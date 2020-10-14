@@ -24,8 +24,8 @@ iot = mqtt_connection_builder.mtls_from_path(
 
 scheduler = sched.scheduler(time.time, time.sleep)
 
-weather = Weather(iot, scheduler, virtual=True)
-printer = Printer(iot, virtual=True)
+weather = Weather(iot, scheduler, virtual=False)
+printer = Printer(iot, virtual=False)
 
 print("Connecting to IOT.")
 iot.connect()
@@ -66,6 +66,8 @@ iot.subscribe(topic=SHADOW_UPDATE_REJECTED_TOPIC, qos=mqtt.QoS.AT_LEAST_ONCE, ca
 print("Requesting new shadow state.")
 iot.publish(topic=SHADOW_GET_TOPIC, payload="", qos=mqtt.QoS.AT_LEAST_ONCE)
 print("Requested new shadow state.")
+
+iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=printer.handle_print_request)
 
 sentinel = threading.Event()
 

@@ -14,14 +14,28 @@ class Printer:
             import datetime
             import serial
 
+            # Pick which version thermal printer class to use depending on the version of
+            # your printer.  Hold the button on the printer as it's powered on and it will
+            # print a test page that displays the firmware version, like 2.64, 2.68, etc.
+            # Use this version in the get_printer_class function below.
+            ThermalPrinter = adafruit_thermal_printer.get_printer_class(2.16)
+
+            # Define RX and TX pins for the board's serial port connected to the printer.
+            # Only the TX pin needs to be configued, and note to take care NOT to connect
+            # the RX pin if your board doesn't support 5V inputs.  If RX is left unconnected
+            # the only loss in functionality is checking if the printer has paper--all other
+            # functions of the printer will work.
+            RX = board.RX
+            TX = board.TX
+
             uart = serial.Serial("/dev/ttyS0", baudrate=19200, timeout=3000)
-            printer = ThermalPrinter(uart)
+            self.printer = ThermalPrinter(uart)
 
             # Initialize the printer.  Note this will take a few seconds for the printer
             # to warm up and be ready to accept commands (hence calling it explicitly vs.
             # automatically in the initializer with the default auto_warm_up=True).
             print("Warming up")
-            printer.warm_up()
+            self.printer.warm_up()
             print("Warmed up")
 
             # Check if the printer has paper.  This only works if the RX line is connected
@@ -38,17 +52,20 @@ class Printer:
         self.iot = iot
         self.virtual = virtual
         self.enabled = False
-        self.iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=handle_print_request)
+        # self.iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=self.handle_print_request)
 
     def handle_print_request(self, topic, payload, **kwargs):
+        print("Handling print request")
         if self.virtual:
             print("Running in virtual mode; did not print payload.")
         else:
-            for line in payload:
-                self.processLine(line.rstrip(), printer)
-            printer.feed(4)
+            print(payload.decode())
+            for line in payload.decode().split("\n"):
+                self.processLine(line.rstrip(), self.printer)
+            self.printer.feed(4)
 
     def processLine(self, line, printer):
+        import adafruit_thermal_printer
         if line.startswith("# "):
             printer.bold = True
             printer.double_height = True
