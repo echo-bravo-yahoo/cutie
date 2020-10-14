@@ -39,20 +39,20 @@ SHADOW_GET_REJECTED_TOPIC = "$aws/things/" + THING_NAME + "/shadow/get/rejected"
 
 def handle_delta(topic, payload, **kwargs):
     print("Received new shadow delta.")
-    weather.handle_delta(payload)
+    weather.handle_delta(payload.decode())
 
 def handle_get_accepted(topic, payload, **kwargs):
     print("Received shadow state.")
-    weather.handle_delta(payload)
+    weather.handle_delta(payload.decode())
 
 def handle_get_rejected(topic, payload, **kwargs):
-    print("---ERROR--- Fetching shadow state failed: " + json.dumps(json.loads(payload), sort_keys=True, indent=4))
+    print("---ERROR--- Fetching shadow state failed: " + json.dumps(json.loads(payload.decode()), sort_keys=True, indent=4))
 
 def handle_update_accepted(topic, payload, **kwargs):
     print("Updated shadow state.")
 
 def handle_update_rejected(topic, payload, **kwargs):
-    print("---ERROR--- Updating shadow state failed: " + json.dumps(json.loads(payload), sort_keys=True, indent=4))
+    print("---ERROR--- Updating shadow state failed: " + json.dumps(json.loads(payload.decode()), sort_keys=True, indent=4))
 
 print("Subscribing to shadow topics.")
 iot.subscribe(topic=SHADOW_UPDATE_DELTA_TOPIC, qos=mqtt.QoS.AT_LEAST_ONCE, callback=handle_delta)

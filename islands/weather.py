@@ -86,10 +86,7 @@ class Weather:
 
 
     def handle_delta(self, payload):
-        try:
-            print(json.dumps(json.loads(payload), sort_keys=True, indent=4))
-        except:
-            print("Failed to pretty print payload: " + payload)
+        print(json.dumps(json.loads(payload), sort_keys=True, indent=4))
         try:
             desired = json.loads(payload)["state"]["desired"]
             reported = json.loads(payload)["state"]["reported"]
