@@ -2,6 +2,7 @@ from awscrt import io, mqtt, auth, http
 from awsiot import mqtt_connection_builder
 import sched, time
 from weather import Weather
+from printer import Printer
 import json
 import threading
 
@@ -23,7 +24,8 @@ iot = mqtt_connection_builder.mtls_from_path(
 
 scheduler = sched.scheduler(time.time, time.sleep)
 
-weather = Weather(iot, scheduler, virtual=False)
+weather = Weather(iot, scheduler, virtual=True)
+printer = Printer(iot, virtual=True)
 
 print("Connecting to IOT.")
 iot.connect()

@@ -1,8 +1,6 @@
 import board
 import busio
-
 import adafruit_thermal_printer
-
 import datetime
 
 # Pick which version thermal printer class to use depending on the version of
