@@ -13,9 +13,9 @@ THING_NAME = "badge-and-printer"
 
 iot = mqtt_connection_builder.mtls_from_path(
         endpoint="<redacted-endpoint>",
-        cert_filepath="/home/swift/workspace/fbb3f88aee-certificate.pem.crt",
-        pri_key_filepath="/home/swift/workspace/fbb3f88aee-private.pem.key",
-        ca_filepath="/home/swift/workspace/AmazonRootCA1.pem",
+        cert_filepath="/home/pi/workspace/fbb3f88aee-certificate.pem.crt",
+        pri_key_filepath="/home/pi/workspace/fbb3f88aee-private.pem.key",
+        ca_filepath="/home/pi/workspace/AmazonRootCA1.pem",
         client_id=THING_NAME,
         client_bootstrap=client_bootstrap,
         clean_session=False,
@@ -23,7 +23,7 @@ iot = mqtt_connection_builder.mtls_from_path(
 
 scheduler = sched.scheduler(time.time, time.sleep)
 
-weather = Weather(iot, scheduler, virtual=True)
+weather = Weather(iot, scheduler, virtual=False)
 
 print("Connecting to IOT.")
 iot.connect()
