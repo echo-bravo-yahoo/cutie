@@ -58,7 +58,6 @@ class Weather:
         else:
             self.iot.publish(topic=PUBLISH_TOPIC, payload=self.generatePayload(), qos=mqtt.QoS.AT_LEAST_ONCE)
 
-
     def generatePayload(self):
         payload = {}
         payload["temp"] = self.toFahrenheit(self.bme680.temperature + self.temperature_offset)
@@ -66,7 +65,7 @@ class Weather:
         payload["humidity"] = self.bme680.humidity
         payload["pressure"] = self.bme680.pressure
         payload["altitude"] = self.bme680.altitude
-        log(payload)
+        self.log(payload)
         return json.dumps(payload)
 
     def toFahrenheit(self, celsius):
@@ -87,7 +86,10 @@ class Weather:
 
 
     def handle_delta(self, payload):
-        print(json.dumps(json.loads(payload), sort_keys=True, indent=4))
+        try:
+            print(json.dumps(json.loads(payload), sort_keys=True, indent=4))
+        except:
+            print("Failed to pretty print payload: " + payload)
         try:
             desired = json.loads(payload)["state"]["desired"]
             reported = json.loads(payload)["state"]["reported"]
