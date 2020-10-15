@@ -78,14 +78,12 @@ class Printer:
             printer.size = adafruit_thermal_printer.SIZE_LARGE
             printer.print(line[3:])
             printer.size = adafruit_thermal_printer.SIZE_SMALL
-            pass
         elif line.startswith("### "):
             printer.underline = adafruit_thermal_printer.UNDERLINE_THICK
             printer.size = adafruit_thermal_printer.SIZE_MEDIUM
             printer.print(line[4:])
             printer.underline = None
             printer.size = adafruit_thermal_printer.SIZE_SMALL
-            pass
         elif line.startswith("#### "):
             printer.underline = adafruit_thermal_printer.UNDERLINE_THIN
             printer.size = adafruit_thermal_printer.SIZE_MEDIUM
@@ -102,7 +100,6 @@ class Printer:
             printer.bold = False
         elif line.startswith("- "):
             printer.print("  " + line)
-        # elif line == None or line == "":
         else:
             printer.print(line)
 
