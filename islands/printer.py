@@ -1,5 +1,6 @@
 from awscrt import mqtt
 import json
+import mornings
 
 THING_NAME = "badge-and-printer"
 MODULE_NAME = "printer"
@@ -62,7 +63,7 @@ class Printer:
             print(payload.decode())
             for line in payload.decode().split("\n"):
                 self.processLine(line.rstrip(), self.printer)
-            self.printer.feed(4)
+            self.printer.feed(3)
 
     def processLine(self, line, printer):
         import adafruit_thermal_printer
@@ -103,3 +104,6 @@ class Printer:
         else:
             printer.print(line)
 
+    def handle_morning(self, topic, payload, **kwargs):
+        print("Handling morning")
+        self.handle_print_request(topic, mornings.handle_morning())

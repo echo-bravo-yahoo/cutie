@@ -43,7 +43,7 @@ def ord(n):
     return str(n)+("th" if 4<=n%100<=20 else {1:"st",2:"nd",3:"rd"}.get(n%10, "th"))
 
 def greeting():
-    template = "Good morning, Ashton! It's %A, %B {}.\n".format(ord(datetime.now().day()))
+    template = "#### Good morning, Ashton!\nIt's %A, %B {}.\n\n".format(ord(datetime.now().day))
     return datetime.now().strftime(template)
 
 def quote():
@@ -51,7 +51,7 @@ def quote():
 
 def weather():
     weather = get_weather()
-    template = "Today's low will be {:.0f} °F (at {}).\nToday's high will be {:.0f} °F (at {}).\nExpect there to be {} today around {}."
+    template = "Today's low will be {:.0f} 'F\n\t(at {}).\nToday's high will be {:.0f} 'F\n\t(around {}).\nExpect there to be {} today around {}.\n\n"
     result = template.format(
         weather["perceived_low"]["temp"],
         weather["perceived_low"]["time"],
@@ -69,11 +69,12 @@ def todo():
 def reminder():
     return "Remember to check your calendar!\n"
 
-def handle_morning(topic, payload, **kwargs):
+def handle_morning():
     string = ""
     string += greeting()
     string += quote()
     string += weather()
     string += todo()
     string += reminder()
-    printer.handle_print_request(topic, string)
+    # this is a dumb hack, printer decodes without checking type
+    return string.encode()

@@ -5,6 +5,7 @@ from weather import Weather
 from printer import Printer
 import json
 import threading
+import mornings
 
 event_loop_group = io.EventLoopGroup(1)
 host_resolver = io.DefaultHostResolver(event_loop_group)
@@ -68,7 +69,7 @@ iot.publish(topic=SHADOW_GET_TOPIC, payload="", qos=mqtt.QoS.AT_LEAST_ONCE)
 print("Requested new shadow state.")
 
 iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=printer.handle_print_request)
-iot.subscribe(topic="events/morning", qos=mqtt.QoS.AT_LEAST_ONCE, callback=mornings.handle_morning)
+iot.subscribe(topic="events/morning", qos=mqtt.QoS.AT_LEAST_ONCE, callback=printer.handle_morning)
 
 sentinel = threading.Event()
 
