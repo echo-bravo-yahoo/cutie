@@ -53,7 +53,8 @@ class Weather:
         self.schedule()
 
     def disable(self):
-        del self.bme680
+	if self.bme680:
+	    del self.bme680
         self.scheduler.cancel(self.scheduledEvent)
 
     def publishResults(self):
