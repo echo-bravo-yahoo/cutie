@@ -1,5 +1,6 @@
 from awscrt import mqtt
 import json
+from util import full_stack
 
 THING_NAME = "badge-and-printer"
 # this should be dynamic
@@ -107,7 +108,7 @@ class Weather:
                     print("Enabled weather module.")
                     self.update_if_necessary(desired, reported)
                 except Exception as err:
-                    print("Failed to instantiate weather module: " + str(err))
+                    print("Failed to instantiate weather module: " + full_stack())
 
             elif desired["weather"].lower() == "false":
                 print ("Disabling weather module.")
@@ -116,7 +117,7 @@ class Weather:
                     print("Disabled weather module.")
                     self.update_if_necessary(desired, reported)
                 except Exception as err:
-                    print("Failed to instantiate weather module: " + str(err))
+                    print("Failed to instantiate weather module: " + full_stack())
             else:
                 raise ValueError("Weather should be a stringified boolean.")
         except KeyError:
