@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from awscrt import io, mqtt, auth, http
 from awsiot import mqtt_connection_builder
 import sched, time
