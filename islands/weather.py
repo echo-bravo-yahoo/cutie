@@ -18,21 +18,6 @@ PUBLISH_TOPIC = "data/" + MODULE_NAME + "/" + LOCATION
 
 class Weather:
     def __init__(self, iot, scheduler, virtual=False):
-        # Use virtual to test iot functionality on computers without busio / sensors.
-        if not virtual:
-            from busio import I2C
-            import adafruit_bme680
-            import board
-
-            # Create library object using our Bus I2C port
-            i2c = I2C(board.SCL, board.SDA)
-            self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, debug=False)
-
-            # change this to match the location's pressure (hPa) at sea level
-            # this could be dynamically updated from, e.g.,
-            # https://forecast.weather.gov/MapClick.php?x=266&y=134&site=sew&zmx=&zmy=&map_x=266&map_y=134#.X2jtB2hKiUk
-            self.bme680.sea_level_pressure = 1013.89
-
         self.iot = iot
         self.scheduler = scheduler
         self.virtual = virtual
@@ -44,12 +29,33 @@ class Weather:
 
         self.enabled = False
 
+    def schedule(self):
+        self.publishResults()
+        self.scheduledEvent = self.scheduler.enter(60, 1, self.schedule)
+
+    # this must be idempotent; it'll be called repeatedly, and we only want to instantiate one sensor
+    def enable(self):
+        # Use virtual to test iot functionality on computers without busio / sensors.
+        if not self.virtual and not self.bme680:
+            from busio import I2C
+            import adafruit_bme680
+            import board
+
+            # Create library object using our Bus I2C port
+            i2c = I2C(board.SCL, board.SDA)
+            self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, debug=False)
+
+            # change this to match the location's pressure (hPa) at sea level
+            # this could be dynamically updated from, e.g.,
+            # https://forecast.weather.gov/MapClick.php?x=266&y=134&site=sew&zmx=&zmy=&map_x=266&mapy=134#.X2jtB2hKiUk
+            self.bme680.sea_level_pressure = 1013.89
+
         # Start the scheduled work
         self.schedule()
 
-    def schedule(self):
-        self.publishResults()
-        self.scheduler.enter(60, 1, self.schedule)
+    def disable(self):
+        self.bme680 = null
+        self.scheduler.cancel(self.scheduledEvent)
 
     def publishResults(self):
         print("Publishing results to " + PUBLISH_TOPIC + ".")
@@ -82,10 +88,10 @@ class Weather:
         if reported and desired["weather"].lower() != reported["weather"].lower():
             payload = '{"state":{"reported":{"weather":"' + desired["weather"] + '"}}}'
             print(payload)
+            print("Updating shadow state.")
             self.iot.publish(topic=SHADOW_UPDATE_TOPIC, payload=payload, qos=mqtt.QoS.AT_LEAST_ONCE)
 
-
-    def handle_delta(self, payload):
+    def handle_state(self, payload):
         print(json.dumps(json.loads(payload), sort_keys=True, indent=4))
         try:
             desired = json.loads(payload)["state"]["desired"]
@@ -97,12 +103,21 @@ class Weather:
         try:
             if desired["weather"].lower() == "true":
                 print("Enabling weather module.")
-                self.enabled = True
-                self.update_if_necessary(desired, reported)
+                try:
+                    self.enable()
+                    print("Enabled weather module.")
+                    self.update_if_necessary(desired, reported)
+                except Exception as err:
+                    print("Failed to instantiate weather module: " + e)
+
             elif desired["weather"].lower() == "false":
                 print ("Disabling weather module.")
-                self.enabled = False
-                self.update_if_necessary(desired, reported)
+                try:
+                    self.disable()
+                    print("Disabled weather module.")
+                    self.update_if_necessary(desired, reported)
+                except Exception as err:
+                    print("Failed to instantiate weather module: " + e)
             else:
                 raise ValueError("Weather should be a stringified boolean.")
         except KeyError:
