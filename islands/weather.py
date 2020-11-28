@@ -53,9 +53,10 @@ class Weather:
         self.schedule()
 
     def disable(self):
-        if self.bme680:
+        if hasattr(self, 'bme680'):
           del self.bme680
-        self.scheduler.cancel(self.scheduledEvent)
+        if hasattr(self, scheduledEvent):
+          self.scheduler.cancel(self.scheduledEvent)
 
     def publishResults(self):
         print("Publishing results to " + PUBLISH_TOPIC + ".")
