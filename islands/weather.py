@@ -108,7 +108,7 @@ class Weather:
                     print("Enabled weather module.")
                     self.update_if_necessary(desired, reported)
                 except Exception as err:
-                    print("Failed to instantiate weather module: " + e)
+                    print("Failed to instantiate weather module: " + err)
 
             elif desired["weather"].lower() == "false":
                 print ("Disabling weather module.")
@@ -117,7 +117,7 @@ class Weather:
                     print("Disabled weather module.")
                     self.update_if_necessary(desired, reported)
                 except Exception as err:
-                    print("Failed to instantiate weather module: " + e)
+                    print("Failed to instantiate weather module: " + err)
             else:
                 raise ValueError("Weather should be a stringified boolean.")
         except KeyError:
