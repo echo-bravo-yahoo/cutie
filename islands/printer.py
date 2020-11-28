@@ -6,7 +6,7 @@ THING_NAME = "badge-and-printer"
 MODULE_NAME = "printer"
 
 class Printer:
-    def __init__(self, iot, virtual=False):
+    def __init__(self, iot, sentinel, virtual=False):
         # Use virtual to test iot functionality on computers without busio / sensors.
         if not virtual:
             import board
@@ -53,6 +53,7 @@ class Printer:
         self.iot = iot
         self.virtual = virtual
         self.enabled = False
+        self.sentinel = sentinel
         # self.iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=self.handle_print_request)
 
     def handle_print_request(self, topic, payload, **kwargs):

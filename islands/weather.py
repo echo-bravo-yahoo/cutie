@@ -18,10 +18,11 @@ SHADOW_GET_REJECTED_TOPIC = "$aws/things/" + THING_NAME + "/shadow/get/rejected"
 PUBLISH_TOPIC = "data/" + MODULE_NAME + "/" + LOCATION
 
 class Weather:
-    def __init__(self, iot, scheduler, virtual=False):
+    def __init__(self, iot, scheduler, sentinel, virtual=False):
         self.iot = iot
         self.scheduler = scheduler
         self.virtual = virtual
+        self.sentinel = sentinel
 
         # You will usually have to add an offset to account for the temperature of
         # the sensor. This is usually around 5 degrees but varies by use. Use a
@@ -31,6 +32,7 @@ class Weather:
     def schedule(self):
         self.publishResults()
         self.scheduledEvent = self.scheduler.enter(60, 1, self.schedule)
+        self.scheduler.run(False)
 
     # this must be idempotent; it'll be called repeatedly, and we only want to instantiate one sensor
     def enable(self):
@@ -51,6 +53,7 @@ class Weather:
 
         # Start the scheduled work
         self.schedule()
+        self.sentinel.set()
 
     def disable(self):
         if hasattr(self, 'bme680'):

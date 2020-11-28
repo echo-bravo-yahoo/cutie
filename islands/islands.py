@@ -6,8 +6,8 @@ import sched, time
 from weather import Weather
 from printer import Printer
 import json
-import threading
 import mornings
+import threading
 
 event_loop_group = io.EventLoopGroup(1)
 host_resolver = io.DefaultHostResolver(event_loop_group)
@@ -26,9 +26,10 @@ iot = mqtt_connection_builder.mtls_from_path(
         keep_alive_secs=6)
 
 scheduler = sched.scheduler(time.time, time.sleep)
+sentinel = threading.Event()
 
-weather = Weather(iot, scheduler, virtual=False)
-printer = Printer(iot, virtual=False)
+weather = Weather(iot, scheduler, sentinel, virtual=False)
+printer = Printer(iot, sentinel, virtual=False)
 
 print("Connecting to IOT.")
 iot.connect()
@@ -73,8 +74,7 @@ print("Requested new shadow state.")
 iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=printer.handle_print_request)
 iot.subscribe(topic="events/morning", qos=mqtt.QoS.AT_LEAST_ONCE, callback=printer.handle_morning)
 
-sentinel = threading.Event()
-
-scheduler.run()
-
-sentinel.wait()
+while (True):
+  sentinel.clear()
+  scheduler.run()
+  sentinel.wait()
