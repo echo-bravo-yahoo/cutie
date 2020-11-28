@@ -35,7 +35,7 @@ class Weather:
     # this must be idempotent; it'll be called repeatedly, and we only want to instantiate one sensor
     def enable(self):
         # Use virtual to test iot functionality on computers without busio / sensors.
-        if not self.virtual and not self.bme680:
+        if not self.virtual and not hasattr(self, 'bme680'):
             from busio import I2C
             import adafruit_bme680
             import board
