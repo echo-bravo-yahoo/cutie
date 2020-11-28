@@ -87,6 +87,7 @@ class Weather:
         print("\n")
 
     def update_if_necessary(self, desired, reported):
+        print("desired " + str(desired) + ", reported " + str(reported))
         if reported and desired["weather"].lower() != reported["weather"].lower():
             payload = '{"state":{"reported":{"weather":"' + desired["weather"] + '"}}}'
             print(payload)
