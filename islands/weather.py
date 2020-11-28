@@ -78,11 +78,12 @@ class Weather:
         return (celsius * 9/5) + 32
 
     def log(self, payload):
-        print("\nTemperature: %0.1f F" % (payload["temp"]))
+        print("Temperature: %0.1f F" % (payload["temp"]))
         print("Gas: %d ohm" % payload["gas"])
         print("Humidity: %0.1f %%" % payload["humidity"])
         print("Pressure: %0.3f hPa" % payload["pressure"])
         print("Altitude: %0.2f meters" % payload["altitude"])
+        print("\n")
 
     def update_if_necessary(self, desired, reported):
         if reported and desired["weather"].lower() != reported["weather"].lower():
