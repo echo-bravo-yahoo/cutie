@@ -27,8 +27,6 @@ class Weather:
         # separate temperature sensor to calibrate this one.
         self.temperature_offset = -5
 
-        self.enabled = False
-
     def schedule(self):
         self.publishResults()
         self.scheduledEvent = self.scheduler.enter(60, 1, self.schedule)
@@ -109,7 +107,7 @@ class Weather:
                     print("Enabled weather module.")
                     self.update_if_necessary(desired, reported)
                 except Exception as err:
-                    print("Failed to instantiate weather module: " + err)
+                    print("Failed to instantiate weather module: " + str(err))
 
             elif desired["weather"].lower() == "false":
                 print ("Disabling weather module.")
@@ -118,7 +116,7 @@ class Weather:
                     print("Disabled weather module.")
                     self.update_if_necessary(desired, reported)
                 except Exception as err:
-                    print("Failed to instantiate weather module: " + err)
+                    print("Failed to instantiate weather module: " + str(err))
             else:
                 raise ValueError("Weather should be a stringified boolean.")
         except KeyError:
