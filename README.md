@@ -9,6 +9,7 @@ There's a lot to know about AWS IOT. In general, though, these are the most impo
 
 ##### To-do:
 - Set up a python language server locally
+- Add a logging library and improve logging when failures occur (to cloudwatch?)
 - Make virtual mode a flag passed on the command line. Right now, it's a hardcoded constant.
 - Figure out a better object composition model (important for my sanity).
 - Actually use the "enabled" flag per feature (important for heterogenous fleet).
