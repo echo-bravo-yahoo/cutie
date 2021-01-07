@@ -54,6 +54,7 @@ class Printer:
         self.virtual = virtual
         self.enabled = False
         self.sentinel = sentinel
+        self.lastSent = 0
         # self.iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=self.handle_print_request)
 
     def handle_print_request(self, topic, payload, **kwargs):
@@ -106,5 +107,10 @@ class Printer:
             printer.print(line)
 
     def handle_morning(self, topic, payload, **kwargs):
-        print("Handling morning")
-        self.handle_print_request(topic, mornings.handle_morning())
+        res = json.loads(payload.decode())
+        print("payload", res, "lastSent", self.lastSent)
+        if (res["timestamp"] > self.lastSent):
+            print("Handling morning")
+            self.lastSent = res["timestamp"]
+            print(mornings.handle_morning())
+            self.handle_print_request(topic, mornings.handle_morning())

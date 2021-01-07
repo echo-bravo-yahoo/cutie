@@ -23,6 +23,7 @@ class Weather:
         self.scheduler = scheduler
         self.virtual = virtual
         self.sentinel = sentinel
+        self.lastSent = 0
 
         # You will usually have to add an offset to account for the temperature of
         # the sensor. This is usually around 5 degrees but varies by use. Use a
@@ -98,6 +99,9 @@ class Weather:
             self.iot.publish(topic=SHADOW_UPDATE_TOPIC, payload=payload, qos=mqtt.QoS.AT_LEAST_ONCE)
 
     def handle_state(self, payload):
+        if (json.loads(payload)["timestamp"] <= self.lastSent):
+            return
+        self.lastSent = json.loads(payload)["timestamp"]
         print(json.dumps(json.loads(payload), sort_keys=True, indent=4))
         try:
             desired = json.loads(payload)["state"]["desired"]
