@@ -61,11 +61,19 @@ class Printer:
         print("Handling print request")
         if self.virtual:
             print("Running in virtual mode; did not print payload.")
-        else:
-            print(payload.decode())
-            for line in payload.decode().split("\n"):
-                self.processLine(line.rstrip(), self.printer)
-            self.printer.feed(3)
+            return
+        print(payload.decode())
+        try:
+            res = json.loads(payload.decode())
+            if (res["timestamp"] <= self.lastSent):
+                return
+            res_str = res["text"]
+            self.lastSent = res["timestamp"]
+        except:
+            res_str = payload.decode()
+        for line in res_str.split("\n"):
+            self.processLine(line.rstrip(), self.printer)
+        self.printer.feed(3)
 
     def processLine(self, line, printer):
         import adafruit_thermal_printer
@@ -105,12 +113,3 @@ class Printer:
             printer.print("  " + line)
         else:
             printer.print(line)
-
-    def handle_morning(self, topic, payload, **kwargs):
-        res = json.loads(payload.decode())
-        print("payload", res, "lastSent", self.lastSent)
-        if (res["timestamp"] > self.lastSent):
-            print("Handling morning")
-            self.lastSent = res["timestamp"]
-            print(mornings.handle_morning())
-            self.handle_print_request(topic, mornings.handle_morning())
