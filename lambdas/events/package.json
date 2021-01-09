@@ -1,0 +1,17 @@
+{
+  "name": "events-fn",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "rm -rf tmp/** && zip -r tmp/events-fn.zip . && aws lambda update-function-code --function-name events-fn --zip-file fileb://tmp/events-fn.zip"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.823.0",
+    "moment": "^2.29.1",
+    "node-fetch": "^2.6.1"
+  }
+}
