@@ -1,5 +1,4 @@
 const fetch = require('node-fetch')
-const moment = require('moment')
 
 async function getTasks() {
   const res = await fetch('https://inthe.am/api/v2/tasks/', {
@@ -15,14 +14,14 @@ async function getTasks() {
   return safeData
 }
 
-function getWorkTasks(tasks) {
+function getWorkTasks(tasks, config) {
   console.log('There are', tasks.length, 'tasks.')
   return tasks.filter((task) => task.project.startsWith('work'))
        .sort((a, b) => b.urgency - a.urgency)
-       .slice(0, 5)
+       .slice(0, config.limit)
 }
 
-function getNextTasks(tasks) {
+function getNextTasks(tasks, config) {
   return tasks.filter((task) => !task.project.startsWith('work'))
        .filter((task) => !task.tags.includes("bgame") || task.tags.includes("visible"))
        .filter((task) => !task.tags.includes("vgame") || task.tags.includes("visible"))
@@ -33,29 +32,33 @@ function getNextTasks(tasks) {
        .filter((task) => !task.tags.includes("read") || task.tags.includes("visible"))
        .filter((task) => !task.tags.includes("unsafe"))
        .sort((a, b) => b.urgency - a.urgency)
-       .slice(0, 5)
+       .slice(0, config.limit)
 }
 
 function taskToString(task) {
-  return `[ ] ${task.description} (${Math.floor(task.urgency)})`
+  return `[ ] ${task.description}`
 }
 
-function convertTasksToString(tasks) {
-  return tasks.map(taskToString)
-}
+// function convertTasksToString(tasks) {
+  // return tasks.map(taskToString)
+// }
 
-async function getTaskBlock() {
+async function getTaskBlock(config) {
   const tasks = await getTasks()
+  const config = config ? config : { work: { limit: 5 }, personal: { limit: 5 } }
   let text = ''
-  // on week days, publish work info
-  if (![0, 6].includes(moment().day())) {
+
+  if (config.work.limit) {
     text += '##### Work\n'
-    text += (getWorkTasks(tasks)).map((task) => `- ${taskToString(task)}`).join('\n')
+    text += (getWorkTasks(tasks, config.work)).map((task) => `- ${taskToString(task)}`).join('\n')
     text += '\n'
   }
-  text += '##### Personal\n'
-  text += (getNextTasks(tasks)).map((task) => `- ${taskToString(task)}`).join('\n')
-  return text
+  if (config.personal.limit) {
+    text += '##### Personal\n'
+    text += (getNextTasks(tasks, config.personal)).map((task) => `- ${taskToString(task)}`).join('\n')
+    text += '\n'
+  }
+  return text.trim()
 }
 
 exports = module.exports = {

@@ -18,11 +18,25 @@ async function generateMorningText() {
 }
 
 async function generateEveningText() {
-  return 'This is an evening event!'
+  const taskBlockPromise = getTaskBlock({ work: { limit: 0 }, personal: { limit: 10 } })
+  let text = ''
+  text += `### Work's over, Ashton!\n`
+  text += `#### To-do:\n`
+  text += `${await taskBlockPromise}\n\n`
+  return text
 }
 
 async function generateWeekendText() {
-  return 'This is a weekend event!'
+  const taskBlockPromise = getTaskBlock({ work: { limit: 0 }, personal: { limit: 10 } })
+  let text = ''
+  if ((new Date()).getDay() === 6) {
+    text += `### Enjoy your Saturday, Ashton!\n`
+  } else {
+    text += `### It's Sunday, Ashton!\n`
+  }
+  text += `#### To-do:\n`
+  text += `${await taskBlockPromise}\n\n`
+  return text
 }
 
 async function generateText(topic) {
