@@ -50,12 +50,12 @@ async function getTaskBlock(_config) {
 
   if (config.work.limit) {
     text += '##### Work\n'
-    text += (getWorkTasks(tasks, config.work)).map((task) => `- ${taskToString(task)}`).join('\n')
+    text += (getWorkTasks(tasks, config.work)).map(taskToString).join('\n')
     text += '\n'
   }
   if (config.personal.limit) {
     text += '##### Personal\n'
-    text += (getNextTasks(tasks, config.personal)).map((task) => `- ${taskToString(task)}`).join('\n')
+    text += (getNextTasks(tasks, config.personal)).map(taskToString).join('\n')
     text += '\n'
   }
   return text.trim()
