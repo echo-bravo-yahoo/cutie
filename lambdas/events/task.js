@@ -43,9 +43,9 @@ function taskToString(task) {
   // return tasks.map(taskToString)
 // }
 
-async function getTaskBlock(config) {
+async function getTaskBlock(_config) {
   const tasks = await getTasks()
-  const config = config ? config : { work: { limit: 5 }, personal: { limit: 5 } }
+  const config = _config ? _config : { work: { limit: 5 }, personal: { limit: 5 } }
   let text = ''
 
   if (config.work.limit) {
