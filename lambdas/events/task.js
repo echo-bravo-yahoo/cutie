@@ -36,12 +36,10 @@ function getNextTasks(tasks, config) {
 }
 
 function taskToString(task) {
-  return `[ ] ${task.description}`
+  let string = `[ ] ${task.description}`
+  if(task.annotations && task.annotations.length) string += ` [${task.annotations.length}]`
+  return string
 }
-
-// function convertTasksToString(tasks) {
-  // return tasks.map(taskToString)
-// }
 
 async function getTaskBlock(_config) {
   const tasks = await getTasks()
