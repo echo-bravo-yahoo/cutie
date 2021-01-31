@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const aws = require('aws-sdk')
 const moment = require('moment')
 const iot = new aws.IotData({endpoint: '<redacted-endpoint>'})
@@ -71,4 +73,15 @@ exports.handler = async (event, context, callback) => {
   return promise
 }
 
-generateText().then(console.log)
+// if we aren't in a lambda function (that is, we're running locally):
+if (!process.argv[1].includes('/var/runtime')) {
+  if (process.argv[2] === 'events/morning' || process.argv[2] === 'morning') {
+    generateText('events/morning').then(console.log)
+  } else if (process.argv[2] === 'events/evening' || process.argv[2] === 'evening') {
+    generateText('events/evening').then(console.log)
+  } else if (process.argv[2] === 'events/weekend' || process.argv[2] === 'weekend') {
+    generateText('events/weekend').then(console.log)
+  } else {
+    throw new Error(`Invalid event (${process.argv[2]})! Please invoke like this: index.js events/morning`)
+  }
+}
