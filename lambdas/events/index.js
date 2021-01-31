@@ -24,7 +24,7 @@ async function generateEveningText() {
   let text = ''
   text += `### Work's over, Ashton!\n`
   text += `#### To-do:\n`
-  text += `${await taskBlockPromise}\n\n`
+  text += `${await taskBlockPromise}`
   return text
 }
 
@@ -37,7 +37,7 @@ async function generateWeekendText() {
     text += `### It's Sunday, Ashton!\n`
   }
   text += `#### To-do:\n`
-  text += `${await taskBlockPromise}\n\n`
+  text += `${await taskBlockPromise}`
   return text
 }
 
