@@ -12,6 +12,7 @@
   "dependencies": {
     "aws-sdk": "^2.823.0",
     "moment": "^2.29.1",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "shuffle-array": "^1.0.1"
   }
 }

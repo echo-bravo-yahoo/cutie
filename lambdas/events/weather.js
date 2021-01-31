@@ -21,11 +21,10 @@ async function getWeather() {
   const units = "imperial"
   const uri = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=${exclude}&appid=${apiKey}&units=${units}`
   res = await (fetch(uri).then((res) => res.json()))
-  console.log(res[0])
   const hourly = res.hourly.slice(0, 24)
 
   const results = {}
-  console.log(hourly.sort((hour, hour2) => hour.temp - hour2.temp).map((hour) => `${hour.temp} at ${hour.dt}`))
+  // console.log(hourly.sort((hour, hour2) => hour.temp - hour2.temp).map((hour) => `${hour.temp} at ${hour.dt}`))
   results.low = hourly.sort((hour, hour2) => hour.temp - hour2.temp)[0]
   results.low.time = results.low.dt
   results.high = hourly.sort((hour, hour2) => hour.temp - hour2.temp).pop()
@@ -40,9 +39,7 @@ async function getWeather() {
 }
 
 function makeDateString(time) {
-  console.log(time*1000)
   let hour = (new Date(time*1000)).getHours()
-  console.log(hour)
   if (hour < 12) {
     return `${hour} AM`
   } else if (hour === 12) {

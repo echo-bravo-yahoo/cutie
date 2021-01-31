@@ -1,38 +1,126 @@
 const fetch = require('node-fetch')
+const shuffle = require('shuffle-array')
+const f = require('./filters')
+const secrets = require('./secrets')
 
 async function getTasks() {
   const res = await fetch('https://inthe.am/api/v2/tasks/', {
     headers: {
-      Authorization: 'Token CENSOREDCENSOREDCENSORED'
+      Authorization: secrets.task.token
     }
   })
+  // take some optional params and ensure they exist
   const safeData = (await res.json()).map((task) => {
-    let _tags
+    let _tags, _annotations
     task.tags ? _tags = task.tags : _tags = []
-    return { ...task, tags: _tags }
+    task.annotations ? _annotations = task.annotations : _annotations = []
+    return { ...task, tags: _tags, annotations: _annotations }
   })
   return safeData
 }
 
-function getWorkTasks(tasks, config) {
-  console.log('There are', tasks.length, 'tasks.')
-  return tasks.filter((task) => task.project.startsWith('work'))
-       .sort((a, b) => b.urgency - a.urgency)
-       .slice(0, config.limit)
+function getRandomArbitrary(min, max) {
+    return Math.random() * (max - min) + min
 }
 
-function getNextTasks(tasks, config) {
-  return tasks.filter((task) => !task.project.startsWith('work'))
-       .filter((task) => !task.tags.includes("bgame") || task.tags.includes("visible"))
-       .filter((task) => !task.tags.includes("vgame") || task.tags.includes("visible"))
-       .filter((task) => !task.tags.includes("show") || task.tags.includes("visible"))
-       .filter((task) => !task.tags.includes("movie") || task.tags.includes("visible"))
-       .filter((task) => !task.tags.includes("outing") || task.tags.includes("visible"))
-       .filter((task) => !task.tags.includes("date") || task.tags.includes("visible"))
-       .filter((task) => !task.tags.includes("read") || task.tags.includes("visible"))
-       .filter((task) => !task.tags.includes("unsafe"))
-       .sort((a, b) => b.urgency - a.urgency)
-       .slice(0, config.limit)
+function filterTasks(tasks) {
+  // we probably shouldn't show tasks that are blocked
+  // on dependency or negative urgency
+  return tasks
+    .filter((task) => !task.depends)
+    .filter((task) => task.urgency > 0)
+}
+
+// this currently works on just 1 task at a time, but could be extended
+// to instead work on a certain number of tasks
+function weightedDraw(tasks) {
+  const totalUrgency = filterTasks(tasks)
+    .map((task) => task.urgency)
+    .reduce((acc, urgency) => acc += urgency, 0)
+
+  const random = getRandomArbitrary(0, totalUrgency)
+
+  // dumb declarative stuff because javascript doesn't support
+  // short-circuiting a reduce function, and at least this
+  // is readable
+  let remainingUrgency = random,
+      index = 0
+  while(remainingUrgency > 0) {
+    remainingUrgency -= tasks[index].urgency
+    index++
+  }
+
+  // console.log('Drew index', index, 'from a total urgency of', totalUrgency, 'which evaluates to task', tasks[index - 1])
+
+  return tasks[index - 1]
+}
+
+// take in a set of matches and others and config
+// return a filtered set of matches and others
+function chunk(firstArg, config) {
+  // firstArg could be an array of others, or an object { matches: [], others: [] }
+  let others, matches, possibilities
+
+  // this happens on the first chunk call to kick off a chain
+  if (firstArg.length) {
+    others = firstArg
+    matches = []
+  } else {
+    others = firstArg.others
+    matches = firstArg.matches
+  }
+
+  possibilities = config.filter ? config.filter(others) : others
+  // console.log('pre strategy:', 'matches', matches.length, 'others', others.length, 'possibilities', possibilities.length)
+
+
+  if (config.strategy === 'next') {
+    let sorted = possibilities.sort((a, b) => b.urgency - a.urgency)
+
+    newMatches = sorted.slice(0, config.limit)
+    others = others.filter((other) => sorted.find((sort) => sort.id !== other.id))
+
+    // console.log('next strategy:', 'matches', ([...matches, ...newMatches]).length, 'others', others.length, 'possibilities', possibilities.length)
+
+    return { matches: [ ...matches, ...newMatches], others }
+  } else if (config.strategy === 'shuffle') {
+    let newMatches = [], maxLength = possibilities.length
+
+    for(let i = 0; i < Math.min(config.limit, maxLength); i++) {
+      const newMatch = weightedDraw(possibilities)
+      newMatches.push(newMatch)
+      others = others.filter((task) => task.id !== newMatch.id)
+      possibilities = possibilities.filter((task) => task.id !== newMatch.id)
+    }
+
+    // console.log('shuffle strategy:', 'matches', ([ ...matches, ...newMatches ]).length, 'others', others.length, 'possibilities', possibilities.length)
+
+    return { matches: [ ...matches, ...newMatches ], others }
+  }
+}
+
+function finish({ matches }, config) {
+  if (config && config.finish === 'shuffle') {
+    matches = shuffle(matches)
+  }
+  return matches.map(taskToString).join('\n')
+}
+
+function getEveningTasks(tasks) {
+  tasks = chunk(tasks, { strategy: 'next', limit: 7, filter: f.typical })
+  tasks = chunk(tasks, { strategy: 'shuffle', limit: 3, filter: f.projects })
+  return finish(tasks, { finish: 'shuffle' })
+}
+
+function getWeekendTasks(tasks) {
+  tasks = chunk(tasks, { strategy: 'next', limit: 7, filter: f.typical })
+  tasks = chunk(tasks, { strategy: 'shuffle', limit: 1, filter: f.projects })
+  tasks = chunk(tasks, { strategy: 'shuffle', limit: 1, filter: f.shows })
+  tasks = chunk(tasks, { strategy: 'shuffle', limit: 1, filter: f.bgames })
+  tasks = chunk(tasks, { strategy: 'shuffle', limit: 1, filter: f.vgames })
+  tasks = chunk(tasks, { strategy: 'shuffle', limit: 1, filter: f.dates })
+  tasks = chunk(tasks, { strategy: 'shuffle', limit: 1, filter: f.movies })
+  return finish(tasks, { finish: 'shuffle' })
 }
 
 function taskToString(task) {
@@ -41,22 +129,27 @@ function taskToString(task) {
   return string
 }
 
-async function getTaskBlock(_config) {
+async function getTaskBlock(event) {
   const tasks = await getTasks()
-  const config = _config ? _config : { work: { limit: 5 }, personal: { limit: 5 } }
   let text = ''
 
-  if (config.work.limit) {
-    text += '##### Work\n'
-    text += (getWorkTasks(tasks, config.work)).map(taskToString).join('\n')
-    text += '\n'
-  }
-  if (config.personal.limit) {
+  if (event === 'evening') {
     text += '##### Personal\n'
-    text += (getNextTasks(tasks, config.personal)).map(taskToString).join('\n')
-    text += '\n'
+    text += getEveningTasks(tasks)
+  } else if (event === 'morning') {
+    text += '##### Work\n'
+    text += finish(chunk(tasks, { strategy: 'next', limit: 5, filter: f.work }))
+    text += '\n\n'
+    text += '##### Personal\n'
+    text += finish(chunk(tasks, { strategy: 'next', limit: 5, filter: f.typical }))
+  } else if (event === 'weekend') {
+    text += '##### Personal\n'
+    text += getWeekendTasks(tasks)
+  } else {
+    throw new Error(`Invalid event name (${event})!`)
   }
-  return text.trim()
+
+  return text
 }
 
 exports = module.exports = {

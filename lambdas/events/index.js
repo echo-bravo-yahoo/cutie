@@ -5,10 +5,12 @@ const moment = require('moment')
 const iot = new aws.IotData({endpoint: '<redacted-endpoint>'})
 const { getTaskBlock } = require('./task.js')
 const { getWeatherBlock } = require('./weather.js')
+const { getBudgetBlock } = require('./ynab.js')
 
 async function generateMorningText() {
   const weatherBlockPromise = getWeatherBlock()
-  const taskBlockPromise = getTaskBlock()
+  const taskBlockPromise = getTaskBlock('morning')
+
   let text = ''
   text += `### Good morning, Ashton!\n`
   text += `It's ${moment().format('dddd, MMMM Do')}.\n\n`
@@ -20,22 +22,28 @@ async function generateMorningText() {
 }
 
 async function generateEveningText() {
-  const taskBlockPromise = getTaskBlock({ work: { limit: 0 }, personal: { limit: 10 } })
+  const taskBlockPromise = getTaskBlock('evening')
+  const budgetBlockPromise = getBudgetBlock()
+
   let text = ''
   text += `### Work's over, Ashton!\n`
+  text += `${await budgetBlockPromise}\n`
   text += `#### To-do:\n`
   text += `${await taskBlockPromise}`
   return text
 }
 
 async function generateWeekendText() {
-  const taskBlockPromise = getTaskBlock({ work: { limit: 0 }, personal: { limit: 10 } })
+  const taskBlockPromise = getTaskBlock('weekend')
+  const budgetBlockPromise = getBudgetBlock()
+
   let text = ''
   if ((new Date()).getDay() === 6) {
     text += `### Enjoy your Saturday, Ashton!\n`
   } else {
     text += `### It's Sunday, Ashton!\n`
   }
+  text += `${await budgetBlockPromise}\n`
   text += `#### To-do:\n`
   text += `${await taskBlockPromise}`
   return text
