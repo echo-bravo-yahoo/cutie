@@ -38,25 +38,41 @@ async function numberToActions(number, width) {
 
   for(let index = 0; index < bits.length; index++) {
     console.log('LED ON for', high, 'microseconds')
+    await io.write(16, true)
     await sleep(high)
 
     if(bits[index]) {
       console.log('LED OFF for', lowLong, 'microseconds')
+      await io.write(16, false)
       await sleep(lowLong)
     } else {
       console.log('LED OFF for', lowShort, 'microseconds')
+      await io.write(16, false)
       await sleep(lowShort)
     }
   }
 }
 
 
+/*
 console.log(numberToBitString(0x11, 8))
 numberToActions(0x11, 8).then(() => {
   console.log('LED ON for', 500, 'microseconds')
   sleep(500)
   console.log('DONE')
 })
+*/
+
+(async() => {
+  await io.setup(16, io.DIR_OUT)
+  await numberToActions(0x11, 8).then(async () => {
+    console.log('LED ON for', 500, 'microseconds')
+    await io.write(16, true)
+    sleep(500)
+    await io.write(16, false)
+    console.log('DONE')
+  })
+})()
 
 // manual: https://www.daikinac.com/content/assets/DOC/OperationManuals/01-EN-3P379751-4C.pdf
 // comfort mode: blows up for cool, down for heat 'avoid blowing on you'
