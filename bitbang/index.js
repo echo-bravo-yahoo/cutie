@@ -1,6 +1,13 @@
+const io = require('pi-gpio')
+const utime = require('microtime')
+const { promisify } = require('util')
+const write = promisify(io.write)
+const open = promisify(io.open)
+const close = promisify(io.close)
+
 function sleep(time) {
   return new Promise((res) => {
-    setTimeout(res, time/1000)
+    setTimeout(res, time/10000)
   })
 }
 
@@ -37,36 +44,45 @@ async function numberToActions(number, width) {
   const lowShort = 435
 
   for(let index = 0; index < bits.length; index++) {
-    console.log('LED ON for', high, 'microseconds')
-    await io.write(16, true)
-    await sleep(high)
+    let before = utime.now()
+    const io_p = write(16, true)
+    const s_p = sleep(high)
+    await Promise.all([io_p, s_p])
+    let after = utime.now()
+    console.log('LED ON for', after - before, 'microseconds')
 
     if(bits[index]) {
-      console.log('LED OFF for', lowLong, 'microseconds')
-      await io.write(16, false)
+      before = utime.now()
+      await write(16, false)
       await sleep(lowLong)
+      after = utime.now()
+      console.log('LED OFF for', after - before, 'microseconds')
     } else {
-      console.log('LED OFF for', lowShort, 'microseconds')
-      await io.write(16, false)
+      before = utime.now()
+      await write(16, false)
       await sleep(lowShort)
+      after = utime.now()
+      console.log('LED OFF for', after - before, 'microseconds')
     }
   }
 }
 
 async function messageToActions(message) {
-  await io.setup(16, io.DIR_OUT)
+  await open(16, "output")
 
   for (let index = 0; index < message.length; index++) {
     await numberToActions(message, 8)
   }
-  console.log('LED ON for', 500, 'microseconds')
-  await io.write(16, true)
+  // console.log('LED ON for', 500, 'microseconds')
+  await write(16, true)
   sleep(500)
-  await io.write(16, false)
+  await write(16, false)
+  await close(16)
   console.log('DONE')
 }
 
 (async() => {
+  await close(16)
   await messageToActions([
     0x11, 0xda, 0x27, 0x00, 0x00, 0x49, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x66
   ])
