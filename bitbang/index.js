@@ -38,20 +38,23 @@ async function numberToActions(number, width) {
   for(let index = 0; index < bits.length; index++) {
     let before = utime.now()
     io.write(16, io.HIGH)
-    sleep(high)
     let after = utime.now()
+    sleep(high - (after - before))
+    after = utime.now()
     console.log('LED ON for', after - before, 'microseconds')
 
     if(bits[index]) {
       before = utime.now()
       io.write(16, io.LOW)
-      sleep(lowLong)
+      after = utime.now()
+      sleep(lowLong - (after - before))
       after = utime.now()
       console.log('LED LONG OFF for', after - before, 'microseconds')
     } else {
       before = utime.now()
       io.write(16, io.LOW)
-      sleep(lowShort)
+      after = utime.now()
+      sleep(lowShort - (after - before))
       after = utime.now()
       console.log('LED SHORT OFF for', after - before, 'microseconds')
     }
