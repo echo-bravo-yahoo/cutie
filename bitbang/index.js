@@ -1,18 +1,12 @@
 const io = require('rpio')
 const utime = require('microtime')
 const { promisify } = require('util')
-
-function sleep(time) {
-  return new Promise((res) => {
-    setTimeout(res, time/10000)
-  })
-}
+const sleep = io.usleep
 
 function numberToBitArray(number, width) {
   let bitArray = []
   for(let i = 0; i < (width || 32); i++) {
     const bit = (Math.pow(2, i) & number) ? true : false
-    // console.log(number, Math.pow(2, i), bit)
     bitArray.push(bit)
   }
   return bitArray
@@ -36,47 +30,54 @@ function arrayToNumber(bitArray, width) {
 
 async function numberToActions(number, width) {
   const bits = numberToBitArray(number, width)
-  const high = 500
-  const lowLong = 1300
-  const lowShort = 435
+  console.log(arrayToBitString(bits))
+  const high = 270
+  const lowLong = 1000
+  const lowShort = 200
 
   for(let index = 0; index < bits.length; index++) {
     let before = utime.now()
-    io.write(16, true)
-    await sleep(high)
+    io.write(16, io.HIGH)
+    sleep(high)
     let after = utime.now()
     console.log('LED ON for', after - before, 'microseconds')
 
     if(bits[index]) {
       before = utime.now()
-      io.write(16, false)
-      await sleep(lowLong)
+      io.write(16, io.LOW)
+      sleep(lowLong)
       after = utime.now()
-      console.log('LED OFF for', after - before, 'microseconds')
+      console.log('LED LONG OFF for', after - before, 'microseconds')
     } else {
       before = utime.now()
-      await Promise.all([led.write(false), sleep(lowShort)])
+      io.write(16, io.LOW)
+      sleep(lowShort)
       after = utime.now()
-      console.log('LED OFF for', after - before, 'microseconds')
+      console.log('LED SHORT OFF for', after - before, 'microseconds')
     }
   }
 }
 
-async function messageToActions(message) {
-  io.open(16, io.OUTPUT)
-
-  for (let index = 0; index < message.length; index++) {
-    await numberToActions(message, 8)
+async function messageToActions(messages) {
+  for (let index = 0; index < messages.length; index++) {
+    await numberToActions(messages[index], 8)
   }
   // console.log('LED ON for', 500, 'microseconds')
-  io.write(16, true)
+  io.write(16, io.HIGH)
   sleep(500)
-  io.write(16, false)
+  io.write(16, io.LOW)
   io.close(16)
   console.log('DONE')
 }
 
 (async() => {
+  // it takes FOREVER to turn the LED on and off for the first time, so let's do that as part of setup
+  io.open(16, io.OUTPUT)
+  io.write(16, io.HIGH)
+  io.write(16, io.LOW)
+  sleep(10000)
+
+  // ok, good to go
   await messageToActions([
     0x11, 0xda, 0x27, 0x00, 0x00, 0x49, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x66
   ])
