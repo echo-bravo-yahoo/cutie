@@ -1,9 +1,6 @@
-const io = require('pi-gpio')
+const io = require('rpio')
 const utime = require('microtime')
 const { promisify } = require('util')
-const write = promisify(io.write)
-const open = promisify(io.open)
-const close = promisify(io.close)
 
 function sleep(time) {
   return new Promise((res) => {
@@ -45,15 +42,14 @@ async function numberToActions(number, width) {
 
   for(let index = 0; index < bits.length; index++) {
     let before = utime.now()
-    const io_p = write(16, true)
-    const s_p = sleep(high)
-    await Promise.all([io_p, s_p])
+    io.write(16, true)
+    await sleep(high)
     let after = utime.now()
     console.log('LED ON for', after - before, 'microseconds')
 
     if(bits[index]) {
       before = utime.now()
-      await write(16, false)
+      io.write(16, false)
       await sleep(lowLong)
       after = utime.now()
       console.log('LED OFF for', after - before, 'microseconds')
@@ -67,21 +63,20 @@ async function numberToActions(number, width) {
 }
 
 async function messageToActions(message) {
-  await open(16, "output")
+  io.open(16, io.OUTPUT)
 
   for (let index = 0; index < message.length; index++) {
     await numberToActions(message, 8)
   }
   // console.log('LED ON for', 500, 'microseconds')
-  await write(16, true)
+  io.write(16, true)
   sleep(500)
-  await write(16, false)
-  await close(16)
+  io.write(16, false)
+  io.close(16)
   console.log('DONE')
 }
 
 (async() => {
-  await close(16)
   await messageToActions([
     0x11, 0xda, 0x27, 0x00, 0x00, 0x49, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x66
   ])
