@@ -59,8 +59,7 @@ async function numberToActions(number, width) {
       console.log('LED OFF for', after - before, 'microseconds')
     } else {
       before = utime.now()
-      await write(16, false)
-      await sleep(lowShort)
+      await Promise.all([led.write(false), sleep(lowShort)])
       after = utime.now()
       console.log('LED OFF for', after - before, 'microseconds')
     }

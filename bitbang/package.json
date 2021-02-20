@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "microtime": "^3.0.0",
+    "onoff": "^6.0.1",
     "pi-gpio": "^0.0.8",
     "rpi-gpio": "^2.1.7"
   }
