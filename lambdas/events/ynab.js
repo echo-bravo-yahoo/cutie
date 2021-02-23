@@ -16,12 +16,16 @@ function formatMoney(number) {
   return (new Intl.NumberFormat('us-EN', { style: 'currency', currency: 'USD' }).format(number))
 }
 
-function getBudgeted(categories) {
-  return categories.reduce((acc, cur) => acc + cur.budgeted, 0)/1000
+function getSpent(categories) {
+  return categories.reduce((acc, cur) => acc + cur.activity, 0)/1000
 }
 
 function getRemaining(categories) {
   return categories.reduce((acc, cur) => acc + cur.balance, 0)/1000
+}
+
+function getBudgeted(categories) {
+  return getRemaining(categories) - getSpent(categories)
 }
 
 function daysInMonth (month, year) {
@@ -38,7 +42,7 @@ async function getBudgetBlock() {
   let text = ''
 
   text += '#### Budget\n'
-  text += `Remaining: ${formatMoney(getBudgeted(categories))} of ${formatMoney(getRemaining(categories))}\n`
+  text += `Remaining: ${formatMoney(getRemaining(categories))} of ${formatMoney(getBudgeted(categories))}\n`
   text += `Per day: ${formatMoney(getPerDay(categories))}\n`
 
   return text
