@@ -54,11 +54,11 @@ async function sendMessage(messages) {
   // do we need to do this?
   // it takes FOREVER to turn the LED on and off for the first time, so let's do that as part of setup
 
-  const high = 270
+  const high = 462
   const highWave = waveFromSeparator(high)
-  const lowLong = 1000
+  const lowLong = 1282
   const lowLongWave = waveOff(lowLong)
-  const lowShort = 200
+  const lowShort = 421
   const lowShortWave = waveOff(lowShort)
   const waves = []
 
@@ -66,20 +66,26 @@ async function sendMessage(messages) {
     const bits = numberToBitArray(messages[index], 8)
 
     for(let index = 0; index < bits.length; index++) {
-      waves.push(...highWave)
+      // waves.push(...highWave)
+      pigpio.waveTxSend(...highWave, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
 
       if(bits[index]) {
-        waves.push(...lowLongWave)
+        // waves.push(...lowLongWave)
+        pigpio.waveTxSend(...lowLongWave, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
       } else {
-        waves.push(...lowShortWave)
+        // waves.push(...lowShortWave)
+        pigpio.waveTxSend(...lowShortWave, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
       }
     }
   }
-  waves.push(...highWave)
-  waves.push(...lowShortWave)
-  console.log('waves.length', waves.length)
-  console.log(JSON.stringify(waves))
-  pigpio.waveChain(waves)
+
+  // waves.push(...highWave)
+  pigpio.waveTxSend(...highWave, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
+  // waves.push(...lowShortWave)
+  pigpio.waveTxSend(...lowShortWave, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
+  // console.log('waves.length', waves.length)
+  // console.log(JSON.stringify(waves))
+  // pigpio.waveChain(waves)
   while (pigpio.waveTxBusy()) {}
   console.log('DONE')
 }
