@@ -1,7 +1,8 @@
-const io = require('rpio')
-const utime = require('microtime')
-const { promisify } = require('util')
-const sleep = io.usleep
+const pigpio = require('pigpio')
+const Gpio = pigpio.Gpio
+const pin = 16
+
+const output = new Gpio(pin, { mode: Gpio.OUTPUT })
 
 function numberToBitArray(number, width) {
   let bitArray = []
@@ -28,61 +29,65 @@ function arrayToNumber(bitArray, width) {
   return number
 }
 
-async function numberToActions(number, width) {
-  const bits = numberToBitArray(number, width)
-  console.log(arrayToBitString(bits))
+function waveFromSeparator(duration, frequency=38000, dutyCycle=0.5) {
+  const usDelay = (1/frequency) * Math.pow(10, 6)
+  const cycles = Math.round(duration * frequency / Math.pow(10, 6))
+
+  pigpio.waveClear()
+  pigpio.waveAddGeneric([{ gpioOn: pin, gpioOff: 0, usDelay: Math.round(usDelay * dutyCycle) }])
+  const onWaveId = pigpio.waveCreate()
+  pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: Math.round(usDelay * (1 - dutyCycle)) }])
+  const offWaveId = pigpio.waveCreate()
+  return [
+    255, 0,            // start a wave
+    onWaveId,          // send the "on" part of the pulse
+    offWaveId,         // send the "off" part of the pulse
+    255, 1, cycles, 0  // repeat the wave cycles times
+  ]
+}
+
+function waveOff(duration) {
+  pigpio.waveClear()
+  pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: duration }])
+  return [pigpio.waveCreate()]
+}
+
+async function sendMessage(messages) {
+  // do we need to do this?
+  // it takes FOREVER to turn the LED on and off for the first time, so let's do that as part of setup
+
   const high = 270
   const lowLong = 1000
   const lowShort = 200
+  const waves = []
 
-  for(let index = 0; index < bits.length; index++) {
-    let before = utime.now()
-    io.write(16, io.HIGH)
-    let after = utime.now()
-    sleep(high - (after - before))
-    after = utime.now()
-    console.log('LED ON for', after - before, 'microseconds')
+  for (let index = 0; index < messages.length; index++) {
+    const bits = numberToBitArray(messages[index], 8)
 
-    if(bits[index]) {
-      before = utime.now()
-      io.write(16, io.LOW)
-      after = utime.now()
-      sleep(lowLong - (after - before))
-      after = utime.now()
-      console.log('LED LONG OFF for', after - before, 'microseconds')
-    } else {
-      before = utime.now()
-      io.write(16, io.LOW)
-      after = utime.now()
-      sleep(lowShort - (after - before))
-      after = utime.now()
-      console.log('LED SHORT OFF for', after - before, 'microseconds')
+    for(let index = 0; index < bits.length; index++) {
+      waves.push(...waveFromSeparator(high))
+
+      if(bits[index]) {
+        waves.push(...waveOff(lowLong))
+      } else {
+        waves.push(...waveOff(lowShort))
+      }
     }
   }
-}
-
-async function messageToActions(messages) {
-  for (let index = 0; index < messages.length; index++) {
-    await numberToActions(messages[index], 8)
-  }
-  // console.log('LED ON for', 500, 'microseconds')
-  io.write(16, io.HIGH)
-  sleep(500)
-  io.write(16, io.LOW)
-  io.close(16)
+  waves.push(...waveFromSeparator(high))
+  waves.push(...waveOff(lowShort))
+  console.log(waves.length)
+  console.log(JSON.stringify(waves))
+  pigpio.waveChain(waves)
+  while (pigpio.waveTxBusy()) {}
   console.log('DONE')
 }
 
 (async() => {
-  // it takes FOREVER to turn the LED on and off for the first time, so let's do that as part of setup
-  io.open(16, io.OUTPUT)
-  io.write(16, io.HIGH)
-  io.write(16, io.LOW)
-  sleep(10000)
-
   // ok, good to go
-  await messageToActions([
-    0x11, 0xda, 0x27, 0x00, 0x00, 0x49, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x66
+  await sendMessage([
+    // 0x11, 0xda, 0x27, 0x00, 0x00, 0x49, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x66
+    0x11
   ])
 })()
 
