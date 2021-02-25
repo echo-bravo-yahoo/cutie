@@ -38,6 +38,8 @@ function waveFromSeparator(duration, frequency=38000, dutyCycle=0.5) {
   const onWaveId = pigpio.waveCreate()
   pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: Math.round(usDelay * (1 - dutyCycle)) }])
   const offWaveId = pigpio.waveCreate()
+  console.log(onWaveId)
+  console.log(offWaveId)
   return [
     255, 0,            // start a wave
     onWaveId,          // send the "on" part of the pulse
@@ -49,7 +51,9 @@ function waveFromSeparator(duration, frequency=38000, dutyCycle=0.5) {
 function waveOff(duration) {
   pigpio.waveClear()
   pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: duration }])
-  return [pigpio.waveCreate()]
+  const waveId = pigpio.waveCreate()
+  console.log(waveId)
+  return [waveId]
 }
 
 async function sendMessage(messages) {
