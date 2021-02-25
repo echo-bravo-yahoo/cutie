@@ -1,6 +1,6 @@
 const pigpio = require('pigpio')
 const Gpio = pigpio.Gpio
-const pin = 16
+const pin = 23
 
 const output = new Gpio(pin, { mode: Gpio.OUTPUT })
 
@@ -50,8 +50,11 @@ function waveOff(duration) {
 
 function sendMessage(messages) {
   const highWave = waveFromSeparator(462)
+  console.log('separator', highWave)
   const lowLongWave = waveOff(1282)
+  console.log('long', lowLongWave)
   const lowShortWave = waveOff(421)
+  console.log('short', lowShortWave)
   const waves = []
 
   for (let index = 0; index < messages.length; index++) {
@@ -68,10 +71,21 @@ function sendMessage(messages) {
     }
   }
 
-  waves.push(...highWave)
-  waves.push(...lowShortWave)
+  waves.push(highWave)
+  waves.push(lowShortWave)
+  console.log(waves.length)
+  console.log(JSON.stringify(waves))
+  console.log('micros', pigpio.waveGetMicros())
+  console.log('highMicros', pigpio.waveGetHighMicros())
+  console.log('maxMicros', pigpio.waveGetMaxMicros())
+  console.log('pulses', pigpio.waveGetPulses())
+  console.log('highPulses', pigpio.waveGetHighPulses())
+  console.log('maxPulses', pigpio.waveGetMaxPulses())
+
   pigpio.waveChain(waves)
-  while (pigpio.waveTxBusy()) {}
+  while (pigpio.waveTxBusy()) {
+    // console.log('Transmitting', pigpio.waveTxAt(), 'waveform')
+  }
   console.log('DONE')
 }
 
