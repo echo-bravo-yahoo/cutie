@@ -32,70 +32,50 @@ function arrayToNumber(bitArray, width) {
 function waveFromSeparator(duration, frequency=38000, dutyCycle=0.5) {
   const usDelay = (1/frequency) * Math.pow(10, 6)
   const cycles = Math.round(duration * frequency / Math.pow(10, 6))
+  const wave = []
 
-  pigpio.waveAddGeneric([{ gpioOn: pin, gpioOff: 0, usDelay: Math.round(usDelay * dutyCycle) }, { gpioOn: 0, gpioOff: pin, usDelay: Math.round(usDelay * (1 - dutyCycle)) }])
-  const onOffWaveId = pigpio.waveCreate()
-  console.log('onOffWaveId', onOffWaveId)
-  return [
-    255, 0,            // start a wave
-    onOffWaveId,       // send the "on" and "off" parts of the pulse
-    255, 1, cycles, 0  // repeat the wave cycles times
-  ]
+  for(let index = 0; index < cycles; index++) {
+    wave.push({ gpioOn: pin, gpioOff: 0, usDelay: Math.round(usDelay * dutyCycle) })
+    wave.push({ gpioOn: 0, gpioOff: pin, usDelay: Math.round(usDelay * (1 - dutyCycle)) })
+  }
+
+  pigpio.waveAddGeneric(wave)
+  return pigpio.waveCreate()
 }
 
 function waveOff(duration) {
   pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: duration }])
-  const waveId = pigpio.waveCreate()
-  console.log('waveId', duration, waveId)
-  return [waveId]
+  return pigpio.waveCreate()
 }
 
-async function sendMessage(messages) {
-  // do we need to do this?
-  // it takes FOREVER to turn the LED on and off for the first time, so let's do that as part of setup
-
-  const high = 462
-  const highWave = waveFromSeparator(high)
-  const lowLong = 1282
-  const lowLongWave = waveOff(lowLong)
-  const lowShort = 421
-  const lowShortWave = waveOff(lowShort)
+function sendMessage(messages) {
+  const highWave = waveFromSeparator(462)
+  const lowLongWave = waveOff(1282)
+  const lowShortWave = waveOff(421)
   const waves = []
 
   for (let index = 0; index < messages.length; index++) {
     const bits = numberToBitArray(messages[index], 8)
 
     for(let index = 0; index < bits.length; index++) {
-      // waves.push(...highWave)
-      pigpio.waveTxSend(...highWave, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
+      waves.push(highWave)
 
       if(bits[index]) {
-        // waves.push(...lowLongWave)
-        pigpio.waveTxSend(...lowLongWave, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
+        waves.push(lowLongWave)
       } else {
-        // waves.push(...lowShortWave)
-        pigpio.waveTxSend(...lowShortWave, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
+        waves.push(lowShortWave)
       }
     }
   }
 
-  // waves.push(...highWave)
-  pigpio.waveTxSend(...highWave, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
-  // waves.push(...lowShortWave)
-  pigpio.waveTxSend(...lowShortWave, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
-  // console.log('waves.length', waves.length)
-  // console.log(JSON.stringify(waves))
-  // pigpio.waveChain(waves)
+  waves.push(...highWave)
+  waves.push(...lowShortWave)
+  pigpio.waveChain(waves)
   while (pigpio.waveTxBusy()) {}
   console.log('DONE')
 }
 
-(async() => {
-  // ok, good to go
-  await sendMessage([
-    0x11, 0xda, 0x27, 0x00, 0x00, 0x49, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x66
-  ])
-})()
+sendMessage([ 0x11, 0xda, 0x27, 0x00, 0x00, 0x49, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x66 ])
 
 // "build a message from scratch"
 // |   header    | Msg Id | Mode | Temp | Fixed | Fan | Fixed |  Timers  | Pwrful | Fixed | Econo | Fixed | Checksum |
