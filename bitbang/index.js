@@ -10,7 +10,7 @@ function numberToBitArray(number, width) {
     const bit = (Math.pow(2, i) & number) ? true : false
     bitArray.push(bit)
   }
-  console.log('0x' + Number(number).toString(16), arrayToBitString(bitArray))
+  console.log('0x' + Number(number).toString(16), arrayToBitString(bitArray), '0x' + Number(bitStringToNumber(arrayToBitString(bitArray))).toString(16), number)
   return bitArray
 }
 
@@ -20,6 +20,14 @@ function numberToBitString(number, width) {
 
 function arrayToBitString(bitArray) {
   return bitArray.map((bit) => bit ? '1' : '0').join('')
+}
+
+function bitStringToArray(bitString) {
+  return [...bitString].map((bit) => bit === '1')
+}
+
+function bitStringToNumber(bitString) {
+  return arrayToNumber(bitStringToArray(bitString))
 }
 
 function arrayToNumber(bitArray, width) {
@@ -99,30 +107,25 @@ function sendMessage(messages) {
   waves.push(lowShortWave)
   console.log(waves.length)
   console.log(JSON.stringify(waves))
-  console.log('micros', pigpio.waveGetMicros())
-  console.log('highMicros', pigpio.waveGetHighMicros())
-  console.log('maxMicros', pigpio.waveGetMaxMicros())
-  console.log('pulses', pigpio.waveGetPulses())
-  console.log('highPulses', pigpio.waveGetHighPulses())
-  console.log('maxPulses', pigpio.waveGetMaxPulses())
 
   pigpio.waveChain(waves)
-  while (pigpio.waveTxBusy()) {
-    // console.log('Transmitting', pigpio.waveTxAt(), 'waveform')
-  }
+  while (pigpio.waveTxBusy()) {}
   console.log('DONE')
 }
 
-sendMessage([ 0x11, 0xda, 0x27, 0x00, 0x00, 0x49, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x66 ])
+sendMessage([ 0x11, 0xda, 0x27, 0x00, 0x00, 0x41, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc5, 0x00, 0x00, 0xa3 ])
 
 // "build a message from scratch"
 // |   header    | Msg Id | Mode | Temp | Fixed | Fan | Fixed |  Timers  | Pwrful | Fixed | Econo | Fixed | Fixed | Checksum |
-// | 11 da 27 00 |   00   |  xx  |  xx  |   00  |  xx |   00  | xx xx xx |   0x   |   00  |   8x  |   00  |   00  |    xx    |
+// | 11 da 27 00 |   00   |  xx  |  xx  |   00  |  xx |   00  | xx xx xx |   0x   |   00  |   ??  |   00  |   00  |    xx    |
 // "heat" at 72F, 3/5 fan speed, swing enabled
-// | 11 da 27 00 |   00   |  49  |  2C  |   00  |  5F |   00  | 00 00 00 |   00   |   00  |   80  |   00  |   00  |    66    |
+// | 11 da 27 00 |   00   |  41  |  2C  |   00  |  5F |   00  | 00 00 00 |   00   |   00  |   c5  |   00  |   00  |    a3    |
 
 // manual: https://www.daikinac.com/content/assets/DOC/OperationManuals/01-EN-3P379751-4C.pdf
 // comfort mode: blows up for cool, down for heat 'avoid blowing on you'
 // econo: lower power use
 // powerful: 20 minutes of max (AC, heat), then return to previous settings
   // mai
+module.exports = exports = {
+  bitStringToNumber
+}
