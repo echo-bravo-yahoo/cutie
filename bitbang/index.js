@@ -48,6 +48,45 @@ function waveOff(duration) {
   return pigpio.waveCreate()
 }
 
+function header(highWave, lowShortWave, lowLongWave) {
+  pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: 24976 }])
+  const oddWave = pigpio.waveCreate()
+  pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: 1727 }])
+  const weirdWave = pigpio.waveCreate()
+  return [
+    highWave,
+    lowShortWave,
+    highWave,
+    lowShortWave,
+    highWave,
+    lowShortWave,
+    highWave,
+    lowShortWave,
+    highWave,
+    lowShortWave,
+    highWave,
+    lowShortWave,
+    highWave,
+    oddWave,
+    highWave,
+    weirdWave,
+    highWave,
+    lowLongWave,
+    highWave,
+    lowShortWave,
+    highWave,
+    lowShortWave,
+    highWave,
+    lowShortWave,
+    highWave,
+    lowLongWave,
+    highWave,
+    lowShortWave,
+    highWave,
+    lowShortWave,
+  ]
+}
+
 function sendMessage(messages) {
   const highWave = waveFromSeparator(462)
   console.log('separator', highWave)
@@ -55,7 +94,7 @@ function sendMessage(messages) {
   console.log('long', lowLongWave)
   const lowShortWave = waveOff(421)
   console.log('short', lowShortWave)
-  const waves = []
+  const waves = [...header(highWave, lowShortWave, lowLongWave)]
 
   for (let index = 0; index < messages.length; index++) {
     const bits = numberToBitArray(messages[index], 8)
