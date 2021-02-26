@@ -10,6 +10,7 @@ function numberToBitArray(number, width) {
     const bit = (Math.pow(2, i) & number) ? true : false
     bitArray.push(bit)
   }
+  console.log('0x' + Number(number).toString(16), arrayToBitString(bitArray))
   return bitArray
 }
 
@@ -65,25 +66,9 @@ function header(highWave, lowShortWave, lowLongWave) {
     highWave,
     lowShortWave,
     highWave,
-    lowShortWave,
-    highWave,
     oddWave,
     highWave,
     weirdWave,
-    highWave,
-    lowLongWave,
-    highWave,
-    lowShortWave,
-    highWave,
-    lowShortWave,
-    highWave,
-    lowShortWave,
-    highWave,
-    lowLongWave,
-    highWave,
-    lowShortWave,
-    highWave,
-    lowShortWave,
   ]
 }
 
@@ -128,13 +113,13 @@ function sendMessage(messages) {
   console.log('DONE')
 }
 
-sendMessage([ 0x11, 0xda, 0x27, 0x00, 0x00, 0x49, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x66 ])
+sendMessage([ 0x11, 0xda, 0x27, 0x00, 0x00, 0x49, 0x2C, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x66 ])
 
 // "build a message from scratch"
-// |   header    | Msg Id | Mode | Temp | Fixed | Fan | Fixed |  Timers  | Pwrful | Fixed | Econo | Fixed | Checksum |
-// | 11 da 27 00 |   00   |  xx  |  xx  |   00  |  xx |   00  | xx xx xx |   0x   |   00  |   8x  |   00  |    xx    |
+// |   header    | Msg Id | Mode | Temp | Fixed | Fan | Fixed |  Timers  | Pwrful | Fixed | Econo | Fixed | Fixed | Checksum |
+// | 11 da 27 00 |   00   |  xx  |  xx  |   00  |  xx |   00  | xx xx xx |   0x   |   00  |   8x  |   00  |   00  |    xx    |
 // "heat" at 72F, 3/5 fan speed, swing enabled
-// | 11 da 27 00 |   00   |  49  |  2C  |   00  |  5F |   00  | 00 00 00 |   00   |   00  |   80  |   00  |    66    |
+// | 11 da 27 00 |   00   |  49  |  2C  |   00  |  5F |   00  | 00 00 00 |   00   |   00  |   80  |   00  |   00  |    66    |
 
 // manual: https://www.daikinac.com/content/assets/DOC/OperationManuals/01-EN-3P379751-4C.pdf
 // comfort mode: blows up for cool, down for heat 'avoid blowing on you'
