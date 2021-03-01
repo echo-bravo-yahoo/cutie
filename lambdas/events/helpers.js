@@ -32,7 +32,6 @@ function wrap(text, indent = 0, width = 32) {
         // res += '\n' + ' '.repeat(indent)
         lineLength = indent
       } else if (words[wordsIndex + 1]) {
-        console.log('duh')
         res += '\n' + ' '.repeat(indent)
         lineLength = indent
       }
