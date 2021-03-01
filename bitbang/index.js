@@ -38,7 +38,7 @@ function arrayToNumber(bitArray, width) {
   return number
 }
 
-function waveFromSeparator(duration, frequency=38000, dutyCycle=0.5) {
+function waveFromSeparator(duration, frequency=38400, dutyCycle=0.5) {
   const usDelay = (1/frequency) * Math.pow(10, 6)
   const cycles = Math.round(duration * frequency / Math.pow(10, 6))
   const wave = []
@@ -60,8 +60,12 @@ function waveOff(duration) {
 function header(highWave, lowShortWave, lowLongWave) {
   pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: 24976 }])
   const oddWave = pigpio.waveCreate()
+
+  const oddSeparator = waveFromSeparator(3520)
+
   pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: 1727 }])
   const weirdWave = pigpio.waveCreate()
+
   return [
     highWave,
     lowShortWave,
@@ -75,17 +79,17 @@ function header(highWave, lowShortWave, lowLongWave) {
     lowShortWave,
     highWave,
     oddWave,
-    highWave,
+    oddSeparator,
     weirdWave,
   ]
 }
 
 function sendMessage(messages) {
-  const highWave = waveFromSeparator(462)
+  const highWave = waveFromSeparator(430)
   console.log('separator', highWave)
-  const lowLongWave = waveOff(1282)
+  const lowLongWave = waveOff(1310)
   console.log('long', lowLongWave)
-  const lowShortWave = waveOff(421)
+  const lowShortWave = waveOff(450)
   console.log('short', lowShortWave)
   const waves = [...header(highWave, lowShortWave, lowLongWave)]
 
