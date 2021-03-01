@@ -2,6 +2,7 @@ const fetch = require('node-fetch')
 const shuffle = require('shuffle-array')
 const f = require('./filters')
 const secrets = require('./secrets')
+const { wrap } = require('./helpers')
 
 async function getTasks() {
   const res = await fetch('https://inthe.am/api/v2/tasks/', {
@@ -126,7 +127,7 @@ function getWeekendTasks(tasks) {
 function taskToString(task) {
   let string = `[ ] ${task.description}`
   if(task.annotations && task.annotations.length) string += ` [${task.annotations.length}]`
-  return string
+  return wrap(string, 4)
 }
 
 async function getTaskBlock(event) {
