@@ -1,42 +1,8 @@
+const { numberToBitArray } = require('./helpers')
 const pigpio = require('pigpio')
 const Gpio = pigpio.Gpio
 const pin = 23
-
 const output = new Gpio(pin, { mode: Gpio.OUTPUT })
-
-function numberToBitArray(number, width) {
-  let bitArray = []
-  for(let i = 0; i < (width || 32); i++) {
-    const bit = (Math.pow(2, i) & number) ? true : false
-    bitArray.push(bit)
-  }
-  console.log('0x' + Number(number).toString(16), arrayToBitString(bitArray), '0x' + Number(bitStringToNumber(arrayToBitString(bitArray))).toString(16), number)
-  return bitArray
-}
-
-function numberToBitString(number, width) {
-  return arrayToBitString(numberToBitArray(number, width))
-}
-
-function arrayToBitString(bitArray) {
-  return bitArray.map((bit) => bit ? '1' : '0').join('')
-}
-
-function bitStringToArray(bitString) {
-  return [...bitString].map((bit) => bit === '1')
-}
-
-function bitStringToNumber(bitString) {
-  return arrayToNumber(bitStringToArray(bitString))
-}
-
-function arrayToNumber(bitArray, width) {
-  number = 0
-  for(let i = 0; i < (width || 32); i++) {
-    number += Number(bitArray[i]) ? Math.pow(2, i) : 0
-  }
-  return number
-}
 
 function waveFromSeparator(duration, frequency=38400, dutyCycle=0.5) {
   const usDelay = (1/frequency) * Math.pow(10, 6)
@@ -130,6 +96,3 @@ sendMessage([ 0x11, 0xda, 0x27, 0x00, 0x00, 0x41, 0x2C, 0x00, 0x5F, 0x00, 0x00, 
 // econo: lower power use
 // powerful: 20 minutes of max (AC, heat), then return to previous settings
   // mai
-module.exports = exports = {
-  bitStringToNumber
-}
