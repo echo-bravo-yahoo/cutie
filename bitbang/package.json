@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "pigpio": "^3.3.0",
-    "serialport": "^9.0.7"
+    "serialport": "^9.0.7",
+    "yargs-parser": "^20.2.6"
   }
 }
