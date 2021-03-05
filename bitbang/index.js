@@ -3,6 +3,9 @@ const pigpio = require('pigpio')
 const Gpio = pigpio.Gpio
 const pin = 23
 const output = new Gpio(pin, { mode: Gpio.OUTPUT })
+const argsOpts = { configuration: { 'strip-dashed': true }, boolean: ['fanSwing', 'powerful', 'econo'] }
+const args = require('yargs-parser')(process.argv.slice(2), argsOpts)
+
 
 function waveFromSeparator(duration, frequency=38400, dutyCycle=0.5) {
   const usDelay = (1/frequency) * Math.pow(10, 6)
@@ -101,7 +104,7 @@ function getTemp(tempInF) {
   return Math.round(tempInC) * 2
 }
 
-function getFan(fan = { mode: 3, swing: true }) {
+function getFan(fanMode, fanSwing) {
   let firstChar, secondChar;
   if (typeof fan.mode === 'number' && fan.mode > 0 && fan.mode < 6) {
     firstChar = String(fan.mode + 2)
@@ -110,15 +113,15 @@ function getFan(fan = { mode: 3, swing: true }) {
   } else if (fan.mode === 'SILENT') {
     firstChar = 'B'
   } else {
-    throw `Unsupported fan mode ${fan.mode}, should be one of 0, 1, 2, 3, 4, 5, AUTO, SILENT.`
+    throw `Unsupported fan mode ${fanMode}, should be one of 0, 1, 2, 3, 4, 5, AUTO, SILENT.`
   }
 
-  if (fan.swing === true) {
+  if (fanSwing === true) {
     secondChar = 'F'
-  } else if (fan.swing === false) {
+  } else if (fanSwing === false) {
     secondChar = '0'
   } else {
-    throw `Unsupported fan swing ${fan.swing}, should be one of true, false.`
+    throw `Unsupported fan swing ${fanSwing}, should be one of true, false.`
   }
 
   return parseInt(`${firstChar}${secondChar}`, 16)
@@ -161,7 +164,7 @@ function getChecksum(message) {
   return 0xFF & message.reduce((sum, val) => sum + val, 0)
 }
 
-function buildMessage({ mode, temp, fan, powerful, econo, comfort }) {
+function buildMessage({ mode, temp, fanMode, fanSwing, powerful, econo }) {
   // start with the header and message id
   const message = [0x11, 0xda, 0x27, 0x00, 0x00]
 
@@ -175,7 +178,7 @@ function buildMessage({ mode, temp, fan, powerful, econo, comfort }) {
   message.push(0x00)
 
   // then the fan info
-  message.push(getFan(fan))
+  message.push(getFan(fanMode, fanSwing))
 
   // then a fixed section
   message.push(0x00)
@@ -209,23 +212,18 @@ function logMessage(message) {
   console.log(message.map(num => Number(num).toString(16)).join(', '))
 }
 
-// 11, da, 27, 0, 0, 41, 2c, 0, 7f, 0, 0, 0, 0, 0, 0, c5, 0, 0, c3
-// sendMessage(buildMessage({ mode: 'HEAT', temp: 72, fan: { mode: 5, swing: true }, powerful: false, econo: false, comfort: false }))
-// logMessage(buildMessage({ mode: 'HEAT', temp: 72, fan: { mode: 5, swing: true }, powerful: false, econo: false, comfort: false }))
+console.log(args)
+logMessage(buildMessage(args))
+// sendMessage(buildMessage(args))
 
-// no canonical string - 78 rounds differently on the remote than in the code
-// logMessage(buildMessage({ mode: 'HEAT', temp: 78, fan: { mode: 1, swing: false }, powerful: true, econo: true, comfort: false }))
-// sendMessage(buildMessage({ mode: 'HEAT', temp: 78, fan: { mode: 1, swing: false }, powerful: true, econo: true, comfort: false }))
+// logMessage(buildMessage(args))
 
-// quirk: if comfort, fan must be auto, swing false
+// this message works perfectly
+// logMessage(buildMessage({ mode: 'HEAT', temp: 72, fan: { mode: 5, swing: true }, powerful: false, econo: false }))
 
-// in dry mode, only fan swing, powerful, econo matter
-// logMessage(buildMessage({ mode: 'DRY', temp: 75, fan: { mode: 'SILENT', swing: true }, powerful: false, econo: true, comfort: false }))
-// sendMessage(buildMessage({ mode: 'DRY', temp: 75, fan: { mode: 'SILENT', swing: true }, powerful: false, econo: true, comfort: false }))
-
-// logMessage(buildMessage({ mode: 'COLD', temp: 68, fan: { mode: 'AUTO', swing: false }, powerful: true, econo: false, comfort: false }))
-// sendMessage(buildMessage({ mode: 'COLD', temp: 68, fan: { mode: 'AUTO', swing: false }, powerful: true, econo: false, comfort: false }))
-// logMessage(buildMessage({ mode: 'AUTO', temp: 72, fan: { mode: 2, swing: false }, powerful: false, econo: true, comfort: false }))
-// sendMessage(buildMessage({ mode: 'AUTO', temp: 72, fan: { mode: 2, swing: false }, powerful: false, econo: true, comfort: false }))
-// logMessage(buildMessage({ mode: 'FAN', temp: 70, fan: { mode: 4, swing: true }, powerful: true, econo: true, comfort: false }))
-// sendMessage(buildMessage({ mode: 'FAN', temp: 70, fan: { mode: 4, swing: true }, powerful: true, econo: true, comfort: false }))
+// try these messages next
+// logMessage(buildMessage({ mode: 'HEAT', temp: 78, fan: { mode: 1, swing: false }, powerful: true, econo: true }))
+// logMessage(buildMessage({ mode: 'DRY', temp: 75, fan: { mode: 'SILENT', swing: true }, powerful: false, econo: true }))
+// logMessage(buildMessage({ mode: 'COLD', temp: 68, fan: { mode: 'AUTO', swing: false }, powerful: true, econo: false }))
+// logMessage(buildMessage({ mode: 'AUTO', temp: 72, fan: { mode: 2, swing: false }, powerful: false, econo: true }))
+// logMessage(buildMessage({ mode: 'FAN', temp: 70, fan: { mode: 4, swing: true }, powerful: true, econo: true }))
