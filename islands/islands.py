@@ -12,14 +12,19 @@ event_loop_group = io.EventLoopGroup(1)
 host_resolver = io.DefaultHostResolver(event_loop_group)
 client_bootstrap = io.ClientBootstrap(event_loop_group, host_resolver)
 
-THING_NAME = "badge-and-printer"
+with open('./config.json', 'r') as config_file:
+    data = config.read(config_file)
+    config = json.loads(data)
+
+THING_ID = config["id"]
+THING_NAME = config["name"]
 
 iot = mqtt_connection_builder.mtls_from_path(
         endpoint="<redacted-endpoint>",
-        cert_filepath="/home/pi/workspace/fbb3f88aee-certificate.pem.crt",
-        pri_key_filepath="/home/pi/workspace/fbb3f88aee-private.pem.key",
+        cert_filepath="/home/pi/workspace/" + THING_ID + "-certificate.pem.crt",
+        pri_key_filepath="/home/pi/workspace/" + THING_ID + "-private.pem.key",
         ca_filepath="/home/pi/workspace/AmazonRootCA1.pem",
-        client_id=THING_NAME,
+        client_id=THING_ID,
         client_bootstrap=client_bootstrap,
         clean_session=False,
         keep_alive_secs=6)
@@ -28,7 +33,8 @@ scheduler = sched.scheduler(time.time, time.sleep)
 sentinel = threading.Event()
 
 weather = Weather(iot, scheduler, sentinel, virtual=False)
-printer = Printer(iot, sentinel, virtual=False)
+printer = Printer(iot, scheduler, sentinel, virtual=False)
+ac = AC(iot, scheduler, sentinel, virtual=False)
 
 print("Connecting to IOT.")
 iot.connect()
@@ -69,8 +75,6 @@ iot.subscribe(topic=SHADOW_UPDATE_REJECTED_TOPIC, qos=mqtt.QoS.AT_LEAST_ONCE, ca
 print("Requesting new shadow state.")
 iot.publish(topic=SHADOW_GET_TOPIC, payload="", qos=mqtt.QoS.AT_LEAST_ONCE)
 print("Requested new shadow state.")
-
-iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=printer.handle_print_request)
 
 while (True):
   sentinel.clear()
