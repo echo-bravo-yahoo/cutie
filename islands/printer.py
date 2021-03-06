@@ -4,7 +4,7 @@ from module import EventRespondingModule
 
 class Printer(EventRespondingModule):
     def __init__(self, iot, scheduler, sentinel, virtual=False):
-        super().__init(iot, scheduler, sentinel, virtual=False)
+        super().__init__(iot, scheduler, sentinel, virtual=False)
         self.stateKey = "printer"
 
     def handle_print_request(self, topic, payload, **kwargs):
@@ -67,7 +67,7 @@ class Printer(EventRespondingModule):
         self.iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=self.handle_print_request)
 
     def disable(self):
-        if (hasattr(self, 'printer'):
+        if (hasattr(self, 'printer')):
             del self.printer
         self.iot.unsubscribe(topic="commands/printer")
 

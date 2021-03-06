@@ -14,6 +14,7 @@ class StatefulModule():
         pass
 
     def update_shadow(self, changed):
+        print("update_shadow")
         payload = { state: { current: {} } }
         for key in changed.keys():
             payload["state"]["current"][key] = changed[key]
@@ -23,6 +24,7 @@ class StatefulModule():
 
     # TODO: This doesn't handle updating shadow state afterwards
     def handle_sub_state(self, payload, payloadKey, changed):
+        print("handle_sub_state")
         [desired, reported] = decode_state(payload)
 
         try:
@@ -51,6 +53,7 @@ class StatefulModule():
             pass
 
     def decode_state(self, mqttMessage):
+        print("decode_state")
         state = decode_message(mqttMessage, self.lastShadowUpdate)
         try:
             desired = json.loads(payload)["state"]["desired"]
@@ -64,6 +67,7 @@ class StatefulModule():
         return (desired, reported)
 
     def decode_message(self, mqttMessage, lastReceived):
+        print("decode_message")
         if self.virtual:
             raise ValueError("Running in virtual mode; did not process message " + mqttMessage.decode())
         payload = json.loads(mqttMessage.decode())
@@ -86,6 +90,7 @@ class DataEmittingModule(StatefulModule):
         super().__init__(iot, scheduler, sentinel, virtual=False)
 
     def schedule(self, action, time, priority=1):
+        print("schedule")
         self.scheduledEvent = self.scheduler.enter(time, priority, self.schedule)
         action()
         self.scheduler.run(False)
