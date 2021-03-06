@@ -19,9 +19,12 @@ class Weather(DataEmittingModule):
         self.temperature_offset = -5
 
     def handle_state(self, payload):
-        changed = {}
-        self.handle_sub_state(payload, "enable", changed)
-        self.update_shadow(changed)
+        [desired, reported] = self.decode_state(payload)
+        # changed = { self.stateKey: {} }
+        self.handle_sub_state(payload, "enable")
+        # TODO: This is bad. It should handle the odd edge case of being asked to enter a state it can't better
+        # Right now it just claims it entered that state, regardless of whether it did or not
+        self.update_shadow(desired)
 
     # this must be idempotent; it'll be called repeatedly, and we only want to instantiate one sensor
     def enable(self):
