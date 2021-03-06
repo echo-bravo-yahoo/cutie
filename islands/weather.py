@@ -24,7 +24,8 @@ class Weather(DataEmittingModule):
         self.handle_sub_state(payload, "enable")
         # TODO: This is bad. It should handle the odd edge case of being asked to enter a state it can't better
         # Right now it just claims it entered that state, regardless of whether it did or not
-        self.update_shadow(desired)
+        if desired != reported:
+            self.update_shadow(desired)
 
     # this must be idempotent; it'll be called repeatedly, and we only want to instantiate one sensor
     def enable(self):
