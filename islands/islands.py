@@ -53,11 +53,13 @@ SHADOW_GET_REJECTED_TOPIC = "$aws/things/" + THING_NAME + "/shadow/get/rejected"
 
 def handle_state(topic, payload, **kwargs):
     print("Received new shadow delta.")
-    modules[0].handle_state(payload)
+    for module in modules:
+        module.handle_state(payload)
 
 def handle_get_accepted(topic, payload, **kwargs):
     print("Received shadow state.")
-    modules[0].handle_state(payload)
+    for module in modules:
+        module.handle_state(payload)
 
 def handle_get_rejected(topic, payload, **kwargs):
     print("---ERROR--- Fetching shadow state failed: " + json.dumps(json.loads(payload.decode()), sort_keys=True, indent=4))
@@ -78,8 +80,6 @@ iot.subscribe(topic=SHADOW_UPDATE_REJECTED_TOPIC, qos=mqtt.QoS.AT_LEAST_ONCE, ca
 print("Requesting new shadow state.")
 iot.publish(topic=SHADOW_GET_TOPIC, payload="", qos=mqtt.QoS.AT_LEAST_ONCE)
 print("Requested new shadow state.")
-
-iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=modules[1].handle_print_request)
 
 while (True):
     sentinel.clear()

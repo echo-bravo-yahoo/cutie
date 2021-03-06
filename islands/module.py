@@ -1,5 +1,6 @@
 import json
 from awscrt import mqtt
+from util import full_stack
 
 with open('./config.json', 'r') as config_file:
     data = config_file.read()
@@ -12,7 +13,7 @@ SHADOW_UPDATE_TOPIC = "$aws/things/" + THING_NAME + "/shadow/update"
 print("SHADOW_UPDATE_TOPIC", SHADOW_UPDATE_TOPIC)
 
 class StatefulModule():
-    def __init__(self, iot, scheduler, sentinel, virtual=False):
+    def __init__(self, iot, scheduler, sentinel, virtual):
         self.iot = iot
         self.scheduler = scheduler
         self.virtual = virtual
@@ -26,17 +27,16 @@ class StatefulModule():
     def disable(self):
         pass
 
-    def update_shadow(self, changed):
-        payload = { "state": { "reported": {} } }
-        for key in changed.keys():
-            payload["state"]["reported"][key] = changed[key]
-        print("Updating shadow state.")
-        print("payload", payload)
-        payload = json.dumps(payload)
-        future, packet = self.iot.publish(topic=SHADOW_UPDATE_TOPIC, payload=payload, qos=mqtt.QoS.AT_LEAST_ONCE)
-        print("Updated shadow state.")
+    def update_shadow(self, state):
+        [desired, reported] = self.decode_state(state)
+        if desired != reported:
+            payload = { "state": { "reported": desired } }
+            print("Updating shadow state.")
+            print("payload", payload)
+            payload = json.dumps(payload)
+            future, packet = self.iot.publish(topic=SHADOW_UPDATE_TOPIC, payload=payload, qos=mqtt.QoS.AT_LEAST_ONCE)
+            print("Updated shadow state.")
 
-    # TODO: This doesn't handle updating shadow state afterwards
     def handle_sub_state(self, payload, payloadKey):
         [desired, reported] = self.decode_state(payload)
         print("desired", json.dumps(desired))
@@ -59,6 +59,8 @@ class StatefulModule():
                     print("Failed to disable", self.stateKey, "module: " + full_stack())
             else:
                 raise ValueError("Enable should be a stringified boolean.")
+        except TypeError:
+            raise TypeError("Desired state key '" + self.stateKey + "' should be an object, but is instead " + str(type(desired[self.stateKey])))
         except KeyError:
             pass
 
@@ -81,8 +83,6 @@ class StatefulModule():
         return (desired, reported)
 
     def decode_message(self, mqttMessage, lastReceived, key):
-        if self.virtual:
-            raise ValueError("Running in virtual mode; did not process message " + mqttMessage.decode())
         payload = json.loads(mqttMessage.decode())
         print(payload)
         if (payload["timestamp"] <= self.lastReceived):
@@ -99,8 +99,8 @@ class StatefulModule():
         pass
 
 class DataEmittingModule(StatefulModule):
-    def __init__(self, iot, scheduler, sentinel, virtual=False):
-        super().__init__(iot, scheduler, sentinel, virtual=False)
+    def __init__(self, iot, scheduler, sentinel, virtual):
+        super().__init__(iot, scheduler, sentinel, virtual)
 
     def schedule(self, action, time, priority=1):
         self.scheduledEvent = self.scheduler.enter(time, priority, self.schedule)
@@ -109,6 +109,6 @@ class DataEmittingModule(StatefulModule):
         self.sentinel.set()
 
 class EventRespondingModule(StatefulModule):
-    def __init__(self, iot, scheduler, sentinel, virtual=False):
-        super().__init__(iot, scheduler, sentinel, virtual=False)
+    def __init__(self, iot, scheduler, sentinel, virtual):
+        super().__init__(iot, scheduler, sentinel, virtual)
 

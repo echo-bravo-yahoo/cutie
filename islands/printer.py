@@ -4,24 +4,26 @@ from module import EventRespondingModule
 
 class Printer(EventRespondingModule):
     def __init__(self, iot, scheduler, sentinel, virtual=False):
-        super().__init__(iot, scheduler, sentinel, virtual=False)
+        super().__init__(iot, scheduler, sentinel, virtual)
         self.stateKey = "printer"
 
     def handle_print_request(self, topic, payload, **kwargs):
         print("Handling print request")
-        message = self.decode_message(payload, self.lastSent)
-        for line in message.split("\n"):
-            self.processLine(line.rstrip(), self.printer)
-        self.printer.feed(3)
+        message = self.decode_message(payload, self.lastReceived, "message")
+        if not self.virtual:
+            for line in message.split("\n"):
+                self.processLine(line.rstrip(), self.printer)
+            self.printer.feed(3)
+        else:
+            print(message)
 
     def handle_state(self, payload):
-        changed = {}
-        self.handle_sub_state(payload, "enable", changed)
-        self.update_shadow(changed)
+        self.handle_sub_state(payload, "enable")
+        self.update_shadow(payload)
 
     def enable(self):
         # Use virtual to test iot functionality on computers without busio / sensors.
-        if not virtual:
+        if not self.virtual:
             import board
             import busio
             import adafruit_thermal_printer
