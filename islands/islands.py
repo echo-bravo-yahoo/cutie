@@ -5,7 +5,7 @@ from awsiot import mqtt_connection_builder
 import sched, time
 from weather import Weather
 from printer import Printer
-from ac import AC
+from air_conditioning import AirConditioning
 import json
 import threading
 
