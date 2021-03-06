@@ -1,6 +1,7 @@
 import json
 from awscrt import mqtt
 from util import full_stack
+from functools import partial
 
 with open('./config.json', 'r') as config_file:
     data = config_file.read()
@@ -103,7 +104,7 @@ class DataEmittingModule(StatefulModule):
         super().__init__(iot, scheduler, sentinel, virtual)
 
     def schedule(self, action, time, priority=1):
-        self.scheduledEvent = self.scheduler.enter(time, priority, self.schedule)
+        self.scheduledEvent = self.scheduler.enter(time, priority, partial(self.schedule, action, time))
         action()
         self.scheduler.run(False)
         self.sentinel.set()

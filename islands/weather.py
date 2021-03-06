@@ -42,7 +42,7 @@ class Weather(DataEmittingModule):
             self.bme680.sea_level_pressure = 1013.89
 
         # Start the scheduled work
-        self.schedule(60)
+        self.schedule(self.publishResults, 60)
 
     def disable(self):
         if hasattr(self, 'bme680'):
