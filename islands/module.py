@@ -3,22 +3,9 @@ from awscrt import mqtt
 from util import full_stack
 from functools import partial
 
-with open('./config.json', 'r') as config_file:
-    data = config_file.read()
-    config = json.loads(data)
-
-THING_ID = config["id"]
-THING_NAME = config["name"]
-
-SHADOW_UPDATE_TOPIC = "$aws/things/" + THING_NAME + "/shadow/update"
-print("SHADOW_UPDATE_TOPIC", SHADOW_UPDATE_TOPIC)
-
 class StatefulModule():
-    def __init__(self, iot, scheduler, sentinel, virtual):
-        self.iot = iot
-        self.scheduler = scheduler
-        self.virtual = virtual
-        self.sentinel = sentinel
+    def __init__(self, island):
+        self.island = island
         self.lastReceived = 0
         self.lastShadowUpdate = 0
 
@@ -35,7 +22,7 @@ class StatefulModule():
             print("Updating shadow state.")
             print("payload", payload)
             payload = json.dumps(payload)
-            future, packet = self.iot.publish(topic=SHADOW_UPDATE_TOPIC, payload=payload, qos=mqtt.QoS.AT_LEAST_ONCE)
+            self.island.iot.publish(topic=self.SHADOW_UPDATE_TOPIC, payload=payload, qos=mqtt.QoS.AT_LEAST_ONCE)
             print("Updated shadow state.")
 
     def handle_sub_state(self, payload, payloadKey):
@@ -100,8 +87,8 @@ class StatefulModule():
         pass
 
 class DataEmittingModule(StatefulModule):
-    def __init__(self, iot, scheduler, sentinel, virtual):
-        super().__init__(iot, scheduler, sentinel, virtual)
+    def __init__(self, island):
+        super().__init__(island)
 
     def schedule(self, action, time, priority=1):
         self.scheduledEvent = self.scheduler.enter(time, priority, partial(self.schedule, action, time))
@@ -110,6 +97,6 @@ class DataEmittingModule(StatefulModule):
         self.sentinel.set()
 
 class EventRespondingModule(StatefulModule):
-    def __init__(self, iot, scheduler, sentinel, virtual):
-        super().__init__(iot, scheduler, sentinel, virtual)
+    def __init__(self, island):
+        super().__init__(island)
 

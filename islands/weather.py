@@ -9,8 +9,8 @@ MODULE_NAME = "weather"
 PUBLISH_TOPIC = "data/" + MODULE_NAME + "/" + LOCATION
 
 class Weather(DataEmittingModule):
-    def __init__(self, iot, scheduler, sentinel, virtual=False):
-        super().__init__(iot, scheduler, sentinel, virtual)
+    def __init__(self, island):
+        super().__init__(island)
         self.stateKey = "weather"
 
         # You will usually have to add an offset to account for the temperature of
@@ -27,7 +27,7 @@ class Weather(DataEmittingModule):
     # this must be idempotent; it'll be called repeatedly, and we only want to instantiate one sensor
     def enable(self):
         # Use virtual to test iot functionality on computers without busio / sensors.
-        if not self.virtual and not hasattr(self, 'bme680'):
+        if not self.island.virtual and not hasattr(self, 'bme680'):
             from busio import I2C
             import adafruit_bme680
             import board
@@ -52,7 +52,7 @@ class Weather(DataEmittingModule):
 
     def publishResults(self):
         print("Publishing results to " + PUBLISH_TOPIC + ".")
-        if self.virtual:
+        if self.island.virtual:
             print("Running in virtual mode; did not publish results to " + PUBLISH_TOPIC + ".")
         else:
             self.iot.publish(topic=PUBLISH_TOPIC, payload=self.generatePayload(), qos=mqtt.QoS.AT_LEAST_ONCE)

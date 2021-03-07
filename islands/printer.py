@@ -3,14 +3,14 @@ import json
 from module import EventRespondingModule
 
 class Printer(EventRespondingModule):
-    def __init__(self, iot, scheduler, sentinel, virtual=False):
-        super().__init__(iot, scheduler, sentinel, virtual)
+    def __init__(self, island):
+        super().__init__(island)
         self.stateKey = "printer"
 
     def handle_print_request(self, topic, payload, **kwargs):
         print("Handling print request")
         message = self.decode_message(payload, self.lastReceived, "message")
-        if not self.virtual:
+        if not self.island.virtual:
             for line in message.split("\n"):
                 self.processLine(line.rstrip(), self.printer)
             self.printer.feed(3)
@@ -23,7 +23,7 @@ class Printer(EventRespondingModule):
 
     def enable(self):
         # Use virtual to test iot functionality on computers without busio / sensors.
-        if not self.virtual:
+        if not self.island.virtual:
             import board
             import busio
             import adafruit_thermal_printer
@@ -66,12 +66,12 @@ class Printer(EventRespondingModule):
             # TODO: Format links as QR codes
             # https://pypi.org/project/qrcode/
 
-        self.iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=self.handle_print_request)
+        self.island.iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=self.handle_print_request)
 
     def disable(self):
         if (hasattr(self, 'printer')):
             del self.printer
-        self.iot.unsubscribe(topic="commands/printer")
+        self.island.iot.unsubscribe(topic="commands/printer")
 
     def processLine(self, line, printer):
         import adafruit_thermal_printer
