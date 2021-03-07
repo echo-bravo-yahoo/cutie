@@ -36,7 +36,7 @@ island = Island(config, iot, scheduler, sentinel, virtual=True)
 modules = [
     Weather(island),
     Printer(island),
-    # AC(island)
+    AirConditioning(island)
 ]
 
 island.register_modules(modules)

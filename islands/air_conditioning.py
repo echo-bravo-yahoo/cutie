@@ -1,24 +1,26 @@
 from awscrt import mqtt
 import json
 import os
+from module import StatefulModule
 
-class AirConditioning:
-    def __init__(self, iot, scheduler, sentinel, virtual=False):
-        self.iot = iot
-        self.virtual = virtual
-        self.enabled = False
-        self.sentinel = sentinel
-        self.lastSent = 0
+class AirConditioning(StatefulModule):
+    def __init__(self, island):
+        super().__init__(island)
+        self.stateKey = "airConditioning"
 
-    def handle_ac_request(self, topic, payload, **kwargs):
-        print("Handling ac request")
-        if self.virtual:
-            print("Running in virtual mode; did not change AC.")
-            return
-        print(payload.decode())
-        res = json.loads(payload.decode())
-        if (res["timestamp"] <= self.lastSent):
-            return
-        command = "node ../bitbang/index.js" + res["cmd"]
-        os.system(command)
+    def handle_state(self, payload):
+        args = {}
+        argKeys = ["mode", "temp", "fanMode", "fanSwing", "powerful", "econo", "comfort"]
+        for key in argKeys:
+            try:
+                args[key] = self.extract_sub_state(payload, key)
+            except KeyError:
+                pass
+        if len(list(args.keys())) != len(argKeys):
+            print("Invalid AC state; one or more args from the list", str(argKeys), "is missing.")
+        else:
+            print("Running", "node ../bitbang/index.js" + " --virtual " + str(self.island.virtual) + " --obj '" + json.dumps(args) + "'")
+            command = "node ../bitbang/index.js" + " --virtual " + str(self.island.virtual) + " --obj '" + json.dumps(args) + "'"
+            os.system(command)
+            self.update_shadow(payload)
 
