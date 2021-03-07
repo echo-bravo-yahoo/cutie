@@ -22,8 +22,12 @@ class StatefulModule():
             print("Updating shadow state.")
             print("payload", payload)
             payload = json.dumps(payload)
-            self.island.iot.publish(topic=self.SHADOW_UPDATE_TOPIC, payload=payload, qos=mqtt.QoS.AT_LEAST_ONCE)
+            self.island.iot.publish(topic=self.island.SHADOW_UPDATE_TOPIC, payload=payload, qos=mqtt.QoS.AT_LEAST_ONCE)
             print("Updated shadow state.")
+
+    def extract_sub_state(self, payload, payloadKey):
+        [desired, reported] = self.decode_state(payload)
+        return desired[self.stateKey][payloadKey]
 
     def handle_sub_state(self, payload, payloadKey):
         [desired, reported] = self.decode_state(payload)

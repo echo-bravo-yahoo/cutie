@@ -38,7 +38,7 @@ class Island:
 
     def handle_state(self, topic, payload, **kwargs):
         print("Received new shadow delta.")
-        for module in modules:
+        for module in self.modules:
             module.handle_state(payload)
 
     def handle_get_accepted(self, topic, payload, **kwargs):
