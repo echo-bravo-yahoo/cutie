@@ -1,10 +1,14 @@
 const { numberToBitArray } = require('./helpers')
-const pigpio = require('pigpio')
-const Gpio = pigpio.Gpio
 const pin = 23
-const output = new Gpio(pin, { mode: Gpio.OUTPUT })
-const argsOpts = { configuration: { 'strip-dashed': true }, boolean: ['fanSwing', 'powerful', 'econo'] }
-const args = require('yargs-parser')(process.argv.slice(2), argsOpts)
+const argsOpts = { configuration: { 'strip-dashed': true }, boolean: ['fanSwing', 'powerful', 'econo', 'virtual'] }
+let args = require('yargs-parser')(process.argv.slice(2), argsOpts)
+let pigpio, Gpio, output
+
+if (args.virtual === undefined || args.virtual === false) {
+  pigpio = require('pigpio')
+  Gpio = pigpio.Gpio
+  output = new Gpio(pin, { mode: Gpio.OUTPUT })
+}
 
 
 function waveFromSeparator(duration, frequency=38400, dutyCycle=0.5) {
@@ -106,19 +110,19 @@ function getTemp(tempInF) {
 
 function getFan(fanMode, fanSwing) {
   let firstChar, secondChar;
-  if (typeof fan.mode === 'number' && fan.mode > 0 && fan.mode < 6) {
-    firstChar = String(fan.mode + 2)
-  } else if (fan.mode === 'AUTO') {
+  if (typeof fanMode === 'number' && fanMode > 0 && fanMode < 6) {
+    firstChar = String(fanMode + 2)
+  } else if (fanMode === 'AUTO') {
     firstChar = 'A'
-  } else if (fan.mode === 'SILENT') {
+  } else if (fanMode === 'SILENT') {
     firstChar = 'B'
   } else {
     throw `Unsupported fan mode ${fanMode}, should be one of 0, 1, 2, 3, 4, 5, AUTO, SILENT.`
   }
 
-  if (fanSwing === true) {
+  if (fanSwing === true || fanSwing === 'true') {
     secondChar = 'F'
-  } else if (fanSwing === false) {
+  } else if (fanSwing === false || fanSwing === 'false') {
     secondChar = '0'
   } else {
     throw `Unsupported fan swing ${fanSwing}, should be one of true, false.`
@@ -128,9 +132,9 @@ function getFan(fanMode, fanSwing) {
 }
 
 function getPowerful(powerful) {
-  if (powerful === true) {
+  if (powerful === true || powerful === 'true') {
     return 0x01
-  } else if (powerful === false) {
+  } else if (powerful === false || powerful === 'false') {
     return 0x00
   } else {
     throw `Unsupported powerful setting ${powerful}, should be one of true, false.`
@@ -141,17 +145,17 @@ function getEcoComfort(econo, comfort) {
   let res = 0
   // unimplemented remote quirk: if POWER is true, ECONO is always set to zero
 
-  if (typeof econo !== 'boolean') {
+  if (typeof econo !== 'boolean' && econo !== 'false' && econo !== 'true') {
     throw `Unsupported econo setting ${econo}, should be one of true, false.`
   }
 
-  if (typeof comfort !== 'boolean') {
+  if (typeof comfort !== 'boolean' && comfort !== 'false' && comfort !== 'true') {
     throw `Unsupported comfort setting ${comfort}, should be one of true, false.`
   }
 
   if (econo === true) {
     res += 4
-  } 
+  }
 
   if (comfort === true) {
     res += 2
@@ -164,7 +168,7 @@ function getChecksum(message) {
   return 0xFF & message.reduce((sum, val) => sum + val, 0)
 }
 
-function buildMessage({ mode, temp, fanMode, fanSwing, powerful, econo }) {
+function buildMessage({ mode, temp, fanMode, fanSwing, powerful, econo, comfort }) {
   // start with the header and message id
   const message = [0x11, 0xda, 0x27, 0x00, 0x00]
 
@@ -212,7 +216,7 @@ function logMessage(message) {
   console.log(message.map(num => Number(num).toString(16)).join(', '))
 }
 
-console.log(args)
+if (args["obj"]) args = JSON.parse(args.obj)
 logMessage(buildMessage(args))
 // sendMessage(buildMessage(args))
 
