@@ -19,8 +19,8 @@ class AirConditioning(StatefulModule):
         if len(list(args.keys())) != len(argKeys):
             print("Invalid AC state; one or more args from the list", str(argKeys), "is missing.")
         else:
-            print("Running", "node ../bitbang/index.js" + " --virtual " + str(self.island.virtual) + " --obj '" + json.dumps(args) + "'")
-            command = "node ../bitbang/index.js" + " --virtual " + str(self.island.virtual) + " --obj '" + json.dumps(args) + "'"
+            print("Running", "sudo node ../bitbang/index.js" + " --virtual " + str(self.island.virtual) + " --obj '" + json.dumps(args) + "'")
+            command = "sudo node ../bitbang/index.js" + " --virtual " + str(self.island.virtual) + " --obj '" + json.dumps(args) + "'"
             os.system(command)
             self.update_shadow(payload)
 
