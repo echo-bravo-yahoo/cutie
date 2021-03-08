@@ -9,6 +9,7 @@ from printer import Printer
 from air_conditioning import AirConditioning
 import json
 import threading
+import getpass
 
 event_loop_group = io.EventLoopGroup(1)
 host_resolver = io.DefaultHostResolver(event_loop_group)
@@ -20,9 +21,9 @@ config = json.loads(data)
 
 iot = mqtt_connection_builder.mtls_from_path(
         endpoint="<redacted-endpoint>",
-        cert_filepath="/home/swift/workspace/" + config["id"] + "-certificate.pem.crt",
-        pri_key_filepath="/home/swift/workspace/" + config["id"] + "-private.pem.key",
-        ca_filepath="/home/swift/workspace/AmazonRootCA1.pem",
+        cert_filepath="/home/" + getpass.getuser() + "/workspace/" + config["id"] + "-certificate.pem.crt",
+        pri_key_filepath="/home/" + getpass.getuser() + "/workspace/" + config["id"] + "-private.pem.key",
+        ca_filepath="/home/" + getpass.getuser() + "/workspace/AmazonRootCA1.pem",
         client_id=config["name"],
         client_bootstrap=client_bootstrap,
         clean_session=False,
