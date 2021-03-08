@@ -5,9 +5,10 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.5"
-awscrt = "^0.10.8"
+python = "^3.7"
 pydash = "^4.9.3"
+awscrt = {url = "https://www.piwheels.org/simple/awscrt/awscrt-0.10.8-cp37-cp37m-linux_armv6l.whl"}
+awsiotsdk = "^1.5.7"
 
 [tool.poetry.dev-dependencies]
 

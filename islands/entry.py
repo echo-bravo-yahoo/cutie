@@ -31,7 +31,7 @@ iot = mqtt_connection_builder.mtls_from_path(
 scheduler = sched.scheduler(time.time, time.sleep)
 sentinel = threading.Event()
 
-island = Island(config, iot, scheduler, sentinel, virtual=True)
+island = Island(config, iot, scheduler, sentinel, virtual=False)
 
 modules = [
     Weather(island),
