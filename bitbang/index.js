@@ -217,13 +217,13 @@ function logMessage(message) {
 }
 
 if (args["obj"]) args = JSON.parse(args.obj)
-if (args.virtual) {
-  console.log('Running in virtual mode, won't send message:')
-  logMessage(buildMessage(args))
-} else {
+if (args.virtual === undefined || args.virtual === false) {
   console.log('Sending message:')
   logMessage(buildMessage(args))
   sendMessage(buildMessage(args))
+} else {
+  console.log('Running in virtual mode, won\'t send message:')
+  logMessage(buildMessage(args))
 }
 
 // logMessage(buildMessage(args))
