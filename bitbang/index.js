@@ -84,7 +84,7 @@ function sendMessage(messages) {
 
   pigpio.waveChain(waves)
   while (pigpio.waveTxBusy()) {}
-  console.log('DONE')
+  console.log('Message sent.')
 }
 
 function getMode(mode) {
@@ -217,8 +217,14 @@ function logMessage(message) {
 }
 
 if (args["obj"]) args = JSON.parse(args.obj)
-logMessage(buildMessage(args))
-// sendMessage(buildMessage(args))
+if (args.virtual) {
+  console.log('Running in virtual mode, won't send message:')
+  logMessage(buildMessage(args))
+} else {
+  console.log('Sending message:')
+  logMessage(buildMessage(args))
+  sendMessage(buildMessage(args))
+}
 
 // logMessage(buildMessage(args))
 
