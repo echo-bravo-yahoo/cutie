@@ -9,7 +9,9 @@ class AirConditioning(StatefulModule):
         self.stateKey = "airConditioning"
 
     def handle_state(self, payload):
-        args = {}
+        [desired, reported] = self.decode_state(payload)
+
+        args = reported[self.stateKey]
         argKeys = ["mode", "temp", "fanMode", "fanSwing", "powerful", "econo", "comfort"]
         for key in argKeys:
             try:
