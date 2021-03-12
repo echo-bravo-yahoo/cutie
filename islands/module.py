@@ -95,10 +95,10 @@ class DataEmittingModule(StatefulModule):
         super().__init__(island)
 
     def schedule(self, action, time, priority=1):
-        self.scheduledEvent = self.scheduler.enter(time, priority, partial(self.schedule, action, time))
+        self.scheduledEvent = self.island.scheduler.enter(time, priority, partial(self.schedule, action, time))
         action()
-        self.scheduler.run(False)
-        self.sentinel.set()
+        self.island.scheduler.run(False)
+        self.island.sentinel.set()
 
 class EventRespondingModule(StatefulModule):
     def __init__(self, island):

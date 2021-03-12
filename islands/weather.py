@@ -48,14 +48,14 @@ class Weather(DataEmittingModule):
         if hasattr(self, 'bme680'):
           del self.bme680
         if hasattr(self, 'scheduledEvent'):
-          self.scheduler.cancel(self.scheduledEvent)
+          self.island.scheduler.cancel(self.scheduledEvent)
 
     def publishResults(self):
         print("Publishing results to " + PUBLISH_TOPIC + ".")
         if self.island.virtual:
             print("Running in virtual mode; did not publish results to " + PUBLISH_TOPIC + ".")
         else:
-            self.iot.publish(topic=PUBLISH_TOPIC, payload=self.generatePayload(), qos=mqtt.QoS.AT_LEAST_ONCE)
+            self.island.iot.publish(topic=PUBLISH_TOPIC, payload=self.generatePayload(), qos=mqtt.QoS.AT_LEAST_ONCE)
 
     def generatePayload(self):
         payload = {}

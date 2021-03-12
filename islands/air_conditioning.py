@@ -10,6 +10,13 @@ class AirConditioning(StatefulModule):
         self.stateKey = "airConditioning"
 
     def handle_state(self, payload):
+        # TODO: quick hack, fix later
+        [desired, reported] = self.decode_state(payload)
+        try: 
+            desired[self.stateKey]
+        except KeyError:
+            return
+
         args = self.state
         argKeys = ["mode", "temp", "fanMode", "fanSwing", "powerful", "econo", "comfort"]
         for key in argKeys:
