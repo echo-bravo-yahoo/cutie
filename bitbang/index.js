@@ -98,19 +98,21 @@ function getMode(mode) {
     return 0x41
   } else if (mode === 'FAN') {
     return 0x61
+  } else if (mode === 'OFF') {
+    return 0x00
   } else {
-    throw `Unsupported mode ${mode}, should be one of AUTO, DRY, COLD, HEAT, FAN.`
+    throw `Unsupported mode ${mode}, should be one of AUTO, DRY, COLD, HEAT, FAN, OFF.`
   }
 }
 
 function getTemp(tempInF) {
   const tempInC = 5/9 * (tempInF - 32)
-  return Math.round(tempInC) * 2
+  return Math.round(tempInC * 2)
 }
 
 function getFan(fanMode, fanSwing) {
   let firstChar, secondChar;
-  if (typeof fanMode === 'number' && fanMode > 0 && fanMode < 6) {
+  if (typeof fanMode === 'number' && fanMode >= 0 && fanMode < 6) {
     firstChar = String(fanMode + 2)
   } else if (fanMode === 'AUTO') {
     firstChar = 'A'
@@ -141,7 +143,7 @@ function getPowerful(powerful) {
   }
 }
 
-function getEcoComfort(econo, comfort) {
+function getEcoComfort(econo, comfort, mode) {
   let res = 0
   // unimplemented remote quirk: if POWER is true, ECONO is always set to zero
 
@@ -151,6 +153,10 @@ function getEcoComfort(econo, comfort) {
 
   if (typeof comfort !== 'boolean' && comfort !== 'false' && comfort !== 'true') {
     throw `Unsupported comfort setting ${comfort}, should be one of true, false.`
+  }
+
+  if (mode === 'OFF') {
+    return 0x20
   }
 
   if (econo === true) {
@@ -170,7 +176,12 @@ function getChecksum(message) {
 
 function buildMessage({ mode, temp, fanMode, fanSwing, powerful, econo, comfort }) {
   // start with the header and message id
-  const message = [0x11, 0xda, 0x27, 0x00, 0x00]
+  let message
+  if (mode === 'OFF') {
+    message = [0x8, 0xed, 0x13, 0x00, 0x00]
+  } else {
+    message = [0x11, 0xda, 0x27, 0x00, 0x00]
+  }
 
   // then the mode
   message.push(getMode(mode))
@@ -197,11 +208,16 @@ function buildMessage({ mode, temp, fanMode, fanSwing, powerful, econo, comfort 
   message.push(getPowerful(powerful))
 
   // then fixed sections
-  message.push(0x00)
-  message.push(0xc5)
+  if (mode == 'OFF') {
+    message.push(0x80)
+    message.push(0x62)
+  } else {
+    message.push(0x00)
+    message.push(0xc5)
+  }
 
   // then economy info
-  message.push(getEcoComfort(econo, comfort))
+  message.push(getEcoComfort(econo, comfort, mode))
 
   // then a fixed section
   message.push(0x00)
