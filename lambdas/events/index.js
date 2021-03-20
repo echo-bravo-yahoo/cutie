@@ -61,7 +61,7 @@ async function generateText(topic) {
 }
 
 exports.handler = async (event, context, callback) => {
-  const payload = { timestamp: Date.now(), message: await generateText(event.topic) }
+  const payload = { timestamp: Date.now(), payload: await generateText(event.topic) }
   var params = {
     topic: 'commands/printer',
     payload: JSON.stringify(payload),
