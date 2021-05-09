@@ -1,44 +1,33 @@
 from awscrt import mqtt
 import json
-from util import full_stack
+from module import DataEmittingModule
 
-THING_NAME = "badge-and-printer"
-# this should be dynamic
+# these should be dynamic
 LOCATION = "den"
 MODULE_NAME = "weather"
 
-SHADOW_UPDATE_TOPIC = "$aws/things/" + THING_NAME + "/shadow/update"
-SHADOW_UPDATE_ACCEPTED_TOPIC = "$aws/things/" + THING_NAME + "/shadow/update/accepted"
-SHADOW_UPDATE_REJECTED_TOPIC = "$aws/things/" + THING_NAME + "/shadow/update/rejected"
-SHADOW_UPDATE_DELTA_TOPIC = "$aws/things/" + THING_NAME + "/shadow/update/delta"
-SHADOW_GET_TOPIC = "$aws/things/" + THING_NAME + "/shadow/get"
-SHADOW_GET_ACCEPTED_TOPIC = "$aws/things/" + THING_NAME + "/shadow/get/accepted"
-SHADOW_GET_REJECTED_TOPIC = "$aws/things/" + THING_NAME + "/shadow/get/rejected"
-
 PUBLISH_TOPIC = "data/" + MODULE_NAME + "/" + LOCATION
 
-class Weather:
-    def __init__(self, iot, scheduler, sentinel, virtual=False):
-        self.iot = iot
-        self.scheduler = scheduler
-        self.virtual = virtual
-        self.sentinel = sentinel
-        self.lastSent = 0
+class Weather(DataEmittingModule):
+    def __init__(self, island):
+        super().__init__(island)
+        self.stateKey = "weather"
 
         # You will usually have to add an offset to account for the temperature of
         # the sensor. This is usually around 5 degrees but varies by use. Use a
         # separate temperature sensor to calibrate this one.
         self.temperature_offset = -5
 
-    def schedule(self):
-        self.publishResults()
-        self.scheduledEvent = self.scheduler.enter(60, 1, self.schedule)
-        self.scheduler.run(False)
+    def handle_state(self, payload):
+        self.handle_sub_state(payload, "enable")
+        # TODO: This is bad. It should handle the odd edge case of being asked to enter a state it can't better
+        # Right now it just claims it entered that state, regardless of whether it did or not
+        self.update_shadow(payload)
 
     # this must be idempotent; it'll be called repeatedly, and we only want to instantiate one sensor
     def enable(self):
         # Use virtual to test iot functionality on computers without busio / sensors.
-        if not self.virtual and not hasattr(self, 'bme680'):
+        if not self.island.virtual and not hasattr(self, 'bme680'):
             from busio import I2C
             import adafruit_bme680
             import board
@@ -53,21 +42,20 @@ class Weather:
             self.bme680.sea_level_pressure = 1013.89
 
         # Start the scheduled work
-        self.schedule()
-        self.sentinel.set()
+        self.schedule(self.publishResults, 60)
 
     def disable(self):
         if hasattr(self, 'bme680'):
           del self.bme680
         if hasattr(self, 'scheduledEvent'):
-          self.scheduler.cancel(self.scheduledEvent)
+          self.island.scheduler.cancel(self.scheduledEvent)
 
     def publishResults(self):
         print("Publishing results to " + PUBLISH_TOPIC + ".")
-        if self.virtual:
+        if self.island.virtual:
             print("Running in virtual mode; did not publish results to " + PUBLISH_TOPIC + ".")
         else:
-            self.iot.publish(topic=PUBLISH_TOPIC, payload=self.generatePayload(), qos=mqtt.QoS.AT_LEAST_ONCE)
+            self.island.iot.publish(topic=PUBLISH_TOPIC, payload=self.generatePayload(), qos=mqtt.QoS.AT_LEAST_ONCE)
 
     def generatePayload(self):
         payload = {}
@@ -89,47 +77,3 @@ class Weather:
         print("Pressure: %0.3f hPa" % payload["pressure"])
         print("Altitude: %0.2f meters" % payload["altitude"])
         print("\n")
-
-    def update_if_necessary(self, desired, reported):
-        print("desired " + str(desired) + ", reported " + str(reported))
-        if reported == None or desired["weather"].lower() != reported["weather"].lower():
-            payload = '{"state":{"reported":{"weather":"' + desired["weather"] + '"}}}'
-            print(payload)
-            print("Updating shadow state.")
-            self.iot.publish(topic=SHADOW_UPDATE_TOPIC, payload=payload, qos=mqtt.QoS.AT_LEAST_ONCE)
-
-    def handle_state(self, payload):
-        if (json.loads(payload)["timestamp"] <= self.lastSent):
-            return
-        self.lastSent = json.loads(payload)["timestamp"]
-        print(json.dumps(json.loads(payload), sort_keys=True, indent=4))
-        try:
-            desired = json.loads(payload)["state"]["desired"]
-            reported = json.loads(payload)["state"]["reported"]
-        except KeyError:
-            desired = json.loads(payload)["state"]
-            reported = None
-
-        try:
-            if desired["weather"].lower() == "true":
-                print("Enabling weather module.")
-                try:
-                    self.enable()
-                    print("Enabled weather module.")
-                    self.update_if_necessary(desired, reported)
-                except Exception as err:
-                    print("Failed to instantiate weather module: " + full_stack())
-
-            elif desired["weather"].lower() == "false":
-                print ("Disabling weather module.")
-                try:
-                    self.disable()
-                    print("Disabled weather module.")
-                    self.update_if_necessary(desired, reported)
-                except Exception as err:
-                    print("Failed to instantiate weather module: " + full_stack())
-            else:
-                raise ValueError("Weather should be a stringified boolean.")
-        except KeyError:
-            pass
-

@@ -1,0 +1,15 @@
+{
+  "name": "mqtt-emitter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "rm -rf tmp/** && zip -r tmp/mqtt-emitter-fn.zip . >/dev/null && aws lambda update-function-code --function-name mqtt-emitter-fn --zip-file fileb://tmp/mqtt-emitter-fn.zip"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.858.0"
+  }
+}

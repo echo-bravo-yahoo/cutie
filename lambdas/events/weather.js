@@ -1,4 +1,5 @@
 const fetch = require('node-fetch')
+const secrets = require('./secrets')
 
 function sortWeather(hour) {
   const weatherPriority = {
@@ -17,7 +18,7 @@ async function getWeather() {
   const lat = 47.650528
   const lon = -122.375575
   const exclude="minutely,daily,alerts"
-  const apiKey = "CENSOREDCENSOREDCENSORED"
+  const apiKey = secrets.weather.apiKey
   const units = "imperial"
   const uri = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=${exclude}&appid=${apiKey}&units=${units}`
   res = await (fetch(uri).then((res) => res.json()))

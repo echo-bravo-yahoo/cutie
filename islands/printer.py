@@ -1,14 +1,29 @@
 from awscrt import mqtt
 import json
-import mornings
+from module import EventRespondingModule
 
-THING_NAME = "badge-and-printer"
-MODULE_NAME = "printer"
+class Printer(EventRespondingModule):
+    def __init__(self, island):
+        super().__init__(island)
+        self.stateKey = "printer"
 
-class Printer:
-    def __init__(self, iot, sentinel, virtual=False):
+    def handle_print_request(self, topic, payload, **kwargs):
+        print("Handling print request")
+        message = self.decode_message(payload, self.lastReceived, "message")
+        if not self.island.virtual:
+            for line in message.split("\n"):
+                self.processLine(line.rstrip(), self.printer)
+            self.printer.feed(3)
+        else:
+            print(message)
+
+    def handle_state(self, payload):
+        self.handle_sub_state(payload, "enable")
+        self.update_shadow(payload)
+
+    def enable(self):
         # Use virtual to test iot functionality on computers without busio / sensors.
-        if not virtual:
+        if not self.island.virtual:
             import board
             import busio
             import adafruit_thermal_printer
@@ -36,6 +51,7 @@ class Printer:
             # to warm up and be ready to accept commands (hence calling it explicitly vs.
             # automatically in the initializer with the default auto_warm_up=True).
             print("Warming up")
+
             self.printer.warm_up()
             print("Warmed up")
 
@@ -50,30 +66,12 @@ class Printer:
             # TODO: Format links as QR codes
             # https://pypi.org/project/qrcode/
 
-        self.iot = iot
-        self.virtual = virtual
-        self.enabled = False
-        self.sentinel = sentinel
-        self.lastSent = 0
-        # self.iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=self.handle_print_request)
+        self.island.iot.subscribe(topic="commands/printer", qos=mqtt.QoS.AT_LEAST_ONCE, callback=self.handle_print_request)
 
-    def handle_print_request(self, topic, payload, **kwargs):
-        print("Handling print request")
-        if self.virtual:
-            print("Running in virtual mode; did not print payload.")
-            return
-        print(payload.decode())
-        try:
-            res = json.loads(payload.decode())
-            if (res["timestamp"] <= self.lastSent):
-                return
-            res_str = res["text"]
-            self.lastSent = res["timestamp"]
-        except:
-            res_str = payload.decode()
-        for line in res_str.split("\n"):
-            self.processLine(line.rstrip(), self.printer)
-        self.printer.feed(3)
+    def disable(self):
+        if (hasattr(self, 'printer')):
+            del self.printer
+        self.island.iot.unsubscribe(topic="commands/printer")
 
     def processLine(self, line, printer):
         import adafruit_thermal_printer

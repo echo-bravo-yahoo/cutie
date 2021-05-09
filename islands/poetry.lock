@@ -1,0 +1,199 @@
+[[package]]
+name = "adafruit-blinka"
+version = "5.13.1"
+description = "CircuitPython APIs for non-CircuitPython versions of Python such as CPython on Linux and MicroPython."
+category = "main"
+optional = false
+python-versions = ">=3.5.0"
+
+[package.dependencies]
+Adafruit-PureIO = ">=1.1.7"
+pyftdi = ">=0.40.0"
+Adafruit-PlatformDetect = ">=2.18.1"
+
+[[package]]
+name = "adafruit-circuitpython-bme680"
+version = "3.3.2"
+description = "CircuitPython library for BME680 temperature, pressure and humidity sensor."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+Adafruit-Blinka = "*"
+adafruit-circuitpython-busdevice = "*"
+
+[[package]]
+name = "adafruit-circuitpython-busdevice"
+version = "5.0.6"
+description = "CircuitPython bus device classes to manage bus sharing."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+Adafruit-Blinka = "*"
+
+[[package]]
+name = "adafruit-circuitpython-thermal-printer"
+version = "1.3.3"
+description = "CircuitPython library for controlling thermal printers."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+pyserial = "*"
+Adafruit-Blinka = "*"
+
+[[package]]
+name = "adafruit-platformdetect"
+version = "2.28.0"
+description = "Platform detection for use by libraries like Adafruit-Blinka."
+category = "main"
+optional = false
+python-versions = ">=3.5.0"
+
+[[package]]
+name = "adafruit-pureio"
+version = "1.1.8"
+description = "Pure python (i.e. no native extensions) access to Linux IO    including I2C and SPI. Drop in replacement for smbus and spidev modules."
+category = "main"
+optional = false
+python-versions = ">=3.5.0"
+
+[[package]]
+name = "aenum"
+version = "3.0.0"
+description = "Advanced Enumerations (compatible with Python's stdlib Enum), NamedTuples, and NamedConstants"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "awscrt"
+version = "0.10.8"
+description = "A common runtime for AWS Python projects"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[package.source]
+type = "url"
+url = "https://www.piwheels.org/simple/awscrt/awscrt-0.10.8-cp35-cp35m-linux_armv6l.whl"
+
+[[package]]
+name = "awsiotsdk"
+version = "1.5.7"
+description = "AWS IoT SDK based on the AWS Common Runtime"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[package.dependencies]
+awscrt = "0.10.8"
+
+[[package]]
+name = "pydash"
+version = "4.9.3"
+description = "The kitchen sink of Python utility libraries for doing \"stuff\" in a functional way. Based on the Lo-Dash Javascript library."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+dev = ["coverage", "docformatter", "flake8", "invoke", "mock", "pylint", "pytest", "pytest-cov", "pytest-flake8", "pytest-pylint", "sphinx", "sphinx-rtd-theme", "tox", "twine", "wheel", "black", "flake8-black", "flake8-bugbear", "flake8-isort", "isort"]
+
+[[package]]
+name = "pyftdi"
+version = "0.52.9"
+description = "FTDI device driver (pure Python)"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[package.dependencies]
+pyserial = ">=3.0"
+aenum = {version = ">=2.1.0", markers = "python_version == \"3.5\""}
+pyusb = ">=1.0.0"
+
+[[package]]
+name = "pyserial"
+version = "3.5"
+description = "Python Serial Port Extension"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+cp2110 = ["hidapi"]
+
+[[package]]
+name = "pyusb"
+version = "1.1.1"
+description = "Python USB access module"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "rpi.gpio"
+version = "0.7.0"
+description = "A module to control Raspberry Pi GPIO channels"
+category = "main"
+optional = false
+python-versions = "*"
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.5"
+content-hash = "9ed7136dcf942d92568947f5cfbb1309af2da4ce01e403858cd793413051c822"
+
+[metadata.files]
+adafruit-blinka = [
+    {file = "Adafruit-Blinka-5.13.1.tar.gz", hash = "sha256:05c83970b336b85c78d5ed8f3578efc5ccdaf4a95f1707b943efcd29a6d66e4a"},
+]
+adafruit-circuitpython-bme680 = [
+    {file = "adafruit-circuitpython-bme680-3.3.2.tar.gz", hash = "sha256:a19c9ea5889b2c4bb20709575c6e6452dbf4b24eb43367e3bae9643ac9abc573"},
+]
+adafruit-circuitpython-busdevice = [
+    {file = "adafruit-circuitpython-busdevice-5.0.6.tar.gz", hash = "sha256:9bb2934e90a151da8b7d9646b25c2ce0b3fd4853f8ba73e8faffedfd8315eda7"},
+]
+adafruit-circuitpython-thermal-printer = [
+    {file = "adafruit-circuitpython-thermal-printer-1.3.3.tar.gz", hash = "sha256:613dc373fd8d69ad7459881829f92a397e54d268def28ce2b8512019233d5cfa"},
+]
+adafruit-platformdetect = [
+    {file = "Adafruit-PlatformDetect-2.28.0.tar.gz", hash = "sha256:aa272605fd8a2ddcc6e5dd8151d628f76a9468c97ba7e4e315d6bc78b9bfb8f8"},
+]
+adafruit-pureio = [
+    {file = "Adafruit_PureIO-1.1.8.tar.gz", hash = "sha256:c6702589aa4bf6dc785e5f4e4ed7e68bef1d93d180633abe548fe3f39d36cad5"},
+]
+aenum = [
+    {file = "aenum-3.0.0-py2-none-any.whl", hash = "sha256:701c4fecd4c5237ed5ab80a18930a0ebe26a8c729a21e1b7302197a3f430da7c"},
+    {file = "aenum-3.0.0-py3-none-any.whl", hash = "sha256:58b899111b3fa9f9569e30c6305b07308f5b0dfdbbd2a9b9f01e8e08def7fdbb"},
+    {file = "aenum-3.0.0.tar.gz", hash = "sha256:17cd8cfed1ee4b617198c9fabbabd70ebd8f01e54ac29cd6c3a92df14bd86656"},
+]
+awscrt = []
+awsiotsdk = [
+    {file = "awsiotsdk-1.5.7-py3-none-any.whl", hash = "sha256:d2b74c5ee7d398aa8b0fc16a63e4d4550497bbd6bc05ef74417fd4737cbcca06"},
+    {file = "awsiotsdk-1.5.7.tar.gz", hash = "sha256:fe9a699cecfe41ee8993c2f3fa9dfa5f0cc89e3976fafac85a8f9d7c23a3890a"},
+]
+pydash = [
+    {file = "pydash-4.9.3-py2.py3-none-any.whl", hash = "sha256:7851a2d749e70c02585ae4803b01c5e0f47b7ec9df9b84ccb16aac38cad2fdd2"},
+    {file = "pydash-4.9.3.tar.gz", hash = "sha256:d709e57b537b1aaf118f188da3ec6242a665090ecd7839b66f857ee3dc2bb006"},
+]
+pyftdi = [
+    {file = "pyftdi-0.52.9-py3-none-any.whl", hash = "sha256:e8123dc3663ff3ac89eac962774e755b611e7f7202e9e36f6b6eb915fedc53f1"},
+    {file = "pyftdi-0.52.9.tar.gz", hash = "sha256:21e84163a48057de9e4eba6efcb42e51994868b702e1eabdbd2a8cbddad66b66"},
+]
+pyserial = [
+    {file = "pyserial-3.5-py2.py3-none-any.whl", hash = "sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0"},
+    {file = "pyserial-3.5.tar.gz", hash = "sha256:3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb"},
+]
+pyusb = [
+    {file = "pyusb-1.1.1-py3-none-any.whl", hash = "sha256:f18eb813d3a1439918071234589162c2f209a19adbeffeb1377ce078a4aebc70"},
+    {file = "pyusb-1.1.1.tar.gz", hash = "sha256:7d449ad916ce58aff60b89aae0b65ac130f289c24d6a5b7b317742eccffafc38"},
+]
+"rpi.gpio" = [
+    {file = "RPi.GPIO-0.7.0.tar.gz", hash = "sha256:7424bc6c205466764f30f666c18187a0824077daf20b295c42f08aea2cb87d3f"},
+]
