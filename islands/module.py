@@ -8,6 +8,7 @@ class StatefulModule():
         self.island = island
         self.lastReceived = 0
         self.lastShadowUpdate = 0
+        self.enabled = False
 
     def enable(self):
         pass
@@ -35,6 +36,9 @@ class StatefulModule():
 
         try:
             if desired[self.stateKey][payloadKey].lower() == "true":
+                if self.enabled:
+                    print("Would enable", self.stateKey, "but it's already enabled.")
+                    return
                 print("Enabling", self.stateKey, "module.")
                 try:
                     self.enable()
@@ -43,6 +47,9 @@ class StatefulModule():
                     print("Failed to enable", self.stateKey, "module: " + full_stack())
 
             elif desired[self.stateKey][payloadKey].lower() == "false":
+                if not self.enabled:
+                    print("Would disable", self.stateKey, "but it's already disabled.")
+                    return
                 print ("Disabling", self.stateKey, "module.")
                 try:
                     self.disable()
