@@ -53,6 +53,7 @@ island.register_modules(modules)
 
 # This is really messy, but it works
 # Uncomment the print statements to see proof
+# Docs on sched: https://docs.python.org/3/library/sched.html
 while True:
      # print(time.time())
      # print(scheduler.queue)

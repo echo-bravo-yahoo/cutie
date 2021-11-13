@@ -53,7 +53,9 @@ class Weather(DataEmittingModule):
     def publishResults(self):
         print("Publishing results to " + PUBLISH_TOPIC + ".")
         if self.island.virtual:
-            print("Running in virtual mode; did not publish results to " + PUBLISH_TOPIC + ".")
+            print("Running in virtual mode; publishing fake results to " + PUBLISH_TOPIC + ".")
+
+            self.island.iot.publish(topic=PUBLISH_TOPIC, payload=json.dumps({ 'temp': 0, 'gas': 0, 'humidity': 0, 'pressure': 0, 'altitude': 0 }), qos=mqtt.QoS.AT_LEAST_ONCE)
         else:
             self.island.iot.publish(topic=PUBLISH_TOPIC, payload=self.generatePayload(), qos=mqtt.QoS.AT_LEAST_ONCE)
 
