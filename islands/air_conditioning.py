@@ -29,7 +29,7 @@ class AirConditioning(StatefulModule):
         else:
             self.state = args
             print("Running", "sudo node ../bitbang/index.js" + " --virtual " + str(self.island.virtual).lower() + " --obj '" + json.dumps(args) + "'")
-            command = "sudo node ../bitbang/index.js" + " --virtual " + str(self.island.virtual).lower() + " --obj '" + json.dumps(args) + "'"
+            command = "node ../bitbang/index.js" + " --virtual " + str(self.island.virtual).lower() + " --obj '" + json.dumps(args) + "'"
             os.system(command)
             self.update_shadow(payload)
 

@@ -232,12 +232,13 @@ function logMessage(message) {
   console.log(message.map(num => Number(num).toString(16)).join(', '))
 }
 
-if (args["obj"]) args = JSON.parse(args.obj)
 if (args.virtual === undefined || args.virtual === false) {
+  if (args["obj"]) args = JSON.parse(args.obj)
   console.log('Sending message:')
   logMessage(buildMessage(args))
   sendMessage(buildMessage(args))
 } else {
+  if (args["obj"]) args = JSON.parse(args.obj)
   console.log('Running in virtual mode, won\'t send message:')
   logMessage(buildMessage(args))
 }
