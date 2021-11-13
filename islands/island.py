@@ -7,7 +7,7 @@ class Island:
         self.sentinel = sentinel
         self.virtual = virtual
 
-        self.THING_ID = config["id"]
+        self.THING_ID = config["certId"]
         self.THING_NAME = config["name"]
         self.SHADOW_UPDATE_TOPIC = "$aws/things/" + self.THING_NAME + "/shadow/update"
         self.SHADOW_UPDATE_ACCEPTED_TOPIC = "$aws/things/" + self.THING_NAME + "/shadow/update/accepted"

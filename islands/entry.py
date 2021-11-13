@@ -27,8 +27,8 @@ def resumed_handler(connection, return_code, session_present, **kwargs):
 
 iot = mqtt_connection_builder.mtls_from_path(
         endpoint="<redacted-endpoint>",
-        cert_filepath="/home/" + getpass.getuser() + "/workspace/" + config["id"] + "-certificate.pem.crt",
-        pri_key_filepath="/home/" + getpass.getuser() + "/workspace/" + config["id"] + "-private.pem.key",
+        cert_filepath="/home/" + getpass.getuser() + "/workspace/" + config["name"] + "-certificate.pem.crt",
+        pri_key_filepath="/home/" + getpass.getuser() + "/workspace/" + config["name"] + "-private.pem.key",
         ca_filepath="/home/" + getpass.getuser() + "/workspace/AmazonRootCA1.pem",
         client_id=config["name"],
         client_bootstrap=client_bootstrap,
