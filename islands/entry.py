@@ -19,6 +19,12 @@ with open('./config.json', 'r') as config_file:
     data = config_file.read()
 config = json.loads(data)
 
+def interrupted_handler(connection, error, **kwargs):
+    print("Connection interrupted: " + error.name + ": " + error.message)
+
+def resumed_handler(connection, return_code, session_present, **kwargs):
+    print("Connection resumed: " + return_code)
+
 iot = mqtt_connection_builder.mtls_from_path(
         endpoint="<redacted-endpoint>",
         cert_filepath="/home/" + getpass.getuser() + "/workspace/" + config["id"] + "-certificate.pem.crt",
@@ -27,7 +33,10 @@ iot = mqtt_connection_builder.mtls_from_path(
         client_id=config["name"],
         client_bootstrap=client_bootstrap,
         clean_session=False,
-        keep_alive_secs=6)
+        ping_timeout_ms=3000,
+        keep_alive_secs=1200,
+        on_connection_interrupted=interrupted_handler,
+        on_connection_resumed=resumed_handler)
 
 scheduler = sched.scheduler(time.time, time.sleep)
 sentinel = threading.Event()
