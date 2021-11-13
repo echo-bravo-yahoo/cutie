@@ -51,7 +51,13 @@ modules = [
 
 island.register_modules(modules)
 
-while (True):
-    sentinel.clear()
-    scheduler.run()
-    sentinel.wait(1)
+# This is really messy, but it works
+# Uncomment the print statements to see proof
+while True:
+     # print(time.time())
+     # print(scheduler.queue)
+     next_event = scheduler.run(False)
+     if next_event is not None:
+         time.sleep(min(1, next_event))
+     else:
+         time.sleep(1)

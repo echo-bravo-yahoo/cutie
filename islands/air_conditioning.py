@@ -12,7 +12,7 @@ class AirConditioning(StatefulModule):
     def handle_state(self, payload):
         # TODO: quick hack, fix later
         [desired, reported] = self.decode_state(payload)
-        try: 
+        try:
             desired[self.stateKey]
         except KeyError:
             return

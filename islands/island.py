@@ -29,9 +29,10 @@ class Island:
         self.iot.subscribe(topic=self.SHADOW_UPDATE_ACCEPTED_TOPIC, qos=mqtt.QoS.AT_LEAST_ONCE, callback=self.handle_update_accepted)
         self.iot.subscribe(topic=self.SHADOW_UPDATE_REJECTED_TOPIC, qos=mqtt.QoS.AT_LEAST_ONCE, callback=self.handle_update_rejected)
 
+        # This is weird - you publish here to get notified on GET_ACCEPTED
+        # See: https://docs.aws.amazon.com/iot/latest/developerguide/device-shadow-mqtt.html?icmpid=docs_iot_hp_manage_things
         print("Requesting new shadow state.")
         self.iot.publish(topic=self.SHADOW_GET_TOPIC, payload="", qos=mqtt.QoS.AT_LEAST_ONCE)
-        print("Requested new shadow state.")
 
     def register_modules(self, modules):
         self.modules = modules
