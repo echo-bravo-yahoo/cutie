@@ -10,10 +10,17 @@ from air_conditioning import AirConditioning
 import json
 import threading
 import getpass
+import argparse
 
 event_loop_group = io.EventLoopGroup(1)
 host_resolver = io.DefaultHostResolver(event_loop_group)
 client_bootstrap = io.ClientBootstrap(event_loop_group, host_resolver)
+
+parser = argparse.ArgumentParser(description="Start an IoT node.")
+parser.add_argument('--virtual', dest='virtual', action='store_true')
+parser.add_argument('--no-virtual', dest='virtual', action='store_false')
+parser.set_defaults(virtual=False)
+args = parser.parse_args()
 
 with open('./config.json', 'r') as config_file:
     data = config_file.read()
@@ -41,7 +48,7 @@ iot = mqtt_connection_builder.mtls_from_path(
 scheduler = sched.scheduler(time.time, time.sleep)
 sentinel = threading.Event()
 
-island = Island(config, iot, scheduler, sentinel, virtual=False)
+island = Island(config, iot, scheduler, sentinel, virtual=args.virtual)
 
 modules = [
     Weather(island),
