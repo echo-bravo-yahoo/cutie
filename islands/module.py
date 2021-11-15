@@ -66,7 +66,7 @@ class StatefulModule():
     def decode_state(self, mqttMessage):
         payload = json.loads(mqttMessage.decode())
         if (payload["timestamp"] <= self.lastShadowUpdate):
-             raise ValueError("Received old message; disregarding.")
+             raise ValueError("Received old shadow state; disregarding.")
         try:
             desired = payload["state"]["desired"]
             reported = payload["state"]["reported"]
@@ -85,9 +85,9 @@ class StatefulModule():
         payload = json.loads(mqttMessage.decode())
         print(payload)
         if (payload["timestamp"] <= self.lastReceived):
-             raise ValueError("Received old message; disregarding.")
-        message = payload["payload"]
-        self.lastSent = payload["timestamp"]
+             raise ValueError("Disregarding old message with timestamp " + str(payload["timestamp"]) + " which is older than lastReceived of " + str(self.lastReceived) + ".")
+        message = payload[key]
+        self.lastReceived = payload["timestamp"]
         return message
 
     def should_update(self, desired, reported):

@@ -9,7 +9,11 @@ class Printer(EventRespondingModule):
 
     def handle_print_request(self, topic, payload, **kwargs):
         print("Handling print request")
-        message = self.decode_message(payload, self.lastReceived, "message")
+        try:
+            message = self.decode_message(payload, self.lastReceived, "message")
+        except ValueError as e:
+            print(e)
+            return
         if not self.island.virtual:
             for line in message.split("\n"):
                 self.processLine(line.rstrip(), self.printer)
