@@ -8,6 +8,7 @@ const { getWeatherBlock } = require('./weather.js')
 const { getBudgetBlock } = require('./ynab.js')
 
 async function generateMorningText() {
+  console.log('morning!')
   const weatherBlockPromise = getWeatherBlock()
   const taskBlockPromise = getTaskBlock('morning')
 

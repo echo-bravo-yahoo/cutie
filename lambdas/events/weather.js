@@ -1,5 +1,6 @@
 const fetch = require('node-fetch')
 const secrets = require('./secrets')
+const { wrap } = require('./helpers')
 
 function sortWeather(hour) {
   const weatherPriority = {
@@ -61,7 +62,8 @@ async function getWeatherBlock() {
   result += `Today's high will be ${state}'F\n\t(at ${time}).\n`
   state = weather.weather.weather[0].description
   time = makeDateString(weather.weather.time)
-  result += `Expect there to be ${state} today around ${time}.\n`
+  result += wrap(`Expect there to be ${state} today around ${time}.`)
+  result += '\n'
   return result
 }
 

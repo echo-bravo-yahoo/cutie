@@ -127,7 +127,7 @@ function getWeekendTasks(tasks) {
 function taskToString(task) {
   let string = `[ ] ${task.description}`
   if(task.annotations && task.annotations.length) string += ` [${task.annotations.length}]`
-  return wrap(string, 4)
+  return wrap(string, 0, 4)
 }
 
 async function getTaskBlock(event) {
