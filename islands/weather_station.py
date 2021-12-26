@@ -11,15 +11,6 @@ WIND_SPEED_PIN = 25
 # pi.set_mode(WIND_DIRECTION_PIN, pigpio.INPUT)
 # pi.set_pull_up_down(WIND_DIRECTION_PIN, pigpio.PUD_DOWN)
 
-def rain(pin, level, tick):
-    print("Rain meter emptied")
-
-def wind_speed(pin, level, tick):
-    print("Wind meter moved")
-
-pi.callback(RAIN_PIN, pigpio.EITHER_EDGE, rain)
-pi.callback(WIND_SPEED_PIN, pigpio.EITHER_EDGE, wind_speed)
-
 # these should be dynamic
 LOCATION = "porch"
 MODULE_NAME = "weatherStation"
@@ -30,8 +21,8 @@ class WeatherStation(DataEmittingModule):
     def __init__(self, island):
         super().__init__(island)
         self.stateKey = "weatherStation"
-        self.rain_fall = []
-        self.wind_speed = []
+        self.rain_fall = 0
+        self.wind_speed = 0
         # self.wind_direction = []
 
     def handle_state(self, payload):
@@ -52,6 +43,8 @@ class WeatherStation(DataEmittingModule):
             pi.set_pull_up_down(WIND_SPEED_PIN, pigpio.PUD_DOWN)
             # pi.set_mode(WIND_DIRECTION_PIN, pigpio.INPUT)
             # pi.set_pull_up_down(WIND_DIRECTION_PIN, pigpio.PUD_DOWN)
+            pi.callback(RAIN_PIN, pigpio.EITHER_EDGE, rain)
+            pi.callback(WIND_SPEED_PIN, pigpio.EITHER_EDGE, wind_speed)
 
         # Start the scheduled work
         # This should allow a customizable interval
@@ -60,9 +53,9 @@ class WeatherStation(DataEmittingModule):
     def disable(self):
         if hasattr(self, 'bme680'):
           del self.pi
-          self.rain_fall = []
-          self.wind_speed = []
-          self.wind_direction = []
+          self.rain_fall = 0
+          self.wind_speed = 0
+          self.wind_direction = 0
         # This doesn't do anything; should this always call scheduler.cancel?
         # Is that idempotent?
         if hasattr(self, 'scheduledEvent'):
@@ -79,14 +72,14 @@ class WeatherStation(DataEmittingModule):
         payload = {}
         # .011 inches of rainfall per switch activation
         # When interval becomes customizable, this will need to change to per minute
-        payload["rain_fall"] = len(self.rain_fall) * 0.011
-        self.rain_fall = []
+        payload["rain_fall"] = self.rain_fall * 0.011
+        self.rain_fall = 0
         # 1.491291 MPH of wind speed per switch activation
         # When interval becomes customizable, this will need to change to per minute
-        payload["wind_speed"] = len(self.wind_speed) * 1.491291
-        self.wind_speed = []
+        payload["wind_speed"] = self.wind_speed * 1.491291
+        self.wind_speed = 0
         # payload["wind_direction"] = self.average(self.wind_direction)
-        # self.wind_direction = []
+        # self.wind_direction = 0
         self.log(payload)
         return json.dumps(payload)
 
@@ -95,3 +88,10 @@ class WeatherStation(DataEmittingModule):
         print("Wind speed: %d mph" % payload["wind_speed"])
         # print("Wind direction: %0.1f %%" % payload["wind_direction"])
         print("\n")
+
+    def rain(self, pin, level, tick):
+        self.rain_fall++
+
+    def wind_speed(self, pin, level, tick):
+        self.wind_speed++
+
