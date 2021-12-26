@@ -5,6 +5,7 @@ from awsiot import mqtt_connection_builder
 import sched, time
 from island import Island
 from weather import Weather
+from weather_station import WeatherStation
 from printer import Printer
 from air_conditioning import AirConditioning
 import json
@@ -52,6 +53,7 @@ island = Island(config, iot, scheduler, sentinel, virtual=args.virtual)
 
 modules = [
     Weather(island),
+    WeatherStation(island),
     Printer(island),
     AirConditioning(island)
 ]

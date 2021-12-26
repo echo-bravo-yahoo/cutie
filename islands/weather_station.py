@@ -21,7 +21,7 @@ pi.callback(RAIN_PIN, pigpio.EITHER_EDGE, rain)
 pi.callback(WIND_SPEED_PIN, pigpio.EITHER_EDGE, wind_speed)
 
 # these should be dynamic
-LOCATION = "den"
+LOCATION = "porch"
 MODULE_NAME = "weatherStation"
 
 PUBLISH_TOPIC = "data/" + MODULE_NAME + "/" + LOCATION
