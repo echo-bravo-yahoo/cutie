@@ -37,11 +37,12 @@ class WeatherStation(DataEmittingModule):
             self.pi.set_pull_up_down(RAIN_PIN, pigpio.PUD_DOWN)
             self.pi.set_mode(WIND_SPEED_PIN, pigpio.INPUT)
             self.pi.set_pull_up_down(WIND_SPEED_PIN, pigpio.PUD_DOWN)
-            # Note: This isn't working because it requires analog pins
-            # pi.set_mode(WIND_DIRECTION_PIN, pigpio.INPUT)
-            # pi.set_pull_up_down(WIND_DIRECTION_PIN, pigpio.PUD_DOWN)
-            self.pi.callback(RAIN_PIN, pigpio.EITHER_EDGE, rain)
-            self.pi.callback(WIND_SPEED_PIN, pigpio.EITHER_EDGE, wind_speed)
+            # Note: This doesn't work because it requires an analog pin
+            # self.pi.set_mode(WIND_DIRECTION_PIN, pigpio.INPUT)
+            # self.pi.set_pull_up_down(WIND_DIRECTION_PIN, pigpio.PUD_DOWN)
+            self.rain_callback = self.pi.callback(RAIN_PIN, pigpio.RISING_EDGE)
+            self.wind_callback = self.pi.callback(WIND_SPEED_PIN, pigpio.RISING_EDGE)
+            # self.wind_direction_callback = self.pi.callback(WIND_DIRECTION_PIN, pigpio.RISING_EDGE)
 
 
         # Start the scheduled work
@@ -70,14 +71,16 @@ class WeatherStation(DataEmittingModule):
         payload = {}
         # .011 inches of rainfall per switch activation
         # When interval becomes customizable, this will need to change to per minute
-        payload["rain_fall"] = self.rain_fall * 0.011
+        payload["rain_fall"] = self.rain_callback.tally() * 0.011
+        self.rain_callback.reset_tally()
         self.rain_fall = 0
         # 1.491291 MPH of wind speed per switch activation
         # When interval becomes customizable, this will need to change to per minute
-        payload["wind_speed"] = self.wind_speed * 1.491291
+        payload["wind_speed"] = self.wind_callback.tally() * 1.491291
         self.wind_speed = 0
-        # payload["wind_direction"] = self.average(self.wind_direction)
-        # self.wind_direction = 0
+        self.wind_callback.reset_tally()
+        # payload["wind_direction"] = ???
+        # self.wind_direction = ???
         self.log(payload)
         return json.dumps(payload)
 
@@ -86,10 +89,3 @@ class WeatherStation(DataEmittingModule):
         print("Wind speed: %d mph" % payload["wind_speed"])
         # print("Wind direction: %0.1f %%" % payload["wind_direction"])
         print("\n")
-
-    def rain(self, pin, level, tick):
-        self.rain_fall = self.rain_fall + 1
-
-    def wind_speed(self, pin, level, tick):
-        self.wind_speed = self.wind_speed + 1
-
