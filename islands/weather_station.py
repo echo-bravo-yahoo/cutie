@@ -7,10 +7,6 @@ RAIN_PIN = 4
 WIND_SPEED_PIN = 25
 # WIND_DIRECTION_PIN = 12
 
-# Note: This isn't working because it requires analog pins
-# pi.set_mode(WIND_DIRECTION_PIN, pigpio.INPUT)
-# pi.set_pull_up_down(WIND_DIRECTION_PIN, pigpio.PUD_DOWN)
-
 # these should be dynamic
 LOCATION = "porch"
 MODULE_NAME = "weatherStation"
@@ -23,7 +19,7 @@ class WeatherStation(DataEmittingModule):
         self.stateKey = "weatherStation"
         self.rain_fall = 0
         self.wind_speed = 0
-        # self.wind_direction = []
+        # self.wind_direction = 0
 
     def handle_state(self, payload):
         self.handle_sub_state(payload, "enable")
@@ -37,14 +33,16 @@ class WeatherStation(DataEmittingModule):
         if not self.island.virtual and not hasattr(self, 'pi'):
             import pigpio
             self.pi = pigpio.pi()
-            pi.set_mode(RAIN_PIN, pigpio.INPUT)
-            pi.set_pull_up_down(RAIN_PIN, pigpio.PUD_DOWN)
-            pi.set_mode(WIND_SPEED_PIN, pigpio.INPUT)
-            pi.set_pull_up_down(WIND_SPEED_PIN, pigpio.PUD_DOWN)
+            self.pi.set_mode(RAIN_PIN, pigpio.INPUT)
+            self.pi.set_pull_up_down(RAIN_PIN, pigpio.PUD_DOWN)
+            self.pi.set_mode(WIND_SPEED_PIN, pigpio.INPUT)
+            self.pi.set_pull_up_down(WIND_SPEED_PIN, pigpio.PUD_DOWN)
+            # Note: This isn't working because it requires analog pins
             # pi.set_mode(WIND_DIRECTION_PIN, pigpio.INPUT)
             # pi.set_pull_up_down(WIND_DIRECTION_PIN, pigpio.PUD_DOWN)
-            pi.callback(RAIN_PIN, pigpio.EITHER_EDGE, rain)
-            pi.callback(WIND_SPEED_PIN, pigpio.EITHER_EDGE, wind_speed)
+            self.pi.callback(RAIN_PIN, pigpio.EITHER_EDGE, rain)
+            self.pi.callback(WIND_SPEED_PIN, pigpio.EITHER_EDGE, wind_speed)
+
 
         # Start the scheduled work
         # This should allow a customizable interval
