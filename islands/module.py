@@ -105,6 +105,9 @@ class DataEmittingModule(StatefulModule):
         action()
         self.scheduledEvent = self.island.scheduler.enter(time, priority, partial(self.schedule, action, time))
 
+    def average(self, data):
+        return sum(data)/len(data)
+
 class EventRespondingModule(StatefulModule):
     def __init__(self, island):
         super().__init__(island)

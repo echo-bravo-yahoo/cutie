@@ -47,6 +47,8 @@ class Weather(DataEmittingModule):
     def disable(self):
         if hasattr(self, 'bme680'):
           del self.bme680
+        # This doesn't do anything; should this always call scheduler.cancel?
+        # Is that idempotent?
         if hasattr(self, 'scheduledEvent'):
           self.island.scheduler.cancel(self.scheduledEvent)
 

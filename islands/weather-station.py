@@ -1,21 +1,13 @@
-import pigpio
-import RPi.GPIO as GPIO
 import os
 from awscrt import mqtt
 import json
 from module import DataEmittingModule
 
-
 RAIN_PIN = 4
 WIND_SPEED_PIN = 25
 # WIND_DIRECTION_PIN = 12
 
-pi = pigpio.pi()
-
-pi.set_mode(RAIN_PIN, pigpio.INPUT)
-pi.set_pull_up_down(RAIN_PIN, pigpio.PUD_DOWN)
-pi.set_mode(WIND_SPEED_PIN, pigpio.INPUT)
-pi.set_pull_up_down(WIND_SPEED_PIN, pigpio.PUD_DOWN)
+# Note: This isn't working because it requires analog pins
 # pi.set_mode(WIND_DIRECTION_PIN, pigpio.INPUT)
 # pi.set_pull_up_down(WIND_DIRECTION_PIN, pigpio.PUD_DOWN)
 
@@ -34,10 +26,13 @@ MODULE_NAME = "weatherStation"
 
 PUBLISH_TOPIC = "data/" + MODULE_NAME + "/" + LOCATION
 
-class Weather(DataEmittingModule):
+class WeatherStation(DataEmittingModule):
     def __init__(self, island):
         super().__init__(island)
         self.stateKey = "weatherStation"
+        self.rain_fall = []
+        self.wind_speed = []
+        # self.wind_direction = []
 
     def handle_state(self, payload):
         self.handle_sub_state(payload, "enable")
@@ -48,26 +43,28 @@ class Weather(DataEmittingModule):
     # this must be idempotent; it'll be called repeatedly, and we only want to instantiate one sensor
     def enable(self):
         # Use virtual to test iot functionality on computers without busio / sensors.
-        if not self.island.virtual and not hasattr(self, 'bme680'):
-            from busio import I2C
-            import adafruit_bme680
-            import board
-
-            # Create library object using our Bus I2C port
-            i2c = I2C(board.SCL, board.SDA)
-            self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, debug=False)
-
-            # change this to match the location's pressure (hPa) at sea level
-            # this could be dynamically updated from, e.g.,
-            # https://forecast.weather.gov/MapClick.php?x=266&y=134&site=sew&zmx=&zmy=&map_x=266&mapy=134#.X2jtB2hKiUk
-            self.bme680.sea_level_pressure = 1013.89
+        if not self.island.virtual and not hasattr(self, 'pi'):
+            import pigpio
+            self.pi = pigpio.pi()
+            pi.set_mode(RAIN_PIN, pigpio.INPUT)
+            pi.set_pull_up_down(RAIN_PIN, pigpio.PUD_DOWN)
+            pi.set_mode(WIND_SPEED_PIN, pigpio.INPUT)
+            pi.set_pull_up_down(WIND_SPEED_PIN, pigpio.PUD_DOWN)
+            # pi.set_mode(WIND_DIRECTION_PIN, pigpio.INPUT)
+            # pi.set_pull_up_down(WIND_DIRECTION_PIN, pigpio.PUD_DOWN)
 
         # Start the scheduled work
+        # This should allow a customizable interval
         self.schedule(self.publishResults, 60)
 
     def disable(self):
         if hasattr(self, 'bme680'):
-          del self.bme680
+          del self.pi
+          self.rain_fall = []
+          self.wind_speed = []
+          self.wind_direction = []
+        # This doesn't do anything; should this always call scheduler.cancel?
+        # Is that idempotent?
         if hasattr(self, 'scheduledEvent'):
           self.island.scheduler.cancel(self.scheduledEvent)
 
@@ -80,21 +77,21 @@ class Weather(DataEmittingModule):
 
     def generatePayload(self):
         payload = {}
-        payload["temp"] = self.toFahrenheit(self.bme680.temperature + self.temperature_offset)
-        payload["gas"] = self.bme680.gas
-        payload["humidity"] = self.bme680.humidity
-        payload["pressure"] = self.bme680.pressure
-        payload["altitude"] = self.bme680.altitude
+        # .011 inches of rainfall per switch activation
+        # When interval becomes customizable, this will need to change to per minute
+        payload["rain_fall"] = len(self.rain_fall) * 0.011
+        self.rain_fall = []
+        # 1.491291 MPH of wind speed per switch activation
+        # When interval becomes customizable, this will need to change to per minute
+        payload["wind_speed"] = len(self.wind_speed) * 1.491291
+        self.wind_speed = []
+        # payload["wind_direction"] = self.average(self.wind_direction)
+        # self.wind_direction = []
         self.log(payload)
         return json.dumps(payload)
 
-    def toFahrenheit(self, celsius):
-        return (celsius * 9/5) + 32
-
     def log(self, payload):
-        print("Temperature: %0.1f F" % (payload["temp"]))
-        print("Gas: %d ohm" % payload["gas"])
-        print("Humidity: %0.1f %%" % payload["humidity"])
-        print("Pressure: %0.3f hPa" % payload["pressure"])
-        print("Altitude: %0.2f meters" % payload["altitude"])
+        print("Rainfall: %0.1f inches" % (payload["rain_fall"]))
+        print("Wind speed: %d mph" % payload["wind_speed"])
+        # print("Wind direction: %0.1f %%" % payload["wind_direction"])
         print("\n")
