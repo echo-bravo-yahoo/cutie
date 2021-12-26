@@ -90,8 +90,8 @@ class WeatherStation(DataEmittingModule):
         print("\n")
 
     def rain(self, pin, level, tick):
-        self.rain_fall++
+        self.rain_fall = self.rain_fall + 1
 
     def wind_speed(self, pin, level, tick):
-        self.wind_speed++
+        self.wind_speed = self.wind_speed + 1
 
