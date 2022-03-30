@@ -1,2 +1,2 @@
 ### To-do:
-- [ ] Remove auth tokens from git history
+- [x] Remove auth tokens from git history

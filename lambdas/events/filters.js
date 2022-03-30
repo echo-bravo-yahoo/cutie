@@ -1,5 +1,5 @@
 function typical(tasks) {
-  return tasks.filter((task) => !task.project.startsWith('work'))
+  return tasks.filter((task) => task && task.project && !task.project.startsWith('work'))
     .filter((task) => !task.tags.includes("bgame") || task.tags.includes("visible"))
     .filter((task) => !task.tags.includes("vgame") || task.tags.includes("visible"))
     .filter((task) => !task.tags.includes("show") || task.tags.includes("visible"))
@@ -11,43 +11,43 @@ function typical(tasks) {
 }
 
 function work(tasks) {
-  return tasks.filter((task) => task.project.startsWith('work'))
+  return tasks.filter((task) => task && task.project && task.project.startsWith('work'))
 }
 
 function projects(tasks) {
-  return tasks.filter((task) => task.tags.includes('project'))
+  return tasks.filter((task) => task && task.tags && task.tags.includes('project'))
 }
 
 function shows(tasks) {
-  return tasks.filter((task) => task.tags.includes('show'))
+  return tasks.filter((task) => task && task.tags && task.tags.includes('show'))
 }
 
 function bgames(tasks) {
-  return tasks.filter((task) => task.tags.includes('bgame'))
+  return tasks.filter((task) => task && task.tags && task.tags.includes('bgame'))
 }
 
 function vgames(tasks) {
-  return tasks.filter((task) => task.tags.includes('vgame'))
+  return tasks.filter((task) => task && task.tags && task.tags.includes('vgame'))
 }
 
 function movies(tasks) {
-  return tasks.filter((task) => task.tags.includes('movie'))
+  return tasks.filter((task) => task && task.tags && task.tags.includes('movie'))
 }
 
 function outings(tasks) {
-  return tasks.filter((task) => task.tags.includes('outing'))
+  return tasks.filter((task) => task && task.tags && task.tags.includes('outing'))
 }
 
 function dates(tasks) {
-  return tasks.filter((task) => task.tags.includes('date'))
+  return tasks.filter((task) => task && task.tags && task.tags.includes('date'))
 }
 
 function read(tasks) {
-  return tasks.filter((task) => task.tags.includes('read'))
+  return tasks.filter((task) => task && task.tags && task.tags.includes('read'))
 }
 
 function sex(tasks) {
-  return tasks.filter((task) => task.tags.includes('sex'))
+  return tasks.filter((task) => task && task.tags && task.tags.includes('sex'))
 }
 
 exports = module.exports = {
