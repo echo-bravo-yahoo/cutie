@@ -106,6 +106,7 @@ function getMode(mode) {
 }
 
 function getTemp(tempInF) {
+  if (tempInF === undefined) throw `Invalid temp ${tempInF}, should be a number.`
   const tempInC = 5/9 * (tempInF - 32)
   return Math.round(tempInC * 2)
 }
