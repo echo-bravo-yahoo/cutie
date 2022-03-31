@@ -33,7 +33,7 @@ function daysInMonth (month, year) {
 }
 
 function getPerDay(categories) {
-  const remainingDays = daysInMonth(new Date().getMonth(), new Date().getFullYear()) - new Date().getDate()
+  const remainingDays = daysInMonth(new Date().getMonth() + 1, new Date().getFullYear()) - new Date().getDate() + 1
   return getRemaining(categories) / remainingDays
 }
 
