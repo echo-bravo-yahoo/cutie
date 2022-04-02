@@ -2,42 +2,53 @@ const { numberToBitArray } = require('./helpers')
 const pin = 23
 const argsOpts = { configuration: { 'strip-dashed': true }, boolean: ['fanSwing', 'powerful', 'econo', 'virtual'] }
 let args = require('yargs-parser')(process.argv.slice(2), argsOpts)
-let pigpio, Gpio, output
+let pigpio, gpio, output
 
 if (args.virtual === undefined || args.virtual === false) {
-  pigpio = require('pigpio')
-  Gpio = pigpio.Gpio
-  output = new Gpio(pin, { mode: Gpio.OUTPUT })
+  pigpio = require('pigpio-client').pigpio()
+  gpio = pigpio.gpio(pin)
 }
 
+const ready = new Promise((resolve, reject) => {
+  pigpio.once('connected', resolve);
+  pigpio.once('error', reject);
+});
 
-function waveFromSeparator(duration, frequency=38400, dutyCycle=0.5) {
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function waveFromSeparator(duration, frequency=38400, dutyCycle=0.5) {
   const usDelay = (1/frequency) * Math.pow(10, 6)
   const cycles = Math.round(duration * frequency / Math.pow(10, 6))
   const wave = []
 
   for(let index = 0; index < cycles; index++) {
-    wave.push({ gpioOn: pin, gpioOff: 0, usDelay: Math.round(usDelay * dutyCycle) })
-    wave.push({ gpioOn: 0, gpioOff: pin, usDelay: Math.round(usDelay * (1 - dutyCycle)) })
+    wave.push([ 1, 0, Math.round(usDelay * dutyCycle) ])
+    wave.push([ 0, 1, Math.round(usDelay * (1 - dutyCycle)) ])
   }
 
-  pigpio.waveAddGeneric(wave)
-  return pigpio.waveCreate()
+  try {
+  await gpio.waveAddPulse(wave)
+  } catch(e) {
+    console.error(e)
+  }
+  return await gpio.waveCreate()
 }
 
-function waveOff(duration) {
-  pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: duration }])
-  return pigpio.waveCreate()
+async function waveOff(duration) {
+  await gpio.waveAddPulse([[ 0, 1, duration ]])
+  return await gpio.waveCreate()
 }
 
-function header(highWave, lowShortWave, lowLongWave) {
-  pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: 24976 }])
-  const oddWave = pigpio.waveCreate()
+async function header(highWave, lowShortWave, lowLongWave) {
+  await gpio.waveAddPulse([[0, 1, 24976 ]])
+  const oddWave = await gpio.waveCreate()
 
-  const oddSeparator = waveFromSeparator(3520)
+  const oddSeparator = await waveFromSeparator(3520)
 
-  pigpio.waveAddGeneric([{ gpioOn: 0, gpioOff: pin, usDelay: 1727 }])
-  const weirdWave = pigpio.waveCreate()
+  await gpio.waveAddPulse([[ 0, 1, 1727 ]])
+  const weirdWave = await gpio.waveCreate()
 
   return [
     highWave,
@@ -57,11 +68,11 @@ function header(highWave, lowShortWave, lowLongWave) {
   ]
 }
 
-function sendMessage(messages) {
-  const highWave = waveFromSeparator(430)
-  const lowLongWave = waveOff(1310)
-  const lowShortWave = waveOff(450)
-  const waves = [...header(highWave, lowShortWave, lowLongWave)]
+async function sendMessage(messages) {
+  const highWave = await waveFromSeparator(430)
+  const lowLongWave = await waveOff(1310)
+  const lowShortWave = await waveOff(450)
+  const waves = [...await (header(highWave, lowShortWave, lowLongWave))]
 
   for (let index = 0; index < messages.length; index++) {
     const bits = numberToBitArray(messages[index], 8)
@@ -82,8 +93,9 @@ function sendMessage(messages) {
   console.log(waves.length)
   console.log(JSON.stringify(waves))
 
-  pigpio.waveChain(waves)
-  while (pigpio.waveTxBusy()) {}
+  await gpio.waveChainTx([{ loop: false }, { waves }, { delay: 0 }, { repeat: 1 }])
+  while (await gpio.waveBusy()) {}
+  await wait(5000)
   console.log('Message sent.')
 }
 
@@ -233,25 +245,31 @@ function logMessage(message) {
   console.log(message.map(num => Number(num).toString(16)).join(', '))
 }
 
-if (args.virtual === undefined || args.virtual === false) {
-  if (args["obj"]) args = JSON.parse(args.obj)
-  console.log('Sending message:')
-  logMessage(buildMessage(args))
-  sendMessage(buildMessage(args))
-} else {
-  if (args["obj"]) args = JSON.parse(args.obj)
-  console.log('Running in virtual mode, won\'t send message:')
-  logMessage(buildMessage(args))
-}
+(async () => {
+  if (args.virtual === undefined || args.virtual === false) {
+    if (args["obj"]) args = JSON.parse(args.obj)
+    console.log('Sending message:')
+    await ready
+    logMessage(buildMessage(args))
+    await sendMessage(buildMessage(args))
+    process.exit(0)
+  } else {
+    if (args["obj"]) args = JSON.parse(args.obj)
+    console.log('Running in virtual mode, won\'t send message:')
+    logMessage(buildMessage(args))
+    process.exit(0)
+  }
+})()
 
 // logMessage(buildMessage(args))
 
 // this message works perfectly
-// logMessage(buildMessage({ mode: 'HEAT', temp: 72, fan: { mode: 5, swing: true }, powerful: false, econo: false }))
+// logMessage(buildMessage({ mode: 'HEAT', temp: 72, fanMode: 5, fanSwing: true, powerful: false, econo: false, comfort: false }))
+// sendMessage(buildMessage({ mode: 'HEAT', temp: 72, fanMode: 5, fanSwing: true, powerful: false, econo: false, comfort: false }))
 
 // try these messages next
-// logMessage(buildMessage({ mode: 'HEAT', temp: 78, fan: { mode: 1, swing: false }, powerful: true, econo: true }))
-// logMessage(buildMessage({ mode: 'DRY', temp: 75, fan: { mode: 'SILENT', swing: true }, powerful: false, econo: true }))
-// logMessage(buildMessage({ mode: 'COLD', temp: 68, fan: { mode: 'AUTO', swing: false }, powerful: true, econo: false }))
-// logMessage(buildMessage({ mode: 'AUTO', temp: 72, fan: { mode: 2, swing: false }, powerful: false, econo: true }))
-// logMessage(buildMessage({ mode: 'FAN', temp: 70, fan: { mode: 4, swing: true }, powerful: true, econo: true }))
+// logMessage(buildMessage({ mode: 'HEAT', temp: 78, fanMode: 1, swing: false, powerful: true, econo: true }))
+// logMessage(buildMessage({ mode: 'DRY', temp: 75, fanMode: 'SILENT', swing: true, powerful: false, econo: true }))
+// logMessage(buildMessage({ mode: 'COLD', temp: 68, fanMode: 'AUTO', swing: false, powerful: true, econo: false }))
+// logMessage(buildMessage({ mode: 'AUTO', temp: 72, fanMode: 2, swing: false, powerful: false, econo: true }))
+// logMessage(buildMessage({ mode: 'FAN', temp: 70, fanMode: 4, swing: true, powerful: true, econo: true }))

@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "pigpio": "^3.3.0",
+    "pigpio-client": "^1.5.2",
     "serialport": "^9.0.7",
     "yargs-parser": "^20.2.6"
   }
