@@ -1,19 +1,19 @@
 [[package]]
 name = "adafruit-blinka"
-version = "5.13.1"
+version = "7.2.0"
 description = "CircuitPython APIs for non-CircuitPython versions of Python such as CPython on Linux and MicroPython."
 category = "main"
 optional = false
-python-versions = ">=3.5.0"
+python-versions = ">=3.7.0"
 
 [package.dependencies]
+Adafruit-PlatformDetect = ">=3.13.0"
 Adafruit-PureIO = ">=1.1.7"
 pyftdi = ">=0.40.0"
-Adafruit-PlatformDetect = ">=2.18.1"
 
 [[package]]
 name = "adafruit-circuitpython-bme680"
-version = "3.3.2"
+version = "3.4.2"
 description = "CircuitPython library for BME680 temperature, pressure and humidity sensor."
 category = "main"
 optional = false
@@ -25,50 +25,55 @@ adafruit-circuitpython-busdevice = "*"
 
 [[package]]
 name = "adafruit-circuitpython-busdevice"
-version = "5.0.6"
+version = "5.1.8"
 description = "CircuitPython bus device classes to manage bus sharing."
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.7.0"
 
 [package.dependencies]
-Adafruit-Blinka = "*"
+Adafruit-Blinka = ">=7.0.0"
+adafruit-circuitpython-typing = "*"
 
 [[package]]
 name = "adafruit-circuitpython-thermal-printer"
-version = "1.3.3"
+version = "1.3.6"
 description = "CircuitPython library for controlling thermal printers."
 category = "main"
 optional = false
 python-versions = "*"
 
 [package.dependencies]
-pyserial = "*"
 Adafruit-Blinka = "*"
+pyserial = "*"
+
+[[package]]
+name = "adafruit-circuitpython-typing"
+version = "1.3.1"
+description = "Types needed for type annotation that are not in `typing`"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+adafruit-circuitpython-busdevice = "*"
+typing_extensions = {version = "*", markers = "python_version <= \"3.7\""}
 
 [[package]]
 name = "adafruit-platformdetect"
-version = "2.28.0"
+version = "3.22.0"
 description = "Platform detection for use by libraries like Adafruit-Blinka."
 category = "main"
 optional = false
-python-versions = ">=3.5.0"
+python-versions = ">=3.7.0"
 
 [[package]]
 name = "adafruit-pureio"
-version = "1.1.8"
+version = "1.1.9"
 description = "Pure python (i.e. no native extensions) access to Linux IO    including I2C and SPI. Drop in replacement for smbus and spidev modules."
 category = "main"
 optional = false
 python-versions = ">=3.5.0"
-
-[[package]]
-name = "aenum"
-version = "3.0.0"
-description = "Advanced Enumerations (compatible with Python's stdlib Enum), NamedTuples, and NamedConstants"
-category = "main"
-optional = false
-python-versions = "*"
 
 [[package]]
 name = "awscrt"
@@ -84,7 +89,7 @@ url = "https://www.piwheels.org/simple/awscrt/awscrt-0.10.8-cp35-cp35m-linux_arm
 
 [[package]]
 name = "awsiotsdk"
-version = "1.5.7"
+version = "1.5.8"
 description = "AWS IoT SDK based on the AWS Common Runtime"
 category = "main"
 optional = false
@@ -106,16 +111,15 @@ dev = ["coverage", "docformatter", "flake8", "invoke", "mock", "pylint", "pytest
 
 [[package]]
 name = "pyftdi"
-version = "0.52.9"
+version = "0.54.0"
 description = "FTDI device driver (pure Python)"
 category = "main"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.7"
 
 [package.dependencies]
 pyserial = ">=3.0"
-aenum = {version = ">=2.1.0", markers = "python_version == \"3.5\""}
-pyusb = ">=1.0.0"
+pyusb = ">=1.0.0,<1.2.0 || >1.2.0"
 
 [[package]]
 name = "pyserial"
@@ -130,70 +134,103 @@ cp2110 = ["hidapi"]
 
 [[package]]
 name = "pyusb"
-version = "1.1.1"
+version = "1.2.1"
 description = "Python USB access module"
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6.0"
 
 [[package]]
-name = "rpi.gpio"
-version = "0.7.0"
-description = "A module to control Raspberry Pi GPIO channels"
+name = "typing-extensions"
+version = "4.1.1"
+description = "Backported and Experimental Type Hints for Python 3.6+"
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6"
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.5"
-content-hash = "9ed7136dcf942d92568947f5cfbb1309af2da4ce01e403858cd793413051c822"
+python-versions = "^3.7"
+content-hash = "72f1ab4903800969ee5c22b7c3c6ee6835db5b63109af03109adf6bb7705f40a"
 
 [metadata.files]
 adafruit-blinka = [
-    {file = "Adafruit-Blinka-5.13.1.tar.gz", hash = "sha256:05c83970b336b85c78d5ed8f3578efc5ccdaf4a95f1707b943efcd29a6d66e4a"},
+    {file = "Adafruit-Blinka-7.2.0.tar.gz", hash = "sha256:527bcbdd84f5bbf1fcbb75c08444b3843150503fb802f4389fa4fd1d00235cf7"},
 ]
 adafruit-circuitpython-bme680 = [
-    {file = "adafruit-circuitpython-bme680-3.3.2.tar.gz", hash = "sha256:a19c9ea5889b2c4bb20709575c6e6452dbf4b24eb43367e3bae9643ac9abc573"},
+    {file = "adafruit-circuitpython-bme680-3.4.2.tar.gz", hash = "sha256:301a3f74415576af2fb685580f761cf5c28990d34c23e801f2c18771b0ccb358"},
 ]
 adafruit-circuitpython-busdevice = [
-    {file = "adafruit-circuitpython-busdevice-5.0.6.tar.gz", hash = "sha256:9bb2934e90a151da8b7d9646b25c2ce0b3fd4853f8ba73e8faffedfd8315eda7"},
+    {file = "adafruit-circuitpython-busdevice-5.1.8.tar.gz", hash = "sha256:fc9717e8d053ab0168e04eaae4b6ace3023baef1e7046a8b72ff54eb512963aa"},
 ]
 adafruit-circuitpython-thermal-printer = [
-    {file = "adafruit-circuitpython-thermal-printer-1.3.3.tar.gz", hash = "sha256:613dc373fd8d69ad7459881829f92a397e54d268def28ce2b8512019233d5cfa"},
+    {file = "adafruit-circuitpython-thermal-printer-1.3.6.tar.gz", hash = "sha256:cd54f9ea7d2b387ab018f3f248e798c28c055b5690c629342ac41bf6e92ce2b1"},
+]
+adafruit-circuitpython-typing = [
+    {file = "adafruit-circuitpython-typing-1.3.1.tar.gz", hash = "sha256:f3bf78ffb69f1d798fae5d91c6ee0827e69683f599e7b61ea82c121dd689a9a1"},
 ]
 adafruit-platformdetect = [
-    {file = "Adafruit-PlatformDetect-2.28.0.tar.gz", hash = "sha256:aa272605fd8a2ddcc6e5dd8151d628f76a9468c97ba7e4e315d6bc78b9bfb8f8"},
+    {file = "Adafruit-PlatformDetect-3.22.0.tar.gz", hash = "sha256:5e707a6924ca455ef65a3717c7d8cf67e146982361e9dbf089abbb5839721393"},
 ]
 adafruit-pureio = [
-    {file = "Adafruit_PureIO-1.1.8.tar.gz", hash = "sha256:c6702589aa4bf6dc785e5f4e4ed7e68bef1d93d180633abe548fe3f39d36cad5"},
+    {file = "Adafruit_PureIO-1.1.9.tar.gz", hash = "sha256:2caf22fb07c7f771d83267f331a76cde314723f884a9570ea6f768730c87a879"},
 ]
-aenum = [
-    {file = "aenum-3.0.0-py2-none-any.whl", hash = "sha256:701c4fecd4c5237ed5ab80a18930a0ebe26a8c729a21e1b7302197a3f430da7c"},
-    {file = "aenum-3.0.0-py3-none-any.whl", hash = "sha256:58b899111b3fa9f9569e30c6305b07308f5b0dfdbbd2a9b9f01e8e08def7fdbb"},
-    {file = "aenum-3.0.0.tar.gz", hash = "sha256:17cd8cfed1ee4b617198c9fabbabd70ebd8f01e54ac29cd6c3a92df14bd86656"},
+awscrt = [
+    {file = "awscrt-0.10.8-cp35-cp35m-macosx_10_6_intel.whl", hash = "sha256:d4175eaed3c3f749cb89762be41f462cfae2ab8928a6a134bcb279b29d47fcb3"},
+    {file = "awscrt-0.10.8-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:ba7e2dd35fe8d41065901f385235bbee1a8344c415468afef2fd546d8fa327b8"},
+    {file = "awscrt-0.10.8-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:55f2dce123473901c16c7a3a81ae6f1a0a7d54e3e8154f46da115ad173a6a0f2"},
+    {file = "awscrt-0.10.8-cp35-cp35m-manylinux2014_aarch64.whl", hash = "sha256:34d0c91dfed38b5cf7dc03df4de4aa7efdbdd08c042276ac9ecb184cb2bd4f06"},
+    {file = "awscrt-0.10.8-cp35-cp35m-manylinux2014_x86_64.whl", hash = "sha256:f38bcb1676ef6bbd149b1014c7cd6ac3ee2b92be8ddefd558bd54a084254f511"},
+    {file = "awscrt-0.10.8-cp35-cp35m-win32.whl", hash = "sha256:35d1ade22c643ad9e3ee8eaf04c97a6c0a564b14e3d5f55e0b15da3d5347afdb"},
+    {file = "awscrt-0.10.8-cp35-cp35m-win_amd64.whl", hash = "sha256:f2a0abcb9b52161e05c2f199e5f2905ac1b886855496fed40aaf9163dadc55ff"},
+    {file = "awscrt-0.10.8-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:35d5e00484ba98ee5467a72295ad18ae45a440ea0d9aaab518fe0092e60b8871"},
+    {file = "awscrt-0.10.8-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:b8f79631f55ac98c48734f8003325e92b010bf8eff5974379571d7b1b7487b13"},
+    {file = "awscrt-0.10.8-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:4d9a5c4bfb55089d4e08db22177c15332b49adec306386e8ec975caefffbdc20"},
+    {file = "awscrt-0.10.8-cp36-cp36m-manylinux2014_aarch64.whl", hash = "sha256:78677f60e73a3827dc9778af42088ab513f80ba47c8de5e853eb90f8723ab8d3"},
+    {file = "awscrt-0.10.8-cp36-cp36m-manylinux2014_x86_64.whl", hash = "sha256:32c0b52353b32a189b2ee141104daf3d641c3f8cc0d05254ff9e1bf100e7bd96"},
+    {file = "awscrt-0.10.8-cp36-cp36m-win32.whl", hash = "sha256:f9f3d3aececcdfe845de026ae1b4918ac28d064ec20c4366c818c1298266c3ed"},
+    {file = "awscrt-0.10.8-cp36-cp36m-win_amd64.whl", hash = "sha256:9ef62217f5d8f8f1ae5d4a6e40624eef3b22e0abfb72fa608140ecfe3345e670"},
+    {file = "awscrt-0.10.8-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:bab5ac620a632eafc47ce41716791aafa3a1c275be91624aff621efb30a544ee"},
+    {file = "awscrt-0.10.8-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:71352b24b257a506a6e371497e78c1518ae7fdf07ba4eae4da50bc9d9b21f058"},
+    {file = "awscrt-0.10.8-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:ca85e82bae25076c3cead5474ddbb73830f2b48f52babed91d0bc8b94fac7e02"},
+    {file = "awscrt-0.10.8-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:7e7ee072066cca25f95ad05d1e687014f5b9cd83d4e5b0a310f2b92b8c828e52"},
+    {file = "awscrt-0.10.8-cp37-cp37m-manylinux2014_x86_64.whl", hash = "sha256:31bd12d12116df5e064a1c0eaed90d9fa38fdcf047d7feb3395c6296d554498f"},
+    {file = "awscrt-0.10.8-cp37-cp37m-win32.whl", hash = "sha256:6118cea0dec4d93d9e62a07e1dfa8e008658850549e425bbc5b5fe218dd94bcb"},
+    {file = "awscrt-0.10.8-cp37-cp37m-win_amd64.whl", hash = "sha256:38ecae2f05b5bb0d40a8a20751e3c538e759f371b500e9440a6d94f0528bd710"},
+    {file = "awscrt-0.10.8-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:5f866f2139e3bb6405ac553582dd6c24edf41bd4683f321a9f0af5e42d7c5d84"},
+    {file = "awscrt-0.10.8-cp38-cp38-manylinux1_i686.whl", hash = "sha256:4517605693f5802d3c750133fac503797f21f203b7a7b70c3831992104e05eb3"},
+    {file = "awscrt-0.10.8-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:820d03ac681d432d6e25659d01ddc57c4c7a398548b3303eb09ce4481acc6590"},
+    {file = "awscrt-0.10.8-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:4f0850d34d08acedbd50811b8afc61ef4fcbd257d3b7aaebb68e42bd9656f938"},
+    {file = "awscrt-0.10.8-cp38-cp38-manylinux2014_x86_64.whl", hash = "sha256:a40c8750b9ad5bd7dee9ca385bd2f6c30df472cfd095a1d024492749f5a84119"},
+    {file = "awscrt-0.10.8-cp38-cp38-win32.whl", hash = "sha256:d3e31d324f764e3e4f0047eb1fdc5bb2c1ac76dac080179bfc8f87b9359b4fc2"},
+    {file = "awscrt-0.10.8-cp38-cp38-win_amd64.whl", hash = "sha256:042cef8ef293ab159cfe74319c1a74db3d079830b561cb0e6a1b0ce4bb590956"},
+    {file = "awscrt-0.10.8-cp39-cp39-manylinux1_i686.whl", hash = "sha256:987a88f800cb58b9fc73ec58065c6102b0f29297cf522492c0a5061a8aad8658"},
+    {file = "awscrt-0.10.8-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:1ab8c655ba43a09454c6774e6b0b48738f9755b38503d6f52a538bca8e36880b"},
+    {file = "awscrt-0.10.8-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:fb2085bf8fdf6765c6094f3db256eb5702c7eca867d2a38fa9df879ad8d59287"},
+    {file = "awscrt-0.10.8-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:6e25fb189759ec3e7ca1e413e6b11585ea971b7620d94317d1f7e6f4d11d1d76"},
+    {file = "awscrt-0.10.8.tar.gz", hash = "sha256:c6859e35c57922f175b587e02bfb662ce30a06c9aa688a7303112c91e25265c6"},
 ]
-awscrt = []
 awsiotsdk = [
-    {file = "awsiotsdk-1.5.7-py3-none-any.whl", hash = "sha256:d2b74c5ee7d398aa8b0fc16a63e4d4550497bbd6bc05ef74417fd4737cbcca06"},
-    {file = "awsiotsdk-1.5.7.tar.gz", hash = "sha256:fe9a699cecfe41ee8993c2f3fa9dfa5f0cc89e3976fafac85a8f9d7c23a3890a"},
+    {file = "awsiotsdk-1.5.8-py3-none-any.whl", hash = "sha256:c03e8f355304bca8222b449b1c018b90fb73892486daa26ce7742fadf54d0ed5"},
+    {file = "awsiotsdk-1.5.8.tar.gz", hash = "sha256:fd8b5c1aa3d77c5f80c8b20d10f5a94e357b60b2e715be3e740e8c2e8b78cf1b"},
 ]
 pydash = [
     {file = "pydash-4.9.3-py2.py3-none-any.whl", hash = "sha256:7851a2d749e70c02585ae4803b01c5e0f47b7ec9df9b84ccb16aac38cad2fdd2"},
     {file = "pydash-4.9.3.tar.gz", hash = "sha256:d709e57b537b1aaf118f188da3ec6242a665090ecd7839b66f857ee3dc2bb006"},
 ]
 pyftdi = [
-    {file = "pyftdi-0.52.9-py3-none-any.whl", hash = "sha256:e8123dc3663ff3ac89eac962774e755b611e7f7202e9e36f6b6eb915fedc53f1"},
-    {file = "pyftdi-0.52.9.tar.gz", hash = "sha256:21e84163a48057de9e4eba6efcb42e51994868b702e1eabdbd2a8cbddad66b66"},
+    {file = "pyftdi-0.54.0-py3-none-any.whl", hash = "sha256:112f16ee5b2a2becb8f8df9dd40b3bba007589f34e7613024122d94bd56eb7d7"},
+    {file = "pyftdi-0.54.0.tar.gz", hash = "sha256:8df9af22077d17533d2f95b508b1d87959877627ea5dc2369056e90a3b5a232d"},
 ]
 pyserial = [
     {file = "pyserial-3.5-py2.py3-none-any.whl", hash = "sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0"},
     {file = "pyserial-3.5.tar.gz", hash = "sha256:3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb"},
 ]
 pyusb = [
-    {file = "pyusb-1.1.1-py3-none-any.whl", hash = "sha256:f18eb813d3a1439918071234589162c2f209a19adbeffeb1377ce078a4aebc70"},
-    {file = "pyusb-1.1.1.tar.gz", hash = "sha256:7d449ad916ce58aff60b89aae0b65ac130f289c24d6a5b7b317742eccffafc38"},
+    {file = "pyusb-1.2.1-py3-none-any.whl", hash = "sha256:2b4c7cb86dbadf044dfb9d3a4ff69fd217013dbe78a792177a3feb172449ea36"},
+    {file = "pyusb-1.2.1.tar.gz", hash = "sha256:a4cc7404a203144754164b8b40994e2849fde1cfff06b08492f12fff9d9de7b9"},
 ]
-"rpi.gpio" = [
-    {file = "RPi.GPIO-0.7.0.tar.gz", hash = "sha256:7424bc6c205466764f30f666c18187a0824077daf20b295c42f08aea2cb87d3f"},
+typing-extensions = [
+    {file = "typing_extensions-4.1.1-py3-none-any.whl", hash = "sha256:21c85e0fe4b9a155d0799430b0ad741cdce7e359660ccbd8b530613e8df88ce2"},
+    {file = "typing_extensions-4.1.1.tar.gz", hash = "sha256:1a9462dcc3347a79b1f1c0271fbe79e844580bb598bafa1ed208b94da3cdcd42"},
 ]
