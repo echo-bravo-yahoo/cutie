@@ -77,7 +77,7 @@ python-versions = ">=3.5.0"
 
 [[package]]
 name = "awscrt"
-version = "0.10.8"
+version = "0.13.6"
 description = "A common runtime for AWS Python projects"
 category = "main"
 optional = false
@@ -89,14 +89,14 @@ url = "https://www.piwheels.org/simple/awscrt/awscrt-0.10.8-cp35-cp35m-linux_arm
 
 [[package]]
 name = "awsiotsdk"
-version = "1.5.8"
+version = "1.10.0"
 description = "AWS IoT SDK based on the AWS Common Runtime"
 category = "main"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.6"
 
 [package.dependencies]
-awscrt = "0.10.8"
+awscrt = "0.13.6"
 
 [[package]]
 name = "pydash"
@@ -151,7 +151,7 @@ python-versions = ">=3.6"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "72f1ab4903800969ee5c22b7c3c6ee6835db5b63109af03109adf6bb7705f40a"
+content-hash = "2a753e62d9c5e93d624bc0cdebe8e9e73545c9fe3d0890a17fa06a008e5a8e85"
 
 [metadata.files]
 adafruit-blinka = [
@@ -176,43 +176,46 @@ adafruit-pureio = [
     {file = "Adafruit_PureIO-1.1.9.tar.gz", hash = "sha256:2caf22fb07c7f771d83267f331a76cde314723f884a9570ea6f768730c87a879"},
 ]
 awscrt = [
-    {file = "awscrt-0.10.8-cp35-cp35m-macosx_10_6_intel.whl", hash = "sha256:d4175eaed3c3f749cb89762be41f462cfae2ab8928a6a134bcb279b29d47fcb3"},
-    {file = "awscrt-0.10.8-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:ba7e2dd35fe8d41065901f385235bbee1a8344c415468afef2fd546d8fa327b8"},
-    {file = "awscrt-0.10.8-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:55f2dce123473901c16c7a3a81ae6f1a0a7d54e3e8154f46da115ad173a6a0f2"},
-    {file = "awscrt-0.10.8-cp35-cp35m-manylinux2014_aarch64.whl", hash = "sha256:34d0c91dfed38b5cf7dc03df4de4aa7efdbdd08c042276ac9ecb184cb2bd4f06"},
-    {file = "awscrt-0.10.8-cp35-cp35m-manylinux2014_x86_64.whl", hash = "sha256:f38bcb1676ef6bbd149b1014c7cd6ac3ee2b92be8ddefd558bd54a084254f511"},
-    {file = "awscrt-0.10.8-cp35-cp35m-win32.whl", hash = "sha256:35d1ade22c643ad9e3ee8eaf04c97a6c0a564b14e3d5f55e0b15da3d5347afdb"},
-    {file = "awscrt-0.10.8-cp35-cp35m-win_amd64.whl", hash = "sha256:f2a0abcb9b52161e05c2f199e5f2905ac1b886855496fed40aaf9163dadc55ff"},
-    {file = "awscrt-0.10.8-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:35d5e00484ba98ee5467a72295ad18ae45a440ea0d9aaab518fe0092e60b8871"},
-    {file = "awscrt-0.10.8-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:b8f79631f55ac98c48734f8003325e92b010bf8eff5974379571d7b1b7487b13"},
-    {file = "awscrt-0.10.8-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:4d9a5c4bfb55089d4e08db22177c15332b49adec306386e8ec975caefffbdc20"},
-    {file = "awscrt-0.10.8-cp36-cp36m-manylinux2014_aarch64.whl", hash = "sha256:78677f60e73a3827dc9778af42088ab513f80ba47c8de5e853eb90f8723ab8d3"},
-    {file = "awscrt-0.10.8-cp36-cp36m-manylinux2014_x86_64.whl", hash = "sha256:32c0b52353b32a189b2ee141104daf3d641c3f8cc0d05254ff9e1bf100e7bd96"},
-    {file = "awscrt-0.10.8-cp36-cp36m-win32.whl", hash = "sha256:f9f3d3aececcdfe845de026ae1b4918ac28d064ec20c4366c818c1298266c3ed"},
-    {file = "awscrt-0.10.8-cp36-cp36m-win_amd64.whl", hash = "sha256:9ef62217f5d8f8f1ae5d4a6e40624eef3b22e0abfb72fa608140ecfe3345e670"},
-    {file = "awscrt-0.10.8-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:bab5ac620a632eafc47ce41716791aafa3a1c275be91624aff621efb30a544ee"},
-    {file = "awscrt-0.10.8-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:71352b24b257a506a6e371497e78c1518ae7fdf07ba4eae4da50bc9d9b21f058"},
-    {file = "awscrt-0.10.8-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:ca85e82bae25076c3cead5474ddbb73830f2b48f52babed91d0bc8b94fac7e02"},
-    {file = "awscrt-0.10.8-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:7e7ee072066cca25f95ad05d1e687014f5b9cd83d4e5b0a310f2b92b8c828e52"},
-    {file = "awscrt-0.10.8-cp37-cp37m-manylinux2014_x86_64.whl", hash = "sha256:31bd12d12116df5e064a1c0eaed90d9fa38fdcf047d7feb3395c6296d554498f"},
-    {file = "awscrt-0.10.8-cp37-cp37m-win32.whl", hash = "sha256:6118cea0dec4d93d9e62a07e1dfa8e008658850549e425bbc5b5fe218dd94bcb"},
-    {file = "awscrt-0.10.8-cp37-cp37m-win_amd64.whl", hash = "sha256:38ecae2f05b5bb0d40a8a20751e3c538e759f371b500e9440a6d94f0528bd710"},
-    {file = "awscrt-0.10.8-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:5f866f2139e3bb6405ac553582dd6c24edf41bd4683f321a9f0af5e42d7c5d84"},
-    {file = "awscrt-0.10.8-cp38-cp38-manylinux1_i686.whl", hash = "sha256:4517605693f5802d3c750133fac503797f21f203b7a7b70c3831992104e05eb3"},
-    {file = "awscrt-0.10.8-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:820d03ac681d432d6e25659d01ddc57c4c7a398548b3303eb09ce4481acc6590"},
-    {file = "awscrt-0.10.8-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:4f0850d34d08acedbd50811b8afc61ef4fcbd257d3b7aaebb68e42bd9656f938"},
-    {file = "awscrt-0.10.8-cp38-cp38-manylinux2014_x86_64.whl", hash = "sha256:a40c8750b9ad5bd7dee9ca385bd2f6c30df472cfd095a1d024492749f5a84119"},
-    {file = "awscrt-0.10.8-cp38-cp38-win32.whl", hash = "sha256:d3e31d324f764e3e4f0047eb1fdc5bb2c1ac76dac080179bfc8f87b9359b4fc2"},
-    {file = "awscrt-0.10.8-cp38-cp38-win_amd64.whl", hash = "sha256:042cef8ef293ab159cfe74319c1a74db3d079830b561cb0e6a1b0ce4bb590956"},
-    {file = "awscrt-0.10.8-cp39-cp39-manylinux1_i686.whl", hash = "sha256:987a88f800cb58b9fc73ec58065c6102b0f29297cf522492c0a5061a8aad8658"},
-    {file = "awscrt-0.10.8-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:1ab8c655ba43a09454c6774e6b0b48738f9755b38503d6f52a538bca8e36880b"},
-    {file = "awscrt-0.10.8-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:fb2085bf8fdf6765c6094f3db256eb5702c7eca867d2a38fa9df879ad8d59287"},
-    {file = "awscrt-0.10.8-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:6e25fb189759ec3e7ca1e413e6b11585ea971b7620d94317d1f7e6f4d11d1d76"},
-    {file = "awscrt-0.10.8.tar.gz", hash = "sha256:c6859e35c57922f175b587e02bfb662ce30a06c9aa688a7303112c91e25265c6"},
+    {file = "awscrt-0.13.6-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:f1a772d55c36847dc2ce455ba515cc981927738fe3e60192a19d9a668d3da79f"},
+    {file = "awscrt-0.13.6-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d4c9988976d66fbc0b4d3545f238332a60f6084ed993b89e0966c0f4b258293f"},
+    {file = "awscrt-0.13.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ee1a9803ed6373924a9c52439d099035fd9ca73dd8b16cb591d82d7c1aa27551"},
+    {file = "awscrt-0.13.6-cp310-cp310-win32.whl", hash = "sha256:412cd5b6315779a687dd81e33306480e64b6ea4eb088f5d099cf405cca062507"},
+    {file = "awscrt-0.13.6-cp310-cp310-win_amd64.whl", hash = "sha256:c695f63fa2b3588829ae04f047dff1bf6812f68c26623f3b19209b6e2ea8ec9b"},
+    {file = "awscrt-0.13.6-cp35-cp35m-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:8db89881580ef14f7e575dd89330be38445f948b5a74a098e6d7ff9c1288ec4d"},
+    {file = "awscrt-0.13.6-cp35-cp35m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:c8226f396a59de84dadae0560308e97debbd29831795ac6d78cd6b8e7ca76fa6"},
+    {file = "awscrt-0.13.6-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:d71ee3195ed378e42ee288d80a614418d4ccc779754fcdcef2ec76dcc0d804cc"},
+    {file = "awscrt-0.13.6-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a4b18676dd4c8b407d9a1facdc27efe57dcad4dbdd33cb43270627954a6ec637"},
+    {file = "awscrt-0.13.6-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1b2146891b16d3d7115d6310e66ffa9d5e308a7be5c1b8bbe5b7948f5a1ba74a"},
+    {file = "awscrt-0.13.6-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:cdd768b35d8b7d11d228c7cac9f1215868c67ff13dc8d87c2977e3ba7d1e3e88"},
+    {file = "awscrt-0.13.6-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:f023aa4d05e0e9a66d7e3b6155702c75859d4f5d7ad5b98a0f81da3108418ad6"},
+    {file = "awscrt-0.13.6-cp36-cp36m-win32.whl", hash = "sha256:a456f98355ca27e43f1def3a686f997d0a193b1da4a078a73a1dd4efd9859dcc"},
+    {file = "awscrt-0.13.6-cp36-cp36m-win_amd64.whl", hash = "sha256:521fc68b8504a73f0f9b9c943b29bc199a73757439caafd921fb74dc737d37c7"},
+    {file = "awscrt-0.13.6-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:ccd5684402f33f77278a4d3a446a45e98187d8bdc6022bdca1013503a7d48403"},
+    {file = "awscrt-0.13.6-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:725c3e8302b99ae87d3bf5b056187e572ad68d69dcf81d8a140e71a314a4dff9"},
+    {file = "awscrt-0.13.6-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:337449f2a70100211b8614a87f16d7486f2a04a624bafb972f42109b58776e81"},
+    {file = "awscrt-0.13.6-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:07c2267146209ff745b083f11226e88c12ab8a8bd34d2feb2a6b752a118d3f9f"},
+    {file = "awscrt-0.13.6-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:27554baa9f0f58d0799351e2482d489132c00778cef973dfb161803487f23e1e"},
+    {file = "awscrt-0.13.6-cp37-cp37m-win32.whl", hash = "sha256:8e4a0a5f4efcfe784dd9054f35bba0af78fc79ab614975b924c101477562be5f"},
+    {file = "awscrt-0.13.6-cp37-cp37m-win_amd64.whl", hash = "sha256:32996a94c9fa87ed19a1e3e750fa22277ec6bb87e0c6724e4ec6a490b7ba9e75"},
+    {file = "awscrt-0.13.6-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:631dd7e6c02e1735a0a3b12d36307281a7240699753ecb3982bc4eb5f2657547"},
+    {file = "awscrt-0.13.6-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5c7163f30687912e75903690c894fd6261a947f3f377324a040769f80b1ef87a"},
+    {file = "awscrt-0.13.6-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1a54172574469abb5ad3103b7d7b6be4956558f0b808e94e8c6736402e372ba4"},
+    {file = "awscrt-0.13.6-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:7bdc2b4f900fdc5f326202dad3034083fb9a9ec42d60ea655703fdbcca4bdc89"},
+    {file = "awscrt-0.13.6-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:60f2f1af2fd2a18d8435aa3a9775eabb6f30748b28f288309a603ab52c7db0be"},
+    {file = "awscrt-0.13.6-cp38-cp38-win32.whl", hash = "sha256:a853b35b0f9f8b390d007c5162922e6f6c1adc108a1048dd10e4921b7d35ae42"},
+    {file = "awscrt-0.13.6-cp38-cp38-win_amd64.whl", hash = "sha256:ce6c37111a76070423dbfa70c3db1984a90bec43479e5c92e417239f253dc29d"},
+    {file = "awscrt-0.13.6-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:57329300a32b773a4db2bfd921861961c39c0f8dd95ab6daf4b33be34cb3766f"},
+    {file = "awscrt-0.13.6-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fab6d2b3ac7392062de5d7e3453d52710aed349dd362d303db37ee7dcb278bb6"},
+    {file = "awscrt-0.13.6-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bcb0382bea9dfb2d466f01f82b67d6af4417dbaf0d21d9397fe0c3214e82bb0d"},
+    {file = "awscrt-0.13.6-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:82439fd30a359904689799b917f45f2dfb4721412958932b1e44c0444668a0b1"},
+    {file = "awscrt-0.13.6-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:fa852cd2339ad337d02e636ed4d92e40bcd9802d0f036c1438815f1c5276388c"},
+    {file = "awscrt-0.13.6-cp39-cp39-win32.whl", hash = "sha256:2d80ff847b69f266a06c6eecfe5bb902a657dad0ddd611550820a6dbecad1457"},
+    {file = "awscrt-0.13.6-cp39-cp39-win_amd64.whl", hash = "sha256:8c58458fd85832a3d3ee6af6668ce05737d1a31fc72ae10d4ffaa2a13c88b2e0"},
+    {file = "awscrt-0.13.6.tar.gz", hash = "sha256:699d4caae73821fadd5a339a1cc8a98cd6fa80b1866dd292f1a8796f7ddea86a"},
 ]
 awsiotsdk = [
-    {file = "awsiotsdk-1.5.8-py3-none-any.whl", hash = "sha256:c03e8f355304bca8222b449b1c018b90fb73892486daa26ce7742fadf54d0ed5"},
-    {file = "awsiotsdk-1.5.8.tar.gz", hash = "sha256:fd8b5c1aa3d77c5f80c8b20d10f5a94e357b60b2e715be3e740e8c2e8b78cf1b"},
+    {file = "awsiotsdk-1.10.0-py3-none-any.whl", hash = "sha256:d419fb8e62687bad59a5b1e580758eb2a79cae56a88158ef773b36c3e470265b"},
+    {file = "awsiotsdk-1.10.0.tar.gz", hash = "sha256:2ecfef5db8927b33a570f8b045ef96c9a2f006a59667ca5c9abfac9795d70842"},
 ]
 pydash = [
     {file = "pydash-4.9.3-py2.py3-none-any.whl", hash = "sha256:7851a2d749e70c02585ae4803b01c5e0f47b7ec9df9b84ccb16aac38cad2fdd2"},
