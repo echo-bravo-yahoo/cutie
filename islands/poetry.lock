@@ -81,11 +81,7 @@ version = "0.13.6"
 description = "A common runtime for AWS Python projects"
 category = "main"
 optional = false
-python-versions = ">=3.5"
-
-[package.source]
-type = "url"
-url = "https://www.piwheels.org/simple/awscrt/awscrt-0.10.8-cp35-cp35m-linux_armv6l.whl"
+python-versions = ">=3.6"
 
 [[package]]
 name = "awsiotsdk"
