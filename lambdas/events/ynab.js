@@ -13,7 +13,7 @@ async function getCategories() {
 }
 
 function formatMoney(number) {
-  return (new Intl.NumberFormat('us-EN', { style: 'currency', currency: 'USD' }).format(number))
+  return (new Intl.NumberFormat('us-EN', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(number))
 }
 
 function getSpent(categories) {
