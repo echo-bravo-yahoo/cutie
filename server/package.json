@@ -1,0 +1,19 @@
+{
+  "name": "islands-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-iot-data-plane": "^3.95.0",
+    "aws-xray-sdk": "^3.3.5",
+    "express": "^4.18.1",
+    "forever": "^4.0.3",
+    "nodemon": "^2.0.16"
+  }
+}

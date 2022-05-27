@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <script>
+      async function ac(event) {
+        const url = `/thermostat/${event.target.attributes["data-action"].value}`
+        const res = await fetch(url).then((res) => res.text())
+        document.querySelector('body').append(res)
+      }
+    </script>
+    <style>
+      .container {
+        float: left;
+        clear: both;
+        padding-top: 15px;
+        padding-bottom: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      Thermostat
+      <button onclick="ac(event)" data-action="coldest">Coldest</button>
+      <button onclick="ac(event)" data-action="cold">Cold</button>
+      <button onclick="ac(event)" data-action="fanOnly">Fan only</button>
+      <button onclick="ac(event)" data-action="auto">Auto</button>
+      <button onclick="ac(event)" data-action="off">Off</button>
+      <button onclick="ac(event)" data-action="hot">Hot</button>
+      <button onclick="ac(event)" data-action="hottest">Hottest</button>
+    </div>
+    <div class="container">
+      Thermal printer
+      <textarea></textarea>
+      <button>Print</button>
+    </div>
+    <div class="container">
+      Lamp
+      <button>Toggle</button>
+    </div>
+  </body>
+</html>
