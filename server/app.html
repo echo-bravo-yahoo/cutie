@@ -1,10 +1,38 @@
 <html>
   <head>
     <script>
+      function feedback(res) {
+        if (res.$metadata.httpStatusCode === 200) {
+          document.querySelector('#response').innerText = 'Success'
+        } else {
+          document.querySelector('#response').innerText
+            = `Error:\n${JSON.stringify(res, null, 4)}`
+        }
+      }
+
       async function ac(event) {
         const url = `/thermostat/${event.target.attributes["data-action"].value}`
-        const res = await fetch(url).then((res) => res.text())
-        document.querySelector('body').append(res)
+        const res = await fetch(url).then((res) => res.json())
+        feedback(res)
+      }
+
+      async function lamp() {
+        const url = `/lamp/toggle`
+        const res = await fetch(url).then((res) => res.json())
+        feedback(res)
+      }
+
+      async function print(event) {
+        const payload = { payload: event.target.parentElement.querySelector('textarea').value, timestamp: Date.now() }
+        const url = '/thermal-printer'
+        const fetchArgs = {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json' }
+        }
+        const res = await fetch(url, fetchArgs)
+          .then((res) => res.json())
+        feedback(res)
       }
     </script>
     <style>
@@ -30,11 +58,13 @@
     <div class="container">
       Thermal printer
       <textarea></textarea>
-      <button>Print</button>
+      <button onclick="print(event)">Print</button>
     </div>
     <div class="container">
       Lamp
-      <button>Toggle</button>
+      <button onclick="lamp()">Toggle</button>
+    </div>
+    <div class="container" id="response">
     </div>
   </body>
 </html>

@@ -16,17 +16,33 @@
   // behavior flags
   const trace = false
 
+  // middleware config
+  app.use(express.json())
   if (trace) app.use(AWSXRay.express.openSegment('MyApp'))
 
   app.get('/app', function(req, res) {
     res.status(200).sendFile(path.join(__dirname, './app.html'))
   })
 
+  app.post('/thermal-printer', async function(req, res) {
+    const args = { topic: 'commands/printer', payload: JSON.stringify(req.body), qos: 1 }
+    const command = new PublishCommand(args)
+    console.log(args)
+    const response = await client.send(command)
+    res.status(200).send(response)
+  })
+
+  app.get('/lamp/toggle', async function(req, res) {
+    const command = new PublishCommand({ topic: 'cmnd/tasmota_9FBD6F/POWER', payload: 'TOGGLE' })
+    const response = await client.send(command)
+    res.status(200).send(response)
+  })
+
   app.get('/thermostat/:desired', async function(req, res) {
     let input = {
       powerful: true,
       econo: false,
-      fanMode: 'AUTO'
+      fanMode: 3
     }
 
     if (req.params.desired === 'coldest') {
@@ -80,12 +96,12 @@
         comfort: true
       }
     } else {
-      res.status(400).send('Bad input')
+      res.status(400).send({ error: 'Bad input.' })
     }
 
     const command = new PublishCommand({ topic: '$aws/things/fiji/shadow/update', payload: JSON.stringify({ state: { desired: { airConditioning: input } } }) })
     const response = await client.send(command)
-    res.status(200).send('Hello World:\n' + JSON.stringify(response, null, 4))
+    res.status(200).send(response)
   })
 
   /* istanbul ignore next */
