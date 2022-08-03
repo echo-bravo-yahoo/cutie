@@ -4,18 +4,18 @@ const aws = require('aws-sdk')
 const moment = require('moment')
 const iot = new aws.IotData({endpoint: '<redacted-endpoint>'})
 const { getTaskBlock } = require('./task.js')
-const { getWeatherBlock } = require('./weather.js')
+// const { getWeatherBlock } = require('./weather.js')
 const { getBudgetBlock } = require('./ynab.js')
 
 async function generateMorningText() {
   console.log('morning!')
-  const weatherBlockPromise = getWeatherBlock()
+  // const weatherBlockPromise = getWeatherBlock()
   const taskBlockPromise = getTaskBlock('morning')
 
   let text = ''
   text += `### Good morning, Ashton!\n`
   text += `It's ${moment().format('dddd, MMMM Do')}.\n\n`
-  text += `${await weatherBlockPromise}\n`
+  // text += `${await weatherBlockPromise}\n`
   text += `#### To-do:\n`
   text += `${await taskBlockPromise}\n\n`
   text += `Remember to check your calendar!`
