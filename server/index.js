@@ -38,6 +38,15 @@
     res.status(200).send(response)
   })
 
+  app.get('/growLights/toggle', async function(req, res) {
+    // TODO: Fix these endpoints
+    const command1 = new PublishCommand({ topic: 'cmnd/tasmota_9FBD6F/POWER', payload: 'TOGGLE' })
+    const command2 = new PublishCommand({ topic: 'cmnd/tasmota_9FBD6F/POWER', payload: 'TOGGLE' })
+    const response1 = await client.send(command1)
+    const response2 = await client.send(command2)
+    res.status(200).send([response1, response2])
+  })
+
   app.get('/thermostat/:desired', async function(req, res) {
     let input = {
       powerful: true,

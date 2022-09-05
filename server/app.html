@@ -22,6 +22,12 @@
         feedback(res)
       }
 
+      async function growLights() {
+        const url = `/growLights/toggle`
+        const res = await fetch(url).then((res) => res.json())
+        feedback(res)
+      }
+
       async function print(event) {
         const payload = { payload: event.target.parentElement.querySelector('textarea').value, timestamp: Date.now() }
         const url = '/thermal-printer'
@@ -61,8 +67,12 @@
       <button onclick="print(event)">Print</button>
     </div>
     <div class="container">
-      Lamp
+      Bedroom lamp
       <button onclick="lamp()">Toggle</button>
+    </div>
+    <div class="container">
+      Grow lights
+      <button onclick="growLights()">Toggle</button>
     </div>
     <div class="container" id="response">
     </div>
