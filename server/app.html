@@ -71,12 +71,19 @@
       }
     </script>
     <style>
-.container {
-  float: left;
-  clear: both;
-  padding-top: 15px;
-  padding-bottom: 15px;
-}
+      .container {
+        float: left;
+        clear: both;
+        padding-top: 15px;
+        padding-bottom: 15px;
+      }
+      .cloudwatch {
+        margin: -8px;
+      }
+      .cloudwatch iframe {
+        width: calc(100vw - 22px);
+        height: 70%;
+      }
     </style>
   </head>
   <body>
@@ -142,6 +149,9 @@
       </div>
     </div>
     <div class="container" id="response">
+    </div>
+    <div class="cloudwatch container" id="cloudwatch">
+        <iframe src="https://cloudwatch.amazonaws.com/dashboard.html?dashboard=weather&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTA5MTk0NDg1MDMxMCIsIlUiOiJ1cy1lYXN0LTFfREhEYlUwZWdhIiwiQyI6IjY0bmZocTAwazBjYnZqN29wbWVkMjFlMnNnIiwiSSI6InVzLWVhc3QtMTo1MzdjMjI1Ni04M2IyLTRmYmItOGYxMS1kMWI5Y2FjMGI4NmMiLCJPIjoiYXJuOmF3czppYW06OjA5MTk0NDg1MDMxMDpyb2xlL3NlcnZpY2Utcm9sZS9DbG91ZFdhdGNoRGFzaGJvYXJkLVB1YmxpYy1SZWFkT25seUFjY2Vzcy13ZWF0aGVyLUlSSzVPUU9EIiwiTSI6IlB1YmxpYyJ9"></iframe>
     </div>
   </body>
 </html>
