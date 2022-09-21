@@ -8,7 +8,6 @@ const { getTaskBlock } = require('./task.js')
 const { getBudgetBlock } = require('./ynab.js')
 
 async function generateMorningText() {
-  console.log('morning!')
   // const weatherBlockPromise = getWeatherBlock()
   const taskBlockPromise = getTaskBlock('morning')
 
@@ -62,9 +61,10 @@ async function generateText(topic) {
 }
 
 exports.handler = async (event, context, callback) => {
-  const payload = { timestamp: Date.now(), payload: await generateText(event.topic) }
-  var params = {
-    topic: 'commands/printer',
+  const payload = { timestamp: Date.now(), message: await generateText(event.topic) }
+  const mqttTopic = process.env.location ? `commands/printer/${process.env.location}` : 'commands/printer'
+  const params = {
+    topic: mqttTopic,
     payload: JSON.stringify(payload),
     qos: 1
   }
