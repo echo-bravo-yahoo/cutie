@@ -9,7 +9,13 @@ const { getBudgetBlock } = require('./ynab.js')
 
 async function generateMorningText() {
   // const weatherBlockPromise = getWeatherBlock()
-  const taskBlockPromise = getTaskBlock('morning')
+  let taskBlockPromise
+  try {
+    taskBlockPromise = await getTaskBlock('morning')
+  } catch (err) {
+    console.error(err)
+    taskBlockPromise = Promise.resolve('Error fetching tasks.')
+  }
 
   let text = ''
   text += `### Good morning, Ashton!\n`

@@ -5,11 +5,14 @@ const secrets = require('./secrets')
 const { wrap } = require('./helpers')
 
 async function getTasks() {
-  const res = await fetch('https://inthe.am/api/v2/tasks/', {
+  let res = await fetch('https://inthe.am/api/v2/tasks/', {
     headers: {
       Authorization: secrets.task.token
     }
   })
+
+  res = await res.json()
+
   // take some optional params and ensure they exist
   const safeData = (await res.json()).map((task) => {
     let _tags, _annotations
