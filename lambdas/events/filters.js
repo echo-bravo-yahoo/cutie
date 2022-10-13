@@ -1,4 +1,4 @@
-function typical(tasks) {
+export function typical(tasks) {
   return tasks.filter((task) => task && task.project && !task.project.startsWith('work'))
     .filter((task) => !task.tags.includes("bgame") || task.tags.includes("visible"))
     .filter((task) => !task.tags.includes("vgame") || task.tags.includes("visible"))
@@ -10,56 +10,42 @@ function typical(tasks) {
     .filter((task) => !task.tags.includes("unsafe"))
 }
 
-function work(tasks) {
+export function work(tasks) {
   return tasks.filter((task) => task && task.project && task.project.startsWith('work'))
 }
 
-function projects(tasks) {
+export function projects(tasks) {
   return tasks.filter((task) => task && task.tags && task.tags.includes('project'))
 }
 
-function shows(tasks) {
+export function shows(tasks) {
   return tasks.filter((task) => task && task.tags && task.tags.includes('show'))
 }
 
-function bgames(tasks) {
+export function bgames(tasks) {
   return tasks.filter((task) => task && task.tags && task.tags.includes('bgame'))
 }
 
-function vgames(tasks) {
+export function vgames(tasks) {
   return tasks.filter((task) => task && task.tags && task.tags.includes('vgame'))
 }
 
-function movies(tasks) {
+export function movies(tasks) {
   return tasks.filter((task) => task && task.tags && task.tags.includes('movie'))
 }
 
-function outings(tasks) {
+export function outings(tasks) {
   return tasks.filter((task) => task && task.tags && task.tags.includes('outing'))
 }
 
-function dates(tasks) {
+export function dates(tasks) {
   return tasks.filter((task) => task && task.tags && task.tags.includes('date'))
 }
 
-function read(tasks) {
+export function read(tasks) {
   return tasks.filter((task) => task && task.tags && task.tags.includes('read'))
 }
 
-function sex(tasks) {
+export function sex(tasks) {
   return tasks.filter((task) => task && task.tags && task.tags.includes('sex'))
-}
-
-exports = module.exports = {
-  typical,
-  work,
-  projects,
-  shows,
-  bgames,
-  vgames,
-  movies,
-  outings,
-  dates,
-  read,
-  sex
 }

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "mkdir -p tmp && rm -rf tmp/** && zip -r tmp/events-fn.zip . >/dev/null && aws lambda update-function-code --function-name events-fn --zip-file fileb://tmp/events-fn.zip"

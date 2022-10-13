@@ -1,6 +1,9 @@
-const fetch = require('node-fetch')
+import fetch from 'node-fetch'
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 const secrets = require('./secrets')
-const { wrap } = require('./helpers')
+
+import { wrap } from './helpers'
 
 function sortWeather(hour) {
   const weatherPriority = {
@@ -51,7 +54,7 @@ function makeDateString(time) {
   }
 }
 
-async function getWeatherBlock() {
+export async function getWeatherBlock() {
   const weather = await getWeather()
   let result = ''
   let state = Math.round(weather.perceived_low.temp)
@@ -65,8 +68,4 @@ async function getWeatherBlock() {
   result += wrap(`Expect there to be ${state} today around ${time}.`)
   result += '\n'
   return result
-}
-
-exports = module.exports = {
-  getWeatherBlock
 }

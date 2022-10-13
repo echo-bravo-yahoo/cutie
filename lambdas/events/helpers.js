@@ -1,5 +1,5 @@
 // BUG: Trailing newlines break this entirely
-function wrap(text, firstIndent = 0, secondIndent = 0, width = 32) {
+export function wrap(text, firstIndent = 0, secondIndent = 0, width = 32) {
   const lines = text.split('\n')
   // use the first lines' indent as a baseline
   // const indent = lines[0].match(/^\s{0,2}/)[0].length
@@ -53,8 +53,4 @@ function wrap(text, firstIndent = 0, secondIndent = 0, width = 32) {
   })
 
   return res
-}
-
-exports = module.exports = {
-  wrap
 }

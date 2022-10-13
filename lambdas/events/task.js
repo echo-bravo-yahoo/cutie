@@ -1,8 +1,12 @@
-const fetch = require('node-fetch')
-const shuffle = require('shuffle-array')
-const f = require('./filters')
+import fetch from 'node-fetch'
+import shuffle from 'shuffle-array'
+import * as f from './filters.js'
+
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+
 const secrets = require('./secrets')
-const { wrap } = require('./helpers')
+import { wrap } from './helpers.js'
 
 async function getTasks() {
   let res = await fetch('https://inthe.am/api/v2/tasks/', {
@@ -14,7 +18,7 @@ async function getTasks() {
   res = await res.json()
 
   // take some optional params and ensure they exist
-  const safeData = (await res.json()).map((task) => {
+  const safeData = res.map((task) => {
     let _tags, _annotations
     task.tags ? _tags = task.tags : _tags = []
     task.annotations ? _annotations = task.annotations : _annotations = []
@@ -78,6 +82,7 @@ function chunk(firstArg, config) {
   // console.log('pre strategy:', 'matches', matches.length, 'others', others.length, 'possibilities', possibilities.length)
 
 
+  let newMatches = [], maxLength = possibilities.length
   if (config.strategy === 'next') {
     let sorted = possibilities.sort((a, b) => b.urgency - a.urgency)
 
@@ -88,7 +93,6 @@ function chunk(firstArg, config) {
 
     return { matches: [ ...matches, ...newMatches], others }
   } else if (config.strategy === 'shuffle') {
-    let newMatches = [], maxLength = possibilities.length
 
     for(let i = 0; i < Math.min(config.limit, maxLength); i++) {
       const newMatch = weightedDraw(possibilities)
@@ -133,7 +137,7 @@ function taskToString(task) {
   return wrap(string, 0, 4)
 }
 
-async function getTaskBlock(event) {
+export async function getTaskBlock(event) {
   const tasks = await getTasks()
   let text = ''
 
@@ -154,8 +158,4 @@ async function getTaskBlock(event) {
   }
 
   return text
-}
-
-exports = module.exports = {
-  getTaskBlock
 }

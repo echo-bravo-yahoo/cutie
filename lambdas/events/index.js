@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-const aws = require('aws-sdk')
-const moment = require('moment')
+import aws from 'aws-sdk'
+import moment from 'moment'
 const iot = new aws.IotData({endpoint: '<redacted-endpoint>'})
-const { getTaskBlock } = require('./task.js')
-// const { getWeatherBlock } = require('./weather.js')
-const { getBudgetBlock } = require('./ynab.js')
+import { getTaskBlock } from './task.js'
+import { getBudgetBlock } from './ynab.js'
+//import { getWeatherBlock } from 'weather.js'
 
 async function generateMorningText() {
   // const weatherBlockPromise = getWeatherBlock()
@@ -66,7 +66,7 @@ async function generateText(topic) {
   }
 }
 
-exports.handler = async (event, context, callback) => {
+export async function handler(event, context, callback) {
   const payload = { timestamp: Date.now(), message: await generateText(event.topic) }
   const mqttTopic = process.env.location ? `commands/printer/${process.env.location}` : 'commands/printer'
   const params = {

@@ -1,5 +1,8 @@
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+
 const secrets = require('./secrets')
-const fetch = require('node-fetch')
+import fetch from 'node-fetch'
 
 async function getCategories() {
   const url = `https://api.youneedabudget.com/v1/budgets/${secrets.ynab.budgetId}/categories`
@@ -37,7 +40,7 @@ function getPerDay(categories) {
   return getRemaining(categories) / remainingDays
 }
 
-async function getBudgetBlock() {
+export async function getBudgetBlock() {
   const categories = await getCategories()
   let text = ''
 
@@ -46,8 +49,4 @@ async function getBudgetBlock() {
   text += `Per day: ${formatMoney(getPerDay(categories))}\n`
 
   return text
-}
-
-exports = module.exports = {
-  getBudgetBlock
 }
