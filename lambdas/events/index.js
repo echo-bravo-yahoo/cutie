@@ -28,8 +28,13 @@ async function generateMorningText() {
 }
 
 async function generateEveningText() {
-  const taskBlockPromise = getTaskBlock('evening')
-  const budgetBlockPromise = getBudgetBlock()
+  let taskBlockPromise
+  try {
+    taskBlockPromise = await getTaskBlock('evening')
+  } catch (err) {
+    console.error(err)
+    taskBlockPromise = Promise.resolve('Error fetching tasks.')
+  }
 
   let text = ''
   text += `### Work's over, Ashton!\n`
@@ -40,8 +45,13 @@ async function generateEveningText() {
 }
 
 async function generateWeekendText() {
-  const taskBlockPromise = getTaskBlock('weekend')
-  const budgetBlockPromise = getBudgetBlock()
+  let taskBlockPromise
+  try {
+    taskBlockPromise = await getTaskBlock('weekend')
+  } catch (err) {
+    console.error(err)
+    taskBlockPromise = Promise.resolve('Error fetching tasks.')
+  }
 
   let text = ''
   if ((new Date()).getDay() === 6) {
@@ -69,6 +79,7 @@ async function generateText(topic) {
 export async function handler(event, context, callback) {
   const payload = { timestamp: Date.now(), message: await generateText(event.topic) }
   const mqttTopic = process.env.location ? `commands/printer/${process.env.location}` : 'commands/printer'
+  console.log(`Attempting to publish to ${mqttTopic}:\n${JSON.stringify(payload, null, 2)}`)
   const params = {
     topic: mqttTopic,
     payload: JSON.stringify(payload),
