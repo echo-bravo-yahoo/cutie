@@ -2,7 +2,7 @@ import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 const config = require('./config.json')
 
-const img = '2023-12-11-raspios-bookworm-arm64-lite.img'
+const img = '2023-12-11-raspios-bookworm-armhf-lite.img'
 
 let customize = 'sudo sdm --customize '
 customize += `--plugin user:"setpassword=pi|password=${config.password}" `
