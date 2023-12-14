@@ -10,7 +10,7 @@ customize += `--plugin L10n:host `
 customize += `--plugin disables:piwiz `
 customize += `--plugin network:"wifissid=${config.wifi.ssid}|wifipassword=${config.wifi.password}" `
 customize += `--plugin copydir:"from=${config.islands.srcPath}|to=${config.islands.destPath}" `
-customize += `--plugin apps:"apps=git,cmake`
+customize += `--plugin apps:"apps=git,cmake,golang`
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
 customize += `${img}`
