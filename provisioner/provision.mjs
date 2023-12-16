@@ -11,6 +11,10 @@ customize += `--plugin disables:piwiz `
 customize += `--plugin network:"wifissid=${config.wifi.ssid}|wifipassword=${config.wifi.password}" `
 customize += `--plugin copydir:"from=${config.islands.srcPath}|to=${config.islands.destPath}" `
 
+// SSH
+customize += `--plugin copydir:"from=./authorized_keys|to=/home/pi/.ssh/authorized_keys" `
+
+// aws-iot-device-sdk-v2 build
 // cmake and golang are required to build aws-crt
 customize += `--plugin apps:"apps=git,cmake,golang" `
 
