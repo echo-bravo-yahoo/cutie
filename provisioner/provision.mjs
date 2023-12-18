@@ -2,11 +2,18 @@ import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 const config = require('./config.json')
 
+import { rmSync, copyFileSync } from 'node:fs'
+import { normalize } from 'path'
+import { execSync } from 'child_process'
+
 const img = '2023-12-11-raspios-bookworm-armhf-lite.img'
 
-let setup = 'rm ../islands-rewrite/node_modules && cp ./node_modules_prebuilt ../node_modules'
-console.log(setup, '\n')
+console.log('Deleting local node modules...')
+rmSync(normalize('../islands-rewrite/node_modules'), { recursive: true, force: true })
+console.log('Copying pre-built raspi 0 node modules...')
+copyFileSync(normalize('./node_modules_prebuilt'), normalize('../node_modules'))
 
+console.log('Running sdm command:', '\n')
 let customize = 'sudo sdm --customize '
 customize += `--plugin user:"setpassword=pi|password=${config.password}" `
 customize += `--plugin L10n:host `
@@ -37,6 +44,7 @@ customize += `--restart `
 customize += `${img}`
 
 console.log(customize, '\n')
+execSync(customize)
 
 const device = '/dev/sde'
 
