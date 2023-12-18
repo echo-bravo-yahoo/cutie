@@ -4,6 +4,9 @@ const config = require('./config.json')
 
 const img = '2023-12-11-raspios-bookworm-armhf-lite.img'
 
+let setup = 'rm ../islands-rewrite/node_modules && cp ./node_modules_prebuilt ../node_modules'
+console.log(setup, '\n')
+
 let customize = 'sudo sdm --customize '
 customize += `--plugin user:"setpassword=pi|password=${config.password}" `
 customize += `--plugin L10n:host `
@@ -11,8 +14,13 @@ customize += `--plugin disables:piwiz `
 customize += `--plugin network:"wifissid=${config.wifi.ssid}|wifipassword=${config.wifi.password}" `
 customize += `--plugin copydir:"from=${config.islands.srcPath}|to=${config.islands.destPath}" `
 
-// SSH
-customize += `--plugin copydir:"from=./authorized_keys|to=/home/pi/.ssh/authorized_keys" `
+// SSH authorized keys
+customize += `--plugin copydir:"from=${config.authorizedKeys}|to=/home/pi/.ssh/authorized_keys" `
+
+// AWS IoT certs
+customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/${config.hostname}-certificate.pem.crt|to=/home/pi/islands/${config.hostname}-certificate.pem.crt`
+customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/${config.hostname}-private.pem.key|to=/home/pi/islands/${config.hostname}-private.pem.key`
+customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/${config.hostname}-public.pem.key|to=/home/pi/islands/${config.hostname}-public.pem.key`
 
 // aws-iot-device-sdk-v2 build
 // cmake and golang are required to build aws-crt
@@ -28,7 +36,7 @@ customize += `--regen-ssh-host-keys `
 customize += `--restart `
 customize += `${img}`
 
-console.log(customize)
+console.log(customize, '\n')
 
 const device = '/dev/sde'
 
@@ -37,4 +45,4 @@ burn += `--hostname ${config.hostname} `
 burn += `--expand-root `
 burn += `${img}`
 
-console.log(burn)
+console.log(burn, '\n')
