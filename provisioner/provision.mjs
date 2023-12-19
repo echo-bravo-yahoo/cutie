@@ -5,32 +5,46 @@ const config = require('./config.json')
 import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-import { rmSync, cpSync, access } from 'node:fs'
+import { rmSync, cpSync, accessSync } from 'node:fs'
 import { resolve, dirname } from 'path'
 import { execSync } from 'child_process'
 
 const img = '2023-12-11-raspios-bookworm-armhf-lite.img'
 
 const nodeVersion = '17.9.1'
+const targetArchitecture = 'armv6l'
 
 try {
-  access(resolve(__dirname, `node-${nodeVersion}-linux-armv6l`)
+  accessSync(resolve(`${config.authorizedKeys}`, `../${config.hostname}-certificate.pem.cert`))
+  accessSync(resolve(`${config.authorizedKeys}`, `../${config.hostname}-private.pem.key`))
+  accessSync(resolve(`${config.authorizedKeys}`, `../${config.hostname}-public.pem.key`))
 } catch (e) {
-  throw e
-// wget --no-check-certificate https://unofficial-builds.nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-linux-armv6l.tar.xz
-// tar -xf node-v17.9.1-linux-armv6l.tar.xz
-// sudo mv node-v17.9.1-linux-armv6l /usr/local/node
-// cd /usr/bin
-// sudo ln -s /usr/local/node/bin/node node
-// sudo ln -s /usr/local/node/bin/npm npm
+  if (e.code === 'ENOENT') {
+    console.log(`Keys not found for hostname ${hostname}. Creating new keys now.`)
+  } else {
+    throw e
+  }
 }
 
-/*
-console.log('Deleting local node modules...')
-rmSync(resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true, force: true })
-console.log('Copying pre-built raspi 0 node modules...')
-cpSync(resolve(__dirname, './node_modules_prebuilt'), resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true })
-*/
+try {
+  accessSync(resolve(__dirname, `node-${nodeVersion}-linux-armv6l`))
+} catch (e) {
+  if (e.code === 'ENOENT') {
+    execSync(`
+      wget --no-check-certificate https://unofficial-builds.nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}-linux-${targetArchitecture}.tar.xz && \
+        tar -xf node-v${nodeVersion}-linux-${targetArchitecture}.tar.xz
+    `)
+ } else {
+  throw e
+  }
+}
+
+if (argv.foo === 'redo') {
+  console.log('Deleting local node modules...')
+  rmSync(resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true, force: true })
+  console.log('Copying pre-built raspi 0 node modules...')
+  cpSync(resolve(__dirname, './node_modules_prebuilt'), resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true })
+}
 
 // console.log('Running sdm command:', '\n')
 let customize = 'sudo sdm --customize '
@@ -42,6 +56,8 @@ customize += `--plugin network:"wifissid=${config.wifi.ssid}|wifipassword=${conf
 // IoT application
 customize += `--plugin mkdir:"dir=/home/pi/.ssh|chown=pi:pi" `
 customize += `--plugin mkdir:"dir=/home/pi/islands|chown=pi:pi" `
+customize += `--plugin mkdir:"dir=/home/pi/logs|chown=pi:pi" `
+customize += `--plugin mkdir:"dir=/home/pi/workspace|chown=pi:pi" `
 customize += `--plugin copydir:"from=${resolve(config.islands.srcPath)}|to=${config.islands.destPath}" `
 
 // SSH authorized keys
@@ -66,6 +82,10 @@ customize += `--plugin raspiconfig:"i2c=1|serial=1" `
 
 // extend the image to fit
 customize += `--extend --xmb 2048 `
+
+// install nodejs
+customize += `--plugin copyfile:"from=${resolve(__dirname, `./node-v${nodeVersion}-linux-${targetArchitecture}`)}|to=/usr/local/node" `
+customize += `--plugin runatboot:"user=pi|script=./install-node.sh|output=/home/pi/logs" `
 
 customize += `--regen-ssh-host-keys `
 customize += `--restart `

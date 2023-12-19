@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aws-iot-device-sdk-v2": "^1.18.0",
     "yargs": "^17.7.2"
   }
 }
