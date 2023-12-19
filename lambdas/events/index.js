@@ -28,12 +28,20 @@ async function generateMorningText() {
 }
 
 async function generateEveningText() {
-  let taskBlockPromise
+  let taskBlockPromise, budgetBlockPromise
+
   try {
     taskBlockPromise = await getTaskBlock('evening')
   } catch (err) {
     console.error(err)
     taskBlockPromise = Promise.resolve('Error fetching tasks.')
+  }
+
+  try {
+    budgetBlockPromise = await getBudgetBlock()
+  } catch (err) {
+    console.error(err)
+    budgetBlockPromise = Promise.resolve('Error fetching budget.')
   }
 
   let text = ''
@@ -45,12 +53,20 @@ async function generateEveningText() {
 }
 
 async function generateWeekendText() {
-  let taskBlockPromise
+  let taskBlockPromise, budgetBlockPromise
+
   try {
     taskBlockPromise = await getTaskBlock('weekend')
   } catch (err) {
     console.error(err)
     taskBlockPromise = Promise.resolve('Error fetching tasks.')
+  }
+
+  try {
+    budgetBlockPromise = await getBudgetBlock()
+  } catch (err) {
+    console.error(err)
+    budgetBlockPromise = Promise.resolve('Error fetching budget.')
   }
 
   let text = ''
