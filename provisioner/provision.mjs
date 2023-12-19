@@ -22,9 +22,11 @@ customize += `--plugin user:"setpassword=pi|password=${config.password}" `
 customize += `--plugin L10n:host `
 customize += `--plugin disables:piwiz `
 customize += `--plugin network:"wifissid=${config.wifi.ssid}|wifipassword=${config.wifi.password}" `
-customize += `--plugin copydir:"from=${resolve(config.islands.srcPath)}|to=${config.islands.destPath}" `
 
+// IoT application
 customize += `--plugin mkdir:"dir=/home/pi/.ssh|chown=pi:pi" `
+customize += `--plugin mkdir:"dir=/home/pi/islands|chown=pi:pi" `
+customize += `--plugin copydir:"from=${resolve(config.islands.srcPath)}|to=${config.islands.destPath}" `
 
 // SSH authorized keys
 customize += `--plugin copyfile:"from=${config.authorizedKeys}|to=/home/pi/.ssh" `
