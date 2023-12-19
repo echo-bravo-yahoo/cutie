@@ -5,18 +5,34 @@ const config = require('./config.json')
 import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-import { rmSync, cpSync } from 'node:fs'
+import { rmSync, cpSync, access } from 'node:fs'
 import { resolve, dirname } from 'path'
 import { execSync } from 'child_process'
 
 const img = '2023-12-11-raspios-bookworm-armhf-lite.img'
 
+const nodeVersion = '17.9.1'
+
+try {
+  access(resolve(__dirname, `node-${nodeVersion}-linux-armv6l`)
+} catch (e) {
+  throw e
+// wget --no-check-certificate https://unofficial-builds.nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-linux-armv6l.tar.xz
+// tar -xf node-v17.9.1-linux-armv6l.tar.xz
+// sudo mv node-v17.9.1-linux-armv6l /usr/local/node
+// cd /usr/bin
+// sudo ln -s /usr/local/node/bin/node node
+// sudo ln -s /usr/local/node/bin/npm npm
+}
+
+/*
 console.log('Deleting local node modules...')
 rmSync(resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true, force: true })
 console.log('Copying pre-built raspi 0 node modules...')
 cpSync(resolve(__dirname, './node_modules_prebuilt'), resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true })
+*/
 
-console.log('Running sdm command:', '\n')
+// console.log('Running sdm command:', '\n')
 let customize = 'sudo sdm --customize '
 customize += `--plugin user:"setpassword=pi|password=${config.password}" `
 customize += `--plugin L10n:host `
@@ -56,7 +72,7 @@ customize += `--restart `
 customize += `${img}`
 
 console.log(customize, '\n')
-execSync(customize)
+// execSync(customize)
 
 const device = '/dev/sde'
 
