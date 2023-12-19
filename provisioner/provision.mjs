@@ -35,6 +35,7 @@ customize += `--plugin copyfile:"from=${config.authorizedKeys}|to=/home/pi/.ssh"
 customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/${config.hostname}-certificate.pem.crt|to=/home/pi/islands" `
 customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/${config.hostname}-private.pem.key|to=/home/pi/islands" `
 customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/${config.hostname}-public.pem.key|to=/home/pi/islands" `
+customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/AmazonRootCA1.pem|to=/home/pi/islands" `
 
 // aws-iot-device-sdk-v2 build
 // cmake and golang are required to build aws-crt
