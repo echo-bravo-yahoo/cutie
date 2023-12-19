@@ -46,6 +46,10 @@ customize += `--plugin apps:"apps=git,cmake,golang" `
 customize += `--plugin system:"swap=4096" `
 
 // customize += `--plugin raspiconfig:"overclock=`
+customize += `--plugin raspiconfig:"i2c=1|serial=1" `
+
+// extend the image to fit
+customize += `--extend --xmb 2048 `
 
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
