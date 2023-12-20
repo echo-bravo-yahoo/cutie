@@ -5,9 +5,11 @@ const config = require('./config.json')
 import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-import { rmSync, cpSync, accessSync } from 'node:fs'
+import { rmSync, cpSync, existsSync, accessSync, constants } from 'node:fs'
 import { resolve, dirname } from 'path'
-import { execSync } from 'child_process'
+import { execSync, spawn } from 'child_process'
+
+import { promisify } from 'node:util'
 
 import { createKeysAndRegisterThing } from './iot-cp.mjs'
 
@@ -17,12 +19,15 @@ const nodeVersion = '17.9.1'
 const arch = 'armv6l'
 
 try {
-  accessSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-certificate.pem.cert`))
-  accessSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-private.pem.key`))
-  accessSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-public.pem.key`))
+  existsSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-certificate.pem.cert`), constants.R_OK)
+  existsSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-private.pem.key`), constants.R_OK)
+  existsSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-public.pem.key`), constants.R_OK)
+  console.log(`Found existing keys. Using them.`)
 } catch (e) {
   if (e.code === 'ENOENT') {
+console.log(e)
     console.log(`Keys not found for hostname ${config.hostname}. Creating new keys now.`)
+    console.log(`Looked for keys in ${resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-public.pem.key`)}`)
     await createKeysAndRegisterThing()
   } else {
     throw e
@@ -115,9 +120,18 @@ customize += `--restart `
 customize += `${img}`
 
 try {
-  console.log(execSync(customize).outputput.toString())
+  // const enc = new TextDecoder("utf-8");
+  // console.log(enc.decode(execSync(`${customize} | yes`)))
+  // await promisify(require('node:child_process').exec)(customize, { stdio: 'inherit', shell: true })
+spawn(customize, [], {
+  cwd: process.cwd(),
+  detached: true,
+  shell: true,
+  stdio: "inherit"
+});
+
 } catch (e) {
-  console.log(`Error running sdm: ${e.output.toString()}`)
+  console.log(`Error running sdm: ${e}`)
 }
 
 const device = '/dev/sde'
