@@ -115,6 +115,9 @@ customize += `--extend --xmb 2048 `
 customize += `--plugin copydir:"from=${resolve(__dirname, `./node-v${nodeVersion}-linux-${arch}`)}|to=/usr/local/node" `
 customize += `--plugin runatboot:"user=pi|script=./install-node.sh|output=/home/pi/logs" `
 
+// don't prompt when re-using an image
+customize += `--redo-customize `
+
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
 customize += `${img}`
