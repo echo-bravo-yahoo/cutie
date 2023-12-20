@@ -41,8 +41,8 @@ try {
   if (e.code === 'ENOENT') {
     console.log(`Could not find node v${nodeVersion}, downloading it now.`)
     execSync(`
-      wget --no-check-certificate --no-verbose https://unofficial-builds.nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}-linux-${arch}.tar.xz && \
-        tar -xf node-v${nodeVersion}-linux-${arch}.tar.xz
+      wget --no-check-certificate --quiet https://unofficial-builds.nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}-linux-${arch}.tar.xz >/dev/null && \
+        tar -xf node-v${nodeVersion}-linux-${arch}.tar.xz >/dev/null
     `)
     console.log(`Done downloading node v${nodeVersion}.`)
  } else {
@@ -58,8 +58,8 @@ try {
     console.log(`Could not find base image ${img}, downloading it now.`)
     // TODO: Get rid of hardcoded datestamp, extract it from the img name
     execSync(`
-      wget --no-check-certificate --no-verbose https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_${arch}-2023-12-11/${img}.xz && \
-        tar -xf node-v${nodeVersion}-linux-${arch}.xz
+      wget --no-check-certificate --quiet https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_${'armhf'}-2023-12-11/${img}.xz && \
+        unxz ${img}.xz
     `)
     console.log(`Done downloading base image ${img}.`)
  } else {
