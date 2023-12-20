@@ -4,12 +4,11 @@ const config = require('./config.json')
 
 import { resolve } from 'path'
 import { writeFile } from 'node:fs/promises'
+import { execSync } from 'child_process'
 
-import { mqtt, iot, iotidentity, io } from 'aws-iot-device-sdk-v2'
+import { mqtt, iot, iotidentity, iotshadow, io } from 'aws-iot-device-sdk-v2'
 
-import { buildIslandTemplate } from './island-template.mjs'
-
-async function createKeysAndRegisterThing() {
+export async function createKeysAndRegisterThing() {
     console.log('Connecting...')
     const connection = await buildConnection()
     const identity = new iotidentity.IotIdentityClient(connection)
@@ -17,19 +16,87 @@ async function createKeysAndRegisterThing() {
   const keys = await createKeys(connection, identity)
 
   const promises = []
-  promises.push(writeFile(resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-certificate.pem.crt`), keys.certificatePem))
-  promises.push(writeFile(resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-private.pem.key`), keys.privateKey))
-  // ???
-  // promises.push(writeFile(resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-public.pem.key`), keys.publicKey))
-  promises.push(writeFile(resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-certificate-ownership.token`), keys.certificateOwnershipToken))
-  promises.push(writeFile(resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-certificate.id`), keys.certificateId))
+  promises.push(writeFile(resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-certificate.pem.crt`), keys.certificatePem, { mode: 0o600 }))
+  promises.push(writeFile(resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-private.pem.key`), keys.privateKey, { mode: 0o600 }))
+  promises.push(writeFile(resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-certificate-ownership.token`), keys.certificateOwnershipToken, { mode: 0o600 }))
+  promises.push(writeFile(resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-certificate.id`), keys.certificateId, { mode: 0o600 }))
   await Promise.all(promises)
 
-  await registerThing(connection, identity, keys.certificateId, keys.certificateOwnershipToken)
+  const enc = new TextDecoder("utf-8");
+  const publicKeyText = enc.decode(execSync(`ssh-keygen -y -f ${resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-private.pem.key`)}`))
+  await writeFile(resolve(`${config.provisioner.iot.awsCertFilePath}`, `../${config.hostname}-public.pem.key`), publicKeyText, { mode: 0o600 })
+
+  await registerThing(identity, keys.certificateId, keys.certificateOwnershipToken)
+
+  await createShadow(connection)
 
   console.log('Disconnecting...')
   await connection.disconnect()
-  console.log('Disconnected!')
+}
+
+async function createShadow(connection) {
+  return new Promise(async (resolve, reject) => {
+    const shadow = new iotshadow.IotShadowClient(connection)
+    try {
+      function shadowUpdateAccepted(error, response) {
+        if (error || !response) {
+          console.log("Error occurred..")
+          reject(error)
+        } else {
+          console.log('Shadow updated.')
+          resolve(response)
+        }
+      }
+
+      function shadowUpdateRejected(error, response) {
+        if (response) {
+          console.log("CreateShadow ErrorResponse for " +
+            " statusCode=:" + response.statusCode +
+            " errorCode=:" + response.errorCode +
+            " errorMessage=:" + response.errorMessage)
+        }
+        if (error) {
+          console.log("Error occurred..")
+        }
+        reject(error)
+      }
+
+      console.log(`Subscribing to ShadowUpdate Accepted and Rejected topics for ${config.hostname}..`)
+
+      await shadow.subscribeToUpdateShadowAccepted(
+        { thingName: config.hostname },
+        mqtt.QoS.AtLeastOnce,
+        shadowUpdateAccepted)
+
+      await shadow.subscribeToUpdateShadowRejected(
+        { thingName: config.hostname },
+        mqtt.QoS.AtLeastOnce,
+        shadowUpdateRejected)
+
+      console.log("Publishing to ShadowUpdate topic..")
+
+      await shadow.publishUpdateShadow(
+        { thingName: config.hostname, state: buildShadow(config) },
+        mqtt.QoS.AtLeastOnce)
+    }
+    catch (error) {
+      reject(error)
+    }
+  })
+}
+
+function buildShadow(config) {
+  return {
+    "desired": {
+      "modules": {},
+      "island": {
+        "name": config.hostname,
+        "location": config.location ? config.location : "dev",
+        "version": 1
+      }
+    },
+    "reported": {}
+  }
 }
 
 async function createKeys(connection, identity) {
@@ -62,7 +129,7 @@ async function createKeys(connection, identity) {
         reject(error)
       }
 
-      console.log("Subscribing to CreateKeysAndCertificate Accepted topic..")
+      console.log("Subscribing to CreateKeysAndCertificate Accepted and Rejected topics..")
 
       const keysSubRequest = {}
 
@@ -70,8 +137,6 @@ async function createKeys(connection, identity) {
         keysSubRequest,
         mqtt.QoS.AtLeastOnce,
         keysAccepted)
-
-      console.log("Subscribing to CreateKeysAndCertificate Rejected topic..")
 
       await identity.subscribeToCreateKeysAndCertificateRejected(
         keysSubRequest,
@@ -91,7 +156,7 @@ async function createKeys(connection, identity) {
   })
 }
 
-export async function registerThing(connection, identity, certId, certificateOwnershipToken) {
+export async function registerThing(identity, certId, certificateOwnershipToken) {
   return new Promise(async (resolve, reject) => {
     function registerAccepted(error, response) {
       if (response) {
@@ -149,8 +214,8 @@ export async function registerThing(connection, identity, certId, certificateOwn
 // lifted and modified from ../islands-rewrite/mqtt.js
 // consolidate later...
 export async function buildConnection() {
-  const level = parseInt(io.LogLevel["INFO"])
-  io.enable_logging(level)
+  // const level = parseInt(io.LogLevel["INFO"])
+  // io.enable_logging(level)
 
   return new Promise(async (resolve, reject) => {
     try {
@@ -165,7 +230,6 @@ export async function buildConnection() {
       const clientConfig = config_builder.build()
       const client = new mqtt.MqttClient()
       const connection = client.new_connection(clientConfig)
-      console.log('builder time')
 
       connection.on('closed', () => {
         console.log(`Connection closed.`)
@@ -181,9 +245,8 @@ export async function buildConnection() {
         reject(err)
       })
 
-      connection.on('disconnect', (err) => {
-        console.log(`Disconnected from MQTT session: ${err}`)
-        reject(err)
+      connection.on('disconnect', () => {
+        console.log(`Disconnected from MQTT session.`)
       })
 
       connection.on('error', (err) => {
@@ -193,17 +256,18 @@ export async function buildConnection() {
 
       connection.on('interrupt', (err) => {
         console.log(`MQTT session interrupted: ${err}`)
-        reject(err)
       })
 
       connection.on('resume', () => {
         console.log(`MQTT session resumed.`)
       })
 
+      /*
       connection.on('message', (topic, msg) => {
         const enc = new TextDecoder("utf-8");
         console.log(`Message received: ${topic}, ${enc.decode(msg)}`)
       })
+      */
 
       await connection.connect()
     } catch (e) {
@@ -212,5 +276,3 @@ export async function buildConnection() {
     }
   })
 }
-
-await createKeysAndRegisterThing()
