@@ -13,11 +13,11 @@ import { execSync, spawn } from 'child_process'
 
 import { createKeysAndRegisterThing } from './iot-cp.mjs'
 
-const img = '2023-12-11-raspios-bookworm-armhf-lite.img'
+const baseImg = '2023-12-11-raspios-bookworm-armhf-lite.img'
+const customImg = `${baseImg.split('.')[0]}.custom.${baseImg.split('.')[1]}`
 
 const nodeVersion = '17.9.1'
 const arch = 'armv6l'
-
 
 const certFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-certificate.pem.cert`)
 const privateKeyFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-private.pem.key`)
@@ -64,21 +64,24 @@ try {
 }
 
 try {
-  accessSync(resolve(__dirname, img))
-  console.log(`Found base image ${img}, using that.`)
+  accessSync(resolve(__dirname, baseImg))
+  console.log(`Found base image ${baseImg}, using that.`)
 } catch (e) {
   if (e.code === 'ENOENT') {
-    console.log(`Could not find base image ${img}, downloading it now.`)
-    // TODO: Get rid of hardcoded datestamp, extract it from the img name
+    console.log(`Could not find base image ${baseImg}, downloading it now.`)
+    // TODO: Get rid of hardcoded datestamp, extract it from the baseImg name
     execSync(`
-      wget --no-check-certificate --quiet https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_${'armhf'}-2023-12-11/${img}.xz && \
-        unxz ${img}.xz
+      wget --no-check-certificate --quiet https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_${'armhf'}-2023-12-11/${baseImg}.xz && \
+        unxz ${baseImg}.xz
     `)
-    console.log(`Done downloading base image ${img}.`)
+    console.log(`Done downloading base image ${baseImg}.`)
  } else {
   throw e
   }
 }
+
+sh(`rm ${customImg}`)
+sh(`cp ${baseImg} ${customImg}`)
 
 if (false) {
   console.log('Deleting local node modules...')
@@ -135,7 +138,7 @@ customize += `--redo-customize `
 
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
-customize += `${img}`
+customize += `${customImg}`
 
 async function sh(cmd) {
   return new Promise((resolve, reject) => {
@@ -152,13 +155,13 @@ async function sh(cmd) {
 }
 
 await sh(customize)
-await sh(`sudo sdm --shrink ${img}`)
+await sh(`sudo sdm --shrink ${customImg}`)
 
 const device = '/dev/sde'
 
 let burn = `sudo sdm --burn ${device} `
 burn += `--hostname ${config.hostname} `
 burn += `--expand-root `
-burn += `${img}`
+burn += `${customImg}`
 
 console.log(burn, '\n')
