@@ -112,8 +112,10 @@ customize += `--plugin raspiconfig:"i2c=1|serial=1" `
 customize += `--extend --xmb 2048 `
 
 // install nodejs
-customize += `--plugin copydir:"from=${resolve(__dirname, `./node-v${nodeVersion}-linux-${arch}`)}|to=/usr/local/node" `
-customize += `--plugin runatboot:"user=pi|script=./install-node.sh|output=/home/pi/logs" `
+customize += `--plugin copydir:"from=${resolve(__dirname, `./node-v${nodeVersion}-linux-${arch}`) + '/'}|to=/usr/local/node" `
+console.log(resolve(__dirname, `./install-node.sh`))
+customize += `--plugin copyfile:"from=${resolve(__dirname, `./install-node.sh`)}|to=/home/pi" `
+customize += `--plugin runatboot:"user=pi|script=/home/pi/islands/provisioner/install-node.sh|output=/home/pi/logs" `
 
 // don't prompt when re-using an image
 customize += `--redo-customize `
