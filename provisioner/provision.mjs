@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 import { rmSync, cpSync, existsSync, accessSync, constants } from 'node:fs'
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, writeFile, access } from 'node:fs/promises'
 import { resolve, dirname } from 'path'
 import { execSync, spawn } from 'child_process'
 
@@ -25,10 +25,12 @@ const publicKeyFilePath = resolve(`${config.authorizedKeys}`, `../islands/${conf
 const awsCertFilePath = '/home/pi/.ssh/islands/AmazonRootCA1.pem'
 
 try {
-  existsSync(certFilePath, constants.R_OK)
-  existsSync(privateKeyFilePath, constants.R_OK)
-  existsSync(publicKeyFilePath, constants.R_OK)
-  console.log(`Found existing keys. Using them.`)
+  await Promise.all([
+    access(certFilePath, constants.R_OK),
+    access(privateKeyFilePath, constants.R_OK),
+    access(publicKeyFilePath, constants.R_OK)
+  ])
+  console.log(`Found existing keys for ${config.hostname}. Using them.`)
 } catch (e) {
   if (e.code === 'ENOENT') {
     console.log(`Keys not found for hostname ${config.hostname}. Creating new keys now.`)
@@ -41,10 +43,10 @@ try {
 // write custom islandConfig
 islandConfig.name = config.hostname
 islandConfig.certId = (await readFile(`/home/pi/.ssh/islands/${config.hostname}-certificate.id`, { encoding: 'utf8' })).trim()
-islandConfig.certFilePath = certFilePath
-islandConfig.awsCertFilePath = awsCertFilePath
-islandConfig.privateKeyFilePath = privateKeyFilePath
-islandConfig.publicKeyFilePath = publicKeyFilePath
+islandConfig.certFilePath = `/home/pi/islands/${config.hostname}-certificate.pem.crt`
+islandConfig.awsCertFilePath = `/home/pi/islands/AmazonRootCA1.pem`
+islandConfig.privateKeyFilePath = `/home/pi/islands/${config.hostname}-private.pem.key`
+islandConfig.publicKeyFilePath = `/home/pi/islands/${config.hostname}-public.pem.key`
 await writeFile(resolve(config.islands.srcPath, './config.json'), JSON.stringify(islandConfig, null, 2))
 
 try {
