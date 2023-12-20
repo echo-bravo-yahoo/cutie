@@ -9,10 +9,12 @@ import { rmSync, cpSync, accessSync } from 'node:fs'
 import { resolve, dirname } from 'path'
 import { execSync } from 'child_process'
 
+import { createKeysAndRegisterThing } from './iot-cp.mjs'
+
 const img = '2023-12-11-raspios-bookworm-armhf-lite.img'
 
 const nodeVersion = '17.9.1'
-const targetArchitecture = 'armv6l'
+const arch = 'armv6l'
 
 try {
   accessSync(resolve(`${config.authorizedKeys}`, `../${config.hostname}-certificate.pem.cert`))
@@ -20,33 +22,54 @@ try {
   accessSync(resolve(`${config.authorizedKeys}`, `../${config.hostname}-public.pem.key`))
 } catch (e) {
   if (e.code === 'ENOENT') {
-    console.log(`Keys not found for hostname ${hostname}. Creating new keys now.`)
+    console.log(`Keys not found for hostname ${config.hostname}. Creating new keys now.`)
+    await createKeysAndRegisterThing()
   } else {
     throw e
   }
 }
 
 try {
-  accessSync(resolve(__dirname, `node-${nodeVersion}-linux-armv6l`))
+  accessSync(resolve(__dirname, `node-v${nodeVersion}-linux-armv6l`))
+  console.log(`Found node v${nodeVersion}, using that.`)
 } catch (e) {
   if (e.code === 'ENOENT') {
+    console.log(`Could not find node v${nodeVersion}, downloading it now.`)
     execSync(`
-      wget --no-check-certificate https://unofficial-builds.nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}-linux-${targetArchitecture}.tar.xz && \
-        tar -xf node-v${nodeVersion}-linux-${targetArchitecture}.tar.xz
+      wget --no-check-certificate --no-verbose https://unofficial-builds.nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}-linux-${arch}.tar.xz && \
+        tar -xf node-v${nodeVersion}-linux-${arch}.tar.xz
     `)
+    console.log(`Done downloading node v${nodeVersion}.`)
  } else {
   throw e
   }
 }
 
-if (argv.foo === 'redo') {
+try {
+  accessSync(resolve(__dirname, img))
+  console.log(`Found base image ${img}, using that.`)
+} catch (e) {
+  if (e.code === 'ENOENT') {
+    console.log(`Could not find base image ${img}, downloading it now.`)
+    // TODO: Get rid of hardcoded datestamp, extract it from the img name
+    execSync(`
+      wget --no-check-certificate --no-verbose https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_${arch}-2023-12-11/${img}.xz && \
+        tar -xf node-v${nodeVersion}-linux-${arch}.xz
+    `)
+    console.log(`Done downloading base image ${img}.`)
+ } else {
+  throw e
+  }
+}
+
+if (false) {
   console.log('Deleting local node modules...')
   rmSync(resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true, force: true })
   console.log('Copying pre-built raspi 0 node modules...')
   cpSync(resolve(__dirname, './node_modules_prebuilt'), resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true })
 }
 
-// console.log('Running sdm command:', '\n')
+console.log('Running sdm.')
 let customize = 'sudo sdm --customize '
 customize += `--plugin user:"setpassword=pi|password=${config.password}" `
 customize += `--plugin L10n:host `
@@ -84,15 +107,18 @@ customize += `--plugin raspiconfig:"i2c=1|serial=1" `
 customize += `--extend --xmb 2048 `
 
 // install nodejs
-customize += `--plugin copyfile:"from=${resolve(__dirname, `./node-v${nodeVersion}-linux-${targetArchitecture}`)}|to=/usr/local/node" `
+customize += `--plugin copyfile:"from=${resolve(__dirname, `./node-v${nodeVersion}-linux-${arch}`)}|to=/usr/local/node" `
 customize += `--plugin runatboot:"user=pi|script=./install-node.sh|output=/home/pi/logs" `
 
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
 customize += `${img}`
 
-console.log(customize, '\n')
-// execSync(customize)
+try {
+  execSync(customize)
+} catch (e) {
+  console.log(`Error running sdm: ${e.output.toString()}`)
+}
 
 const device = '/dev/sde'
 
