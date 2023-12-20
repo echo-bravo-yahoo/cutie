@@ -1,15 +1,15 @@
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 const config = require('./config.json')
+const islandConfig = require('../islands-rewrite/config.json')
 
 import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 import { rmSync, cpSync, existsSync, accessSync, constants } from 'node:fs'
+import { readFile, writeFile } from 'node:fs/promises'
 import { resolve, dirname } from 'path'
 import { execSync, spawn } from 'child_process'
-
-import { promisify } from 'node:util'
 
 import { createKeysAndRegisterThing } from './iot-cp.mjs'
 
@@ -18,21 +18,34 @@ const img = '2023-12-11-raspios-bookworm-armhf-lite.img'
 const nodeVersion = '17.9.1'
 const arch = 'armv6l'
 
+
+const certFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-certificate.pem.cert`)
+const privateKeyFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-private.pem.key`)
+const publicKeyFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-public.pem.key`)
+const awsCertFilePath = '/home/pi/.ssh/islands/AmazonRootCA1.pem'
+
 try {
-  existsSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-certificate.pem.cert`), constants.R_OK)
-  existsSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-private.pem.key`), constants.R_OK)
-  existsSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-public.pem.key`), constants.R_OK)
+  existsSync(certFilePath, constants.R_OK)
+  existsSync(privateKeyFilePath, constants.R_OK)
+  existsSync(publicKeyFilePath, constants.R_OK)
   console.log(`Found existing keys. Using them.`)
 } catch (e) {
   if (e.code === 'ENOENT') {
-console.log(e)
     console.log(`Keys not found for hostname ${config.hostname}. Creating new keys now.`)
-    console.log(`Looked for keys in ${resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-public.pem.key`)}`)
     await createKeysAndRegisterThing()
   } else {
     throw e
   }
 }
+
+// write custom islandConfig
+islandConfig.hostname = config.hostname
+islandConfig.certId = await readFile(`/home/pi/.ssh/islands/${config.hostname}-certificate.id`, { encoding: 'utf8' })
+islandConfig.certFilePath = certFilePath
+islandConfig.awsCertFilePath = awsCertFilePath
+islandConfig.privateKeyFilePath = privateKeyFilePath
+islandConfig.publicKeyFilePath = publicKeyFilePath
+await writeFile(resolve(config.islands.srcPath, './config.json'), JSON.stringify(islandConfig, null, 2))
 
 try {
   accessSync(resolve(__dirname, `node-v${nodeVersion}-linux-armv6l`))
