@@ -133,9 +133,6 @@ console.log(resolve(__dirname, `./install-node.sh`))
 customize += `--plugin copyfile:"from=${resolve(__dirname, `./install-node.sh`)}|to=/home/pi" `
 customize += `--plugin runatboot:"user=pi|script=/home/pi/islands/provisioner/install-node.sh|output=/home/pi/logs" `
 
-// don't prompt when re-using an image
-customize += `--redo-customize `
-
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
 customize += `${customImg}`
