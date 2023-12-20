@@ -80,8 +80,8 @@ try {
   }
 }
 
-sh(`rm ${customImg}`)
-sh(`cp ${baseImg} ${customImg}`)
+await sh(`rm ${customImg}`)
+await sh(`cp ${baseImg} ${customImg}`)
 
 if (false) {
   console.log('Deleting local node modules...')
