@@ -19,7 +19,7 @@ const customImg = `${baseImg.split('.')[0]}.custom.${baseImg.split('.')[1]}`
 const nodeVersion = '17.9.1'
 const arch = 'armv6l'
 
-const certFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-certificate.pem.cert`)
+const certFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-certificate.pem.crt`)
 const privateKeyFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-private.pem.key`)
 const publicKeyFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-public.pem.key`)
 const awsCertFilePath = '/home/pi/.ssh/islands/AmazonRootCA1.pem'
@@ -39,8 +39,8 @@ try {
 }
 
 // write custom islandConfig
-islandConfig.hostname = config.hostname
-islandConfig.certId = await readFile(`/home/pi/.ssh/islands/${config.hostname}-certificate.id`, { encoding: 'utf8' })
+islandConfig.name = config.hostname
+islandConfig.certId = (await readFile(`/home/pi/.ssh/islands/${config.hostname}-certificate.id`, { encoding: 'utf8' })).trim()
 islandConfig.certFilePath = certFilePath
 islandConfig.awsCertFilePath = awsCertFilePath
 islandConfig.privateKeyFilePath = privateKeyFilePath
