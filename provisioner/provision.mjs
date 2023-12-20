@@ -119,20 +119,22 @@ customize += `--regen-ssh-host-keys `
 customize += `--restart `
 customize += `${img}`
 
-try {
-  // const enc = new TextDecoder("utf-8");
-  // console.log(enc.decode(execSync(`${customize} | yes`)))
-  // await promisify(require('node:child_process').exec)(customize, { stdio: 'inherit', shell: true })
-spawn(customize, [], {
-  cwd: process.cwd(),
-  detached: true,
-  shell: true,
-  stdio: "inherit"
-});
+async function sh(cmd) {
+  return new Promise((resolve, reject) => {
+    const subProcess = spawn(cmd, [], {
+      cwd: process.cwd(),
+      detached: true,
+      shell: true,
+      stdio: "inherit"
+    })
 
-} catch (e) {
-  console.log(`Error running sdm: ${e}`)
+    subProcess.on('close', resolve)
+    subProcess.on('error', reject)
+  })
 }
+
+await sh(customize)
+await sh(`sudo sdm --shrink ${img}`)
 
 const device = '/dev/sde'
 
