@@ -17,13 +17,12 @@ const nodeVersion = '17.9.1'
 const arch = 'armv6l'
 
 try {
-  accessSync(resolve(`${config.authorizedKeys}`, `../${config.hostname}-certificate.pem.cert`))
-  accessSync(resolve(`${config.authorizedKeys}`, `../${config.hostname}-private.pem.key`))
-  accessSync(resolve(`${config.authorizedKeys}`, `../${config.hostname}-public.pem.key`))
+  accessSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-certificate.pem.cert`))
+  accessSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-private.pem.key`))
+  accessSync(resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-public.pem.key`))
 } catch (e) {
   if (e.code === 'ENOENT') {
     console.log(`Keys not found for hostname ${config.hostname}. Creating new keys now.`)
-    console.log(`Looked for ${resolve(`${config.authorizedKeys}`, `../${config.hostname}-certificate.pem.cert`)}.`)
     await createKeysAndRegisterThing()
   } else {
     throw e
