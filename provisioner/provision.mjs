@@ -115,7 +115,8 @@ customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/AmazonRootCA1.pem|to
 
 // aws-iot-device-sdk-v2 build
 // cmake and golang are required to build aws-crt
-customize += `--plugin apps:"name=dev|apps=git,cmake,golang" `
+// customize += `--plugin apps:"name=dev|apps=git,cmake,golang" `
+customize += `--plugin apps:"name=dev|apps=git" `
 
 // default swap is 100 mb, and is too small to compile aws-crt (dependency of aws-iot-device-sdk-v2)
 // have not dialed it in yet, but 4 GB does provide enough headroom to build aws-crt
@@ -129,7 +130,6 @@ customize += `--extend --xmb 2048 `
 
 // install nodejs
 customize += `--plugin copydir:"from=${resolve(__dirname, `./node-v${nodeVersion}-linux-${arch}`) + '/'}|to=/usr/local/node" `
-console.log(resolve(__dirname, `./install-node.sh`))
 customize += `--plugin copyfile:"from=${resolve(__dirname, `./install-node.sh`)}|to=/home/pi" `
 customize += `--plugin runatboot:"user=pi|script=/home/pi/islands/provisioner/install-node.sh|output=/home/pi/logs" `
 
