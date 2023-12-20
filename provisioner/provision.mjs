@@ -23,6 +23,7 @@ try {
 } catch (e) {
   if (e.code === 'ENOENT') {
     console.log(`Keys not found for hostname ${config.hostname}. Creating new keys now.`)
+    console.log(`Looked for ${resolve(`${config.authorizedKeys}`, `../${config.hostname}-certificate.pem.cert`)}.`)
     await createKeysAndRegisterThing()
   } else {
     throw e
@@ -107,7 +108,7 @@ customize += `--plugin raspiconfig:"i2c=1|serial=1" `
 customize += `--extend --xmb 2048 `
 
 // install nodejs
-customize += `--plugin copyfile:"from=${resolve(__dirname, `./node-v${nodeVersion}-linux-${arch}`)}|to=/usr/local/node" `
+customize += `--plugin copydir:"from=${resolve(__dirname, `./node-v${nodeVersion}-linux-${arch}`)}|to=/usr/local/node" `
 customize += `--plugin runatboot:"user=pi|script=./install-node.sh|output=/home/pi/logs" `
 
 customize += `--regen-ssh-host-keys `
@@ -115,7 +116,7 @@ customize += `--restart `
 customize += `${img}`
 
 try {
-  execSync(customize)
+  console.log(execSync(customize).outputput.toString())
 } catch (e) {
   console.log(`Error running sdm: ${e.output.toString()}`)
 }
