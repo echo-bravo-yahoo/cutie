@@ -47,7 +47,7 @@ islandConfig.certFilePath = `/home/pi/islands/${config.hostname}-certificate.pem
 islandConfig.awsCertFilePath = `/home/pi/islands/AmazonRootCA1.pem`
 islandConfig.privateKeyFilePath = `/home/pi/islands/${config.hostname}-private.pem.key`
 islandConfig.publicKeyFilePath = `/home/pi/islands/${config.hostname}-public.pem.key`
-await writeFile(resolve(config.islands.srcPath, './config.json'), JSON.stringify(islandConfig, null, 2))
+await writeFile(resolve(config.islands.srcPath, '/islands-rewrite/config.json'), JSON.stringify(islandConfig, null, 2))
 
 try {
   accessSync(resolve(__dirname, `node-v${nodeVersion}-linux-armv6l`))
