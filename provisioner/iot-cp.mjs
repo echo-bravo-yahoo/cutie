@@ -32,6 +32,8 @@ export async function createKeysAndRegisterThing() {
 
   console.log('Disconnecting...')
   await connection.disconnect()
+
+  return { ...keys, publicKey: publicKeyText }
 }
 
 async function createShadow(connection) {
