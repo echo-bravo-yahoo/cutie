@@ -156,7 +156,7 @@ async function sh(cmd) {
 }
 
 await sh(customize)
-await sh(`sudo sdm --shrink ${customImg}`)
+await sh(`sudo sdm --shrink ./cache/${customImg}`)
 
 const device = '/dev/sde'
 
