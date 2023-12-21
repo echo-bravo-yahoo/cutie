@@ -1,11 +1,14 @@
 ### To-do
 #### Highest
-- Preserve .git directory when copying islands-rewrite
+- Detect if necessary to copy node_modules_prebuilt to node_modules
+- Move from (4 IoT rules -> Cloudwatch) to (IoT Rule -> Lambda -> Cloudwatch) to be able to support metric dimensions
+- Hook cron/pm2/islands together
+- Figure out why I2C, SPI setup doesn't work
+- Figure out why ./install-node.sh isn't run automatically
 
 #### Ops
-- Real dev environment on Kungsholmen
+- Set up a real dev environment on Kungsholmen
 - Script to trash an island's resources
-- Hook cron/pm2/islands together
 
 #### Extensions
 - Add "scripts" section to shadow
