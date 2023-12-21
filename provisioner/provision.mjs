@@ -50,13 +50,13 @@ islandConfig.publicKeyFilePath = `/home/pi/islands/${config.hostname}-public.pem
 await writeFile(resolve(config.islands.srcPath, './islands-rewrite/config.json'), JSON.stringify(islandConfig, null, 2))
 
 try {
-  accessSync(resolve(__dirname, '/cache/', `node-v${nodeVersion}-linux-armv6l`))
+  accessSync(resolve(__dirname, './cache/', `node-v${nodeVersion}-linux-armv6l`))
   console.log(`Found node v${nodeVersion}, using that.`)
 } catch (e) {
   if (e.code === 'ENOENT') {
     console.log(`Could not find node v${nodeVersion}, downloading it now.`)
     execSync(`
-      cd ${resolve(__dirname, '/cache/')} &&
+      cd ${resolve(__dirname, './cache/')} &&
       wget --no-check-certificate --quiet https://unofficial-builds.nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}-linux-${arch}.tar.xz >/dev/null && \
         tar -xf node-v${nodeVersion}-linux-${arch}.tar.xz >/dev/null
     `)
@@ -67,14 +67,14 @@ try {
 }
 
 try {
-  accessSync(resolve(__dirname, '/cache/', baseImg))
+  accessSync(resolve(__dirname, './cache/', baseImg))
   console.log(`Found base image ${baseImg}, using that.`)
 } catch (e) {
   if (e.code === 'ENOENT') {
     console.log(`Could not find base image ${baseImg}, downloading it now.`)
     // TODO: Get rid of hardcoded datestamp, extract it from the baseImg name
     execSync(`
-      cd ${resolve(__dirname, '/cache/')} &&
+      cd ${resolve(__dirname, './cache/')} &&
       wget --no-check-certificate --quiet https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_${'armhf'}-2023-12-11/${baseImg}.xz && \
         unxz ${baseImg}.xz
     `)
@@ -84,8 +84,8 @@ try {
   }
 }
 
-await sh(`rm ${resolve(__dirname, '/cache/', customImg)}`)
-await sh(`cp ${resolve(__dirname, '/cache/', baseImg)} ${resolve(__dirname, '/cache/', customImg)}`)
+await sh(`rm ${resolve(__dirname, './cache/', customImg)}`)
+await sh(`cp ${resolve(__dirname, './cache/', baseImg)} ${resolve(__dirname, './cache/', customImg)}`)
 
 if (false) {
   console.log('Deleting local node modules...')
