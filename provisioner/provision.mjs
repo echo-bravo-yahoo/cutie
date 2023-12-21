@@ -118,7 +118,7 @@ customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/AmazonRootCA1.pem|to
 // aws-iot-device-sdk-v2 build
 // cmake and golang are required to build aws-crt
 // customize += `--plugin apps:"name=dev|apps=git,cmake,golang" `
-customize += `--plugin apps:"name=dev|apps=git" `
+customize += `--plugin apps:"name=dev|apps=git,i2c-tools" `
 
 // default swap is 100 mb, and is too small to compile aws-crt (dependency of aws-iot-device-sdk-v2)
 // have not dialed it in yet, but 4 GB does provide enough headroom to build aws-crt
