@@ -127,7 +127,7 @@ customize += `--plugin apps:"name=dev|apps=git,i2c-tools" `
 customize += `--plugin system:"name=swap|swap=4096" `
 
 // customize += `--plugin raspiconfig:"overclock=`
-customize += `--plugin raspiconfig:"i2c=1|serial=1" `
+customize += `--plugin raspiconfig:"i2c=0|serial=0" `
 
 // extend the image to fit
 customize += `--extend --xmb 2048 `
@@ -135,7 +135,7 @@ customize += `--extend --xmb 2048 `
 // install nodejs
 customize += `--plugin copydir:"from=${resolve(__dirname, `./cache/node-v${nodeVersion}-linux-${arch}`) + '/'}|to=/usr/local/node" `
 customize += `--plugin copyfile:"from=${resolve(__dirname, `./install-node.sh`)}|to=/home/pi" `
-customize += `--plugin runatboot:"user=pi|script=/home/pi/islands/provisioner/install-node.sh|output=/home/pi/logs" `
+customize += `--plugin runatboot:"script=/home/pi/islands/provisioner/install-node.sh|output=/home/pi/logs" `
 
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
@@ -163,6 +163,6 @@ const device = '/dev/sde'
 let burn = `sudo sdm --burn ${device} `
 burn += `--hostname ${config.hostname} `
 burn += `--expand-root `
-burn += `${customImg}`
+burn += `./cache/${customImg}`
 
 console.log(burn, '\n')
