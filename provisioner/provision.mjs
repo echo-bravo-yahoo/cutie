@@ -47,15 +47,16 @@ islandConfig.certFilePath = `/home/pi/islands/${config.hostname}-certificate.pem
 islandConfig.awsCertFilePath = `/home/pi/islands/AmazonRootCA1.pem`
 islandConfig.privateKeyFilePath = `/home/pi/islands/${config.hostname}-private.pem.key`
 islandConfig.publicKeyFilePath = `/home/pi/islands/${config.hostname}-public.pem.key`
-await writeFile(resolve(config.islands.srcPath, '/islands-rewrite/config.json'), JSON.stringify(islandConfig, null, 2))
+await writeFile(resolve(config.islands.srcPath, './islands-rewrite/config.json'), JSON.stringify(islandConfig, null, 2))
 
 try {
-  accessSync(resolve(__dirname, `node-v${nodeVersion}-linux-armv6l`))
+  accessSync(resolve(__dirname, '/cache/', `node-v${nodeVersion}-linux-armv6l`))
   console.log(`Found node v${nodeVersion}, using that.`)
 } catch (e) {
   if (e.code === 'ENOENT') {
     console.log(`Could not find node v${nodeVersion}, downloading it now.`)
     execSync(`
+      cd ${resolve(__dirname, '/cache/')} &&
       wget --no-check-certificate --quiet https://unofficial-builds.nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}-linux-${arch}.tar.xz >/dev/null && \
         tar -xf node-v${nodeVersion}-linux-${arch}.tar.xz >/dev/null
     `)
@@ -66,13 +67,14 @@ try {
 }
 
 try {
-  accessSync(resolve(__dirname, baseImg))
+  accessSync(resolve(__dirname, '/cache/', baseImg))
   console.log(`Found base image ${baseImg}, using that.`)
 } catch (e) {
   if (e.code === 'ENOENT') {
     console.log(`Could not find base image ${baseImg}, downloading it now.`)
     // TODO: Get rid of hardcoded datestamp, extract it from the baseImg name
     execSync(`
+      cd ${resolve(__dirname, '/cache/')} &&
       wget --no-check-certificate --quiet https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_${'armhf'}-2023-12-11/${baseImg}.xz && \
         unxz ${baseImg}.xz
     `)
@@ -82,14 +84,14 @@ try {
   }
 }
 
-await sh(`rm ${customImg}`)
-await sh(`cp ${baseImg} ${customImg}`)
+await sh(`rm ${resolve(__dirname, '/cache/', customImg)}`)
+await sh(`cp ${resolve(__dirname, '/cache/', baseImg)} ${resolve(__dirname, '/cache/', customImg)}`)
 
 if (false) {
   console.log('Deleting local node modules...')
   rmSync(resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true, force: true })
   console.log('Copying pre-built raspi 0 node modules...')
-  cpSync(resolve(__dirname, './node_modules_prebuilt'), resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true })
+  cpSync(resolve(__dirname, './cache/node_modules_prebuilt'), resolve(__dirname, '../islands-rewrite/node_modules'), { recursive: true })
 }
 
 console.log('Running sdm.')
@@ -131,13 +133,13 @@ customize += `--plugin raspiconfig:"i2c=1|serial=1" `
 customize += `--extend --xmb 2048 `
 
 // install nodejs
-customize += `--plugin copydir:"from=${resolve(__dirname, `./node-v${nodeVersion}-linux-${arch}`) + '/'}|to=/usr/local/node" `
+customize += `--plugin copydir:"from=${resolve(__dirname, `./cache/node-v${nodeVersion}-linux-${arch}`) + '/'}|to=/usr/local/node" `
 customize += `--plugin copyfile:"from=${resolve(__dirname, `./install-node.sh`)}|to=/home/pi" `
 customize += `--plugin runatboot:"user=pi|script=/home/pi/islands/provisioner/install-node.sh|output=/home/pi/logs" `
 
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
-customize += `${customImg}`
+customize += `./cache/${customImg}`
 
 async function sh(cmd) {
   return new Promise((resolve, reject) => {
