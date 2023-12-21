@@ -1,5 +1,6 @@
 ### To-do
 #### Highest
+- Detect if necessary to copy node_modules_prebuilt to node_modules
 - Move from (4 IoT rules -> Cloudwatch) to (IoT Rule -> Lambda -> Cloudwatch) to be able to support metric dimensions
 - Hook cron/pm2/islands together
 - Figure out why I2C, SPI setup doesn't work
