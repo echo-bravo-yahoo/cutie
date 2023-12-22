@@ -1,12 +1,12 @@
 ### To-do
 #### Highest
-- Detect if necessary to copy node_modules_prebuilt to node_modules
-- Move from (4 IoT rules -> Cloudwatch) to (IoT Rule -> Lambda -> Cloudwatch) to be able to support metric dimensions
-- Hook cron/pm2/islands together
-- Figure out why I2C, SPI setup doesn't work
 - Figure out why ./install-node.sh isn't run automatically
+- Fix application start-up issues (much noisier over MQTT than necessary, and leaves module.currentState untrustable)
+- Make output logging... usable
+- Hook cron/pm2/islands together
 
 #### Ops
+- Detect if necessary to copy node_modules_prebuilt to node_modules
 - Set up a real dev environment on Kungsholmen
 - Script to trash an island's resources
 
