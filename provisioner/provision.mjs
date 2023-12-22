@@ -111,6 +111,12 @@ customize += `--plugin copydir:"from=${resolve(config.islands.srcPath)}|to=${con
 // SSH authorized keys
 customize += `--plugin copyfile:"from=${config.authorizedKeys}|to=/home/pi/.ssh" `
 
+// github SSH key
+customize += `--plugin copyfile:"from=${config.github.privateKeyFilePath}|to=/home/pi/.ssh/github" `
+
+// SSH config
+customize += `--plugin copyfile:"from=${resolve(config.islands.srcPath, './provisioner/ssh.conf')}|to=/home/pi" `
+
 // AWS IoT certs
 customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/${config.hostname}-certificate.pem.crt|to=/home/pi/islands" `
 customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/${config.hostname}-private.pem.key|to=/home/pi/islands" `
