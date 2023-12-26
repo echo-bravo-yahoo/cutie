@@ -47,7 +47,7 @@ islandConfig.certFilePath = `/home/pi/islands/${config.hostname}-certificate.pem
 islandConfig.awsCertFilePath = `/home/pi/islands/AmazonRootCA1.pem`
 islandConfig.privateKeyFilePath = `/home/pi/islands/${config.hostname}-private.pem.key`
 islandConfig.publicKeyFilePath = `/home/pi/islands/${config.hostname}-public.pem.key`
-await writeFile(resolve(config.islands.srcPath, './islands-rewrite/config.json'), JSON.stringify(islandConfig, null, 2))
+await writeFile(resolve(__dirname, '../islands-rewrite/config.json'), JSON.stringify(islandConfig, null, 2))
 
 try {
   accessSync(resolve(__dirname, './cache/', `node-v${nodeVersion}-linux-armv6l`))
@@ -136,7 +136,7 @@ customize += `--plugin system:"name=swap|swap=4096" `
 customize += `--plugin raspiconfig:"i2c=0|serial=0" `
 
 // extend the image to fit
-customize += `--extend --xmb 2048 `
+customize += `--extend --xmb 4096 `
 
 // install nodejs
 customize += `--plugin copydir:"from=${resolve(__dirname, `./cache/node-v${nodeVersion}-linux-${arch}`) + '/'}|to=/usr/local/node" `
@@ -145,7 +145,7 @@ customize += `--plugin runatboot:"script=/home/pi/islands/provisioner/install-no
 
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
-customize += `./cache/${customImg}`
+customize += `${resolve(__dirname, `./cache/${customImg}`)}`
 
 async function sh(cmd) {
   return new Promise((resolve, reject) => {
@@ -162,7 +162,7 @@ async function sh(cmd) {
 }
 
 await sh(customize)
-await sh(`sudo sdm --shrink ./cache/${customImg}`)
+await sh(`sudo sdm --shrink ${resolve(__dirname, `./cache/${customImg}`)}`)
 
 const device = '/dev/sde'
 
