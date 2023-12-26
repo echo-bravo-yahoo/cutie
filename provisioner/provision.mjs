@@ -106,16 +106,16 @@ customize += `--plugin mkdir:"dir=/home/pi/.ssh|chown=pi:pi" `
 customize += `--plugin mkdir:"dir=/home/pi/islands|chown=pi:pi" `
 customize += `--plugin mkdir:"dir=/home/pi/logs|chown=pi:pi" `
 customize += `--plugin mkdir:"dir=/home/pi/workspace|chown=pi:pi" `
-customize += `--plugin copydir:"from=${resolve(config.islands.srcPath)}|to=${config.islands.destPath}|rsyncopts=-a --exclude /cache/ --owner --group" `
+customize += `--plugin copydir:"from=${resolve(config.islands.srcPath)}|to=${config.islands.destPath}|rsyncopts=-a --exclude '*cache*' --owner --group" `
 
 // SSH authorized keys
 customize += `--plugin copyfile:"from=${config.authorizedKeys}|to=/home/pi/.ssh" `
 
 // github SSH key
-customize += `--plugin copyfile:"from=${config.github.privateKeyFilePath}|to=/home/pi/.ssh/github" `
+customize += `--plugin copyfile:"from=${config.github.privateKeyFilePath}|to=/home/pi/.ssh" `
 
 // SSH config
-customize += `--plugin copyfile:"from=${resolve(config.islands.srcPath, './provisioner/ssh.conf')}|to=/home/pi" `
+customize += `--plugin copyfile:"from=${resolve(config.islands.srcPath, './provisioner/config')}|to=/home/pi/.ssh" `
 
 // AWS IoT certs
 customize += `--plugin copyfile:"from=/home/pi/.ssh/islands/${config.hostname}-certificate.pem.crt|to=/home/pi/islands" `
