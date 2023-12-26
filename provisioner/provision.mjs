@@ -106,7 +106,7 @@ customize += `--plugin mkdir:"dir=/home/pi/.ssh|chown=pi:pi" `
 customize += `--plugin mkdir:"dir=/home/pi/islands|chown=pi:pi" `
 customize += `--plugin mkdir:"dir=/home/pi/logs|chown=pi:pi" `
 customize += `--plugin mkdir:"dir=/home/pi/workspace|chown=pi:pi" `
-customize += `--plugin copydir:"from=${resolve(config.islands.srcPath)}|to=${config.islands.destPath}|rsyncopts=-a --exclude '*cache*' --owner --group" `
+customize += `--plugin copydir:"from=${resolve(config.islands.srcPath)}|to=${config.islands.destPath}|rsyncopts=-a --exclude-from ${resolve(__dirname, './rsync-exclude.txt')} --owner --group" `
 
 // SSH authorized keys
 customize += `--plugin copyfile:"from=${config.authorizedKeys}|to=/home/pi/.ssh" `
