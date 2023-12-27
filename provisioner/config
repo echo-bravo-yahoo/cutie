@@ -1,4 +1,4 @@
 Host github.com
   User git
-  IdentityFile /home/pi/islands/github
+  IdentityFile /home/pi/.ssh/github
   IdentitiesOnly yes
