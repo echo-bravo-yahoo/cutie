@@ -141,10 +141,11 @@ customize += `--extend --xmb 4096 `
 // install nodejs
 customize += `--plugin copydir:"from=${resolve(__dirname, `./cache/node-v${nodeVersion}-linux-${arch}`) + '/'}|to=/usr/local/node" `
 customize += `--plugin copyfile:"from=${resolve(__dirname, `./install-node.sh`)}|to=/home/pi" `
-customize += `--plugin runatboot:"script=/home/pi/islands/provisioner/install-node.sh|output=/home/pi/logs" `
+customize += `--plugin runatboot:"script=/home/pi/islands/provisioner/install-node.sh|output=/home/pi/logs/install-node.log" `
 
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
+customize += `--batch `
 customize += `${resolve(__dirname, `./cache/${customImg}`)}`
 
 async function sh(cmd) {
