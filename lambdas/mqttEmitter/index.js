@@ -1,7 +1,9 @@
-const aws = require('aws-sdk')
-const iot = new aws.IotData({endpoint: '<redacted-endpoint>'})
+import { IoTDataPlaneClient, PublishCommand } from "@aws-sdk/client-iot-data-plane"
 
-exports.handler = async (event, context, callback) => {
+// const iot = new IoTDataPlaneClient({ endpoint: '<redacted-endpoint>' })
+const iot = new IoTDataPlaneClient({ region: 'us-west-2' })
+
+export async function handler(event, context, callback) {
   var params = {
     topic: event.topic,
     payload: JSON.stringify(event),
@@ -10,17 +12,8 @@ exports.handler = async (event, context, callback) => {
 
   console.log(`Re-broadcasting event ${JSON.stringify(JSON.parse(params.payload), null, 2)} for topic ${params.topic}.`)
 
-  const promise = new Promise((resolve, reject) => {
-    iot.publish(params, function(err, data) {
-      if (err) {
-        console.log(err)
-        reject(err)
-      } else {
-        console.log('Event successfully re-broadcast.')
-        resolve(event)
-      }
-    })
-  })
-
-  return promise
+  const command = new PublishCommand(params)
+  const result = await iot.send(command)
+  console.log('Event successfully re-broadcast.')
+  return result
 }
