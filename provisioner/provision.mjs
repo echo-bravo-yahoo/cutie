@@ -1,10 +1,10 @@
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const config = require('./config.json')
-const islandConfig = require('../islands-rewrite/config.json')
-
 import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+const config = require(resolve(__dirname, './provisioner/config.json'))
+const islandConfig = require(resolve(__dirname, './islands-rewrite/config.json'))
 
 import { rmSync, cpSync, existsSync, accessSync, constants } from 'node:fs'
 import { readFile, writeFile, access } from 'node:fs/promises'
