@@ -127,7 +127,7 @@
 
   /* istanbul ignore next */
   if (!module.parent) {
-    app.listen(3009, '0.0.0.0')
+    app.listen(3009)
     console.log('Express started on port 3009')
   }
 
