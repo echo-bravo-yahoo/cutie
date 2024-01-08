@@ -113,6 +113,18 @@
     res.status(200).send(response)
   })
 
+  // generic method for all MQTT interactions
+  app.post(/\/mqtt\/.*/, async (req, res) => {
+    console.log(req.path)
+    console.log(req.params)
+    const command = new PublishCommand({
+      topic: req.path.replace(/^\/mqtt\//, ''),
+      payload: JSON.stringify(req.body)
+    })
+    const response = await client.send(command)
+    res.status(200).send(response)
+  })
+
   /* istanbul ignore next */
   if (!module.parent) {
     app.listen(3009, '0.0.0.0')
