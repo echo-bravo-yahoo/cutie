@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon"
   },
+  "engines": "~17.9.0",
   "author": "",
   "license": "ISC",
   "dependencies": {
