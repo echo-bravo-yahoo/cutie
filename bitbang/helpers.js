@@ -1,3 +1,17 @@
+function bitArrayToByte(bitArray, lsbFirst=true) {
+  if (bitArray.length !== 8) throw new Error(`Bit array is ${bitArray.length} bits long, but it should be 8 bits long to convert to a byte!`)
+  let result = 0x00
+  for(let i = 0; i < 8; i++) {
+    if (lsbFirst) {
+    result = result | Math.pow(2, i) * bitArray[i]
+    } else {
+    result = result | Math.pow(2, i) * bitArray[7 - i]
+    }
+  }
+
+  return result
+}
+
 function numberToBitArray(number, width) {
   let bitArray = []
   for(let i = 0; i < (width || 32); i++) {
@@ -37,5 +51,6 @@ module.exports = exports = {
   bitStringToArray,
   bitStringToNumber,
   numberToBitArray,
-  numberToBitString
+  numberToBitString,
+  bitArrayToByte
 }
