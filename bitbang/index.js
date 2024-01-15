@@ -1,275 +1,104 @@
-const { numberToBitArray } = require('./helpers')
-const pin = 23
-const argsOpts = { configuration: { 'strip-dashed': true }, boolean: ['fanSwing', 'powerful', 'econo', 'virtual'] }
-let args = require('yargs-parser')(process.argv.slice(2), argsOpts)
-let pigpio, gpio, output
+const pigpio = require('pigpio')
+const Gpio = pigpio.Gpio
+// const fs = require('fs')
 
-if (args.virtual === undefined || args.virtual === false) {
-  pigpio = require('pigpio-client').pigpio()
-  gpio = pigpio.gpio(pin)
-}
+const { waveToNec } = require('nec.js')
 
-const ready = new Promise((resolve, reject) => {
-  pigpio.once('connected', resolve);
-  pigpio.once('error', reject);
-});
+const ledPin = 23
+const infraredSensor = new Gpio(17, { mode: Gpio.INPUT, alert: true })
+new Gpio(ledPin, { mode: Gpio.OUTPUT })
 
-function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+let lastTick = pigpio.getTick()
+let pulse = []
+// let expectedCSV = 'On,Duration\n'
+// let actualCSV = 'On,Duration\n'
 
-async function waveFromSeparator(duration, frequency=38400, dutyCycle=0.5) {
+pigpio.waveClear()
+console.log(`Max wave length, pulses: ${pigpio.waveGetMaxPulses()}`)
+console.log(`Max wave length, uS: ${pigpio.waveGetMaxMicros()}`)
+console.log(`Max control blocks: ${pigpio.waveGetMaxCbs()}`)
+
+const maxGap = 5000 // in uS
+const cmdStart = [9000*.9, 9000*1.1]
+
+infraredSensor.on('alert', (level, tick) => {
+  const duration = pigpio.tickDiff(lastTick, tick) /* in uS */
+
+  if (pulse.length && pigpio.tickDiff(lastTick, tick) >= maxGap) {
+    console.log(`Command ended after ${pulse.length} pulses with a ${duration} gap since last pulse.`)
+    done = true
+    waveToNec(pulse)
+    transmitPulse(pulse)
+    pulse = []
+  }
+
+  if (pulse.length) {
+  pulse.push({ level, duration })
+  }
+
+  if (duration >= cmdStart[0] && duration <= cmdStart[1]) {
+    console.log(`New command starting!`)
+    pulse.push({ level, duration })
+  }
+
+  lastTick = tick
+})
+
+console.log(`Listening for new infrared pulses...`)
+
+function highWaveFromDuration(duration, wavePulses, frequency=38400, dutyCycle=0.5) {
   const usDelay = (1/frequency) * Math.pow(10, 6)
   const cycles = Math.round(duration * frequency / Math.pow(10, 6))
-  const wave = []
+  const pulses = []
 
   for(let index = 0; index < cycles; index++) {
-    wave.push([ 1, 0, Math.round(usDelay * dutyCycle) ])
-    wave.push([ 0, 1, Math.round(usDelay * (1 - dutyCycle)) ])
+    pulses.push({ gpioOn: ledPin, gpioOff: 0, usDelay: Math.round(usDelay * dutyCycle) })
+    pulses.push({ gpioOn: 0, gpioOff: ledPin, usDelay: Math.round(usDelay * (1 - dutyCycle)) })
   }
 
-  try {
-  await gpio.waveAddPulse(wave)
-  } catch(e) {
-    console.error(e)
-  }
-  return await gpio.waveCreate()
+  // pulses.forEach((pulse) => actualCSV += `${pulse.gpioOn ? 1 : 0},${pulse.usDelay}\n`)
+
+  return [...wavePulses, ...pulses]
 }
 
-async function waveOff(duration) {
-  await gpio.waveAddPulse([[ 0, 1, duration ]])
-  return await gpio.waveCreate()
+function lowWaveFromDuration(duration, wavePulses) {
+
+  // actualCSV += `0,${duration}\n`
+
+  return [...wavePulses, { gpioOn: 0, gpioOff: ledPin, usDelay: duration }]
 }
 
-async function header(highWave, lowShortWave, lowLongWave) {
-  await gpio.waveAddPulse([[0, 1, 24976 ]])
-  const oddWave = await gpio.waveCreate()
+function transmitPulse(pulse) {
+  let wavePulses = []
+  pulse.forEach((segment) => {
+    // expectedCSV += `${segment.level},${0}\n`
+    // expectedCSV += `${segment.level},${segment.duration}\n`
 
-  const oddSeparator = await waveFromSeparator(3520)
-
-  await gpio.waveAddPulse([[ 0, 1, 1727 ]])
-  const weirdWave = await gpio.waveCreate()
-
-  return [
-    highWave,
-    lowShortWave,
-    highWave,
-    lowShortWave,
-    highWave,
-    lowShortWave,
-    highWave,
-    lowShortWave,
-    highWave,
-    lowShortWave,
-    highWave,
-    oddWave,
-    oddSeparator,
-    weirdWave,
-  ]
-}
-
-async function sendMessage(messages) {
-  const highWave = await waveFromSeparator(430)
-  const lowLongWave = await waveOff(1310)
-  const lowShortWave = await waveOff(450)
-  const waves = [...await (header(highWave, lowShortWave, lowLongWave))]
-
-  for (let index = 0; index < messages.length; index++) {
-    const bits = numberToBitArray(messages[index], 8)
-
-    for(let index = 0; index < bits.length; index++) {
-      waves.push(highWave)
-
-      if(bits[index]) {
-        waves.push(lowLongWave)
-      } else {
-        waves.push(lowShortWave)
-      }
+    if (segment.level === 0) {
+      wavePulses = lowWaveFromDuration(segment.duration, wavePulses)
+    } else {
+      wavePulses = highWaveFromDuration(segment.duration, wavePulses)
     }
-  }
+  })
 
-  waves.push(highWave)
-  waves.push(lowShortWave)
-  console.log(waves.length)
-  console.log(JSON.stringify(waves))
+  pigpio.waveAddGeneric(wavePulses)
+  const waveId = pigpio.waveCreate()
+  // fs.writeFileSync('./actual.csv', actualCSV)
+  // fs.writeFileSync('./expected.csv', expectedCSV)
 
-  await gpio.waveChainTx([{ loop: false }, { waves }, { delay: 0 }, { repeat: 1 }])
-  while (await gpio.waveBusy()) {}
-  await wait(5000)
-  console.log('Message sent.')
+  setInterval(() => {
+    console.log(`Transmitting new wave (expected length ${pulse.reduce((sum, current) => sum + current.duration, 0)}, actual length ${pigpio.waveGetMicros()}).`)
+    pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT)
+    checkWave()
+  }, 5000)
 }
 
-function getMode(mode) {
-  if (mode === 'AUTO') {
-    return 0x01
-  } else if (mode === 'DRY') {
-    return 0x21
-  } else if (mode === 'COLD') {
-    return 0x31
-  } else if (mode === 'HEAT') {
-    return 0x41
-  } else if (mode === 'FAN') {
-    return 0x61
-  } else if (mode === 'OFF') {
-    return 0x00
-  } else {
-    throw `Unsupported mode ${mode}, should be one of AUTO, DRY, COLD, HEAT, FAN, OFF.`
-  }
+function checkWave() {
+  setImmediate(() => {
+    if (!pigpio.waveTxBusy()) {
+      console.log(`Done transmitting.`)
+    } else {
+      setImmediate(checkWave)
+    }
+  })
 }
-
-function getTemp(tempInF) {
-  if (tempInF === undefined) throw `Invalid temp ${tempInF}, should be a number.`
-  const tempInC = 5/9 * (tempInF - 32)
-  return Math.round(tempInC * 2)
-}
-
-function getFan(fanMode, fanSwing) {
-  let firstChar, secondChar;
-  if (typeof fanMode === 'number' && fanMode >= 0 && fanMode < 6) {
-    firstChar = String(fanMode + 2)
-  } else if (fanMode === 'AUTO') {
-    firstChar = 'A'
-  } else if (fanMode === 'SILENT') {
-    firstChar = 'B'
-  } else {
-    throw `Unsupported fan mode ${fanMode}, should be one of 0, 1, 2, 3, 4, 5, AUTO, SILENT.`
-  }
-
-  if (fanSwing === true || fanSwing === 'true') {
-    secondChar = 'F'
-  } else if (fanSwing === false || fanSwing === 'false') {
-    secondChar = '0'
-  } else {
-    throw `Unsupported fan swing ${fanSwing}, should be one of true, false.`
-  }
-
-  return parseInt(`${firstChar}${secondChar}`, 16)
-}
-
-function getPowerful(powerful) {
-  if (powerful === true || powerful === 'true') {
-    return 0x01
-  } else if (powerful === false || powerful === 'false') {
-    return 0x00
-  } else {
-    throw `Unsupported powerful setting ${powerful}, should be one of true, false.`
-  }
-}
-
-function getEcoComfort(econo, comfort, mode) {
-  let res = 0
-  // unimplemented remote quirk: if POWER is true, ECONO is always set to zero
-
-  if (typeof econo !== 'boolean' && econo !== 'false' && econo !== 'true') {
-    throw `Unsupported econo setting ${econo}, should be one of true, false.`
-  }
-
-  if (typeof comfort !== 'boolean' && comfort !== 'false' && comfort !== 'true') {
-    throw `Unsupported comfort setting ${comfort}, should be one of true, false.`
-  }
-
-  if (mode === 'OFF') {
-    return 0x20
-  }
-
-  if (econo === true) {
-    res += 4
-  }
-
-  if (comfort === true) {
-    res += 2
-  }
-
-  return res
-}
-
-function getChecksum(message) {
-  return 0xFF & message.reduce((sum, val) => sum + val, 0)
-}
-
-function buildMessage({ mode, temp, fanMode, fanSwing, powerful, econo, comfort }) {
-  // start with the header and message id
-  let message
-  if (mode === 'OFF') {
-    message = [0x8, 0xed, 0x13, 0x00, 0x00]
-  } else {
-    message = [0x11, 0xda, 0x27, 0x00, 0x00]
-  }
-
-  // then the mode
-  message.push(getMode(mode))
-
-  // then the temp
-  message.push(getTemp(temp))
-
-  // then a fixed section
-  message.push(0x00)
-
-  // then the fan info
-  message.push(getFan(fanMode, fanSwing))
-
-  // then a fixed section
-  message.push(0x00)
-
-  // then the timer info
-  // NB: not implemented
-  message.push(0x00)
-  message.push(0x00)
-  message.push(0x00)
-
-  // then the powerful info
-  message.push(getPowerful(powerful))
-
-  // then fixed sections
-  if (mode == 'OFF') {
-    message.push(0x80)
-    message.push(0x62)
-  } else {
-    message.push(0x00)
-    message.push(0xc5)
-  }
-
-  // then economy info
-  message.push(getEcoComfort(econo, comfort, mode))
-
-  // then a fixed section
-  message.push(0x00)
-
-  // then the checksum
-  message.push(getChecksum(message))
-
-  return message
-}
-
-function logMessage(message) {
-  console.log(message.map(num => Number(num).toString(16)).join(', '))
-}
-
-(async () => {
-  if (args.virtual === undefined || args.virtual === false) {
-    if (args["obj"]) args = JSON.parse(args.obj)
-    console.log('Sending message:')
-    await ready
-    logMessage(buildMessage(args))
-    await sendMessage(buildMessage(args))
-    process.exit(0)
-  } else {
-    if (args["obj"]) args = JSON.parse(args.obj)
-    console.log('Running in virtual mode, won\'t send message:')
-    logMessage(buildMessage(args))
-    process.exit(0)
-  }
-})()
-
-// logMessage(buildMessage(args))
-
-// this message works perfectly
-// logMessage(buildMessage({ mode: 'HEAT', temp: 72, fanMode: 5, fanSwing: true, powerful: false, econo: false, comfort: false }))
-// sendMessage(buildMessage({ mode: 'HEAT', temp: 72, fanMode: 5, fanSwing: true, powerful: false, econo: false, comfort: false }))
-
-// try these messages next
-// logMessage(buildMessage({ mode: 'HEAT', temp: 78, fanMode: 1, swing: false, powerful: true, econo: true }))
-// logMessage(buildMessage({ mode: 'DRY', temp: 75, fanMode: 'SILENT', swing: true, powerful: false, econo: true }))
-// logMessage(buildMessage({ mode: 'COLD', temp: 68, fanMode: 'AUTO', swing: false, powerful: true, econo: false }))
-// logMessage(buildMessage({ mode: 'AUTO', temp: 72, fanMode: 2, swing: false, powerful: false, econo: true }))
-// logMessage(buildMessage({ mode: 'FAN', temp: 70, fanMode: 4, swing: true, powerful: true, econo: true }))
