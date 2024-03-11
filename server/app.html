@@ -10,9 +10,36 @@
         }
       }
 
+      /*
       async function ac(event) {
         const url = `/thermostat/${event.target.attributes["data-action"].value}`
         const res = await fetch(url).then((res) => res.json())
+        feedback(res)
+      }
+       */
+
+      async function runScript(event) {
+        const topic = event.target.parentElement.attributes["data-location"].value + '/run-script'
+        const url = `/mqtt/${topic}`
+        const payload = {
+          script: event.target.attributes["data-script-name"].value,
+          args: event.target.parentElement.querySelector('textarea'),
+          timestamp: Date.now()
+        }
+
+        if (payload.args === null || payload.args === undefined) {
+          delete payload.args
+        } else {
+          payload.args = payload.args.value
+        }
+
+        const fetchArgs = {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json' }
+        }
+        console.log(`Sending payload ${JSON.stringify(payload)} to mqtt topic ${topic}.`)
+        const res = await fetch(url, fetchArgs).then((res) => res.json())
         feedback(res)
       }
 
@@ -22,11 +49,13 @@
         feedback(res)
       }
 
+      /*
       async function growLights() {
         const url = `/growLights/toggle`
         const res = await fetch(url).then((res) => res.json())
         feedback(res)
       }
+       */
 
       async function print(event) {
         const payload = { payload: event.target.parentElement.querySelector('textarea').value, timestamp: Date.now() }
@@ -42,16 +71,17 @@
       }
     </script>
     <style>
-      .container {
-        float: left;
-        clear: both;
-        padding-top: 15px;
-        padding-bottom: 15px;
-      }
+.container {
+  float: left;
+  clear: both;
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
     </style>
   </head>
   <body>
-    <div class="container">
+    <!--
+      <div class="container">
       Thermostat
       <button onclick="ac(event)" data-action="coldest">Coldest</button>
       <button onclick="ac(event)" data-action="cold">Cold</button>
@@ -60,7 +90,8 @@
       <button onclick="ac(event)" data-action="off">Off</button>
       <button onclick="ac(event)" data-action="hot">Hot</button>
       <button onclick="ac(event)" data-action="hottest">Hottest</button>
-    </div>
+      </div>
+    -->
     <div class="container">
       Thermal printer
       <textarea></textarea>
@@ -70,9 +101,45 @@
       Bedroom lamp
       <button onclick="lamp()">Toggle</button>
     </div>
-    <div class="container">
+    <!--
+      <div class="container">
       Grow lights
       <button onclick="growLights()">Toggle</button>
+      </div>
+    -->
+    <div class="container">
+      <div class="container">
+        Desktop (swift)
+      </div>
+      <div class="container" data-location="desktop">
+        <button onclick="runScript(event)" data-script-name="turnOffMonitors">Turn off monitors</button>
+      </div>
+      <div class="container" data-location="desktop">
+        <button onclick="runScript(event)" data-script-name="swapToSpeakers">Swap to speakers</button>
+      </div>
+      <div class="container" data-location="desktop">
+        <button onclick="runScript(event)" data-script-name="swapToHeadphones">Swap to headphones</button>
+      </div>
+      <div class="container" data-location="desktop">
+      <button onclick="runScript(event)" data-script-name="toggleMute">Toggle mute</button>
+      </div>
+      <div class="container" data-location="desktop">
+        <textarea></textarea>
+        <button onclick="runScript(event)" data-script-name="setVolume">Set volume</button>
+      </div>
+      <div class="container" data-location="desktop">
+        <textarea></textarea>
+        <button onclick="runScript(event)" data-script-name="launchGame">Launch game</button>
+      </div>
+    </div>
+    </div>
+    <div class="container">
+      <div class="container">
+        Laptop (hammerpoint)
+      </div>
+      <div class="container" data-location="dev">
+        <button onclick="runScript(event)" data-script-name="turnOffMonitors">Turn off monitors</button>
+      </div>
     </div>
     <div class="container" id="response">
     </div>
