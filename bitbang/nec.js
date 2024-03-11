@@ -2,6 +2,7 @@
 // https://manderc.com/apps/umrechner/index_eng.php
 
 const { bitArrayToByte, numberToBitArray } = require('./helpers.js')
+const { checkWave } = require('./pulse.js')
 
 function bitToWave(bool) {
   return [
@@ -171,10 +172,23 @@ function validateComplement(a, b) {
   }
 }
 
+async function transmitNECCommand(pigpio, address, command, extendedAddress, extendedCommand) {
+  pigpio.waveClear()
+
+  return new Promise((resolve, reject) => {
+    pigpio.waveAddGeneric(necToWave(address, command, extendedAddress, extendedCommand))
+    const waveId = pigpio.waveCreate()
+    // TODO: figure out why WAVE_MODE_ONE_SHOT_SYNC binds things up - it would be really helpful...
+    pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT)
+    checkWave(pigpio, resolve.bind(null, waveId))
+  })
+}
+
 module.exports = {
   necToWave,
   waveToNec,
   is,
   highWaveFromDuration,
-  lowWaveFromDuration
+  lowWaveFromDuration,
+  transmitNECCommand
 }

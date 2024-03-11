@@ -1,8 +1,8 @@
 const pigpio = require('pigpio')
 const Gpio = pigpio.Gpio
-// const fs = require('fs')
 
-const { waveToNec, is, necToWave, highWaveFromDuration, lowWaveFromDuration } = require('./nec.js')
+const { waveToNec, is, necToWave, highWaveFromDuration, lowWaveFromDuration, transmitNECCommand } = require('./nec.js')
+const { standby } = require('./epson-projector.js')
 
 const ledPin = 23
 const infraredSensor = new Gpio(17, { mode: Gpio.INPUT, alert: true })
@@ -10,8 +10,6 @@ new Gpio(ledPin, { mode: Gpio.OUTPUT })
 
 let lastTick = pigpio.getTick()
 let pulse = []
-// let expectedCSV = 'On,Duration\n'
-// let actualCSV = 'On,Duration\n'
 
 pigpio.waveClear()
 console.log(`Max wave length, pulses: ${pigpio.waveGetMaxPulses()}`)
@@ -22,6 +20,11 @@ const maxGap = 15000 // in uS; needs to be longer than the 9000 uS of the NEC st
 let timeoutHandle
 
 infraredSensor.on('alert', (level, tick) => {
+  if (pigpio.waveTxBusy()) {
+    console.log('Seeing our own transmit...')
+    return
+  }
+
   const duration = pigpio.tickDiff(lastTick, tick) // in uS
   lastTick = tick
 
@@ -32,7 +35,6 @@ infraredSensor.on('alert', (level, tick) => {
   } else if (pulse.length === 67) {
     console.log(`Received a full NEC command.`)
     waveToNec(pulse)
-    // transmitPulse(pulse)
     pulse = []
   } else if (pulse.length) {
     pulse.push({ level, duration })
@@ -55,74 +57,7 @@ infraredSensor.on('alert', (level, tick) => {
 
 console.log(`Listening for new infrared pulses...`)
 
-console.log(`Periodically transmitting volume - command.`)
-const wave = necToWave(0x7c, 0x66, 0xaa)
-pigpio.waveAddGeneric(wave)
-const waveId = pigpio.waveCreate()
-// fs.writeFileSync('./actual.csv', actualCSV)
-// fs.writeFileSync('./expected.csv', expectedCSV)
+standby(pigpio)
 
-setInterval(() => {
-  console.log(`Transmitting new wave (${pigpio.waveGetMicros()} uS duration).`)
-  pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT)
-  checkWave()
-}, 5000)
 
-async function transmitNECCommand(pigpio, address, command, extendedAddress, extendedCommand) {
-  return new Promise((resolve, reject) => {
-    pigpio.waveAddGeneric(necToWave(address, command, extendedAddress, extendedCommand))
-    const waveId = pigpio.waveCreate()
-    // TODO: figure out why WAVE_MODE_ONE_SHOT_SYNC binds things up - it would be really helpful...
-    pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT)
-    checkWave(resolve.bind(null, waveId))
-  })
-}
-
-function checkWave(cb) {
-  setImmediate(() => {
-    if (!pigpio.waveTxBusy()) {
-      cb()
-    } else {
-      setImmediate(checkWave.bind(this, cb))
-    }
-  })
-}
-
-function transmitPulse(pulse) {
-  let wavePulses = []
-  pulse.forEach((segment) => {
-    // expectedCSV += `${segment.level},${0}\n`
-    // expectedCSV += `${segment.level},${segment.duration}\n`
-
-    if (segment.level === 0) {
-      wavePulses = lowWaveFromDuration(segment.duration, wavePulses)
-    } else {
-      wavePulses = highWaveFromDuration(segment.duration, wavePulses)
-    }
-  })
-
-  pigpio.waveAddGeneric(wavePulses)
-  const waveId = pigpio.waveCreate()
-  // fs.writeFileSync('./actual.csv', actualCSV)
-  // fs.writeFileSync('./expected.csv', expectedCSV)
-
-  setInterval(() => {
-    console.log(`Transmitting new wave (expected length ${pulse.reduce((sum, current) => sum + current.duration, 0)}, actual length ${pigpio.waveGetMicros()}).`)
-    pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT)
-    checkWave()
-  }, 5000)
-}
-
-function checkWave() {
-  setImmediate(() => {
-    if (!pigpio.waveTxBusy()) {
-      console.log(`Done transmitting.`)
-    } else {
-      setImmediate(checkWave)
-    }
-  })
-}
-
-module.exports = {
-  transmitNECCommand
-}
+module.exports = {}
