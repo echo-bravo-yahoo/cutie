@@ -1,45 +1,10 @@
 // https://exploreembedded.com/wiki/NEC_IR_Remote_Control_Interface_with_8051
 // https://manderc.com/apps/umrechner/index_eng.php
 
-const { bitArrayToByte, numberToBitArray } = require('./helpers.js')
+const { bitArrayToByte, bitToWave, highWaveFromDuration, lowWaveFromDuration, numberToBitArray, is, readByte } = require('./helpers.js')
 const { checkWave } = require('./pulse.js')
 
-function bitToWave(bool) {
-  return [
-    highWaveFromDuration(563),
-    bool ? lowWaveFromDuration(563) : lowWaveFromDuration(1688)
-  ]
-}
-
-function highWaveFromDuration(duration, wavePulses, ledPin=23, frequency=38400, dutyCycle=0.5) {
-  const usDelay = (1/frequency) * Math.pow(10, 6)
-  const cycles = Math.round(duration * frequency / Math.pow(10, 6))
-  const pulses = []
-
-  for(let index = 0; index < cycles; index++) {
-    pulses.push({ gpioOn: ledPin, gpioOff: 0, usDelay: Math.round(usDelay * dutyCycle) })
-    pulses.push({ gpioOn: 0, gpioOff: ledPin, usDelay: Math.round(usDelay * (1 - dutyCycle)) })
-  }
-
-  // pulses.forEach((pulse) => actualCSV += `${pulse.gpioOn ? 1 : 0},${pulse.usDelay}\n`)
-
-  if (wavePulses) {
-    return [...wavePulses, ...pulses]
-  } else {
-    return pulses
-  }
-}
-
-function lowWaveFromDuration(duration, wavePulses, ledPin=23) {
-
-  // actualCSV += `0,${duration}\n`
-
-  if (wavePulses) {
-    return [...wavePulses, { gpioOn: 0, gpioOff: ledPin, usDelay: duration }]
-  } else {
-    return [{ gpioOn: 0, gpioOff: ledPin, usDelay: duration }]
-  }
-}
+const readNECByte = (array, startIndex) => readByte(array, startIndex, false, 1688, 563)
 
 function necToWave(necAddress, necCommand, extendedNecAddress, extendedNecCommand) {
   // if we aren't provided extended address/command, assume we should make the complement
@@ -81,26 +46,6 @@ function necToWave(necAddress, necCommand, extendedNecAddress, extendedNecComman
   return wave.flat(Infinity)
 }
 
-function bitArrayToWave(bitArray) {
-  const wave = []
-
-  for (let i = 0; i < bitArray.length; i++) {
-    wave.push(...highWaveFromDuration(563))
-    if(bitArray[i]) {
-      wave.push({ level: 0, usDelay: 563 })
-    } else {
-      wave.push({ level: 0, usDelay: 1688 })
-    }
-  }
-}
-
-function is(value, expected, tolerance=.33) {
-  const lowTolerance = 1 - tolerance
-  const highTolerance = 1 + tolerance
-
-  return value <= expected * highTolerance && value >= expected * lowTolerance
-}
-
 function waveToNec(wave, validateAddress = false, validateCommand = true) {
 
   if (!wave[0] || wave[0].level !== 1 || is(wave[0], 9000))
@@ -116,8 +61,6 @@ function waveToNec(wave, validateAddress = false, validateCommand = true) {
       throw new Error(`Seperator at index ${index} is not the expected size (563); was actually ${segment.duration}.\n\nSegments: ${JSON.stringify(wave, null, 2)}`)
   })
 
-  // wave = wave.slice(2)
-
   let durations = wave.filter((segment) => segment.level === 0 && !is(segment, 4500)).map((segment) => segment.duration)
   console.log(`wave.length: ${wave.length}`)
   if (wave.length === 1) {
@@ -125,10 +68,10 @@ function waveToNec(wave, validateAddress = false, validateCommand = true) {
   }
 
   try {
-    const address = readByte(durations, 1)
-    const addressComplement = readByte(durations, 1 + 8)
-    const command = readByte(durations, 1 + 8*2)
-    const commandComplement = readByte(durations, 1 + 8*3)
+    const address = readNECByte(durations, 1)
+    const addressComplement = readNECByte(durations, 1 + 8)
+    const command = readNECByte(durations, 1 + 8*2)
+    const commandComplement = readNECByte(durations, 1 + 8*3)
 
     console.log(`Received NEC command.`)
     console.log(`Address             : ${JSON.stringify(address)} (${bitArrayToByte(address)}, 0x${bitArrayToByte(address).toString(16)})`)
@@ -146,32 +89,6 @@ function waveToNec(wave, validateAddress = false, validateCommand = true) {
   }
 }
 
-function readBit(duration, highDuration=1688, lowDuration=563) {
-  if (is(duration, highDuration)) {
-    return 0
-  } else if (is(duration, lowDuration)) {
-    return 1
-  } else {
-    throw new Error(`Bit with duration ${duration} is not the expected size (563 or 1688).`)
-  }
-}
-
-function readByte(array, startIndex=0, highDuration=1688, lowDuration=563) {
-  const byte = []
-  for (let i = startIndex; i < startIndex + 8; i++) {
-    byte.push(readBit(array[i]))
-  }
-
-  return byte
-}
-
-function validateComplement(a, b) {
-  if (a.length !== b.length) throw new Error(`Cannot be complimentary (differing lengths).`)
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] === b[i]) throw new Error(`Not complimentary; at index ${i}, both bytes contain the value ${a[i]}.`)
-  }
-}
-
 async function transmitNECCommand(pigpio, address, command, extendedAddress, extendedCommand) {
   pigpio.waveClear()
 
@@ -184,11 +101,56 @@ async function transmitNECCommand(pigpio, address, command, extendedAddress, ext
   })
 }
 
+let lastTick
+let pulse = []
+const maxGap = 15000 // in uS; needs to be longer than the 9000 uS of the NEC start block
+let timeoutHandle
+
+
+function necListener(level, tick, pigpio) {
+  if (lastTick === undefined) lastTick = pigpio.getTick()
+
+  if (pigpio.waveTxBusy()) {
+    console.log('Seeing our own transmit...')
+    return
+  }
+
+  const duration = pigpio.tickDiff(lastTick, tick) // in uS
+  lastTick = tick
+
+  if (pulse.length === 0 && level === 1 && is(duration, 9000)) {
+    // starting a new NEC instruction
+    console.log(`New command starting!`)
+    pulse = [{ level, duration }]
+  } else if (pulse.length === 67) {
+    console.log(`Received a full NEC command.`)
+    waveToNec(pulse)
+    pulse = []
+  } else if (pulse.length) {
+    pulse.push({ level, duration })
+  }
+
+  if (timeoutHandle) clearTimeout(timeoutHandle)
+
+  setTimeout(() => {
+    const difference = pigpio.tickDiff(lastTick, pigpio.getTick())
+    if (pulse.length === 67) {
+      console.log(`Received a full NEC command.`)
+      waveToNec(pulse)
+    } else if (pulse.length && difference >= maxGap) {
+      console.log(`Received an invalid NEC command with ${pulse.length} pulses. Starting over...`)
+      pulse = []
+    }
+    // why do we need this to be _ten times_ too long to work? not a single clue!
+  }, maxGap/1000*10) // convert to uS
+}
+
 module.exports = {
   necToWave,
   waveToNec,
   is,
   highWaveFromDuration,
   lowWaveFromDuration,
-  transmitNECCommand
+  transmitNECCommand,
+  necListener
 }

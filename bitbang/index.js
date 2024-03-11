@@ -1,63 +1,56 @@
 const pigpio = require('pigpio')
 const Gpio = pigpio.Gpio
 
-const { waveToNec, is, necToWave, highWaveFromDuration, lowWaveFromDuration, transmitNECCommand } = require('./nec.js')
-const { standby } = require('./epson-projector.js')
+// const { necListener } = require('./nec.js')
+// const { rawListener } = require('./raw.js')
+const { mitsubishiListener, heat } = require('./mitsubishi-ac.js')
+// const { standby } = require('./epson-projector.js')
 
 const ledPin = 23
 const infraredSensor = new Gpio(17, { mode: Gpio.INPUT, alert: true })
 new Gpio(ledPin, { mode: Gpio.OUTPUT })
-
-let lastTick = pigpio.getTick()
-let pulse = []
 
 pigpio.waveClear()
 console.log(`Max wave length, pulses: ${pigpio.waveGetMaxPulses()}`)
 console.log(`Max wave length, uS: ${pigpio.waveGetMaxMicros()}`)
 console.log(`Max control blocks: ${pigpio.waveGetMaxCbs()}`)
 
-const maxGap = 15000 // in uS; needs to be longer than the 9000 uS of the NEC start block
-let timeoutHandle
-
-infraredSensor.on('alert', (level, tick) => {
-  if (pigpio.waveTxBusy()) {
-    console.log('Seeing our own transmit...')
-    return
-  }
-
-  const duration = pigpio.tickDiff(lastTick, tick) // in uS
-  lastTick = tick
-
-  if (pulse.length === 0 && level === 1 && is(duration, 9000)) {
-    // starting a new NEC instruction
-    console.log(`New command starting!`)
-    pulse = [{ level, duration }]
-  } else if (pulse.length === 67) {
-    console.log(`Received a full NEC command.`)
-    waveToNec(pulse)
-    pulse = []
-  } else if (pulse.length) {
-    pulse.push({ level, duration })
-  }
-
-  if (timeoutHandle) clearTimeout(timeoutHandle)
-
-  setTimeout(() => {
-    const difference = pigpio.tickDiff(lastTick, pigpio.getTick())
-    if (pulse.length === 67) {
-      console.log(`Received a full NEC command.`)
-      waveToNec(pulse)
-    } else if (pulse.length && difference >= maxGap) {
-      console.log(`Received an invalid NEC command with ${pulse.length} pulses. Starting over...`)
-      pulse = []
-    }
-    // why do we need this to be _ten times_ too long to work? not a single clue!
-  }, maxGap/1000*10) // convert to uS
+// infraredSensor.on('alert', (level, tick) => necListener(level, tick, pigpio))
+// infraredSensor.on('alert', (level, tick) => rawListener(level, tick, pigpio))
+heat(pigpio)
+.then(() => {
+  console.log(`Listening for new infrared pulses...`)
+  infraredSensor.on('alert', (level, tick) => mitsubishiListener(level, tick, pigpio))
 })
 
-console.log(`Listening for new infrared pulses...`)
+/*
+const { readByte, graphToTerminal, bitArrayToByte } = require('./helpers')
+// 0x23
+const durations = [
+  1275,
+  1275,
+  450,
+  450,
+  450,
+  1275,
+  450,
+  450,
+]
 
-standby(pigpio)
+const bits = readByte(durations, 0, false, 450, 1275)
+console.log(JSON.stringify(bits))
+const wave = bits.map((duration) => { return { level: 0, duration } })
+console.log(`0x${bitArrayToByte(bits).toString(16)}`)
+console.log(graphToTerminal(wave, [
+  { duration: 1275, tolerance: .14 },
+  { duration: 450 },
+  { duration: 3500 },
+  { duration: 17000 },
+  { duration: 1700, tolerance: .14 },
+]))
+*/
 
+// standby(pigpio)
 
 module.exports = {}
+
