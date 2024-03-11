@@ -11,7 +11,7 @@ ln -s /usr/local/node/bin/npm npm;
 printf '\n\nexport PATH=$PATH:/usr/local/node/bin' >> /home/pi/.bashrc;
 
 # set up pm2
-npm install pm2 --location=global && \
-sudo env PATH=$PATH:/usr/local/node/bin /usr/local/node/lib/node_modules/pm2/bin/pm2 startup systemd -u pi --hp /home/pi && \
-su -c "env PATH=$PATH:/usr/local/node/bin pm2 start /home/pi/islands/islands-rewrite/island.pm2.config.cjs" pi && \
-su -c "env PATH=$PATH:/usr/local/node/bin pm2 save" pi
+su -c "npm install pm2 --location=global" root && \
+sudo env PATH=$PATH:/usr/local/node/bin /usr/local/node/lib/node_modules/pm2/bin/pm2 startup systemd -u root --hp /home/pi && \
+su -c "env PATH=$PATH:/usr/local/node/bin pm2 start /home/pi/islands/islands-rewrite/island.pm2.config.cjs" root && \
+su -c "env PATH=$PATH:/usr/local/node/bin pm2 save" root
