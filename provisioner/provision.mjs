@@ -146,7 +146,7 @@ customize += `--plugin runatboot:"script=/home/pi/islands/provisioner/install-no
 customize += `--regen-ssh-host-keys `
 customize += `--restart `
 customize += `--batch `
-customize += `${resolve(__dirname, `./cache/${customImg}`)}`
+customize += `${resolve(__dirname, `./provisioner/cache/${customImg}`)}`
 
 async function sh(cmd) {
   return new Promise((resolve, reject) => {
