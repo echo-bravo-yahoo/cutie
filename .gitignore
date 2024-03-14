@@ -2,6 +2,7 @@ __pycache__/
 *.pem
 *.key
 *.crt
+*.vim
 github
 github.pub
 provisioner/authorized_keys/**

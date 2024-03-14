@@ -1,7 +1,7 @@
 const SerialPort = require('serialport')
 const serial = new SerialPort('/dev/ttyS5')
 const Readline = require('@serialport/parser-readline')
-const { byteStringToNum, chunk, removeHeader, messageToBits, remoteMessage } = require('./debug')
+const { byteStringToNum, chunk, removeHeader, messageToBits, remoteMessage } = require('../debug')
 
 function lineToNumArray(line) {
   let array = line.split(' ').slice(4).join('')

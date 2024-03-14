@@ -1,17 +1,9 @@
-
 const { writeFileSync } = require('fs')
 const { resolve } = require('path')
 
 let generatedCSV = ''
 function writeGeneratedCSV() {
   writeFileSync(resolve(__dirname, './generated.csv'), generatedCSV)
-}
-
-function bytesToBitArray(bytes, littleEndian=true) {
-  const res = bytes.reduce((bits, nextByte) => {
-    return bits.concat(...numberToBitArray(nextByte, 8))
-  }, [])
-  return littleEndian ? res.reverse() : res
 }
 
 function bitArrayToByte(bitArray, lsbFirst=true) {
@@ -80,15 +72,6 @@ function graphToTerminal(wave, buckets) {
   }, '')
 
   return lines
-}
-
-function numberToBitArray(number, width) {
-  let bitArray = []
-  for(let i = 0; i < (width || 32); i++) {
-    const bit = (Math.pow(2, i) & number) ? true : false
-    bitArray.push(bit)
-  }
-  return bitArray
 }
 
 function numberToBitString(number, width) {
@@ -182,7 +165,9 @@ function readBit(duration, highDuration=1688, lowDuration=563) {
   } else if (is(duration, lowDuration)) {
     return 1
   } else {
-    throw new Error(`Bit with duration ${duration} is not the expected size (${lowDuration} or ${highDuration}).`)
+    console.error(`Bit with duration ${duration} is not the expected size (${lowDuration} or ${highDuration}).`)
+    return duration < lowDuration ? 1 : 0
+    // throw new Error(`Bit with duration ${duration} is not the expected size (${lowDuration} or ${highDuration}).`)
   }
 }
 
@@ -207,6 +192,10 @@ function readByte(array, startIndex=0, littleEndian=true, highDuration=1688, low
   return littleEndian ? byte.reverse() : byte
 }
 
+function clamp(value, min, max) {
+  return Math.min(Math.max(min, value), max)
+}
+
 module.exports = {
   arrayToNumber,
   arrayToBitString,
@@ -214,12 +203,12 @@ module.exports = {
   bitArrayToWave,
   bitStringToArray,
   bitStringToNumber,
-  bytesToBitArray,
+  clamp,
   graphToTerminal,
   highWaveFromDuration,
   is,
   lowWaveFromDuration,
-  numberToBitArray,
+  // numberToBitArray,
   numberToBitString,
   readBit,
   readByte,
