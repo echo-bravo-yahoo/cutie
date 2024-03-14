@@ -1,4 +1,3 @@
-
 const { writeFileSync } = require('fs')
 const { resolve } = require('path')
 
@@ -7,12 +6,14 @@ function writeGeneratedCSV() {
   writeFileSync(resolve(__dirname, './generated.csv'), generatedCSV)
 }
 
+/*
 function bytesToBitArray(bytes, littleEndian=true) {
   const res = bytes.reduce((bits, nextByte) => {
     return bits.concat(...numberToBitArray(nextByte, 8))
   }, [])
   return littleEndian ? res.reverse() : res
 }
+*/
 
 function bitArrayToByte(bitArray, lsbFirst=true) {
   if (bitArray.length !== 8) throw new Error(`Bit array is ${bitArray.length} bits long, but it should be 8 bits long to convert to a byte!`)
@@ -80,15 +81,6 @@ function graphToTerminal(wave, buckets) {
   }, '')
 
   return lines
-}
-
-function numberToBitArray(number, width) {
-  let bitArray = []
-  for(let i = 0; i < (width || 32); i++) {
-    const bit = (Math.pow(2, i) & number) ? true : false
-    bitArray.push(bit)
-  }
-  return bitArray
 }
 
 function numberToBitString(number, width) {
@@ -214,12 +206,12 @@ module.exports = {
   bitArrayToWave,
   bitStringToArray,
   bitStringToNumber,
-  bytesToBitArray,
+  // bytesToBitArray,
   graphToTerminal,
   highWaveFromDuration,
   is,
   lowWaveFromDuration,
-  numberToBitArray,
+  // numberToBitArray,
   numberToBitString,
   readBit,
   readByte,

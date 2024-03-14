@@ -1,8 +1,8 @@
 // https://exploreembedded.com/wiki/NEC_IR_Remote_Control_Interface_with_8051
 // https://manderc.com/apps/umrechner/index_eng.php
 
-const { bitArrayToByte, bitToWave, highWaveFromDuration, lowWaveFromDuration, numberToBitArray, is, readByte } = require('./helpers.js')
-const { checkWave } = require('./pulse.js')
+const { bitArrayToByte, bitToWave, highWaveFromDuration, lowWaveFromDuration, numberToBitArray, is, readByte } = require('../helpers.js')
+const { checkWave } = require('../pulse.js')
 
 const readNECByte = (array, startIndex) => readByte(array, startIndex, false, 1688, 563)
 

@@ -1,4 +1,4 @@
-const { is } = require('./helpers.js')
+const { is } = require('../helpers.js')
 
 let lastTick
 let pulse = []

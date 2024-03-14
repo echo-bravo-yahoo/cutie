@@ -1,5 +1,5 @@
-const { bitArrayToByte, bytesToBitArray, highWaveFromDuration, lowWaveFromDuration, is, readByte, graphToTerminal, simpleWaveFromDuration, writeGeneratedCSV } = require('./helpers.js')
-const { checkWave } = require('./pulse.js')
+const { bitArrayToByte, bytesToBitArray, highWaveFromDuration, lowWaveFromDuration, is, readByte, graphToTerminal, simpleWaveFromDuration, writeGeneratedCSV } = require('../helpers.js')
+const { checkWave } = require('../pulse.js')
 
 const readMitsubishiByte = (array, startIndex) => readByte(array, startIndex, false, 450, 1275)
 
@@ -208,4 +208,3 @@ module.exports = {
   transmitMitsubishiCommand,
   mitsubishiListener
 }
-
