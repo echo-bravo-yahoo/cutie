@@ -174,7 +174,9 @@ function readBit(duration, highDuration=1688, lowDuration=563) {
   } else if (is(duration, lowDuration)) {
     return 1
   } else {
-    throw new Error(`Bit with duration ${duration} is not the expected size (${lowDuration} or ${highDuration}).`)
+    console.error(`Bit with duration ${duration} is not the expected size (${lowDuration} or ${highDuration}).`)
+    return duration < lowDuration ? 1 : 0
+    // throw new Error(`Bit with duration ${duration} is not the expected size (${lowDuration} or ${highDuration}).`)
   }
 }
 

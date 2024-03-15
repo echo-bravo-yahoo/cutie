@@ -5,14 +5,17 @@ class Byte extends BitAware {
   constructor(numberOrBitArray, lsbFirst, flipLogic) {
     super(lsbFirst, flipLogic)
 
-    if (numberOrBitArray instanceof BitArray) {
+    if (numberOrBitArray instanceof Byte) {
+      return numberOrBitArray
+    } else if (numberOrBitArray instanceof BitArray) {
       this.logical = numberOrBitArray.toNumber()
     } else if (typeof numberOrBitArray === 'number') {
       this.logical = numberOrBitArray
     } else if (typeof numberOrBitArray === 'string') {
       this.logical = parseInt(numberOrBitArray)
     } else {
-      throw new Error('???')
+      console.log(numberOrBitArray instanceof Number)
+      throw new Error(`Cannot convert this (${numberOrBitArray}, ${JSON.stringify(numberOrBitArray)} ${typeof numberOrBitArray}) into a Byte.`)
     }
   }
 
