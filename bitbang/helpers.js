@@ -199,6 +199,10 @@ function readByte(array, startIndex=0, littleEndian=true, highDuration=1688, low
   return littleEndian ? byte.reverse() : byte
 }
 
+function clamp(value, min, max) {
+  return Math.min(Math.max(min, value), max)
+}
+
 module.exports = {
   arrayToNumber,
   arrayToBitString,
@@ -206,6 +210,7 @@ module.exports = {
   bitArrayToWave,
   bitStringToArray,
   bitStringToNumber,
+  clamp,
   // bytesToBitArray,
   graphToTerminal,
   highWaveFromDuration,

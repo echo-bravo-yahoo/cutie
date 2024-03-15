@@ -2,8 +2,8 @@ class BitAware {
   lsbFirst
 
   constructor(lsbFirst = false, flipLogic = false) {
-    this.lsbFirst = lsbFirst
-    this.flipLogic = flipLogic
+    this.initialLsbFirst = lsbFirst
+    this.initialFlipLogic = flipLogic
   }
 
   get physical() {
@@ -12,9 +12,9 @@ class BitAware {
 
   calculatePhysical() {
     let physical = this.logical
-    if (this.lsbFirst)
+    if (this.lsbFirst !== this.initialLsbFirst)
       physical = Object.getPrototypeOf(this).constructor.bitwiseReverse(physical)
-    if (this.flipLogic)
+    if (this.flipLogic !== this.initialFlipLogic)
       physical = Object.getPrototypeOf(this).constructor.bitwiseFlip(physical)
     return physical
   }
