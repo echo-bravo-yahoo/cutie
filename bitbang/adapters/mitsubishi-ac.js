@@ -19,11 +19,20 @@ function writeRecordedCSV() {
   }
 }
 
-function heat(pigpio) {
-  // const command = ["0x23","0xcb","0x26","0x1","0x0","0x20","0x8","0x7","0x30","0x7c","0x0","0x0","0x0","0x0","0x0","0x0","0x0","0xf0","0x23","0xcb","0x26","0x1","0x0","0x20","0x8","0x7","0x30","0x7c","0x0","0x0","0x0","0x0","0x0","0x0","0x0","0xf0"]
+function heat() {
+  const cmd = {
+    "on": true,
+    "mode": "HEAT",
+    "temperature": 21,
+    "fanSpeed": 5,
+    "vane": "AUTO",
+    "clockByte": "0x54",
+    "endTime": "0x0",
+    "startTime": "0x0",
+    "timer": "0x0"
+  }
 
-
-  // return transmitMitsubishiCommand(pigpio, command)
+  
 }
 
 function mitsubishiToWave(byteArray, simple) {
@@ -130,7 +139,7 @@ function waveToMitsubishiAC(wave) {
 async function transmitMitsubishiCommand(pigpio, byteArray) {
   pigpio.waveClear()
 
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     console.log(`Sending Mitsubishi AC command:`)
     const wave = mitsubishiToWave(byteArray)
     // const filteredWave = wave.filter((segment) => segment.level === 0 && !is(segment.duration, 1700, .16) && !is(segment.duration, 17000)).map((segment) => segment.duration)
@@ -148,11 +157,9 @@ async function transmitMitsubishiCommand(pigpio, byteArray) {
     // TODO: figure out why WAVE_MODE_ONE_SHOT_SYNC binds things up - it would be really helpful...
     const start = performance.now()
     pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT)
-    checkWave(pigpio, () => {
-      const end = performance.now()
-      console.log(`Transmission took ${(end - start) * Math.pow(10, 3)} uS`)
-      resolve()
-    })
+    await checkWave(pigpio)
+    const end = performance.now()
+    console.log(`Transmission took ${(end - start) * Math.pow(10, 3)} uS`)
   })
 }
 
@@ -166,7 +173,6 @@ function mitsubishiListener(level, tick, pigpio) {
   if (lastTick === undefined) lastTick = pigpio.getTick()
 
   if (pigpio.waveTxBusy()) {
-    // console.log('Seeing our own transmit...')
     return
   }
 
@@ -178,7 +184,6 @@ function mitsubishiListener(level, tick, pigpio) {
     console.log(`New Mitsubishi command starting!`)
     pulse = [{ level, duration }]
   } else if (pulse.length === pulseCount) {
-    // console.log(`Received a full Mitsubishi command.`)
     waveToMitsubishiAC(pulse)
     pulse = []
   } else if (pulse.length) {
@@ -190,9 +195,7 @@ function mitsubishiListener(level, tick, pigpio) {
   timeoutHandle = setTimeout(() => {
     const difference = pigpio.tickDiff(lastTick, pigpio.getTick())
     if (pulse.length === pulseCount) {
-      // console.log(`Received a full Mitsubishi command.`)
       waveToMitsubishiAC(pulse)
-      // heat(pigpio)
     } else if (pulse.length && difference >= maxGap) {
       console.log(`Received an invalid Mitsubishi command with ${pulse.length} pulses. Starting over...`)
       pulse = []
@@ -202,9 +205,8 @@ function mitsubishiListener(level, tick, pigpio) {
 }
 
 module.exports = {
-  waveToMitsubishiAC,
-  is,
   heat,
+  waveToMitsubishiAC,
   transmitMitsubishiCommand,
   mitsubishiListener
 }

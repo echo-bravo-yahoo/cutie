@@ -23,13 +23,17 @@ function transmitPulse(pulse) {
   }, 5000)
 }
 
-function checkWave(pigpio, cb) {
-  setImmediate(() => {
+function checkWave(pigpio) {
+  function doCheckWave(pigpio, resolve) {
     if (!pigpio.waveTxBusy()) {
-      cb()
+      resolve()
     } else {
-      setImmediate(checkWave.bind(this, pigpio, cb))
+      setImmediate(doCheckWave.bind(this, pigpio, resolve))
     }
+  }
+
+  return new Promise((resolve) => {
+    doCheckWave(pigpio, resolve)
   })
 }
 

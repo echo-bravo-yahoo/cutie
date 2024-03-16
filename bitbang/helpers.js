@@ -6,15 +6,6 @@ function writeGeneratedCSV() {
   writeFileSync(resolve(__dirname, './generated.csv'), generatedCSV)
 }
 
-/*
-function bytesToBitArray(bytes, littleEndian=true) {
-  const res = bytes.reduce((bits, nextByte) => {
-    return bits.concat(...numberToBitArray(nextByte, 8))
-  }, [])
-  return littleEndian ? res.reverse() : res
-}
-*/
-
 function bitArrayToByte(bitArray, lsbFirst=true) {
   if (bitArray.length !== 8) throw new Error(`Bit array is ${bitArray.length} bits long, but it should be 8 bits long to convert to a byte!`)
   let result = 0x00
@@ -213,7 +204,6 @@ module.exports = {
   bitStringToArray,
   bitStringToNumber,
   clamp,
-  // bytesToBitArray,
   graphToTerminal,
   highWaveFromDuration,
   is,

@@ -38,8 +38,12 @@ class Byte extends BitAware {
     return this
   }
 
-  toNumber() {
-    return this.logical
+  toBitArray(sourceName='logical') {
+    return new BitArray(this.toNumber(sourceName), 8)
+  }
+
+  toNumber(sourceName='logical') {
+    return this[sourceName]
   }
 
   getBit(index) {

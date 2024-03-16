@@ -17,10 +17,10 @@ console.log(`Max control blocks: ${pigpio.waveGetMaxCbs()}`)
 
 // infraredSensor.on('alert', (level, tick) => necListener(level, tick, pigpio))
 // infraredSensor.on('alert', (level, tick) => rawListener(level, tick, pigpio))
-// heat(pigpio)
+heat(pigpio)
 // .then(() => {
-  console.log(`Listening for new infrared pulses...`)
-  infraredSensor.on('alert', (level, tick) => mitsubishiListener(level, tick, pigpio))
+  // console.log(`Listening for new infrared pulses...`)
+  // infraredSensor.on('alert', (level, tick) => mitsubishiListener(level, tick, pigpio))
 // })
 
 /*
