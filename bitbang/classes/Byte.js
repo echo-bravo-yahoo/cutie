@@ -14,17 +14,16 @@ class Byte extends BitAware {
     } else if (typeof numberOrBitArray === 'string') {
       this.logical = parseInt(numberOrBitArray)
     } else {
-      console.log(numberOrBitArray instanceof Number)
-      throw new Error(`Cannot convert this (${numberOrBitArray}, ${JSON.stringify(numberOrBitArray)} ${typeof numberOrBitArray}) into a Byte.`)
+      throw new Error(`Cannot convert this (${numberOrBitArray}, ${JSON.stringify(numberOrBitArray)}, ${typeof numberOrBitArray}) into a Byte.`)
     }
   }
 
-  static bitwiseReverse(number) {
-    return (new BitArray(number)).bitwiseReverse().toNumber()
+  static bitwiseReverse(byte, sourceName = 'logical') {
+    return new Byte(BitArray.bitwiseReverse(Byte.toBitArray(byte, sourceName), sourceName))
   }
 
-  static bitwiseFlip(number) {
-    return (new BitArray(number)).bitwiseFlip().toNumber()
+  static bitwiseFlip(byte, sourceName = 'logical') {
+    return new Byte(BitArray.bitwiseReverse(Byte.toBitArray(byte, sourceName), sourceName))
   }
 
   // mutates source, chainable
@@ -36,6 +35,10 @@ class Byte extends BitAware {
   bitwiseFlip(sourceName='logical') {
     this[sourceName] = (new BitArray(this[sourceName])).bitwiseFlip().toNumber()
     return this
+  }
+
+  static toBitArray(byte, sourceName='logical') {
+    return new Byte(byte).toBitArray(sourceName)
   }
 
   toBitArray(sourceName='logical') {

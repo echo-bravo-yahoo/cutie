@@ -21,7 +21,7 @@ class Mitsubishi {
 
   commandToBytes(command) {
     // start with the static header
-    const bytes = new ByteArray([0x23, 0xCB, 0x26, 0x01, 0x00])
+    const bytes = new ByteArray([0x23, 0xCB, 0x26, 0x01, 0x00], false)
 
     // on or off
     bytes.push(new Byte(command.on ? 0x20 : 0x0))
@@ -246,8 +246,8 @@ class Mitsubishi {
   byteArrayToWave(byteArray) {
     let low = lowWaveFromDuration
     let high = highWaveFromDuration
-    const bits = byteArray.toBitArray()
-    console.log(`Bits: ${JSON.stringify(bits)}`)
+    byteArray.lsbFirst = true
+    const bits = byteArray.toBitArray('physical')
 
     // the first two waves are the Mitsubishi start header
     // the last wave signals the end of transmission
@@ -287,6 +287,21 @@ module.exports = {
 }
 
 /*
+const cmd = {
+  "on": true,
+  "mode": "HEAT",
+  "temperature": 21,
+  "fanSpeed": 5,
+  "vane": "AUTO",
+  "clockByte": "0x54",
+  "endTime": "0x0",
+  "startTime": "0x0",
+  "timer": "0x0"
+}
+
+const m = new Mitsubishi()
+m.byteArrayToWave(m.commandToBytes(cmd))
+
 const m = new Mitsubishi()
 const command = [
   0x23, 0xcb, 0x26,

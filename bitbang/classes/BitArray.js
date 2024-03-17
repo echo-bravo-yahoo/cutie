@@ -31,11 +31,11 @@ class BitArray extends BitAware {
 
   // returns a copy of bitArray
   static bitwiseReverse(bitArray, sourceName='logical') {
-    return [...bitArray][sourceName].reverse()
+    return new BitArray(bitArray[sourceName].reverse())
   }
 
   static bitwiseFlip(bitArray, sourceName='logical') {
-    return bitArray[sourceName].map((bit) => !!bit)
+    return new BitArray(bitArray[sourceName].map((bit) => !!bit))
   }
 
   // mutates source, chainable

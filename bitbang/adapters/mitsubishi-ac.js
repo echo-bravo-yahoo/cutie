@@ -36,7 +36,7 @@ function heat() {
 }
 
 function mitsubishiToWave(byteArray, simple) {
-  console.log('    mitsubishiToWave: ' + byteArray.reduce((string, next) => string += ` ${next}`, '').trim())
+  console.log('    mitsubishiToWave: ' + byteArray.reduce((string, next) => string += ` 0x${next.toString(16)}`, '').trim())
   let low, high
   if (simple) {
     low = simpleWaveFromDuration.bind(null, false)
@@ -46,8 +46,8 @@ function mitsubishiToWave(byteArray, simple) {
     high = highWaveFromDuration
   }
 
-  console.log('First byte', byteArray[0])
   const bits = bytesToBitArray(byteArray, false)
+  console.log(JSON.stringify(bits.map((bit) => bit ? 1 : 0)))
 
   // the first two waves are the Mitsubishi start header
   // the last wave signals the end of transmission

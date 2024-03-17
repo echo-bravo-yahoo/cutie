@@ -9,6 +9,18 @@ class ByteArray extends BitAware {
     this.push(byteArray)
   }
 
+  static bitwiseReverse(byteArray, sourceName='logical') {
+    if (byteArray instanceof ByteArray)
+      byteArray = byteArray[sourceName]
+    return new ByteArray(byteArray.map((byte) => Byte.bitwiseReverse(byte, sourceName)))
+  }
+
+  static bitwiseFlip(byteArray, sourceName='logical') {
+    if (byteArray instanceof ByteArray)
+      byteArray = byteArray[sourceName]
+    return new ByteArray(byteArray.map((byte) => Byte.bitwiseFlip(byte, sourceName)))
+  }
+
   bitwiseReverse(sourceName='logical') {
     this[sourceName].forEach((byte) => byte.bitwiseReverse(sourceName))
     return this
@@ -72,11 +84,19 @@ class ByteArray extends BitAware {
   }
 
   toNumber(...args) {
-    return this.logical.map((byte) => byte.toNumber(...args))
+    return this.logical.map((byte) => {
+      byte.lsbFirst = this.lsbFirst
+      byte.flipLogic = this.flipLogic
+      return byte.toNumber(...args)
+    })
   }
 
   toString(...args) {
-    return this.logical.map((byte) => byte.toString(...args))
+    return this.logical.map((byte) => {
+      byte.lsbFirst = this.lsbFirst
+      byte.flipLogic = this.flipLogic
+      return byte.toString(...args)
+    })
   }
 
   sum(sourceName='logical') {
