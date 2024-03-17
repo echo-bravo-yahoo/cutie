@@ -23,7 +23,7 @@ class Byte extends BitAware {
   }
 
   static bitwiseFlip(byte, sourceName = 'logical') {
-    return new Byte(BitArray.bitwiseReverse(Byte.toBitArray(byte, sourceName), sourceName))
+    return new Byte(BitArray.bitwiseFlip(Byte.toBitArray(byte, sourceName), sourceName))
   }
 
   // mutates source, chainable

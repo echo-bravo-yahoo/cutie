@@ -277,6 +277,10 @@ class Mitsubishi {
     return wave.flat(Infinity)
   }
 
+  mitsubishiListener() {
+    // TODO: IMPLEMENT
+  }
+
   celsiusIntToFahrenheitInt(celsius) {
     return Math.round((Math.round(celsius) * (9/5)) + 32)
   }

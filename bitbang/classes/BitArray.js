@@ -35,7 +35,7 @@ class BitArray extends BitAware {
   }
 
   static bitwiseFlip(bitArray, sourceName='logical') {
-    return new BitArray(bitArray[sourceName].map((bit) => !!bit))
+    return new BitArray(bitArray[sourceName].map((bit) => !bit))
   }
 
   // mutates source, chainable
