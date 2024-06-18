@@ -20,7 +20,7 @@
   app.use(express.json())
   if (trace) app.use(AWSXRay.express.openSegment('MyApp'))
 
-  app.get('/app', function(req, res) {
+  app.get('*', function(req, res) {
     res.status(200).sendFile(path.join(__dirname, './app.html'))
   })
 
@@ -127,8 +127,8 @@
 
   /* istanbul ignore next */
   if (!module.parent) {
-    app.listen(3009)
-    console.log('Express started on port 3009')
+    app.listen(8080)
+    console.log('Express started on port 8080')
   }
 
   if (trace) app.use(AWSXRay.express.closeSegment())
