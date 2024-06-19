@@ -1,0 +1,38 @@
+.container {
+  display: block;
+  float: left;
+  background-color: #becbd6;
+  margin: 12px;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.container h1 {
+  font-family: "Playwrite PL", cursive;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal;
+  color: #d4af37;
+
+  background-color: #687387;
+  border-radius: 6px;
+  margin: 12px;
+  padding: 12px;
+}
+
+.cloudwatch {
+  margin: -8px;
+}
+
+.cloudwatch iframe {
+  width: calc(100vw - 22px);
+  height: 70%;
+}
+
+.hidden {
+  display: none;
+}
+
+.broken {
+  background-color: #cc5500;
+}

@@ -1,122 +1,39 @@
+<!doctype html>
 <html>
   <head>
-    <script>
-      function feedback(res) {
-        if (res.$metadata.httpStatusCode === 200) {
-          document.querySelector('#response').innerText = 'Success'
-        } else {
-          document.querySelector('#response').innerText
-            = `Error:\n${JSON.stringify(res, null, 4)}`
-        }
-      }
-
-      /*
-      async function ac(event) {
-        const url = `/thermostat/${event.target.attributes["data-action"].value}`
-        const res = await fetch(url).then((res) => res.json())
-        feedback(res)
-      }
-       */
-
-      async function runScript(event) {
-        const topic = event.target.parentElement.attributes["data-location"].value + '/run-script'
-        const url = `/mqtt/${topic}`
-        const payload = {
-          script: event.target.attributes["data-script-name"].value,
-          args: event.target.parentElement.querySelector('textarea'),
-          timestamp: Date.now()
-        }
-
-        if (payload.args === null || payload.args === undefined) {
-          delete payload.args
-        } else {
-          payload.args = payload.args.value
-        }
-
-        const fetchArgs = {
-          method: 'POST',
-          body: JSON.stringify(payload),
-          headers: { 'Content-Type': 'application/json' }
-        }
-        console.log(`Sending payload ${JSON.stringify(payload)} to mqtt topic ${topic}.`)
-        const res = await fetch(url, fetchArgs).then((res) => res.json())
-        feedback(res)
-      }
-
-      async function lamp() {
-        const url = `/lamp/toggle`
-        const res = await fetch(url).then((res) => res.json())
-        feedback(res)
-      }
-
-      /*
-      async function growLights() {
-        const url = `/growLights/toggle`
-        const res = await fetch(url).then((res) => res.json())
-        feedback(res)
-      }
-       */
-
-      async function print(event) {
-        const payload = { payload: event.target.parentElement.querySelector('textarea').value, timestamp: Date.now() }
-        const url = '/thermal-printer'
-        const fetchArgs = {
-          method: 'POST',
-          body: JSON.stringify(payload),
-          headers: { 'Content-Type': 'application/json' }
-        }
-        const res = await fetch(url, fetchArgs)
-          .then((res) => res.json())
-        feedback(res)
-      }
-    </script>
-    <style>
-      .container {
-        float: left;
-        clear: both;
-        padding-top: 15px;
-        padding-bottom: 15px;
-      }
-      .cloudwatch {
-        margin: -8px;
-      }
-      .cloudwatch iframe {
-        width: calc(100vw - 22px);
-        height: 70%;
-      }
-    </style>
+    <script src="assets/app.js"></script>
+    <link rel="stylesheet" type="text/css" href="assets/app.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playwrite+PL:wght@300&display=swap" rel="stylesheet" />
+    <title>IoT!</title>
   </head>
   <body>
-    <!--
       <div class="container">
-      Thermostat
-      <button onclick="ac(event)" data-action="coldest">Coldest</button>
-      <button onclick="ac(event)" data-action="cold">Cold</button>
-      <button onclick="ac(event)" data-action="fanOnly">Fan only</button>
-      <button onclick="ac(event)" data-action="auto">Auto</button>
-      <button onclick="ac(event)" data-action="off">Off</button>
-      <button onclick="ac(event)" data-action="hot">Hot</button>
-      <button onclick="ac(event)" data-action="hottest">Hottest</button>
+        <h1>Thermostat</h1>
+        <button onclick="ac(event)" data-action="coldest">Coldest</button>
+        <button onclick="ac(event)" data-action="cold">Cold</button>
+        <button onclick="ac(event)" data-action="fanOnly">Fan only</button>
+        <button onclick="ac(event)" data-action="auto">Auto</button>
+        <button onclick="ac(event)" data-action="off">Off</button>
+        <button onclick="ac(event)" data-action="hot">Hot</button>
+        <button onclick="ac(event)" data-action="hottest">Hottest</button>
       </div>
-    -->
     <div class="container">
-      Thermal printer
+      <h1 class="playwrite-pl-iot">Lights</h1>
+      Bedroom lamp
+      <button onclick="lamp()">Toggle</button>
+      Grow lights
+      <button onclick="growLights()">Toggle</button>
+    </div>
+    <div class="container">
+      <h1>Thermal printer</h1>
       <textarea></textarea>
       <button onclick="print(event)">Print</button>
     </div>
     <div class="container">
-      Bedroom lamp
-      <button onclick="lamp()">Toggle</button>
-    </div>
-    <!--
       <div class="container">
-      Grow lights
-      <button onclick="growLights()">Toggle</button>
-      </div>
-    -->
-    <div class="container">
-      <div class="container">
-        Desktop (swift)
+        <h1>Desktop (swift)</h1>
       </div>
       <div class="container" data-location="desktop">
         <button onclick="runScript(event)" data-script-name="turnOffMonitors">Turn off monitors</button>
@@ -142,13 +59,11 @@
     </div>
     <div class="container">
       <div class="container">
-        Laptop (hammerpoint)
+        <h1>Laptop (hammerpoint)</h1>
       </div>
-      <div class="container" data-location="dev">
-        <button onclick="runScript(event)" data-script-name="turnOffMonitors">Turn off monitors</button>
-      </div>
+      <button onclick="runScript(event)" data-script-name="turnOffMonitors">Turn off monitors</button>
     </div>
-    <div class="container" id="response">
+    <div class="container hidden" id="response">
     </div>
     <div class="cloudwatch container" id="cloudwatch">
         <iframe src="https://cloudwatch.amazonaws.com/dashboard.html?dashboard=weather&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTA5MTk0NDg1MDMxMCIsIlUiOiJ1cy1lYXN0LTFfREhEYlUwZWdhIiwiQyI6IjY0bmZocTAwazBjYnZqN29wbWVkMjFlMnNnIiwiSSI6InVzLWVhc3QtMTo1MzdjMjI1Ni04M2IyLTRmYmItOGYxMS1kMWI5Y2FjMGI4NmMiLCJPIjoiYXJuOmF3czppYW06OjA5MTk0NDg1MDMxMDpyb2xlL3NlcnZpY2Utcm9sZS9DbG91ZFdhdGNoRGFzaGJvYXJkLVB1YmxpYy1SZWFkT25seUFjY2Vzcy13ZWF0aGVyLUlSSzVPUU9EIiwiTSI6IlB1YmxpYyJ9"></iframe>

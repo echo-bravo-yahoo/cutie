@@ -18,9 +18,10 @@
 
   // middleware config
   app.use(express.json())
+  app.use('/assets', express.static(path.join(__dirname, 'assets')))
   if (trace) app.use(AWSXRay.express.openSegment('MyApp'))
 
-  app.get('*', function(req, res) {
+  app.get('/', function(req, res) {
     res.status(200).sendFile(path.join(__dirname, './app.html'))
   })
 
