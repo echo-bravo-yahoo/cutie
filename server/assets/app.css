@@ -18,10 +18,8 @@
   border-radius: 6px;
   margin: 12px;
   padding: 12px;
-}
 
-.cloudwatch {
-  margin: -8px;
+  clear: both;
 }
 
 .cloudwatch iframe {

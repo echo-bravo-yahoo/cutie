@@ -42,8 +42,14 @@
 
   app.get('/growLights/toggle', async function(req, res) {
     const TOGGLE = '2'
-    // TODO: Fix these endpoints
-    const command = new PublishCommand({ topic: 'cmnd/tasmota_9FBD6F/POWER', payload: TOGGLE })
+    const command = new PublishCommand({ topic: 'cmnd/tasmota_E106CD/POWER', payload: TOGGLE })
+    const response = await client.send(command)
+    res.status(200).send(response)
+  })
+
+  app.get('/officeLight/toggle', async function(req, res) {
+    const TOGGLE = '2'
+    const command = new PublishCommand({ topic: 'cmnd/tasmota_149D65/POWER', payload: TOGGLE })
     const response = await client.send(command)
     res.status(200).send(response)
   })

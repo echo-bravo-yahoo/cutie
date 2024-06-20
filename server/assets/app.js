@@ -46,13 +46,17 @@
         feedback(res)
       }
 
-      /*
       async function growLights() {
         const url = `/growLights/toggle`
         const res = await fetch(url).then((res) => res.json())
         feedback(res)
       }
-       */
+
+      async function officeLight() {
+        const url = `/officeLight/toggle`
+        const res = await fetch(url).then((res) => res.json())
+        feedback(res)
+      }
 
       async function print(event) {
         const payload = { payload: event.target.parentElement.querySelector('textarea').value, timestamp: Date.now() }
