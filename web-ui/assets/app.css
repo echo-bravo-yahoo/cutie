@@ -7,6 +7,7 @@ body {
   box-sizing: border-box;
   margin: 0;
   padding: 8px;
+  overflow-x: hidden;
 }
 
 .container {
@@ -46,7 +47,7 @@ body {
   font-style: normal;
   color: #d4af37;
   white-space: nowrap;
-  overflow: hidden;
+  /* overflow: hidden; */
   text-overflow: ellipsis;
 
   background-color: #687387;
@@ -67,4 +68,37 @@ body {
 
 .broken {
   background-color: #cc5500;
+}
+
+.tooltip {
+  position:relative; /* making the .tooltip span a container for the tooltip text */
+  border-bottom:1px dashed #000; /* little indicater to indicate it's hoverable */
+}
+
+.tooltip:before {
+  content: attr(data-text); /* here's the magic */
+  z-index: 999;
+  position:absolute;
+
+  /* vertically center */
+  top:50%;
+  transform:translateY(-50%);
+
+  /* move to right */
+  left:100%;
+  margin-left:15px; /* and add a small left margin */
+
+  /* basic styles */
+  width: auto;
+  padding: 10px;
+  border-radius: 10px;
+  background: #000;
+  color: #fff;
+  text-align: center;
+
+  display:none; /* hide by default */
+}
+
+.tooltip:hover:before {
+  display:block;
 }
