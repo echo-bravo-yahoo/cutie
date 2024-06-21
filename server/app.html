@@ -9,8 +9,9 @@
     <title>IoT!</title>
   </head>
   <body>
-      <div class="container">
-        <h1>Thermostat</h1>
+    <div class="container">
+      <h1>Thermostat</h1>
+      <div class="column">
         <button onclick="ac(event)" data-action="coldest">Coldest</button>
         <button onclick="ac(event)" data-action="cold">Cold</button>
         <button onclick="ac(event)" data-action="fanOnly">Fan only</button>
@@ -19,56 +20,58 @@
         <button onclick="ac(event)" data-action="hot">Hot</button>
         <button onclick="ac(event)" data-action="hottest">Hottest</button>
       </div>
+    </div>
     <div class="container">
       <h1 class="playwrite-pl-iot">Lights</h1>
-      Bedroom lamp
-      <button onclick="lamp()">Toggle</button>
-      Grow lights
-      <button onclick="growLights()">Toggle</button>
-      Office light
-      <button onclick="officeLight()">Toggle</button>
+      <div class="column">
+        <button onclick="lamp()">Bedroom lamp</button>
+        <button onclick="growLights()">Grow lights</button>
+        <button onclick="officeLight()">Office light</button>
+      </div>
     </div>
     <div class="container">
       <h1>Thermal printer</h1>
-      <textarea></textarea>
-      <button onclick="print(event)">Print</button>
+      <div class="row">
+        <textarea></textarea>
+        <button onclick="print(event)">Print</button>
+      </div>
     </div>
     <div class="container">
-      <div class="container">
+      <div>
         <h1>Desktop (swift)</h1>
       </div>
-      <div class="container" data-location="desktop">
-        <button onclick="runScript(event)" data-script-name="turnOffMonitors">Turn off monitors</button>
-      </div>
-      <div class="container" data-location="desktop">
-        <button onclick="runScript(event)" data-script-name="swapToSpeakers">Swap to speakers</button>
-      </div>
-      <div class="container" data-location="desktop">
-        <button onclick="runScript(event)" data-script-name="swapToHeadphones">Swap to headphones</button>
-      </div>
-      <div class="container" data-location="desktop">
-      <button onclick="runScript(event)" data-script-name="toggleMute">Toggle mute</button>
-      </div>
-      <div class="container" data-location="desktop">
-        <textarea></textarea>
-        <button onclick="runScript(event)" data-script-name="setVolume">Set volume</button>
-      </div>
-      <div class="container" data-location="desktop">
-        <textarea></textarea>
-        <button onclick="runScript(event)" data-script-name="launchGame">Launch game</button>
-      </div>
+      <div class="column">
+        <div data-location="desktop">
+          <button onclick="runScript(event)" data-script-name="turnOffMonitors">Turn off monitors</button>
+        </div>
+        <div data-location="desktop">
+          <button onclick="runScript(event)" data-script-name="swapToSpeakers">Swap to speakers</button>
+        </div>
+        <div data-location="desktop">
+          <button onclick="runScript(event)" data-script-name="swapToHeadphones">Swap to headphones</button>
+        </div>
+        <div data-location="desktop">
+          <button onclick="runScript(event)" data-script-name="toggleMute">Toggle mute</button>
+        </div>
+        <div class="row" data-location="desktop">
+          <textarea></textarea>
+          <button onclick="runScript(event)" data-script-name="setVolume">Set volume</button>
+        </div>
+        <div class="row" data-location="desktop">
+          <textarea></textarea>
+          <button onclick="runScript(event)" data-script-name="launchGame">Launch game</button>
+        </div></div>
     </div>
     </div>
     <div class="container">
-      <div class="container">
-        <h1>Laptop (hammerpoint)</h1>
-      </div>
+      <h1>Laptop (hammerpoint)</h1>
       <button onclick="runScript(event)" data-script-name="turnOffMonitors">Turn off monitors</button>
     </div>
     <div class="container hidden" id="response">
     </div>
-    <div class="cloudwatch container" id="cloudwatch">
-        <iframe src="https://cloudwatch.amazonaws.com/dashboard.html?dashboard=weather&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTA5MTk0NDg1MDMxMCIsIlUiOiJ1cy1lYXN0LTFfREhEYlUwZWdhIiwiQyI6IjY0bmZocTAwazBjYnZqN29wbWVkMjFlMnNnIiwiSSI6InVzLWVhc3QtMTo1MzdjMjI1Ni04M2IyLTRmYmItOGYxMS1kMWI5Y2FjMGI4NmMiLCJPIjoiYXJuOmF3czppYW06OjA5MTk0NDg1MDMxMDpyb2xlL3NlcnZpY2Utcm9sZS9DbG91ZFdhdGNoRGFzaGJvYXJkLVB1YmxpYy1SZWFkT25seUFjY2Vzcy13ZWF0aGVyLUlSSzVPUU9EIiwiTSI6IlB1YmxpYyJ9"></iframe>
+    <div class="cloudwatch container column" id="cloudwatch">
+      <h1>Dashboard</h1>
+      <iframe src="https://cloudwatch.amazonaws.com/dashboard.html?dashboard=weather&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTA5MTk0NDg1MDMxMCIsIlUiOiJ1cy1lYXN0LTFfREhEYlUwZWdhIiwiQyI6IjY0bmZocTAwazBjYnZqN29wbWVkMjFlMnNnIiwiSSI6InVzLWVhc3QtMTo1MzdjMjI1Ni04M2IyLTRmYmItOGYxMS1kMWI5Y2FjMGI4NmMiLCJPIjoiYXJuOmF3czppYW06OjA5MTk0NDg1MDMxMDpyb2xlL3NlcnZpY2Utcm9sZS9DbG91ZFdhdGNoRGFzaGJvYXJkLVB1YmxpYy1SZWFkT25seUFjY2Vzcy13ZWF0aGVyLUlSSzVPUU9EIiwiTSI6IlB1YmxpYyJ9"></iframe>
     </div>
   </body>
 </html>
