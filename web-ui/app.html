@@ -37,7 +37,10 @@
       </div>
     </div>
     <div class="container" data-location="desktop">
-      <h1 class="tooltip" data-text="swift">Desktop</h1>
+      <h1 class="tooltip-able" data-tooltip-id="swift" onmouseover="tooltip(event, true)" onmouseleave="tooltip(event, false)">
+        Desktop
+        <div class="tooltip" id="swift">swift</div>
+      </h1>
       <div class="column">
         <button onclick="runScript(event)" data-script-name="turnOffMonitors">Turn off monitors</button>
         <button onclick="runScript(event)" data-script-name="swapToSpeakers">Swap to speakers</button>
@@ -59,7 +62,10 @@
       </div>
     </div>
     <div class="container">
-      <h1 class="tooltip" data-text="<strong>hammerpoint</strong>">Laptop</h1>
+      <h1 class="tooltip-able" data-tooltip-id="hammerpoint" onmouseover="tooltip(event, true)" onmouseleave="tooltip(event, false)">
+        Laptop
+        <div class="tooltip" id="hammerpoint">hammerpoint</div>
+      </h1>
       <button onclick="runScript(event)" data-script-name="turnOffMonitors">Turn off monitors</button>
     </div>
     <div class="container hidden" id="response">

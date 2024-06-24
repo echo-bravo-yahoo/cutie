@@ -17,8 +17,7 @@ body {
   padding: 12px;
   padding-top: 0px;
   border-radius: 6px;
-  flex-basis: 50%;
-  max-width: 300px;
+  flex-grow: 1;
 }
 
 .row {
@@ -70,13 +69,13 @@ body {
   background-color: #cc5500;
 }
 
-.tooltip {
+.tooltip-able {
   position:relative; /* making the .tooltip span a container for the tooltip text */
   border-bottom:1px dashed #000; /* little indicater to indicate it's hoverable */
 }
 
-.tooltip:before {
-  content: attr(data-text); /* here's the magic */
+.tooltip {
+  /* content: attr(data-text); /1* here's the magic *1/ */
   z-index: 999;
   position:absolute;
 
@@ -96,9 +95,9 @@ body {
   color: #fff;
   text-align: center;
 
-  display:none; /* hide by default */
+  display: none; /* hide by default */
 }
 
-.tooltip:hover:before {
-  display:block;
+.visible {
+  display: block;
 }

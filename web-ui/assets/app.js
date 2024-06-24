@@ -75,3 +75,11 @@ async function print(event) {
   feedback(res)
 }
 
+function tooltip(event, shouldShow) {
+  let id = event.target.getAttribute("data-tooltip-id")
+  if (shouldShow) {
+    document.querySelector(`#${id}`).classList.add("visible")
+  } else {
+    document.querySelector(`#${id}`).classList.remove("visible")
+  }
+}
