@@ -1,3 +1,37 @@
+@media only screen and (max-device-width: 300px) {
+  .container {
+    width: 100%;
+  }
+
+  .row {
+    gap: 24px;
+  }
+
+  input, textarea, button {
+    font-size: 18px;
+    padding: 14px;
+  }
+}
+
+@media only screen and (min-device-width: 300px) and (max-device-width: 700px) {
+  .container {
+    /* terrible hack - lets you fit 2 but not 3... */
+    min-width: 40%;
+  }
+
+  .row {
+    gap: 24px;
+  }
+
+  input, textarea, button {
+    font-size: 18px;
+    padding: 14px;
+  }
+
+  button {
+    border-radius: 14px;
+  }
+}
 body {
   display: flex;
   flex-wrap: wrap;
@@ -11,13 +45,22 @@ body {
 }
 
 .container {
-  display: block;
+  display: flex;
+  flex-direction: column;
   background-color: #becbd6;
   margin: 12px;
   padding: 12px;
   padding-top: 0px;
   border-radius: 6px;
   flex-grow: 1;
+}
+
+.container > .row > textarea {
+  flex-grow: 1;
+}
+
+.container > .row > input, button {
+  height: max-content;
 }
 
 .row {
