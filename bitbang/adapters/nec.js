@@ -1,45 +1,60 @@
 // https://exploreembedded.com/wiki/NEC_IR_Remote_Control_Interface_with_8051
 // https://manderc.com/apps/umrechner/index_eng.php
+// https://www.sbprojects.net/knowledge/ir/nec.php
+// https://techdocs.altium.com/display/FPGA/NEC+Infrared+Transmission+Protocol
 
-const { bitArrayToByte, bitToWave, highWaveFromDuration, lowWaveFromDuration, numberToBitArray, is, readByte } = require('../helpers.js')
+const { bitArrayToByte, bitArrayToWave, highWaveFromDuration, lowWaveFromDuration, numberToBitArray, is, readByte } = require('../helpers.js')
 const { checkWave } = require('../pulse.js')
 
 const readNECByte = (array, startIndex) => readByte(array, startIndex, false, 1688, 563)
 
-function necToWave(necAddress, necCommand, extendedNecAddress, extendedNecCommand) {
+function necToBits({ necAddress, necCommand, extendedNecAddress, extendedNecCommand, logger = () => {} }) {
+  let addressBits, extendedAddressBits, commandBits, extendedCommandBits
   // if we aren't provided extended address/command, assume we should make the complement
   // of the address/command
   if (!extendedNecAddress) {
-    extendedNecAddress = numberToBitArray(necAddress, 8).map((bit) => !bit)
+    logger('complement address')
+    extendedAddressBits = numberToBitArray(necAddress, 8).map((bit) => !bit)
+    addressBits = numberToBitArray(necAddress, 8).map((bit) => !bit)
   } else {
-    extendedNecAddress = numberToBitArray(extendedNecAddress, 8)
+    logger('extended address')
+    extendedAddressBits = numberToBitArray(necAddress, 8).map((bit) => !bit)
+    addressBits = numberToBitArray(extendedNecAddress, 8).map((bit) => !bit)
   }
+
   if (!extendedNecCommand) {
-    extendedNecCommand = numberToBitArray(necCommand, 8).map((bit) => !bit)
+    logger('complement command')
+    extendedCommandBits = numberToBitArray(necCommand, 8).map((bit) => !bit)
+    commandBits = numberToBitArray(necCommand, 8)
   } else {
-    extendedNecCommand = numberToBitArray(extendedNecCommand, 8)
+    logger('extended command')
+    extendedCommandBits = numberToBitArray(extendedNecCommand, 8)
+    commandBits = numberToBitArray(necCommand, 8)
   }
 
+  logger(`Sending NEC command.`)
+  logger(`Address             : (phys) ${JSON.stringify(addressBits.map(bit => bit ? 1 : 0))} (logical ${bitArrayToByte(addressBits)}, 0x${bitArrayToByte(addressBits).toString(16)})`)
+  logger(`Address (complement): (phys) ${JSON.stringify(extendedAddressBits.map(bit => bit ? 1 : 0))} (logical ${bitArrayToByte(extendedAddressBits)}, 0x${bitArrayToByte(extendedAddressBits).toString(16)})`)
+  logger(`Command             : (phys) ${JSON.stringify(commandBits.map(bit => bit ? 1 : 0))} (logical ${bitArrayToByte(commandBits)}, 0x${bitArrayToByte(commandBits).toString(16)})`)
+  logger(`Command (complement): (phys) ${JSON.stringify(extendedCommandBits.map(bit => bit ? 1 : 0))} (logical ${bitArrayToByte(extendedCommandBits)}, 0x${bitArrayToByte(extendedCommandBits).toString(16)})`)
 
-    const addressBits = numberToBitArray(necAddress, 8)
-    //const extendedAddressBits = numberToBitArray(extendedNecAddress, 8)
-    const commandBits = numberToBitArray(necCommand, 8)
-    //const extendedCommandBits = numberToBitArray(extendedNecCommand, 8)
-    console.log(`Sending NEC command.`)
-    console.log(`Address             : ${JSON.stringify(addressBits)} (${bitArrayToByte(addressBits)}, 0x${bitArrayToByte(addressBits).toString(16)})`)
-    console.log(`Address (complement): ${JSON.stringify(extendedNecAddress)} (${bitArrayToByte(extendedNecAddress)}, 0x${bitArrayToByte(extendedNecAddress).toString(16)})`)
-    console.log(`Command             : ${JSON.stringify(commandBits)} (${bitArrayToByte(commandBits)}, 0x${bitArrayToByte(commandBits).toString(16)})`)
-    console.log(`Command (complement): ${JSON.stringify(extendedNecCommand)} (${bitArrayToByte(extendedNecCommand)}, 0x${bitArrayToByte(extendedNecCommand).toString(16)})`)
+  return [
+    addressBits,
+    extendedAddressBits,
+    commandBits,
+    extendedCommandBits
+  ].flat(Infinity)
 
+}
+
+function necToWave(necAddress, necCommand, extendedNecAddress, extendedNecCommand) {
   // the first two waves are the NEC start header
   // the last wave signals the end of transmission
+  const bits = necToBits({ necAddress, necCommand, extendedNecAddress, extendedNecCommand, logger: console.log })
   let wave = [
     highWaveFromDuration(9000),
     lowWaveFromDuration(4500),
-    numberToBitArray(necAddress, 8).map(bitToWave),
-    extendedNecAddress.map(bitToWave),
-    numberToBitArray(necCommand, 8).map(bitToWave),
-    extendedNecCommand.map(bitToWave),
+    bitArrayToWave(bits),
     highWaveFromDuration(563)
   ]
 
@@ -98,6 +113,7 @@ async function transmitNECCommand(pigpio, address, command, extendedAddress, ext
     // TODO: figure out why WAVE_MODE_ONE_SHOT_SYNC binds things up - it would be really helpful...
     pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT)
     checkWave(pigpio, resolve.bind(null, waveId))
+    pigpio.waveDelete(waveId)
   })
 }
 
@@ -147,6 +163,7 @@ function necListener(level, tick, pigpio) {
 
 module.exports = {
   necToWave,
+  necToBits,
   waveToNec,
   is,
   highWaveFromDuration,

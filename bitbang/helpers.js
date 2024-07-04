@@ -7,7 +7,8 @@ function writeGeneratedCSV() {
 }
 
 function bitArrayToByte(bitArray, lsbFirst=true) {
-  if (bitArray.length !== 8) throw new Error(`Bit array is ${bitArray.length} bits long, but it should be 8 bits long to convert to a byte!`)
+  // if (bitArray.length !== 8) throw new Error(`Bit array is ${bitArray.length} bits long, but it should be 8 bits long to convert to a byte!`)
+  if (bitArray.length !== 8) console.log(`Bit array is ${bitArray.length} bits long, but it should be 8 bits long to convert to a byte!`)
   let result = 0x00
   for(let i = 0; i < 8; i++) {
     if (lsbFirst) {
@@ -78,6 +79,16 @@ function numberToBitString(number, width) {
   return arrayToBitString(numberToBitArray(number, width))
 }
 
+function numberToBitArray(number, width, lsbFirst=true) {
+  let bitArray = []
+  for(let i = 0; i < (width || 32); i++) {
+    const bit = (Math.pow(2, i) & number) ? true : false
+    bitArray.push(bit)
+  }
+
+  return lsbFirst ? bitArray : bitArray.reverse()
+}
+
 function arrayToBitString(bitArray) {
   return bitArray.map((bit) => bit ? '1' : '0').join('')
 }
@@ -139,17 +150,19 @@ function lowWaveFromDuration(duration, wavePulses, ledPin=23) {
   }
 }
 
-function bitArrayToWave(bitArray) {
+function bitArrayToWave(bitArray, ledPin=23) {
   const wave = []
 
   for (let i = 0; i < bitArray.length; i++) {
     wave.push(...highWaveFromDuration(563))
     if(bitArray[i]) {
-      wave.push({ level: 0, usDelay: 563 })
+      wave.push({ gpioOn: 0, gpioOff: ledPin, usDelay: 563 })
     } else {
-      wave.push({ level: 0, usDelay: 1688 })
+      wave.push({ gpioOn: 0, gpioOff: ledPin, usDelay: 1688 })
     }
   }
+
+  return wave
 }
 
 function validateComplement(a, b) {
@@ -208,7 +221,7 @@ module.exports = {
   highWaveFromDuration,
   is,
   lowWaveFromDuration,
-  // numberToBitArray,
+  numberToBitArray,
   numberToBitString,
   readBit,
   readByte,

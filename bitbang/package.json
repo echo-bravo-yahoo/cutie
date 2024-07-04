@@ -4,11 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ava"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "pigpio": "^3.3.1"
+    "pigpio": "^3.3.1",
+    "sinon": "^18.0.0"
+  },
+  "devDependencies": {
+    "tape": "^5.8.1"
   }
 }
