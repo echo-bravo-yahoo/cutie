@@ -14,17 +14,17 @@ function feedback(res) {
 // }
 
 function findInAncestors(node, finder) {
-  if (node.parenElement === undefined) return undefined
+  if (node === undefined || node === null) return undefined
   if (finder(node)) return finder(node)
-  return findInAncestors(node.parentElement)
+  return findInAncestors(node.parentElement, finder)
 }
 
 async function runScript(event) {
-  const topic = event.target.parentElement.attributes["data-location"].value + '/run-script'
+  const topic = findInAncestors(event.target, (node) => node.attributes["data-location"]?.value) + '/run-script'
   const url = `/mqtt/${topic}`
   const payload = {
-    script: findInAncestors(event.target, (node) => node.attributes["data-script-name"].value),
-    args: findInAncestors(event.target, (node) => node.classList.includes("args")),
+    script: findInAncestors(event.target, (node) => node.attributes["data-script-name"]?.value),
+    args: findInAncestors(event.target, (node) => Array.from(node.classList)?.includes("args")?.value),
     timestamp: Date.now()
   }
 
