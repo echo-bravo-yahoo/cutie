@@ -63,7 +63,7 @@ async function officeLight() {
 }
 
 async function print(event) {
-  const payload = { payload: event.target.parentElement.querySelector('textarea').value, timestamp: Date.now() }
+  const payload = { message: event.target.parentElement.querySelector('textarea').value, timestamp: Date.now() }
   const url = '/thermal-printer'
   const fetchArgs = {
     method: 'POST',
