@@ -7,3 +7,4 @@ github
 github.pub
 provisioner/authorized_keys/**
 **/node_modules
+islands-rewrite/config.json
