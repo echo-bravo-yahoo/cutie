@@ -25,6 +25,10 @@
     res.status(200).sendFile(path.join(__dirname, './app.html'))
   })
 
+  app.get('/boox', function(req, res) {
+    res.status(200).sendFile(path.join(__dirname, './boox.html'))
+  })
+
   app.post('/thermal-printer', async function(req, res) {
     const args = { topic: 'commands/printer', payload: JSON.stringify(req.body), qos: 1 }
     const command = new PublishCommand(args)

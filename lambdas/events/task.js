@@ -9,7 +9,7 @@ const secrets = require('./secrets')
 import { wrap } from './helpers.js'
 
 async function getTasks() {
-  let res = await fetch('https://inthe.am/api/v2/tasks/', {
+  let res = await fetch('https://app.wingtask.com:53589', {
     headers: {
       Authorization: secrets.task.token
     }
