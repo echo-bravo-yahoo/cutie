@@ -1,6 +1,9 @@
 import fetch from 'node-fetch'
 import shuffle from 'shuffle-array'
 import * as f from './filters.js'
+import fs from 'fs'
+import path from 'path'
+import https from 'https'
 
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
@@ -9,7 +12,20 @@ const secrets = require('./secrets')
 import { wrap } from './helpers.js'
 
 async function getTasks() {
-  let res = await fetch('https://inthe.am/api/v2/tasks/', {
+  const options = {
+    cert: fs.readFileSync(
+      path.resolve('/home/swift/.ssh/others/wingtask.cert.pem'),
+      `utf-8`,
+    ),
+    key: fs.readFileSync(
+      path.resolve('/home/swift/.ssh/others/wingtask.key.pem'),
+      'utf-8',
+    ),
+    passphrase: secrets.task.token,
+    rejectUnauthorized: false,
+  }
+  const sslConfiguredAgent = new https.Agent(options)
+  let res = await fetch('https://app.wingtask.com:53589/api/v2/tasks/', {
     headers: {
       Authorization: secrets.task.token
     }
@@ -159,3 +175,5 @@ export async function getTaskBlock(event) {
 
   return text
 }
+
+console.log(await getTasks())
