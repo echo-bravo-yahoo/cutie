@@ -6,7 +6,7 @@ import { resolve } from 'path'
 import { writeFile } from 'node:fs/promises'
 import { execSync } from 'child_process'
 
-import { mqtt, iot, iotidentity, iotshadow, io } from 'aws-iot-device-sdk-v2'
+import { mqtt, iot, iotidentity, iotshadow } from 'aws-iot-device-sdk-v2'
 
 export async function createKeysAndRegisterThing() {
     console.log('Connecting...')

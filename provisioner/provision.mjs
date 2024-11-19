@@ -6,7 +6,7 @@ const require = createRequire(import.meta.url)
 const config = require(resolve(__dirname, './provisioner/config.json'))
 const islandConfig = require(resolve(__dirname, './islands-rewrite/config.json'))
 
-import { rmSync, cpSync, existsSync, accessSync, constants } from 'node:fs'
+import { rmSync, cpSync, accessSync, constants } from 'node:fs'
 import { readFile, writeFile, access } from 'node:fs/promises'
 import { resolve, dirname } from 'path'
 import { execSync, spawn } from 'child_process'
@@ -22,7 +22,7 @@ const arch = 'armv6l'
 const certFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-certificate.pem.crt`)
 const privateKeyFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-private.pem.key`)
 const publicKeyFilePath = resolve(`${config.authorizedKeys}`, `../islands/${config.hostname}-public.pem.key`)
-const awsCertFilePath = '/home/pi/.ssh/islands/AmazonRootCA1.pem'
+// const awsCertFilePath = '/home/pi/.ssh/islands/AmazonRootCA1.pem'
 
 try {
   await Promise.all([
