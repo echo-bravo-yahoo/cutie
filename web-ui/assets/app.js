@@ -44,20 +44,8 @@ async function runScript(event) {
   feedback(res)
 }
 
-async function lamp() {
-  const url = `/lamp/toggle`
-  const res = await fetch(url).then((res) => res.json())
-  feedback(res)
-}
-
-async function growLights() {
-  const url = `/growLights/toggle`
-  const res = await fetch(url).then((res) => res.json())
-  feedback(res)
-}
-
-async function officeLight() {
-  const url = `/officeLight/toggle`
+async function toggle(resourceName) {
+  const url = `toggle/${resourceName}`
   const res = await fetch(url).then((res) => res.json())
   feedback(res)
 }

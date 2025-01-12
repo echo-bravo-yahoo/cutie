@@ -1,16 +1,21 @@
 (async () => {
   // libraries
   const express = require('express')
-  const { IoTDataPlaneClient, PublishCommand } = require("@aws-sdk/client-iot-data-plane")
-  // import { IoTDataPlaneClient, PublishCommand } from "@aws-sdk/client-iot-data-plane"
+
   const path = require('path')
-  const { readFileSync } = require('fs')
   const AWSXRay = require('aws-xray-sdk')
 
+  // docs: https://aws.github.io/aws-iot-device-sdk-js-v2/node/index.html
+  const { mqtt5, iot } = require('aws-iot-device-sdk-v2');
+  let builder = iot.AwsIotMqtt5ClientConfigBuilder.newDirectMqttBuilderWithMtlsFromPath(
+    "<redacted-endpoint>",
+    "./device-cert.pem.crt",
+    "./private-key.pem.key",
+  );
+  let client = new mqtt5.Mqtt5Client(builder.build());
+  client.start();
 
   // config and constructed objects
-  const config = require('./config.json')
-  const client = new IoTDataPlaneClient(config)
   const app = module.exports = express()
 
   // behavior flags
@@ -19,38 +24,22 @@
   // middleware config
   app.use(express.json())
   app.use('/assets', express.static(path.join(__dirname, 'assets')))
-  if (trace) app.use(AWSXRay.express.openSegment('MyApp'))
+  if (trace) app.use(AWSXRay.express.openSegment('islands'))
 
   app.get('/', function(req, res) {
     res.status(200).sendFile(path.join(__dirname, './app.html'))
   })
 
   app.post('/thermal-printer', async function(req, res) {
-    const args = { topic: 'commands/printer', payload: JSON.stringify(req.body), qos: 1 }
-    const command = new PublishCommand(args)
-    console.log(args)
-    const response = await client.send(command)
+    const args = { topicName: 'commands/printer', payload: JSON.stringify(req.body), qos: 1 }
+    const response = await client.publish(args)
     res.status(200).send(response)
   })
 
-  app.get('/lamp/toggle', async function(req, res) {
+  app.get('/toggle/:resourceName', async function(req, res) {
     const TOGGLE = '2'
-    const command = new PublishCommand({ topic: 'cmnd/tasmota_9FBD6F/POWER', payload: TOGGLE })
-    const response = await client.send(command)
-    res.status(200).send(response)
-  })
-
-  app.get('/growLights/toggle', async function(req, res) {
-    const TOGGLE = '2'
-    const command = new PublishCommand({ topic: 'cmnd/tasmota_E106CD/POWER', payload: TOGGLE })
-    const response = await client.send(command)
-    res.status(200).send(response)
-  })
-
-  app.get('/officeLight/toggle', async function(req, res) {
-    const TOGGLE = '2'
-    const command = new PublishCommand({ topic: 'cmnd/tasmota_149D65/POWER', payload: TOGGLE })
-    const response = await client.send(command)
+    const args = { topicName: `cmnd/${req.params.resourceName}/POWER`, payload: TOGGLE, qos: 1 }
+    const response = await client.publish(args)
     res.status(200).send(response)
   })
 
@@ -115,8 +104,8 @@
       res.status(400).send({ error: 'Bad input.' })
     }
 
-    const command = new PublishCommand({ topic: '$aws/things/fiji/shadow/update', payload: JSON.stringify({ state: { desired: { airConditioning: input } } }) })
-    const response = await client.send(command)
+    const args = { topicName: '$aws/things/fiji/shadow/update', payload: JSON.stringify({ state: { desired: { airConditioning: input } } }), qos: 1 }
+    const response = await client.publish(args)
     res.status(200).send(response)
   })
 
@@ -124,11 +113,12 @@
   app.post(/\/mqtt\/.*/, async (req, res) => {
     console.log(req.path)
     console.log(req.params)
-    const command = new PublishCommand({
-      topic: req.path.replace(/^\/mqtt\//, ''),
-      payload: JSON.stringify(req.body)
-    })
-    const response = await client.send(command)
+    const args = {
+      topicName: req.path.replace(/^\/mqtt\//, ''),
+      payload: JSON.stringify(req.body),
+      qos: 1,
+    }
+    const response = await client.publish(args)
     res.status(200).send(response)
   })
 
