@@ -24,7 +24,7 @@ export async function handler(event, context, callback) {
   console.log(`event: ${JSON.stringify(event, null, 2)}`)
 
   await Promise.all([
-    logToCloudwatch(event),
+    // logToCloudwatch(event),
     logToInflux(event),
   ])
 }
@@ -34,7 +34,7 @@ async function logToInflux(event) {
     labels = []
 
   for (const [key, value] of Object.entries(event.readings)) {
-    if (key !== 'metadata') {
+    if (key !== 'metadata' && key !== 'aggregationMetadata') {
       data.push(`${key}=${value}`)
     }
   }
@@ -67,7 +67,7 @@ async function logToCloudwatch(event) {
   })
 
   for(let i = 0; i < Object.keys(event.readings).length; i++) {
-    if (Object.keys(event.readings)[i] !== 'metadata') {
+    if (Object.keys(event.readings)[i] !== 'metadata' && Object.keys(event.readings)[i] !== 'aggregationMetadata') {
       data.push({
         MetricName: Object.keys(event.readings)[i],
         Dimensions: dimensions,
