@@ -1,9 +1,13 @@
 {
-  "name": "islands-rewrite",
+  "name": "m-cutie-t",
   "type": "module",
-  "version": "2.0.1",
-  "description": "",
+  "version": "1.0.1",
+  "description": "a general-purpose cli & library for automating mqtt interactions.",
   "main": "src/index.js",
+  "bin": {
+    "m-cutie-t": "src/cli-entrypoint.js",
+    "cutie": "src/cli-entrypoint.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "cd ..; sudo docker build . -t islands -f ./islands-rewrite/Dockerfile; cd islands-rewrite",
@@ -13,7 +17,7 @@
     "update-service": "npm run add-service && sudo systemctl restart islands"
   },
   "engines": "~17.9.0",
-  "author": "",
+  "author": "ashton eby",
   "license": "ISC",
   "dependencies": {
     "bme280": "^2.1.1",
@@ -21,11 +25,13 @@
     "lodash": "^4.17.21",
     "mqtt": "^5.11.0",
     "node-ble": "^1.13.0",
+    "node-yaml": "^4.0.1",
     "pigpio": "^3.3.1",
     "pino": "^8.5.0",
     "pino-pretty": "^9.1.0",
     "serialport": "^10.4.0",
-    "thermalprinter": "^0.3.10"
+    "thermalprinter": "^0.3.10",
+    "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
