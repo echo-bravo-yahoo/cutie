@@ -2,16 +2,11 @@ import get from "lodash/get.js";
 
 import { globals } from "../index.js";
 import { Temp } from "../util/temp.js";
-import { Sensor } from "./generic-sensor.js";
-import { logWeatherToInflux } from "./influxdb.js";
+import { Sensor } from "../util/generic-sensor.js";
 
-let bme280Sensor;
-
-export class BME280 extends Sensor {
-  constructor(stateKey) {
-    super(stateKey);
-
-    this.stateKey = stateKey;
+export default class BME280 extends Sensor {
+  constructor(stateKey, config) {
+    super(stateKey, config);
   }
 
   async register() {
@@ -33,7 +28,9 @@ export class BME280 extends Sensor {
     this.info({ blob: this.samples }, `Aggregating.`);
     const aggregated = {
       metadata: {
+        name: globals.name,
         island: globals.name,
+        location: globals.location,
         timestamp: new Date(),
       },
       aggregationMetadata: {
@@ -104,42 +101,36 @@ export class BME280 extends Sensor {
     const payload = this.aggregate();
 
     globals.connection.publish(
-      `${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.state.location || "unknown"}`,
+      `${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.location || "unknown"}`,
       JSON.stringify(payload)
     );
 
-    await logWeatherToInflux(payload, {
-      ...globals.state,
-      ...this.currentState,
-    });
-
-    if (this.currentState.remoteSensor) {
-      // cmnd/destination/HVACRemoteTemp degreesC
-      // HVACRemoteTemp 22
-      // HVACRemoteTempClearTime 300000
-
-      const sensorPayload = new Temp(payload.temp, "f")
-        .to("c")
-        .value({ precision: 1, stepSize: 0.5 });
-
-      globals.connection.publish(
-        this.currentState.remoteSensor.topic,
-        JSON.stringify(sensorPayload)
+    for (let toFind of this.currentState.destinations) {
+      const found = globals.destinations.find(
+        (globalDest) => globalDest.type === desiredDestination.type
       );
-      this.info(
-        { role: "blob", blob: payload },
-        `Publishing new bme280 remote sensor data to ${this.currentState.remoteSensor.topic}: ${sensorPayload}`
-      );
+
+      if (found) {
+        await found.send(
+          toFind.measurement,
+          {
+            temp: payload.temp,
+            pressure: payload.pressure,
+            humidity: payload.humidity,
+          },
+          payload.metadata
+        );
+      }
     }
 
     this.info(
       { role: "blob", blob: payload },
-      `Publishing new bme280 data to ${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.state.location || "unknown"}: ${JSON.stringify(payload)}`
+      `Publishing new bme280 data to ${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.location || "unknown"}: ${JSON.stringify(payload)}`
     );
   }
 
   async enable() {
-    bme280Sensor = await import("bme280");
+    const bme280Sensor = await import("bme280");
     this.sensor = await bme280Sensor.open({
       i2cAddress: Number(this.currentState.i2cAddress) || 0x76,
     });
@@ -176,6 +167,3 @@ export class BME280 extends Sensor {
   }
 }
 */
-
-const bme280 = new BME280("bme280");
-export default bme280;

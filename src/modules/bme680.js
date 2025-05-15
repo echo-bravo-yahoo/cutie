@@ -2,13 +2,11 @@ import get from "lodash/get.js";
 
 import { globals } from "../index.js";
 import { Temp } from "../util/temp.js";
-import { logWeatherToInflux } from "./influxdb.js";
+import { Sensor } from "../util/generic-sensor.js";
 
-let Bme680;
-
-export class BME680 {
-  constructor(stateKey) {
-    this.stateKey = stateKey;
+export class BME680 extends Sensor {
+  constructor(stateKey, config) {
+    super(stateKey, config);
   }
 
   async register() {
@@ -29,7 +27,7 @@ export class BME680 {
 
     const aggregated = {
       metadata: {
-        island: globals.state.name,
+        island: globals.name,
         timestamp: new Date(),
       },
       aggregationMetadata: {
@@ -67,7 +65,7 @@ export class BME680 {
 
     const datapoint = {
       metadata: {
-        island: globals.state.name,
+        island: globals.name,
         timestamp: new Date(),
       },
       temp: {
@@ -114,11 +112,9 @@ export class BME680 {
     const payload = this.aggregate();
 
     globals.connection.publish(
-      `${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.configs[0].currentState.location || "unknown"}`,
+      `${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.location || "unknown"}`,
       JSON.stringify(payload)
     );
-
-    logWeatherToInflux(payload, { ...globals.state, ...this.currentState });
 
     if (this.currentState.remoteSensor) {
       // cmnd/destination/HVACRemoteTemp degreesC
@@ -141,13 +137,13 @@ export class BME680 {
 
     this.info(
       { role: "blob", blob: payload },
-      `Publishing new bme680 data to ${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.state.location || "unknown"}: ${JSON.stringify(payload)}`
+      `Publishing new bme680 data to ${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.location || "unknown"}: ${JSON.stringify(payload)}`
     );
   }
 
   async enable() {
     if (!this.currentState.virtual) {
-      Bme680 = (await import("bme680-sensor")).default.Bme680;
+      const Bme680 = (await import("bme680-sensor")).default.Bme680;
       this.sensor = new Bme680(1, Number(this.currentState.i2cAddress) || 0x77);
       await this.sensor.initialize();
     }
@@ -168,5 +164,4 @@ export class BME680 {
   }
 }
 
-const bme680 = new BME680("bme680");
-export default bme680;
+export default BME680;

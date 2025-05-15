@@ -4,8 +4,8 @@ import map from "lodash/map.js";
 import { Module } from "./generic-module.js";
 
 export class Sensor extends Module {
-  constructor(stateKey) {
-    super(stateKey);
+  constructor(stateKey, config) {
+    super(stateKey, config);
 
     this.reportInterval = undefined;
     this.sampleInterval = undefined;

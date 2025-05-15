@@ -1,16 +1,15 @@
 import get from "lodash/get.js";
 
 import { globals } from "../index.js";
-import { Sensor } from "./generic-sensor.js";
+import { Sensor } from "../util/generic-sensor.js";
 
 let ble, adapter;
 const deviceMap = {};
 
 export class BLETracker extends Sensor {
-  constructor(stateKey) {
-    super(stateKey);
+  constructor(stateKey, config) {
+    super(stateKey, config);
 
-    this.stateKey = stateKey;
     this.samples = {};
   }
 
@@ -98,13 +97,13 @@ export class BLETracker extends Sensor {
     const payload = this.aggregateOne(deviceKey);
 
     globals.connection.publish(
-      `${this.currentState.mqttTopicPrefix || "data/ble"}/${globals.state.location || "unknown"}/${deviceKey}`,
+      `${this.currentState.mqttTopicPrefix || "data/ble"}/${globals.location || "unknown"}/${deviceKey}`,
       JSON.stringify(payload)
     );
 
     this.info(
       { role: "blob", blob: payload },
-      `Publishing new BLE tracker data to ${this.currentState.mqttTopicPrefix || "data/ble"}/${globals.state.location || "unknown"}/${deviceKey}: ${JSON.stringify(payload)}`
+      `Publishing new BLE tracker data to ${this.currentState.mqttTopicPrefix || "data/ble"}/${globals.location || "unknown"}/${deviceKey}: ${JSON.stringify(payload)}`
     );
   }
 
@@ -183,5 +182,4 @@ export class BLETracker extends Sensor {
 }
 */
 
-const bleTracker = new BLETracker("bleTracker");
-export default bleTracker;
+export default BLETracker;
