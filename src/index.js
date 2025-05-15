@@ -2,9 +2,9 @@ import mqtt from "mqtt";
 
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const config = require("./config.json");
-const state = require("./state.json");
-const packageJson = require("./package.json");
+const config = require("../config/config.json");
+const state = require("../config/state.json");
+const packageJson = require("../package.json");
 
 import bme280 from "./modules/bme280.js";
 import bme680 from "./modules/bme680.js";

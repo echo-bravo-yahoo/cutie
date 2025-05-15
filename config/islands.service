@@ -3,8 +3,8 @@ Description=a little iot island
 
 [Service]
 User=pi
-WorkingDirectory=/home/pi/islands/mqtt-islands
-ExecStart=node index.js
+WorkingDirectory=/home/pi/islands
+ExecStart=npm run start
 Restart=always
 RestartSec=2
 
