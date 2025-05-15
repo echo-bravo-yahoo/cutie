@@ -1,12 +1,19 @@
-#### Islands
-It's my IOT experiment! Each device is an "island".
+Confirmed to work on node 17
 
-##### Things to know:
-There's a lot to know about AWS IOT. In general, though, these are the most important:
-- You have 2 ways to communicate: shadow updates, and MQTT events. Use shadow updates for state and MQTT events otherwise. Supposedly, with persistent connections, devices will get MQTT events that they missed while offline. I haven't tested this yet, though.
-- Having the same device running 2 MQTT clients is bad news. They appear to pick randomly which gets which messages, and both publish.
-- I've decided to have homogenous code-bases and store which hardware each device has in its shadow.
+Install to systemctl via `sudo cp ./islands.service /etc/systemd/system/islands.service` and then `sudo systemctl enable islands`
 
-##### Known bugs:
-- When the Thing receives a desired shadow state, it echoes that back to reported, regardless of whether it can reach that state or not
-- When the Thing receives a shadow delta, it echoes only the delta back to reported, causing it to thrash on updates over and over until it receives a full shadow state
+### To-do
+
+- Dynamically adapt to changes in location from MQTT (the application currently doesn't see those changes and continues to emit/subscribe to the old location MQTT topics)
+
+### Logging cookbook
+
+- Pretty logs: `node index.js | pino-pretty`
+- Pretty logs for only one tag (in this case, "shadow"): `node index.js | jq 'select(.tags | index( "shadow" ))' | pino-pretty`
+
+### Deploying to a raspi for development
+
+Problems with rsync: no watch daemon
+`rsync --recursive --exclude "**/node_modules/*" --exclude "**/.git/*" --exclude "**/config.json"  --exclude "**.png" --exclude "**.zip" --exclude "**.md" --exclude "**/package-lock.json" ~/workspace/islands/ <node>:/home/pi/islands --verbose`
+
+`git stash; git pull; git stash pop; sudo systemctl restart islands; sudo journalctl -u islands --follow`

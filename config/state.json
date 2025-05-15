@@ -1,0 +1,40 @@
+{
+  "location": "",
+  "name": "",
+  "bme280": {
+    "enabled": false,
+    "offsets": {
+      "temp": 0,
+      "humidity": 0,
+      "pressure": 0
+    },
+    "sampling": {
+      "interval": "",
+      "aggregation": "average"
+    },
+    "reporting": {
+      "interval": ""
+    },
+    "remoteSensor": {
+      "topic": ""
+    },
+    "mqttTopicPrefix": ""
+  },
+  "influxdb": {
+    "enabled": false,
+    "url": "",
+    "organization": "",
+    "bucket": "",
+    "precision": "ms",
+    "token": ""
+  },
+  "bleTracker": {
+    "enabled": false,
+    "devices": [{ "alias": "", "macAddress": "00:00:00:00:00:00" }],
+    "sampling": {
+      "interval": 10000,
+      "aggregation": "average"
+    },
+    "mqttTopicPrefix": ""
+  }
+}

@@ -1,0 +1,187 @@
+import get from "lodash/get.js";
+
+import { globals } from "../index.js";
+import { Sensor } from "./generic-sensor.js";
+
+let ble, adapter;
+const deviceMap = {};
+
+export class BLETracker extends Sensor {
+  constructor(stateKey) {
+    super(stateKey);
+
+    this.stateKey = stateKey;
+    this.samples = {};
+  }
+
+  async register() {
+    this.currentState = get(globals, `state["${this.stateKey}"]`, {
+      enabled: false,
+    });
+
+    if (this.currentState.enabled) {
+      this.enable();
+    }
+  }
+
+  aggregateOne(deviceKey) {
+    const aggregation =
+      this.samples[deviceKey].length === 1
+        ? "latest"
+        : get(this.currentState, "sampling.aggregation", "average");
+
+    this.info({ blob: this.samples[deviceKey] }, `Aggregating.`);
+    const aggregated = {
+      metadata: {
+        island: globals.name,
+        timestamp: new Date(),
+      },
+      aggregationMetadata: {
+        samples: this.samples[deviceKey].length,
+        aggregation,
+      },
+      rssi: Number(this.aggregateMeasurement(`rssi.result`, deviceKey)).toFixed(
+        0
+      ),
+    };
+    this.info(
+      { before: this.samples[deviceKey], after: aggregated },
+      `Aggregated.`
+    );
+
+    this.samples[deviceKey] = [];
+
+    return aggregated;
+  }
+
+  async sampleOne(deviceSpec) {
+    const deviceKey = deviceSpec.alias || deviceSpec.macAddress;
+    let rssi = -99;
+
+    if (deviceMap[deviceKey]) {
+      try {
+        rssi = await deviceMap[deviceKey].getRSSI();
+      } catch (e) {}
+    }
+
+    const datapoint = {
+      metadata: {
+        island: globals.name,
+        timestamp: new Date(),
+      },
+      rssi: {
+        raw: rssi,
+        result: rssi,
+      },
+    };
+
+    this.debug({}, `Sampled new data point`);
+    if (!this.samples[deviceKey] || !this.samples[deviceKey].length)
+      this.samples[deviceKey] = [];
+    this.samples[deviceKey].push(datapoint);
+  }
+
+  async sample() {
+    if (!this.currentState.enabled) return;
+
+    await this.discoverAdvertisements();
+
+    const promises = [];
+    for (let device of this.currentState.devices) {
+      promises.push(this.sampleOne(device));
+    }
+
+    return Promise.all(promises);
+  }
+
+  async publishOne(deviceKey) {
+    const payload = this.aggregateOne(deviceKey);
+
+    globals.connection.publish(
+      `${this.currentState.mqttTopicPrefix || "data/ble"}/${globals.state.location || "unknown"}/${deviceKey}`,
+      JSON.stringify(payload)
+    );
+
+    this.info(
+      { role: "blob", blob: payload },
+      `Publishing new BLE tracker data to ${this.currentState.mqttTopicPrefix || "data/ble"}/${globals.state.location || "unknown"}/${deviceKey}: ${JSON.stringify(payload)}`
+    );
+  }
+
+  async publishReading() {
+    const firstDeviceSamples = Object.values(this.samples)[0];
+    if (
+      get(this.currentState, "sampling") === undefined ||
+      !firstDeviceSamples ||
+      firstDeviceSamples.length === 0
+    ) {
+      await this.sample();
+    }
+
+    for (let deviceSpec of this.currentState.devices) {
+      const deviceKey = deviceSpec.alias || deviceSpec.macAddress;
+      this.publishOne(deviceKey);
+    }
+  }
+
+  async discoverAdvertisements() {
+    if (!adapter) {
+      const nodeBLE = (await import("node-ble")).default;
+      ble = nodeBLE.createBluetooth();
+      adapter = await ble.bluetooth.defaultAdapter();
+    }
+
+    if (!(await adapter.isDiscovering())) await adapter.startDiscovery();
+
+    for (let device of this.currentState.devices) {
+      const deviceKey = device.alias || device.macAddress;
+      try {
+        deviceMap[deviceKey] = await adapter.waitDevice(
+          device.macAddress,
+          30000
+        );
+        this.debug({}, `Device with key ${deviceKey} found.`);
+      } catch (e) {
+        this.debug({}, `No device found for key ${deviceKey}`);
+        // it's normal for missing devices to timeout
+      }
+    }
+  }
+
+  async enable() {
+    await this.discoverAdvertisements();
+
+    this.setupPublisher();
+    this.info({}, `Enabled BLE tracker.`);
+    this.currentState.enabled = true;
+  }
+
+  async disable() {
+    clearInterval(this.interval);
+    for (let device of Object.values(deviceMap)) {
+      await device.disconnect();
+    }
+    ble.destroy();
+
+    this.info({}, `Disabled BLE tracker.`);
+    this.currentState.enabled = false;
+  }
+}
+
+/*
+{
+  "enabled": true,
+  "macAddress": "00:00:00:00:00:00",
+  "alias": "some name to use for the MQTT topic",
+  "sampling": {
+    "interval": "",
+    "aggregation": "latest|average|median|pX"
+  },
+  "reporting": {
+    "interval": ""
+  }
+}
+*/
+
+const bleTracker = new BLETracker("bleTracker");
+export default bleTracker;

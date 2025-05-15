@@ -1,0 +1,12 @@
+[Unit]
+Description=a little iot island
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/islands/mqtt-islands
+ExecStart=node index.js
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
