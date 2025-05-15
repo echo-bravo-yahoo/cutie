@@ -7,8 +7,8 @@ let ble, adapter;
 const deviceMap = {};
 
 export class BLETracker extends Sensor {
-  constructor(stateKey, config) {
-    super(stateKey, config);
+  constructor(config) {
+    super(config);
 
     this.samples = {};
   }
@@ -96,15 +96,24 @@ export class BLETracker extends Sensor {
   async publishOne(deviceKey) {
     const payload = this.aggregateOne(deviceKey);
 
-    globals.connection.publish(
-      `${this.currentState.mqttTopicPrefix || "data/ble"}/${globals.location || "unknown"}/${deviceKey}`,
-      JSON.stringify(payload)
-    );
+    // real clumsy hack: this is copied from util/generic-sensor until i get sampling one/many
+    // working well
+    for (let toFind of this.config.destinations) {
+      const found = getDestination(toFind.name);
 
-    this.info(
-      { role: "blob", blob: payload },
-      `Publishing new BLE tracker data to ${this.currentState.mqttTopicPrefix || "data/ble"}/${globals.location || "unknown"}/${deviceKey}: ${JSON.stringify(payload)}`
-    );
+      if (found) {
+        this.info(
+          { role: "blob", blob: payload },
+          `Publishing new ${this.config.name} data to ${toFind.measurement}: ${JSON.stringify(payload)}`
+        );
+        found.send(
+          toFind.measurement,
+          { ...payload, metadata: undefined, aggregationMetadata: undefined },
+          payload.metadata,
+          payload.aggregationMetadata
+        );
+      }
+    }
   }
 
   async publishReading() {

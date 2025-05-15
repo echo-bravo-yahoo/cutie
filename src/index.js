@@ -4,7 +4,6 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-import mqtt from "mqtt";
 import { read } from "node-yaml";
 
 import loggerFactory from "pino";
@@ -29,10 +28,6 @@ export async function start(args) {
     name: state.name,
     version: packageJson.version,
     logger: loggerFactory({ level: config.logLevel || "debug" }),
-    connection: mqtt.connect(config.mqttOptions.endpoint, {
-      ...config.mqttOptions,
-      endpoint: undefined,
-    }),
   };
 
   await registerModules(state.modules);

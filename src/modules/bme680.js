@@ -5,8 +5,8 @@ import { Temp } from "../util/temp.js";
 import { Sensor } from "../util/generic-sensor.js";
 
 export class BME680 extends Sensor {
-  constructor(stateKey, config) {
-    super(stateKey, config);
+  constructor(config) {
+    super(config);
   }
 
   async register() {
@@ -99,46 +99,6 @@ export class BME680 extends Sensor {
 
     this.debug({}, `Sampled new data point`);
     this.samples.push(datapoint);
-  }
-
-  async publishReading() {
-    if (
-      get(this.currentState, "sampling") === undefined ||
-      this.samples.length === 0
-    ) {
-      await this.sample();
-    }
-
-    const payload = this.aggregate();
-
-    globals.connection.publish(
-      `${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.location || "unknown"}`,
-      JSON.stringify(payload)
-    );
-
-    if (this.currentState.remoteSensor) {
-      // cmnd/destination/HVACRemoteTemp degreesC
-      // HVACRemoteTemp 22
-      // HVACRemoteTempClearTime 300000
-
-      const sensorPayload = new Temp(payload.temp, "f")
-        .to("c")
-        .value({ precision: 1, stepSize: 0.5 });
-
-      globals.connection.publish(
-        this.currentState.remoteSensor.topic,
-        JSON.stringify(sensorPayload)
-      );
-      this.info(
-        { role: "blob", blob: payload },
-        `Publishing new bme280 remote sensor data to ${this.currentState.remoteSensor.topic}: ${sensorPayload}`
-      );
-    }
-
-    this.info(
-      { role: "blob", blob: payload },
-      `Publishing new bme680 data to ${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.location || "unknown"}: ${JSON.stringify(payload)}`
-    );
   }
 
   async enable() {

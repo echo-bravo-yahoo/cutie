@@ -12,8 +12,8 @@ export class Loggable {
         {
           ...obj,
           role: "breadcrumb",
-          virtual: this.currentState.virtual,
-          tags: [...(obj.tags || []), stateKey],
+          virtual: !!this.virtual,
+          tags: [...(obj.tags || []), this.stateKey],
         },
         msg,
         args
@@ -30,8 +30,8 @@ export class Loggable {
         {
           ...obj,
           role: "breadcrumb",
-          virtual: this.currentState.virtual,
-          tags: [...(obj.tags || []), stateKey],
+          virtual: !!this.virtual,
+          tags: [...(obj.tags || []), this.stateKey],
         },
         msg,
         args
@@ -49,8 +49,8 @@ export class Loggable {
       globals.logger.error({
         ...obj,
         role: 'breadcrumb',
-        virtual: this.currentState.virtual,
-        tags: [...(obj.tags || []), stateKey]
+        virtual: !!this.virtual,
+        tags: [...(obj.tags || []), this.stateKey]
       }, msg, args)
       */
     };

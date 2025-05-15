@@ -3,8 +3,8 @@ import { exec } from "node:child_process";
 import { Destination } from "../util/generic-destination.js";
 
 export default class InfluxDB extends Destination {
-  constructor(stateKey, config) {
-    super(stateKey, config);
+  constructor(config) {
+    super(config);
   }
 
   async register() {

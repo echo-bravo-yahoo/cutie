@@ -26,7 +26,6 @@ export async function registerDestinations(destinationConfigs) {
       const newIndex = globals.destinations.length;
       const newDestination = new Destination(destinationConfig);
 
-      console.log(newDestination);
       globals.destinations.push(newDestination);
       promises.push(newDestination.register());
       globals.logger.info(
@@ -45,6 +44,6 @@ export async function registerDestinations(destinationConfigs) {
 
 export function getDestination(destinationKey) {
   return globals.destinations.find(
-    (destination) => destination.name === destinationKey
+    (destination) => destination.config.name === destinationKey
   );
 }

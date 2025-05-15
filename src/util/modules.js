@@ -41,5 +41,5 @@ export async function registerModules(moduleConfigs) {
 }
 
 export function getModule(moduleKey) {
-  return globals.modules.find((module) => module.name === moduleKey);
+  return globals.modules.find((module) => module.config.name === moduleKey);
 }

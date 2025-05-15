@@ -12,11 +12,11 @@
         "pressure": 0
       },
       "sampling": {
-        "interval": "",
+        "interval": 10000,
         "aggregation": "average"
       },
       "reporting": {
-        "interval": ""
+        "interval": 10000
       },
       "destinations": [
         {
@@ -45,7 +45,9 @@
         "interval": 10000,
         "aggregation": "average"
       },
-      "mqttTopicPrefix": ""
+      "reporting": {
+        "interval": 10000
+      }
     }
   ],
   "destinations": [
@@ -58,6 +60,14 @@
       "bucket": "",
       "precision": "ms",
       "token": ""
+    },
+    {
+      "name": "mqtt",
+      "type": "mqtt",
+      "enabled": false,
+      "username": "",
+      "password": "",
+      "endpoint": ""
     }
   ]
 }

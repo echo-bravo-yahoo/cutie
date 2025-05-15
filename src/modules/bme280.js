@@ -5,16 +5,12 @@ import { Temp } from "../util/temp.js";
 import { Sensor } from "../util/generic-sensor.js";
 
 export default class BME280 extends Sensor {
-  constructor(stateKey, config) {
-    super(stateKey, config);
+  constructor(config) {
+    super(config);
   }
 
   async register() {
-    this.currentState = get(globals, `state["${this.stateKey}"]`, {
-      enabled: false,
-    });
-
-    if (this.currentState.enabled) {
+    if (this.config.enabled) {
       this.enable();
     }
   }
@@ -23,7 +19,7 @@ export default class BME280 extends Sensor {
     const aggregation =
       this.samples.length === 1
         ? "latest"
-        : get(this.currentState, "sampling.aggregation", "average");
+        : get(this.config, "sampling.aggregation", "average");
 
     this.info({ blob: this.samples }, `Aggregating.`);
     const aggregated = {
@@ -37,9 +33,9 @@ export default class BME280 extends Sensor {
         samples: this.samples.length,
         aggregation,
         offsets: {
-          temp: get(this.currentState, "offsets.temp", 0),
-          humidity: get(this.currentState, "offsets.humidity", 0),
-          pressure: get(this.currentState, "offsets.pressure", 0),
+          temp: get(this.config, "offsets.temp", 0),
+          humidity: get(this.config, "offsets.humidity", 0),
+          pressure: get(this.config, "offsets.pressure", 0),
         },
       },
       temp: new Temp(this.aggregateMeasurement("temp.result"), "f").value({
@@ -55,7 +51,7 @@ export default class BME280 extends Sensor {
   }
 
   async sample() {
-    if (!this.currentState.enabled) return;
+    if (!this.config.enabled) return;
     const sensorData = await this.sensor.read();
 
     const datapoint = {
@@ -66,23 +62,21 @@ export default class BME280 extends Sensor {
       temp: {
         raw: sensorData.temperature,
         converted: new Temp(sensorData.temperature, "c").to("f").value(),
-        offset: get(this.currentState, "offsets.temp"),
+        offset: get(this.config, "offsets.temp"),
         result: new Temp(sensorData.temperature, "c")
           .to("f")
-          .add(get(this.currentState, "offsets.temp", 0), "f")
+          .add(get(this.config, "offsets.temp", 0), "f")
           .value(),
       },
       humidity: {
         raw: sensorData.humidity,
-        offset: get(this.currentState, "offsets.humidity", 0),
-        result:
-          sensorData.humidity + get(this.currentState, "offsets.humidity", 0),
+        offset: get(this.config, "offsets.humidity", 0),
+        result: sensorData.humidity + get(this.config, "offsets.humidity", 0),
       },
       pressure: {
         raw: sensorData.pressure,
-        offset: get(this.currentState, "offsets.pressure", 0),
-        result:
-          sensorData.pressure + get(this.currentState, "offsets.pressure", 0),
+        offset: get(this.config, "offsets.pressure", 0),
+        result: sensorData.pressure + get(this.config, "offsets.pressure", 0),
       },
     };
 
@@ -90,60 +84,21 @@ export default class BME280 extends Sensor {
     this.samples.push(datapoint);
   }
 
-  async publishReading() {
-    if (
-      get(this.currentState, "sampling") === undefined ||
-      this.samples.length === 0
-    ) {
-      await this.sample();
-    }
-
-    const payload = this.aggregate();
-
-    globals.connection.publish(
-      `${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.location || "unknown"}`,
-      JSON.stringify(payload)
-    );
-
-    for (let toFind of this.currentState.destinations) {
-      const found = globals.destinations.find(
-        (globalDest) => globalDest.type === desiredDestination.type
-      );
-
-      if (found) {
-        await found.send(
-          toFind.measurement,
-          {
-            temp: payload.temp,
-            pressure: payload.pressure,
-            humidity: payload.humidity,
-          },
-          payload.metadata
-        );
-      }
-    }
-
-    this.info(
-      { role: "blob", blob: payload },
-      `Publishing new bme280 data to ${this.currentState.mqttTopicPrefix || "data/weather"}/${globals.location || "unknown"}: ${JSON.stringify(payload)}`
-    );
-  }
-
   async enable() {
     const bme280Sensor = await import("bme280");
     this.sensor = await bme280Sensor.open({
-      i2cAddress: Number(this.currentState.i2cAddress) || 0x76,
+      i2cAddress: Number(this.config.i2cAddress) || 0x76,
     });
     this.setupPublisher();
     this.info({}, `Enabled bme280.`);
-    this.currentState.enabled = true;
+    this.enabled = true;
   }
 
   async disable() {
     clearInterval(this.interval);
     if (this.sensor) await this.sensor.close();
     this.info({}, `Disabled bme280.`);
-    this.currentState.enabled = false;
+    this.enabled = false;
   }
 }
 

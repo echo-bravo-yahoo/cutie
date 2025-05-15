@@ -2,6 +2,7 @@ import get from "lodash/get.js";
 import map from "lodash/map.js";
 
 import { Module } from "./generic-module.js";
+import { getDestination } from "./destinations.js";
 
 export class Sensor extends Module {
   constructor(stateKey, config) {
@@ -11,6 +12,34 @@ export class Sensor extends Module {
     this.sampleInterval = undefined;
     this.sensor = undefined;
     this.samples = [];
+  }
+
+  async publishReading() {
+    if (
+      get(this.config, "sampling") === undefined ||
+      this.samples.length === 0
+    ) {
+      await this.sample();
+    }
+
+    const payload = this.aggregate();
+
+    for (let toFind of this.config.destinations) {
+      const found = getDestination(toFind.name);
+
+      if (found) {
+        this.info(
+          { role: "blob", blob: payload },
+          `Publishing new ${this.config.name} data to ${toFind.measurement}: ${JSON.stringify(payload)}`
+        );
+        found.send(
+          toFind.measurement,
+          { ...payload, metadata: undefined, aggregationMetadata: undefined },
+          payload.metadata,
+          payload.aggregationMetadata
+        );
+      }
+    }
   }
 
   // path => single datapoint
@@ -26,9 +55,7 @@ export class Sensor extends Module {
   // array of numbers => single datapoint
   doAggregation(data) {
     const aggregation =
-      data.length === 1
-        ? "latest"
-        : get(this.currentState, "sampling.aggregation");
+      data.length === 1 ? "latest" : get(this.config, "sampling.aggregation");
 
     if (aggregation === "average") {
       return data.reduce((sum, next) => sum + next, 0) / data.length;
@@ -61,37 +88,11 @@ export class Sensor extends Module {
     });
   }
 
-  async handleSampling(newState) {
-    this.info(
-      {},
-      `Updating sampling interval from ${this.getSamplingInterval()} to ${newState.sampling.interval}.`
-    );
-    this.currentState.sampling = newState.sampling;
-
-    // TODO: ideally, this would re-calculate the next invocation to the correct time
-    // right now, it sort of just is randomly between (newInterval) and
-    // (newInterval+oldInterval)
-    this.setupSampler.bind(this)();
-  }
-
-  async handleReporting(newState) {
-    this.info(
-      {},
-      `Updating reporting interval from ${this.getReportingInterval()} to ${newState.reporting.interval}.`
-    );
-    this.currentState.reporting = newState.reporting;
-
-    // TODO: ideally, this would re-calculate the next invocation to the correct time
-    // right now, it sort of just is randomly between (newInterval) and
-    // (newInterval+oldInterval)
-    this.setupPublisher.bind(this)();
-  }
-
   getSamplingInterval() {
-    return get(this.currentState, "sampling.interval", 60 * 1000);
+    return get(this.config, "sampling.interval", 60 * 1000);
   }
 
   getReportingInterval() {
-    return get(this.currentState, "reporting.interval", 60 * 1000);
+    return get(this.config, "reporting.interval", 60 * 1000);
   }
 }
