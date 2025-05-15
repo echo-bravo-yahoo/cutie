@@ -8,9 +8,7 @@ export default class InfluxDB extends Destination {
   }
 
   async register() {
-    // if (this.currentState.enabled) {
-    //   this.enable();
-    // }
+    // this.enable();
   }
 
   async send(measurementName, event, labels) {

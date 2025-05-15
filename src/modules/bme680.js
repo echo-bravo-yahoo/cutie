@@ -10,11 +10,7 @@ export class BME680 extends Sensor {
   }
 
   async register() {
-    this.currentState = get(globals, `state["${this.stateKey}"]`, {
-      enabled: false,
-    });
-
-    if (this.currentState.enabled) {
+    if (this.enabled) {
       this.enable();
     }
   }
@@ -23,7 +19,7 @@ export class BME680 extends Sensor {
     const aggregation =
       this.samples.length === 1
         ? "latest"
-        : get(this.currentState, "sampling.aggregation", "average");
+        : get(this.config, "sampling.aggregation", "average");
 
     const aggregated = {
       metadata: {
@@ -34,10 +30,10 @@ export class BME680 extends Sensor {
         samples: this.samples.length,
         aggregation,
         offsets: {
-          temp: get(this.currentState, "offsets.temp", 0),
-          humidity: get(this.currentState, "offsets.humidity", 0),
-          pressure: get(this.currentState, "offsets.pressure", 0),
-          gas: get(this.currentState, "offsets.gas", 0),
+          temp: get(this.config, "offsets.temp", 0),
+          humidity: get(this.config, "offsets.humidity", 0),
+          pressure: get(this.config, "offsets.pressure", 0),
+          gas: get(this.config, "offsets.gas", 0),
         },
       },
       temp: new Temp(this.aggregateMeasurement("temp.result")).value({
@@ -45,13 +41,12 @@ export class BME680 extends Sensor {
       }),
       humidity:
         this.aggregateMeasurement("humidity.result") +
-        get(this.currentState, "offsets.humidity", 0),
+        get(this.config, "offsets.humidity", 0),
       pressure:
         this.aggregateMeasurement("pressure.result") +
-        get(this.currentState, "offsets.pressure", 0),
+        get(this.config, "offsets.pressure", 0),
       gas:
-        this.aggregateMeasurement("gas") +
-        get(this.currentState, "offsets.gas", 0),
+        this.aggregateMeasurement("gas") + get(this.config, "offsets.gas", 0),
     };
 
     this.samples = [];
@@ -60,7 +55,7 @@ export class BME680 extends Sensor {
   }
 
   async sample() {
-    if (!this.currentState.enabled) return;
+    if (!this.enabled) return;
     const sensorData = await this.sensor.read();
 
     const datapoint = {
@@ -71,29 +66,26 @@ export class BME680 extends Sensor {
       temp: {
         raw: sensorData.temperature,
         converted: new Temp(sensorData.temperature, "c").to("f").value(),
-        offset: get(this.currentState, "offsets.temp"),
+        offset: get(this.config, "offsets.temp"),
         result: new Temp(sensorData.temperature, "c")
           .to("f")
-          .add(get(this.currentState, "offsets.temp", 0), "f")
+          .add(get(this.config, "offsets.temp", 0), "f")
           .value(),
       },
       humidity: {
         raw: sensorData.humidity,
-        offset: get(this.currentState, "offsets.humidity", 0),
-        result:
-          sensorData.humidity + get(this.currentState, "offsets.humidity", 0),
+        offset: get(this.config, "offsets.humidity", 0),
+        result: sensorData.humidity + get(this.config, "offsets.humidity", 0),
       },
       pressure: {
         raw: sensorData.pressure,
-        offset: get(this.currentState, "offsets.pressure", 0),
-        result:
-          sensorData.pressure + get(this.currentState, "offsets.pressure", 0),
+        offset: get(this.config, "offsets.pressure", 0),
+        result: sensorData.pressure + get(this.config, "offsets.pressure", 0),
       },
       gas: {
         raw: sensorData.gas_resistance,
-        offset: get(this.currentState, "offsets.gas", 0),
-        result:
-          sensorData.gas_resistance + get(this.currentState, "offsets.gas", 0),
+        offset: get(this.config, "offsets.gas", 0),
+        result: sensorData.gas_resistance + get(this.config, "offsets.gas", 0),
       },
     };
 
@@ -102,9 +94,9 @@ export class BME680 extends Sensor {
   }
 
   async enable() {
-    if (!this.currentState.virtual) {
+    if (!this.config.virtual) {
       const Bme680 = (await import("bme680-sensor")).default.Bme680;
-      this.sensor = new Bme680(1, Number(this.currentState.i2cAddress) || 0x77);
+      this.sensor = new Bme680(1, Number(this.config.i2cAddress) || 0x77);
       await this.sensor.initialize();
     }
 
@@ -113,14 +105,14 @@ export class BME680 extends Sensor {
     // (newInterval+oldInterval)
     this.setupPublisher();
     this.info({}, `Enabled bme680.`);
-    this.currentState.enabled = true;
+    this.enabled = true;
   }
 
   async disable() {
     // TODO: do I need to turn off the sensor / close the connection?
     clearInterval(this.interval);
     this.info({}, `Disabled bme680.`);
-    this.currentState.enabled = false;
+    this.enabled = false;
   }
 }
 

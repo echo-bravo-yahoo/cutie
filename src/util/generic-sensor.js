@@ -5,8 +5,8 @@ import { Module } from "./generic-module.js";
 import { getDestination } from "./destinations.js";
 
 export class Sensor extends Module {
-  constructor(stateKey, config) {
-    super(stateKey, config);
+  constructor(config) {
+    super(config);
 
     this.reportInterval = undefined;
     this.sampleInterval = undefined;

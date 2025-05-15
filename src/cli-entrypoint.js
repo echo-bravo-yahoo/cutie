@@ -8,10 +8,9 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const argv = parser(process.argv.slice(2) || "", {
-  string: ["config", "state"],
+  string: ["config"],
   default: {
     config: `${__dirname}/../config/config.json`,
-    state: `${__dirname}/../config/state.json`,
   },
 });
 

@@ -14,11 +14,7 @@ export class BLETracker extends Sensor {
   }
 
   async register() {
-    this.currentState = get(globals, `state["${this.stateKey}"]`, {
-      enabled: false,
-    });
-
-    if (this.currentState.enabled) {
+    if (this.enabled) {
       this.enable();
     }
   }
@@ -27,7 +23,7 @@ export class BLETracker extends Sensor {
     const aggregation =
       this.samples[deviceKey].length === 1
         ? "latest"
-        : get(this.currentState, "sampling.aggregation", "average");
+        : get(this.config, "sampling.aggregation", "average");
 
     this.info({ blob: this.samples[deviceKey] }, `Aggregating.`);
     const aggregated = {
@@ -81,12 +77,12 @@ export class BLETracker extends Sensor {
   }
 
   async sample() {
-    if (!this.currentState.enabled) return;
+    if (!this.enabled) return;
 
     await this.discoverAdvertisements();
 
     const promises = [];
-    for (let device of this.currentState.devices) {
+    for (let device of this.config.devices) {
       promises.push(this.sampleOne(device));
     }
 
@@ -119,14 +115,14 @@ export class BLETracker extends Sensor {
   async publishReading() {
     const firstDeviceSamples = Object.values(this.samples)[0];
     if (
-      get(this.currentState, "sampling") === undefined ||
+      get(this.config, "sampling") === undefined ||
       !firstDeviceSamples ||
       firstDeviceSamples.length === 0
     ) {
       await this.sample();
     }
 
-    for (let deviceSpec of this.currentState.devices) {
+    for (let deviceSpec of this.config.devices) {
       const deviceKey = deviceSpec.alias || deviceSpec.macAddress;
       this.publishOne(deviceKey);
     }
@@ -141,7 +137,7 @@ export class BLETracker extends Sensor {
 
     if (!(await adapter.isDiscovering())) await adapter.startDiscovery();
 
-    for (let device of this.currentState.devices) {
+    for (let device of this.config.devices) {
       const deviceKey = device.alias || device.macAddress;
       try {
         deviceMap[deviceKey] = await adapter.waitDevice(
@@ -161,7 +157,7 @@ export class BLETracker extends Sensor {
 
     this.setupPublisher();
     this.info({}, `Enabled BLE tracker.`);
-    this.currentState.enabled = true;
+    this.enabled = true;
   }
 
   async disable() {
@@ -172,7 +168,7 @@ export class BLETracker extends Sensor {
     ble.destroy();
 
     this.info({}, `Disabled BLE tracker.`);
-    this.currentState.enabled = false;
+    this.enabled = false;
   }
 }
 
