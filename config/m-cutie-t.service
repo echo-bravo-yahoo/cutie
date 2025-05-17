@@ -1,9 +1,9 @@
 [Unit]
-Description=a little iot island
+Description=a little MQTT service
 
 [Service]
 User=pi
-WorkingDirectory=/home/pi/islands
+WorkingDirectory=/home/pi/m-cutie-t
 ExecStart=npm run start
 Restart=always
 RestartSec=2

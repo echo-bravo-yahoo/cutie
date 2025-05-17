@@ -12,7 +12,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "cd ..; sudo docker build . -t islands -f ./islands-rewrite/Dockerfile; cd islands-rewrite",
     "sync": "lsyncd config.lua",
-    "start": "nodemon src/index.js",
+    "start": "./src/cli-entrypoint.js",
     "add-service": "sudo cp ./config/islands.service /etc/systemd/system/islands.service && sudo systemctl enable islands",
     "update-service": "npm run add-service && sudo systemctl restart islands"
   },
@@ -32,8 +32,5 @@
     "serialport": "^10.4.0",
     "thermalprinter": "^0.3.10",
     "yargs-parser": "^21.1.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
   }
 }
