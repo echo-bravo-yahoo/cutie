@@ -4,24 +4,25 @@ FROM node:20
 # dependencies first for docker cache reasons:
 # https://docs.docker.com/get-started/docker-concepts/building-images/using-the-build-cache/
 
-WORKDIR /usr/local/islands
-COPY ./islands-rewrite/package.json ./islands-rewrite/package-lock.json .
+WORKDIR /usr/local/cutie
+COPY ./package.json ./package-lock.json .
 RUN npm install
 
 WORKDIR /usr/local/bitbang
 COPY ./bitbang/package.json ./bitbang/package-lock.json .
 RUN npm install
 
-WORKDIR /usr/local/islands
-COPY ./islands-rewrite .
+WORKDIR /usr/local/cutie
+COPY . .
 
 WORKDIR /usr/local/bitbang
 COPY ./bitbang .
 
-WORKDIR /usr/local/islands
+WORKDIR /usr/local/cutie
 EXPOSE 8080
 
 # CMD tail -f /dev/null
 
 # runs package.json's main script
-CMD ["node", "/usr/local/islands/node_modules/.bin/nodemon"]
+WORKDIR /usr/local/cutie
+CMD ["node", "/usr/local/cutie/node_modules/.bin/nodemon"]

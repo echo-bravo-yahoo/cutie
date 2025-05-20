@@ -1,20 +1,19 @@
 {
-  "name": "m-cutie-t",
+  "name": "cutie",
   "type": "module",
   "version": "1.0.1",
   "description": "a general-purpose cli & library for automating mqtt interactions.",
   "main": "src/index.js",
   "bin": {
-    "m-cutie-t": "src/cli-entrypoint.js",
     "cutie": "src/cli-entrypoint.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "cd ..; sudo docker build . -t islands -f ./islands-rewrite/Dockerfile; cd islands-rewrite",
+    "build": "sudo docker build . -t cutie -f ./Dockerfile",
     "sync": "lsyncd config.lua",
     "start": "./src/cli-entrypoint.js",
-    "add-service": "sudo cp ./config/islands.service /etc/systemd/system/islands.service && sudo systemctl enable islands",
-    "update-service": "npm run add-service && sudo systemctl restart islands"
+    "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo systemctl enable cutie",
+    "update-service": "npm run add-service && sudo systemctl restart cutie"
   },
   "engines": "~17.9.0",
   "author": "ashton eby",
