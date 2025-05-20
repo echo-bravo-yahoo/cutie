@@ -19,7 +19,7 @@ This functionality is not implemented yet, but I plan to allow defining subscrib
 
 ## Platform requirements
 
-Right now, `cutie` is only tested to run on nodeJS 17 on 1st gen raspberry pi 0Ws. It should run in most linux environments, but individual sensors may fail to build or require OS utilities not present for some distributions.
+Right now, `cutie` is only tested to run on nodeJS 17 on 1st gen raspberry pi 0Ws. It should run in most linux environments, but individual sensors may fail to build or require OS utilities not present for some distributions. It does have to be built with python 3.10.8 or earlier.
 
 ## Installation & use
 
@@ -28,7 +28,7 @@ To use `cutie` as a CLI tool:
 ```bash
 git clone git@github.com:echo-bravo-yahoo/cutie.git
 cd cutie
-npm install
+npm install --python=python3.10 # won't build with newer python versions
 npm link # optional, installs the CLI to your path as `cutie`
 cutie
 ```
@@ -58,6 +58,18 @@ Once you have it configured to your liking, you can install it to systemctl so i
 - [ ] Update `provisioner`
 - [ ] Update `Dockerfile`
 
+### Common issues
+
+#### `npm install` fails because of node-gyp failure
+
+```
+npm ERR! ValueError: invalid mode: 'rU' while trying to load binding.gyp
+npm ERR! gyp ERR! configure error
+npm ERR! gyp ERR! stack Error: `gyp` failed with exit code: 1
+```
+
+Ensure you're installing with python < 3.11, e.g., `npm install --python=python3.10 # or other older python that's on your PATH`.
+
 ### Developing on cutie
 
 These are primarily notes to myself for the time being.
@@ -68,8 +80,8 @@ The `random` sensor runs without any hardware; use it to test changes to the run
 
 #### Logging
 
-- Pretty logs: `node index.js | pino-pretty`
-- Pretty logs for only one tag (in this case, "shadow"): `node index.js | jq 'select(.tags | index( "shadow" ))' | pino-pretty`
+- Pretty logs: `npm run start -- --config ./config/config-real.json | pino-pretty`
+- Pretty logs for only one tag (in this case, "shadow"): `npm run start -- --config ./config/config-real.json | jq 'select(.tags | index( "shadow" ))' | pino-pretty`
 
 #### Deploying to a raspi for development
 
