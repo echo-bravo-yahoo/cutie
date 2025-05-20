@@ -28,8 +28,8 @@ export async function start(args) {
     logger: loggerFactory({ level: config.logLevel || "debug" }),
   };
 
-  await registerModules(config.modules);
   await registerExchanges(config.exchanges);
+  await registerModules(config.modules);
 
   console.log("globals", {
     ...globals,

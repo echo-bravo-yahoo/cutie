@@ -1,10 +1,16 @@
 import mqtt from "mqtt";
 
 import { Exchange } from "../util/generic-exchange.js";
+import { getExchangesByType } from "../util/exchanges.js";
+import { globals } from "../index.js";
 
 export default class MQTT extends Exchange {
   constructor(config) {
     super(config);
+
+    this.state = {
+      subscriptions: [],
+    };
   }
 
   async register() {
@@ -21,10 +27,38 @@ export default class MQTT extends Exchange {
       enabled: undefined,
       endpoint: undefined,
     });
+
+    this.connection.on("message", this.handleMessage.bind(this));
   }
 
-  async send(measurementName, event, labels, aggregationMetadata) {
-    this.connection.publish(
+  handleMessage(topic, message, _packet) {
+    message = JSON.parse(message.toString());
+    this.debug(
+      { role: "blob", blob: message },
+      `Received new message on topic "${topic}": ${JSON.stringify(message)}`
+    );
+    const mqttExchangeNames = getExchangesByType("mqtt").map(
+      (exchange) => exchange.config.name
+    );
+    const triggers = globals.modules.filter((module) => {
+      return mqttExchangeNames.includes(module.config.name);
+    });
+    this.debug(`Found ${triggers.length} matching triggers.`);
+    for (let triggerModule of triggers) {
+      if (triggerModule.matchesTopic(topic)) triggerModule.dispatch(message);
+    }
+  }
+
+  async subscribe(topics) {
+    return this.connection.subscribeAsync(topics);
+  }
+
+  sendRaw(topic, message) {
+    return this.connection.publish(topic, message);
+  }
+
+  send(measurementName, event, labels, aggregationMetadata) {
+    return this.connection.publish(
       measurementName,
       JSON.stringify({
         ...event,

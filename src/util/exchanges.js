@@ -47,3 +47,13 @@ export function getExchange(exchangeKey) {
     (exchange) => exchange.config.name === exchangeKey
   );
 }
+
+export function getExchangesByType(exchangeType) {
+  return globals.exchanges.filter(
+    (exchange) => exchange.config.type === exchangeType
+  );
+}
+
+export function getExchangeTriggers(exchangeKey) {
+  return globals.config.modules.filter((module) => module.name === exchangeKey);
+}

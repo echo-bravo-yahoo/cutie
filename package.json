@@ -23,6 +23,7 @@
     "bme680-sensor": "^1.1.0",
     "lodash": "^4.17.21",
     "mqtt": "^5.11.0",
+    "mqtt-topics": "^1.0.2",
     "node-ble": "^1.13.0",
     "node-yaml": "^4.0.1",
     "pigpio": "^3.3.1",

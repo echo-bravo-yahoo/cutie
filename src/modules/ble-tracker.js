@@ -7,7 +7,7 @@ import { getExchange } from "../util/exchanges.js";
 let ble, adapter;
 const deviceMap = {};
 
-export class BLETracker extends Sensor {
+export default class BLETracker extends Sensor {
   constructor(config) {
     super(config);
 
@@ -15,7 +15,7 @@ export class BLETracker extends Sensor {
   }
 
   async register() {
-    if (this.enabled) {
+    if (this.config.enabled) {
       this.enable();
     }
   }
@@ -187,5 +187,3 @@ export class BLETracker extends Sensor {
   }
 }
 */
-
-export default BLETracker;

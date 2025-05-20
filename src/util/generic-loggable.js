@@ -10,8 +10,8 @@ export class Loggable {
 
       globals.logger.debug(
         {
-          ...obj,
           role: "breadcrumb",
+          ...obj,
           tags: [...(obj.tags || []), this.stateKey],
         },
         msg,
@@ -27,8 +27,8 @@ export class Loggable {
 
       globals.logger.info(
         {
-          ...obj,
           role: "breadcrumb",
+          ...obj,
           tags: [...(obj.tags || []), this.stateKey],
         },
         msg,
