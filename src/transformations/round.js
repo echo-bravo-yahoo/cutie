@@ -1,5 +1,4 @@
 import get from "lodash/get.js";
-import set from "lodash/set.js";
 
 import { Transformation } from "../util/generic-transformation.js";
 
@@ -8,7 +7,7 @@ export default class Round extends Transformation {
     super(config);
   }
 
-  transform(message, _inputModule) {
+  doTransform(message, _inputModule) {
     this.debug(
       { role: "blob", blob: message },
       `Rounding some number in message: ${JSON.stringify(message)}`
@@ -32,20 +31,7 @@ export default class Round extends Transformation {
       );
     }
 
-    this.debug(
-      { role: "blob", blob: message },
-      `Message (type ${typeof message}): ${JSON.stringify(message)}`
-    );
-    if (typeof message === "object") {
-      result = set(message, this.config.path, result);
-      this.debug(
-        { role: "blob", blob: result },
-        `Rounded some number in message: ${JSON.stringify(result)}`
-      );
-      return result;
-    } else {
-      return result;
-    }
+    return result;
   }
 }
 
