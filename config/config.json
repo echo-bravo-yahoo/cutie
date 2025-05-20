@@ -50,7 +50,7 @@
       }
     }
   ],
-  "destinations": [
+  "exchanges": [
     {
       "name": "influxdb",
       "type": "influxdb",

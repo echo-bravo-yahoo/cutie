@@ -1,6 +1,6 @@
 import { Loggable } from "./generic-loggable.js";
 
-export class Destination extends Loggable {
+export class Exchange extends Loggable {
   constructor(config) {
     super();
 

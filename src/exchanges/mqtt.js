@@ -1,8 +1,8 @@
 import mqtt from "mqtt";
 
-import { Destination } from "../util/generic-destination.js";
+import { Exchange } from "../util/generic-exchange.js";
 
-export default class MQTT extends Destination {
+export default class MQTT extends Exchange {
   constructor(config) {
     super(config);
   }
@@ -37,16 +37,16 @@ export default class MQTT extends Destination {
 
 /*
 {
-  "metadata": {
-    "island": "<node>",
-    "timestamp": "2024-11-19T04:59:43.405Z"
-  },
-  "temp": 76.52394317895174,
-  "humidity": 28.606149841897132,
-  "pressure": 1003.3289466281659
-  "dimensions": {
-    "island": "<node>",
-    "location": "office"
-  }
+  "name": "mqtt",
+  "type": "mqtt",
+  "enabled": true,
+  "username": "",
+  "password": "",
+  "endpoint": "mqtt://127.0.0.1:1883"
+}
+
+{
+  "name": "mqtt",
+  "topic": "data/weather/${state.location || 'unknown'}"
 }
 */

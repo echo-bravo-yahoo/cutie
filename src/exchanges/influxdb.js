@@ -1,8 +1,8 @@
 import { exec } from "node:child_process";
 
-import { Destination } from "../util/generic-destination.js";
+import { Exchange } from "../util/generic-exchange.js";
 
-export default class InfluxDB extends Destination {
+export default class InfluxDB extends Exchange {
   constructor(config) {
     super(config);
   }

@@ -2,7 +2,7 @@ import get from "lodash/get.js";
 import map from "lodash/map.js";
 
 import { Module } from "./generic-module.js";
-import { getDestination } from "./destinations.js";
+import { getExchange } from "./exchanges.js";
 
 export class Sensor extends Module {
   constructor(config) {
@@ -25,7 +25,7 @@ export class Sensor extends Module {
     const payload = this.aggregate();
 
     for (let toFind of this.config.destinations) {
-      const found = getDestination(toFind.name);
+      const found = getExchange(toFind.name);
 
       if (found) {
         this.info(
