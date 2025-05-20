@@ -57,9 +57,9 @@ export default class MQTT extends Exchange {
     return this.connection.publish(topic, message);
   }
 
-  send(measurementName, event, labels, aggregationMetadata) {
+  send(topic, event, labels, aggregationMetadata) {
     return this.connection.publish(
-      measurementName,
+      topic,
       JSON.stringify({
         ...event,
         metadata: labels,

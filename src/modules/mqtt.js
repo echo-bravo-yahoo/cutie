@@ -39,15 +39,15 @@ export class MQTT extends Module {
   }
 
   async dispatch(message) {
-    message = await this.transform(message);
+    message = await this.transform(message, this);
 
     for (let destination of this.config.destinations) {
       const exchange = getExchange(destination.name);
       this.debug(
         { role: "blob", blob: message },
-        `Dispatching on topic "${destination.measurement}" for exchange "${exchange.config.name}": ${JSON.stringify(message)}`
+        `Dispatching on topic "${destination.topic}" for exchange "${exchange.config.name}": ${JSON.stringify(message)}`
       );
-      exchange.sendRaw(destination.measurement, JSON.stringify(message));
+      exchange.sendRaw(destination.topic, JSON.stringify(message));
     }
   }
 

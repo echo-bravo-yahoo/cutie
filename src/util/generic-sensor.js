@@ -33,7 +33,7 @@ export class Sensor extends Module {
           `Publishing new ${this.config.name} data to ${toFind.measurement}: ${JSON.stringify(payload)}`
         );
         found.send(
-          toFind.measurement,
+          toFind.measurement || toFind.topic,
           { ...payload, metadata: undefined, aggregationMetadata: undefined },
           payload.metadata,
           payload.aggregationMetadata
@@ -56,6 +56,20 @@ export class Sensor extends Module {
   doAggregation(data) {
     const aggregation =
       data.length === 1 ? "latest" : get(this.config, "sampling.aggregation");
+
+    if (aggregation === "average") {
+      return data.reduce((sum, next) => sum + next, 0) / data.length;
+    } else if (aggregation === "latest") {
+      return data.pop();
+    } else {
+      throw new Error(
+        `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`
+      );
+    }
+  }
+
+  static doAggregation(data, aggregation) {
+    if (data.length === 1) aggregation = "latest";
 
     if (aggregation === "average") {
       return data.reduce((sum, next) => sum + next, 0) / data.length;

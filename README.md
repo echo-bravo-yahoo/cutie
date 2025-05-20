@@ -43,6 +43,7 @@ Once you have it configured to your liking, you can install it to systemctl so i
 
 ### To-do
 
+- [ ] Generalize transforms to work for either single or set operations
 - [ ] Normalize how sensors work compared to mqtt module
 - [ ] Add interval / cron modules
 - [ ] Add cookbook for common tasks
@@ -52,7 +53,7 @@ Once you have it configured to your liking, you can install it to systemctl so i
 - [ ] Confirm full range of usable nodeJS versions (`engines` field in package.json)
 - [ ] Build listen/repeat behavior
   - [x] Customizable data transformations
-  - [ ] Listen to topic pattern
+  - [x] Listen to topic pattern
   - [ ] Persistent queue vs transient queue
 - [ ] Allow configuring `cutie` via MQTT
 - [ ] Support other MQTT auth strategies
@@ -84,7 +85,7 @@ Ensure you're installing with python < 3.11, e.g., `npm install --python=python3
 
 #### What's with the name `cutie`?
 
-If you say M*QT*T fast, it sounds like "em-cutie-tee". And software could stand to be a little cuter and more whimsical.
+If you say M**QT**T fast, it sounds like "em-cutie-tee". And software could stand to be a little cuter and more whimsical.
 
 ### Developing on `cutie`
 

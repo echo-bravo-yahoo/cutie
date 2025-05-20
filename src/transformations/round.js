@@ -1,5 +1,3 @@
-import get from "lodash/get.js";
-
 import { Transformation } from "../util/generic-transformation.js";
 
 export default class Round extends Transformation {
@@ -7,12 +5,11 @@ export default class Round extends Transformation {
     super(config);
   }
 
-  doTransform(message, _inputModule) {
-    this.debug(
-      { role: "blob", blob: message },
-      `Rounding some number in message: ${JSON.stringify(message)}`
-    );
-    const number = get(message, this.config.path || "", message);
+  transform(message, inputModule) {
+    return this.doTransformSingle(message, inputModule);
+  }
+
+  doTransformSingle(number, _inputModule) {
     const integer = Math.floor(number);
     const fractional = number - integer;
     const precision = this.config.precision || 0;
@@ -38,6 +35,7 @@ export default class Round extends Transformation {
 /*
 {
   "type": "round",
+  "path": "",
   "precision": "2",
   "direction": "up"|"down"|"round"
 }

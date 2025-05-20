@@ -26,7 +26,7 @@ export class Module extends Loggable {
       ).default;
       const transformer = new Transformation(transformationConfig);
 
-      result = await transformer.transform(result);
+      result = await transformer.transform(result, this);
     }
 
     return result;
