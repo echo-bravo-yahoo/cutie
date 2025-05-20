@@ -10,6 +10,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "sudo docker build . -t cutie -f ./Dockerfile",
+    "build-wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
     "sync": "lsyncd config.lua",
     "start": "./src/cli-entrypoint.js",
     "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo systemctl enable cutie",

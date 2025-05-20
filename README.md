@@ -39,9 +39,12 @@ Once you have it configured to your liking, you can install it to systemctl so i
 
 ### To-do
 
+- [ ] Move from using `./config/config-real.json` to `./config/config-sample.json` and having users copy.
+- [ ] Support dynamic substitution in MQTT destination keys (everywhere?)
+- [ ] Fix up logging
 - [ ] Confirm full range of usable nodeJS versions (`engines` field in package.json)
 - [ ] Build listen/repeat behavior
-  - [ ] Customizable data transformations
+  - [x] Customizable data transformations
   - [ ] Listen to topic pattern
   - [ ] Persistent queue vs transient queue
 - [ ] Allow configuring `cutie` via MQTT
@@ -56,7 +59,7 @@ Once you have it configured to your liking, you can install it to systemctl so i
 - [ ] Document `outputs` concept
 - [ ] Document `provisioner` concept
 - [ ] Update `provisioner`
-- [ ] Update `Dockerfile`
+- [x] Update `Dockerfile`
 
 ### Common issues
 

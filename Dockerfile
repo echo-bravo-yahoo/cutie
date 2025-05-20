@@ -1,5 +1,5 @@
 # alpine does not work with the AWS SDK
-FROM node:20
+FROM node:17
 
 # dependencies first for docker cache reasons:
 # https://docs.docker.com/get-started/docker-concepts/building-images/using-the-build-cache/
@@ -9,14 +9,14 @@ COPY ./package.json ./package-lock.json .
 RUN npm install
 
 WORKDIR /usr/local/bitbang
-COPY ./bitbang/package.json ./bitbang/package-lock.json .
+COPY ./src/util/bitbang/package.json ./src/util/bitbang/package-lock.json .
 RUN npm install
 
 WORKDIR /usr/local/cutie
 COPY . .
 
 WORKDIR /usr/local/bitbang
-COPY ./bitbang .
+COPY ./src/util/bitbang .
 
 WORKDIR /usr/local/cutie
 EXPOSE 8080
