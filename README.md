@@ -2,7 +2,7 @@
 
 ## What is this?
 
-`cutie` is an application to make it easier to develop and glue together IoT & home automation applications. It primarily consists of two parts, both works-in-progress: a sensor platform and an MQTT listener/repeater. It aims to be configuration-first, with code extensions to support use cases the configuration cannot. I wrote [a little bit about the motivation behind it here](https://blog.echobravoyahoo.net/the-problem-with-home-automation-software/).
+`cutie` is an application to make it easier to develop and glue together IoT & home automation applications. It primarily consists of three parts, all works-in-progress: a sensor platform, a system for reading from and writing to a remote data store (intended primarily as an MQTT listener/repeater), and a provisioning script that installs `cutie` on a raspberry pi. It aims to be configuration-first, with code extensions to support use cases the configuration cannot. I wrote [a little bit about the motivation behind it here](https://blog.echobravoyahoo.net/the-problem-with-home-automation-software/).
 
 ### `cutie` as a sensor platform
 
@@ -11,15 +11,19 @@
 - Sampling multiple times per reporting window
 - Aggregating samples in various ways (avg, latest, p25/50/75/X)
 - Offsetting values before publishing them
-- Delivering data to multiple MQTT or InfluxDB exchanges
+- Delivering data to one or multiple MQTT or InfluxDB exchanges
 
 ### `cutie` as an MQTT listener/repeater
 
 This functionality is not implemented yet, but I plan to allow defining subscribe/transform/publish in config with the intent that users can integrate MQTT services that were not intended to be used together.
 
+### `cutie` as a raspberry pi provisioner
+
+This functionality is also not really implemented yet, but you can take a look at the work in progress in the `./provisioner` directory.
+
 ## Platform requirements
 
-Right now, `cutie` is only tested to run on nodeJS 17 on 1st gen raspberry pi 0Ws. It should run in most linux environments, but individual sensors may fail to build or require OS utilities not present for some distributions. It does have to be built with python 3.10.8 or earlier.
+Right now, `cutie` is only tested to run on nodeJS 17 on 1st gen raspberry pi 0Ws. It should run in most linux environments, but individual sensors may fail to build or require OS utilities not present for some distributions. On ARMv6, it has to be built with python 3.10.8 or earlier.
 
 ## Installation & use
 
@@ -28,7 +32,7 @@ To use `cutie` as a CLI tool:
 ```bash
 git clone git@github.com:echo-bravo-yahoo/cutie.git
 cd cutie
-npm install --python=python3.10 # won't build with newer python versions
+npm install --python=python3.10 # won't build with newer python versions on ARMv6
 npm link # optional, installs the CLI to your path as `cutie`
 cutie
 ```
@@ -39,6 +43,9 @@ Once you have it configured to your liking, you can install it to systemctl so i
 
 ### To-do
 
+- [ ] Normalize how sensors work compared to mqtt module
+- [ ] Add interval / cron modules
+- [ ] Add cookbook for common tasks
 - [ ] Move from using `./config/config-real.json` to `./config/config-sample.json` and having users copy.
 - [ ] Support dynamic substitution in MQTT destination keys (everywhere?)
 - [ ] Fix up logging
@@ -73,7 +80,13 @@ npm ERR! gyp ERR! stack Error: `gyp` failed with exit code: 1
 
 Ensure you're installing with python < 3.11, e.g., `npm install --python=python3.10 # or other older python that's on your PATH`.
 
-### Developing on cutie
+### FAQ
+
+#### What's with the name `cutie`?
+
+If you say M*QT*T fast, it sounds like "em-cutie-tee". And software could stand to be a little cuter and more whimsical.
+
+### Developing on `cutie`
 
 These are primarily notes to myself for the time being.
 
