@@ -1,5 +1,4 @@
 import get from "lodash/get.js";
-import set from "lodash/set.js";
 
 import { Loggable } from "./generic-loggable.js";
 
@@ -29,82 +28,51 @@ export class Transformation extends Loggable {
     const isSimpleReading = this.config.path !== undefined;
     const isCompositeReading = this.config.paths !== undefined;
     const isPrimitiveReading = !isSimpleReading && !isCompositeReading;
+    const context = {
+      message,
+      basePath: this.config.basePath,
+      path: this.config.path,
+      paths: this.config.paths,
+      current: this.config.basePath || "",
+    };
 
     if (isArrayOfReadings) {
-      if (isSimpleReading || isPrimitiveReading) {
-        return this.transformSimpleReadingArray(message);
-      } else if (isCompositeReading) {
-        return this.transformCompositeReadingArray(message);
+      let array = get(context.message, context.current, context.message);
+      for (let i = 0; i < array.length; i++) {
+        context.current = `${context.basePath || ""}[${i}]`;
+        if (isSimpleReading || isPrimitiveReading) {
+          this.#transformSimpleReading(context);
+        } else if (isCompositeReading) {
+          this.#transformCompositeReading(context);
+        }
       }
     } else {
       if (isPrimitiveReading) {
-        return this.transformPrimitiveReading(message);
+        return this.doTransformSingle(context);
       } else if (isSimpleReading) {
-        return set(
-          message,
-          this.config.path,
-          this.transformSimpleReading(message)
-        );
+        this.#transformSimpleReading(context);
       } else if (isCompositeReading) {
-        return this.transformCompositeReading(message);
+        this.#transformCompositeReading(context);
       }
     }
+
+    return message;
   }
 
-  transformSimpleReadingArray(message) {
-    let array = get(message, this.config.basePath, message);
-    array = array.map((reading) => {
-      if (this.config.path) {
-        return set(
-          reading,
-          this.config.path,
-          this.transformSimpleReading(reading)
-        );
-      } else {
-        return this.transformSimpleReading(reading);
-      }
+  #transformCompositeReading(context) {
+    for (let path of Object.keys(this.config.paths)) {
+      this.doTransformSingle({
+        ...context,
+        current: `${context.current ? `${context.current}.` : ""}${path}`,
+        pathChosen: path,
+      });
+    }
+  }
+
+  #transformSimpleReading(context) {
+    this.doTransformSingle({
+      ...context,
+      current: `${context.current}${context.path && context.current ? "." : ""}${context.path || ""}`,
     });
-
-    if (!this.config.basePath) {
-      message = array;
-    } else {
-      message = set(message, this.config.basePath, array);
-    }
-    return message;
-  }
-
-  transformCompositeReadingArray(message) {
-    let array = get(message, this.config.basePath, message);
-    array = array.map((reading) => {
-      return this.transformCompositeReading(reading);
-    });
-
-    if (!this.config.basePath) {
-      message = array;
-    } else {
-      message = set(message, this.config.basePath, array);
-    }
-    return message;
-  }
-
-  transformPrimitiveReading(message) {
-    return this.transformSimpleReading(message);
-  }
-
-  transformCompositeReading(message) {
-    for (let [path, options] of Object.entries(this.config.paths)) {
-      const original = get(message, path);
-      const transformed = this.transformSimpleReading(original, options);
-      message = set(message, path, transformed);
-    }
-
-    return message;
-  }
-
-  transformSimpleReading(value, option = this.config) {
-    if (option.path) {
-      return this.doTransformSingle(get(value, option.path), option);
-    }
-    return this.doTransformSingle(value, option);
   }
 }

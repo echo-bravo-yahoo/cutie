@@ -1,3 +1,6 @@
+import get from "lodash/get.js";
+import set from "lodash/set.js";
+
 import { Transformation } from "../util/generic-transformation.js";
 
 export default class Offset extends Transformation {
@@ -5,8 +8,16 @@ export default class Offset extends Transformation {
     super(config);
   }
 
-  doTransformSingle(value, config) {
-    return value + config.offset;
+  doTransformSingle(context) {
+    const config = context.pathChosen
+      ? this.config.paths[context.pathChosen]
+      : this.config;
+
+    const oldValue = get(context.message, context.current, context.message);
+    const newValue = oldValue + config.offset;
+    set(context.message, context.current, newValue);
+
+    return newValue;
   }
 }
 
