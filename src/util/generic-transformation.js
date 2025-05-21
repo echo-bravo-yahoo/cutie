@@ -37,29 +37,53 @@ export class Transformation extends Loggable {
     };
 
     if (isArrayOfReadings) {
-      let array = get(context.message, context.current, context.message);
-      for (let i = 0; i < array.length; i++) {
-        context.current = `${context.basePath || ""}[${i}]`;
-        if (isSimpleReading || isPrimitiveReading) {
-          this.#transformSimpleReading(context);
-        } else if (isCompositeReading) {
-          this.#transformCompositeReading(context);
-        }
+      if (isPrimitiveReading) {
+        return this.transformPrimitiveReadingArray(context);
+      } else if (isSimpleReading) {
+        return this.transformSimpleReadingArray(context);
+      } else if (isCompositeReading) {
+        this.transformCompositeReadingArray(context);
       }
     } else {
       if (isPrimitiveReading) {
-        return this.doTransformSingle(context);
+        return this.transformSimpleReading(context);
       } else if (isSimpleReading) {
-        this.#transformSimpleReading(context);
+        this.transformSimpleReading(context);
       } else if (isCompositeReading) {
-        this.#transformCompositeReading(context);
+        this.transformCompositeReading(context);
       }
     }
 
     return message;
   }
 
-  #transformCompositeReading(context) {
+  transformPrimitiveReadingArray(context) {
+    let array = get(context.message, context.current, context.message);
+    for (let i = 0; i < array.length; i++) {
+      context.current = `${context.basePath || ""}[${i}]`;
+      this.transformPrimitiveReading(context);
+    }
+    return context.message;
+  }
+
+  transformSimpleReadingArray(context) {
+    let array = get(context.message, context.current, context.message);
+    for (let i = 0; i < array.length; i++) {
+      context.current = `${context.basePath || ""}[${i}]`;
+      this.transformSimpleReading(context);
+    }
+    return context.message;
+  }
+
+  transformCompositeReadingArray(context) {
+    let array = get(context.message, context.current, context.message);
+    for (let i = 0; i < array.length; i++) {
+      context.current = `${context.basePath || ""}[${i}]`;
+      this.transformCompositeReading(context);
+    }
+  }
+
+  transformCompositeReading(context) {
     for (let path of Object.keys(this.config.paths)) {
       this.doTransformSingle({
         ...context,
@@ -69,8 +93,12 @@ export class Transformation extends Loggable {
     }
   }
 
-  #transformSimpleReading(context) {
-    this.doTransformSingle({
+  transformPrimitiveReading(context) {
+    return this.transformSimpleReading(context);
+  }
+
+  transformSimpleReading(context) {
+    return this.doTransformSingle({
       ...context,
       current: `${context.current}${context.path && context.current ? "." : ""}${context.path || ""}`,
     });

@@ -70,13 +70,18 @@ export class Sensor extends Module {
     }
   }
 
-  static doAggregation(data, aggregation) {
+  static doAggregation(data, aggregation, path = "") {
     if (data.length === 1) aggregation = "latest";
 
-    if (aggregation === "average") {
-      return data.reduce((sum, next) => sum + next, 0) / data.length;
-    } else if (aggregation === "latest") {
+    if (aggregation === "latest") {
       return data.pop();
+    } else if (aggregation === "average") {
+      console.log("path", path);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) {
+        sum += get(data[i], path, data[i]);
+      }
+      return sum / data.length;
     } else {
       throw new Error(
         `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`

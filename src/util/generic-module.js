@@ -7,6 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 import get from "lodash/get.js";
 
 import { Loggable } from "./generic-loggable.js";
+import { globals } from "../index.js";
 
 export class Module extends Loggable {
   constructor(config) {
@@ -41,7 +42,7 @@ export class Module extends Loggable {
 
     return inject(template, {
       module: this.config,
-      globals: { name: globals.name, version: globals.version },
+      globals: { ...globals, logger: undefined },
     });
   }
 }

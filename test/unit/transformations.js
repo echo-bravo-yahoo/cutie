@@ -3,6 +3,37 @@ import { expect } from "chai";
 import { Module } from "../../src/util/generic-module.js";
 
 describe("transformations", function () {
+  describe("specific transformers", function () {
+    describe("aggregate", function () {
+      it("works on arrays of primitive readings", async function () {
+        const module = new Module({
+          transformations: [{ type: "aggregate", aggregation: "average" }],
+        });
+
+        // a primitive reading is one not wrapped in an object
+        const transformed = await module.runAllTransformations([2, 3, 4, 5]);
+        expect(transformed).to.deep.equal(3.5);
+      });
+
+      it("works on arrays of simple readings", async function () {
+        const module = new Module({
+          transformations: [
+            { type: "aggregate", aggregation: "average", path: "temp" },
+          ],
+        });
+
+        // a primitive reading is one not wrapped in an object
+        const transformed = await module.runAllTransformations([
+          { temp: 2 },
+          { temp: 3 },
+          { temp: 4 },
+          { temp: 5 },
+        ]);
+        expect(transformed).to.deep.equal({ temp: 3.5 });
+      });
+    });
+  });
+
   it("works on primitive readings", async function () {
     const module = new Module({
       transformations: [{ type: "offset", offset: -5 }],

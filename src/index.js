@@ -10,7 +10,13 @@ import loggerFactory from "pino";
 import { registerModules } from "./util/modules.js";
 import { registerExchanges } from "./util/exchanges.js";
 
-export let globals;
+export let globals = {};
+
+// used for testing
+export function setGlobals(newValue) {
+  globals = newValue;
+  console.log("globals", globals);
+}
 
 export async function start(args) {
   const configPromise = read(normalize(args.config));
