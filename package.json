@@ -8,7 +8,7 @@
     "cutie": "src/cli-entrypoint.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha --recursive ./test",
     "build": "sudo docker build . -t cutie -f ./Dockerfile",
     "build-wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
     "sync": "lsyncd config.lua",
@@ -33,5 +33,9 @@
     "serialport": "^10.4.0",
     "thermalprinter": "^0.3.10",
     "yargs-parser": "^21.1.1"
+  },
+  "devDependencies": {
+    "chai": "^5.2.0",
+    "mocha": "^11.4.0"
   }
 }

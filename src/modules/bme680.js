@@ -1,7 +1,4 @@
-import get from "lodash/get.js";
-
 import { globals } from "../index.js";
-import { Temp } from "../util/temp.js";
 import { Sensor } from "../util/generic-sensor.js";
 
 export class BME680 extends Sensor {
@@ -15,45 +12,6 @@ export class BME680 extends Sensor {
     }
   }
 
-  aggregate() {
-    const aggregation =
-      this.samples.length === 1
-        ? "latest"
-        : get(this.config, "sampling.aggregation", "average");
-
-    const aggregated = {
-      metadata: {
-        island: globals.name,
-        timestamp: new Date(),
-      },
-      aggregationMetadata: {
-        samples: this.samples.length,
-        aggregation,
-        offsets: {
-          temp: get(this.config, "offsets.temp", 0),
-          humidity: get(this.config, "offsets.humidity", 0),
-          pressure: get(this.config, "offsets.pressure", 0),
-          gas: get(this.config, "offsets.gas", 0),
-        },
-      },
-      temp: new Temp(this.aggregateMeasurement("temp.result")).value({
-        precision: 2,
-      }),
-      humidity:
-        this.aggregateMeasurement("humidity.result") +
-        get(this.config, "offsets.humidity", 0),
-      pressure:
-        this.aggregateMeasurement("pressure.result") +
-        get(this.config, "offsets.pressure", 0),
-      gas:
-        this.aggregateMeasurement("gas") + get(this.config, "offsets.gas", 0),
-    };
-
-    this.samples = [];
-
-    return aggregated;
-  }
-
   async sample() {
     if (!this.enabled) return;
     const sensorData = await this.sensor.read();
@@ -63,30 +21,10 @@ export class BME680 extends Sensor {
         island: globals.name,
         timestamp: new Date(),
       },
-      temp: {
-        raw: sensorData.temperature,
-        converted: new Temp(sensorData.temperature, "c").to("f").value(),
-        offset: get(this.config, "offsets.temp"),
-        result: new Temp(sensorData.temperature, "c")
-          .to("f")
-          .add(get(this.config, "offsets.temp", 0), "f")
-          .value(),
-      },
-      humidity: {
-        raw: sensorData.humidity,
-        offset: get(this.config, "offsets.humidity", 0),
-        result: sensorData.humidity + get(this.config, "offsets.humidity", 0),
-      },
-      pressure: {
-        raw: sensorData.pressure,
-        offset: get(this.config, "offsets.pressure", 0),
-        result: sensorData.pressure + get(this.config, "offsets.pressure", 0),
-      },
-      gas: {
-        raw: sensorData.gas_resistance,
-        offset: get(this.config, "offsets.gas", 0),
-        result: sensorData.gas_resistance + get(this.config, "offsets.gas", 0),
-      },
+      temp: sensorData.temperature,
+      humidity: sensorData.humidity,
+      pressure: sensorData.pressure,
+      gas: sensorData.gas_resistance,
     };
 
     this.debug({}, `Sampled new data point`);
@@ -104,6 +42,7 @@ export class BME680 extends Sensor {
     // right now, it sort of just is randomly between (newInterval) and
     // (newInterval+oldInterval)
     this.setupPublisher();
+    this.setupSampler();
     this.info({}, `Enabled bme680.`);
     this.enabled = true;
   }

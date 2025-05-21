@@ -6,20 +6,26 @@ export default class Aggregate extends Transformation {
     super(config);
   }
 
-  // TODO: confirm that inputModule is a Sensor?
-  transform(message, inputModule) {
-    return this.transformSet(message, inputModule, this.config.aggregations);
-  }
-
   doTransformSingle(value, aggregation) {
-    return Sensor.doAggregation(value, aggregation);
+    if (value.length) {
+      return Sensor.doAggregation(value, aggregation);
+    } else {
+      return value;
+    }
   }
 }
 
 /*
+single path form:
 {
   "type": "aggregate",
-  "aggregations": {
+  "path": "",
+  "aggregation": "latest|average|median|pX"
+}
+
+{
+  "type": "aggregate",
+  "paths": {
     "path.to.aggregate": "latest|average|median|pX"
   }
 }

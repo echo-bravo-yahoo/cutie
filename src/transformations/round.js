@@ -5,10 +5,6 @@ export default class Round extends Transformation {
     super(config);
   }
 
-  transform(message, inputModule) {
-    return this.doTransformSingle(message, inputModule);
-  }
-
   doTransformSingle(number, _inputModule) {
     const integer = Math.floor(number);
     const fractional = number - integer;
@@ -33,10 +29,23 @@ export default class Round extends Transformation {
 }
 
 /*
+
+single path form:
 {
   "type": "round",
   "path": "",
   "precision": "2",
   "direction": "up"|"down"|"round"
+}
+
+multi-path form:
+{
+  "type": "round",
+  "paths": {
+    "path.through.object": {
+      "precision": "2",
+      "direction": "up"|"down"|"round"
+    }
+  }
 }
 */

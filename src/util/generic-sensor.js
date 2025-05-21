@@ -22,7 +22,7 @@ export class Sensor extends Module {
       await this.sample();
     }
 
-    const payload = this.aggregate();
+    const payload = this.collateSamples();
 
     for (let toFind of this.config.destinations) {
       const found = getExchange(toFind.name);
@@ -40,6 +40,8 @@ export class Sensor extends Module {
         );
       }
     }
+
+    this.samples = [];
   }
 
   // path => single datapoint

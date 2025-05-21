@@ -1,5 +1,3 @@
-import get from "lodash/get.js";
-
 import { globals } from "../index.js";
 import { Sensor } from "../util/generic-sensor.js";
 
@@ -14,33 +12,6 @@ export default class Random extends Sensor {
     if (this.config.enabled) {
       this.enable();
     }
-  }
-
-  aggregate() {
-    const aggregation =
-      this.samples.length === 1
-        ? "latest"
-        : get(this.config, "sampling.aggregation", "average");
-
-    this.info({ blob: this.samples }, `Aggregating.`);
-    const aggregated = {
-      metadata: {
-        name: globals.name,
-        island: globals.name,
-        location: globals.location,
-        timestamp: new Date(),
-      },
-      aggregationMetadata: {
-        samples: this.samples.length,
-        aggregation,
-      },
-      // number: this.aggregateMeasurement("number"),
-      number: [...this.samples.map((sample) => sample.number)],
-    };
-
-    this.samples = [];
-
-    return aggregated;
   }
 
   generateNextNumber() {
@@ -59,6 +30,15 @@ export default class Random extends Sensor {
 
     this.lastNumber = result;
     return result;
+  }
+
+  collateSamples() {
+    return {
+      metadata: {
+        island: globals.name,
+      },
+      number: this.samples,
+    };
   }
 
   async sample() {
@@ -104,7 +84,6 @@ export default class Random extends Sensor {
   "min": 20,
   "sampling": {
     "interval": 10000,
-    "aggregation": "latest|average|median|pX"
   },
   "reporting": {
     "interval": 10000

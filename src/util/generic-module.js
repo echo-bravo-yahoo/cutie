@@ -4,6 +4,8 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+import get from "lodash/get.js";
+
 import { Loggable } from "./generic-loggable.js";
 
 export class Module extends Loggable {
@@ -14,8 +16,9 @@ export class Module extends Loggable {
     this.stateKey = config.name || config.type;
   }
 
-  async transform(message) {
+  async runAllTransformations(message) {
     let result = message;
+
     for (let transformationConfig of this.config.transformations) {
       const Transformation = (
         await import(
@@ -26,9 +29,19 @@ export class Module extends Loggable {
       ).default;
       const transformer = new Transformation(transformationConfig);
 
-      result = await transformer.transform(result, this);
+      result = transformer.transform(result, this);
     }
 
     return result;
+  }
+
+  interpolateConfigString(template) {
+    const inject = (str, obj) =>
+      str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));
+
+    return inject(template, {
+      module: this.config,
+      globals: { name: globals.name, version: globals.version },
+    });
   }
 }

@@ -39,7 +39,7 @@ export class MQTT extends Module {
   }
 
   async dispatch(message) {
-    message = await this.transform(message, this);
+    message = await this.runAllTransformations(message);
 
     for (let destination of this.config.destinations) {
       const exchange = getExchange(destination.name);
