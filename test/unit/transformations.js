@@ -55,6 +55,46 @@ describe("transformations", function () {
         expect(transformed).to.deep.equal({ temp: 3.5, humidity: 19 });
       });
     });
+
+    describe("convert", function () {
+      describe("celsius to fahrenheit", function () {
+        it("works on primitive readings", async function () {
+          const module = new Module({
+            transformations: [
+              {
+                type: "convert",
+                from: "celsius",
+                to: "fahrenheit",
+              },
+            ],
+          });
+
+          const transformed = await module.runAllTransformations(21.1);
+          expect(transformed).to.deep.equal(69.98);
+        });
+        it.skip("works on simple readings", async function () {});
+        it.skip("works on composite readings", async function () {});
+      });
+
+      describe("fahrenheit to celsius ", () => {
+        it("works on primitive readings", async function () {
+          const module = new Module({
+            transformations: [
+              {
+                type: "convert",
+                from: "fahrenheit",
+                to: "celsius",
+              },
+            ],
+          });
+
+          const transformed = await module.runAllTransformations(69.98);
+          expect(transformed).to.deep.equal(21.1);
+        });
+        it.skip("works on simple readings", async function () {});
+        it.skip("works on composite readings", async function () {});
+      });
+    });
   });
 
   it("works on primitive readings", async function () {
