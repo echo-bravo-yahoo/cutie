@@ -1,4 +1,5 @@
 import get from "lodash/get.js";
+import set from "lodash/set.js";
 
 import { Loggable } from "./generic-loggable.js";
 
@@ -36,25 +37,37 @@ export class Transformation extends Loggable {
       current: this.config.basePath || "",
     };
 
+    let replacement;
     if (isArrayOfReadings) {
       if (isPrimitiveReading) {
-        return this.transformPrimitiveReadingArray(context);
+        replacement = this.transformPrimitiveReadingArray(context);
       } else if (isSimpleReading) {
-        return this.transformSimpleReadingArray(context);
+        replacement = this.transformSimpleReadingArray(context);
       } else if (isCompositeReading) {
-        this.transformCompositeReadingArray(context);
+        replacement = this.transformCompositeReadingArray(context);
       }
     } else {
       if (isPrimitiveReading) {
-        return this.transformSimpleReading(context);
+        replacement = this.transformPrimitiveReading(context);
       } else if (isSimpleReading) {
-        this.transformSimpleReading(context);
+        replacement = this.transformSimpleReading(context);
       } else if (isCompositeReading) {
-        this.transformCompositeReading(context);
+        replacement = this.transformCompositeReading(context);
       }
     }
 
-    return message;
+    return replacement !== undefined ? replacement : message;
+  }
+
+  doTransformSingle(context) {
+    const config = context.pathChosen
+      ? this.config.paths[context.pathChosen]
+      : this.config;
+    const oldValue = get(context.message, context.current, context.message);
+    const newValue = this.transformSingle(oldValue, config, context);
+    set(context.message, context.current, newValue);
+
+    return newValue;
   }
 
   transformPrimitiveReadingArray(context) {
@@ -94,11 +107,14 @@ export class Transformation extends Loggable {
   }
 
   transformPrimitiveReading(context) {
-    return this.transformSimpleReading(context);
+    return this.doTransformSingle({
+      ...context,
+      current: `${context.current}${context.path && context.current ? "." : ""}${context.path || ""}`,
+    });
   }
 
   transformSimpleReading(context) {
-    return this.doTransformSingle({
+    this.doTransformSingle({
       ...context,
       current: `${context.current}${context.path && context.current ? "." : ""}${context.path || ""}`,
     });

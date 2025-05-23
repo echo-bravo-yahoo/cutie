@@ -26,15 +26,12 @@ export default class Aggregate extends Transformation {
       ? this.config.paths[context.pathChosen]
       : this.config;
 
-    console.log("context", context);
     const oldValue = get(context.message, context.current, context.message);
-    console.log("oldValue", oldValue);
     let newValue = Sensor.doAggregation(
       oldValue,
       config.aggregation,
       context.path
     );
-    console.log("newValue", newValue);
     if (context.current) {
       set(context.message, context.current, newValue);
     } else {
@@ -44,7 +41,37 @@ export default class Aggregate extends Transformation {
     return newValue;
   }
 
-  transformCompositeReadingArray(context) {}
+  transformCompositeReadingArray(context) {
+    const oldArray = [
+      ...get(context.message, context.current, context.message),
+    ];
+    const newSubObject = {};
+
+    for (let path of Object.keys(this.config.paths)) {
+      context = {
+        ...context,
+        current: `${context.basePath ? `${context.basePath}.` : ""}${path}`,
+        pathChosen: path,
+      };
+      const config = context.pathChosen
+        ? this.config.paths[context.pathChosen]
+        : this.config;
+      let newValue = Sensor.doAggregation(
+        oldArray,
+        config.aggregation,
+        context.pathChosen
+      );
+      set(newSubObject, context.current, newValue);
+    }
+
+    if (context.basePath) {
+      set(context.message, context.basePath, newSubObject);
+    } else {
+      context.message = newSubObject;
+    }
+
+    return newSubObject;
+  }
 
   doTransformSingle(value, aggregation) {
     if (value.length) {

@@ -31,6 +31,29 @@ describe("transformations", function () {
         ]);
         expect(transformed).to.deep.equal({ temp: 3.5 });
       });
+
+      it("works on arrays of composite readings", async function () {
+        const module = new Module({
+          transformations: [
+            {
+              type: "aggregate",
+              paths: {
+                temp: { aggregation: "average" },
+                humidity: { aggregation: "latest" },
+              },
+            },
+          ],
+        });
+
+        // a primitive reading is one not wrapped in an object
+        const transformed = await module.runAllTransformations([
+          { temp: 2, humidity: 20 },
+          { temp: 3, humidity: 20 },
+          { temp: 4, humidity: 20 },
+          { temp: 5, humidity: 19 },
+        ]);
+        expect(transformed).to.deep.equal({ temp: 3.5, humidity: 19 });
+      });
     });
   });
 

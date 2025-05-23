@@ -62,7 +62,7 @@ export class Sensor extends Module {
     if (aggregation === "average") {
       return data.reduce((sum, next) => sum + next, 0) / data.length;
     } else if (aggregation === "latest") {
-      return data.pop();
+      return data[data.length - 1];
     } else {
       throw new Error(
         `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`
@@ -74,9 +74,8 @@ export class Sensor extends Module {
     if (data.length === 1) aggregation = "latest";
 
     if (aggregation === "latest") {
-      return data.pop();
+      return get(data[data.length - 1], path, data[data.length - 1]);
     } else if (aggregation === "average") {
-      console.log("path", path);
       let sum = 0;
       for (let i = 0; i < data.length; i++) {
         sum += get(data[i], path, data[i]);
