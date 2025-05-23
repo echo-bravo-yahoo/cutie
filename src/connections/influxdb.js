@@ -1,8 +1,8 @@
 import { exec } from "node:child_process";
 
-import { Exchange } from "../util/generic-exchange.js";
+import { Connection } from "../util/generic-connection.js";
 
-export default class InfluxDB extends Exchange {
+export default class InfluxDB extends Connection {
   constructor(config) {
     super(config);
   }

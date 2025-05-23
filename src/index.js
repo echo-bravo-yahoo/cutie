@@ -8,14 +8,13 @@ import { read } from "node-yaml";
 
 import loggerFactory from "pino";
 import { registerModules } from "./util/modules.js";
-import { registerExchanges } from "./util/exchanges.js";
+import { registerConnections } from "./util/connections.js";
 
 export let globals = {};
 
 // used for testing
 export function setGlobals(newValue) {
   globals = newValue;
-  console.log("globals", globals);
 }
 
 export async function start(args) {
@@ -28,13 +27,13 @@ export async function start(args) {
 
   globals = {
     modules: [],
-    exchanges: [],
+    connections: [],
     name: config.name,
     version: packageJson.version,
     logger: loggerFactory({ level: config.logLevel || "debug" }),
   };
 
-  await registerExchanges(config.exchanges);
+  await registerConnections(config.connections);
   await registerModules(config.modules);
 
   console.log("globals", {

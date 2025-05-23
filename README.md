@@ -11,7 +11,7 @@
 - Sampling multiple times per reporting window
 - Aggregating samples in various ways (avg, latest, p25/50/75/X)
 - Offsetting values before publishing them
-- Delivering data to one or multiple MQTT or InfluxDB exchanges
+- Delivering data to one or multiple MQTT or InfluxDB connections
 
 ### `cutie` as an MQTT listener/repeater
 
@@ -65,7 +65,7 @@ Once you have it configured to your liking, you can install it to systemctl so i
   - [ ] NEC
   - [ ] switchbot
   - [ ] thermal-printer
-- [ ] Document `exchanges` concept
+- [ ] Document `connections` concept
 - [ ] Document `outputs` concept
 - [ ] Document `provisioner` concept
 - [ ] Update `provisioner`

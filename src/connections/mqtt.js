@@ -1,10 +1,10 @@
 import mqtt from "mqtt";
 
-import { Exchange } from "../util/generic-exchange.js";
-import { getExchangesByType } from "../util/exchanges.js";
+import { Connection } from "../util/generic-connection.js";
+import { getConnectionsByType } from "../util/connections.js";
 import { globals } from "../index.js";
 
-export default class MQTT extends Exchange {
+export default class MQTT extends Connection {
   constructor(config) {
     super(config);
 
@@ -37,11 +37,11 @@ export default class MQTT extends Exchange {
       { role: "blob", blob: message },
       `Received new message on topic "${topic}": ${JSON.stringify(message)}`
     );
-    const mqttExchangeNames = getExchangesByType("mqtt").map(
-      (exchange) => exchange.config.name
+    const mqttConnectionNames = getConnectionsByType("mqtt").map(
+      (connection) => connection.config.name
     );
     const triggers = globals.modules.filter((module) => {
-      return mqttExchangeNames.includes(module.config.name);
+      return mqttConnectionNames.includes(module.config.name);
     });
     this.debug(`Found ${triggers.length} matching triggers.`);
     for (let triggerModule of triggers) {

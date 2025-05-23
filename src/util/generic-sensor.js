@@ -2,7 +2,7 @@ import get from "lodash/get.js";
 import map from "lodash/map.js";
 
 import { Module } from "./generic-module.js";
-import { getExchange } from "./exchanges.js";
+import { getConnection } from "./connections.js";
 
 export class Sensor extends Module {
   constructor(config) {
@@ -25,7 +25,7 @@ export class Sensor extends Module {
     const payload = this.collateSamples();
 
     for (let toFind of this.config.destinations) {
-      const found = getExchange(toFind.name);
+      const found = getConnection(toFind.name);
 
       if (found) {
         this.info(

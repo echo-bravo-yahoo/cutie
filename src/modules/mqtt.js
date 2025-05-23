@@ -1,8 +1,8 @@
 import { Module } from "../util/generic-module.js";
-import { getExchange } from "../util/exchanges.js";
+import { getConnection } from "../util/connections.js";
 import MqttTopics from "mqtt-topics";
 
-export class MQTT extends Module {
+export default class MQTT extends Module {
   constructor(config) {
     super(config);
   }
@@ -14,7 +14,7 @@ export class MQTT extends Module {
   }
 
   async enable() {
-    this.mqtt = getExchange(this.stateKey);
+    this.mqtt = getConnection(this.stateKey);
     if (this.config.topics && this.config.topics.length) {
       await this.mqtt.subscribe(this.config.topics);
 
@@ -42,12 +42,12 @@ export class MQTT extends Module {
     message = await this.runAllTransformations(message);
 
     for (let destination of this.config.destinations) {
-      const exchange = getExchange(destination.name);
+      const connection = getConnection(destination.name);
       this.debug(
         { role: "blob", blob: message },
-        `Dispatching on topic "${destination.topic}" for exchange "${exchange.config.name}": ${JSON.stringify(message)}`
+        `Dispatching on topic "${destination.topic}" for connection "${connection.config.name}": ${JSON.stringify(message)}`
       );
-      exchange.sendRaw(destination.topic, JSON.stringify(message));
+      connection.sendRaw(destination.topic, JSON.stringify(message));
     }
   }
 
@@ -67,5 +67,3 @@ export class MQTT extends Module {
   "destinations": []
 }
 */
-
-export default MQTT;

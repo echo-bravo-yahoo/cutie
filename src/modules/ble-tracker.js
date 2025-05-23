@@ -2,7 +2,7 @@ import get from "lodash/get.js";
 
 import { globals } from "../index.js";
 import { Sensor } from "../util/generic-sensor.js";
-import { getExchange } from "../util/exchanges.js";
+import { getConnection } from "../util/connections.js";
 
 let ble, adapter;
 const deviceMap = {};
@@ -96,7 +96,7 @@ export default class BLETracker extends Sensor {
     // real clumsy hack: this is copied from util/generic-sensor until i get sampling one/many
     // working well
     for (let toFind of this.config.destinations) {
-      const found = getExchange(toFind.name);
+      const found = getConnection(toFind.name);
 
       if (found) {
         this.info(
