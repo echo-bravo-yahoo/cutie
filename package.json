@@ -22,6 +22,7 @@
   "dependencies": {
     "bme280": "^2.1.1",
     "bme680-sensor": "^1.1.0",
+    "cron-schedule": "^5.0.4",
     "lodash": "^4.17.21",
     "mqtt": "^5.11.0",
     "mqtt-topics": "^1.0.2",

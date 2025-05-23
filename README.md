@@ -46,7 +46,7 @@ Once you have it configured to your liking, you can install it to systemctl so i
 - [x] Generalize transforms to work for either single or set operations
 - [x] Normalize how sensors work compared to mqtt module
   - [ ] Normalize BLE sensor
-- [ ] Add interval / cron modules
+- [x] Add interval / cron modules
 - [x] Add temperature transformations
 - [ ] Add cookbook for common tasks
 - [ ] Move from using `./config/config-real.json` to `./config/config-sample.json` and having users copy.
