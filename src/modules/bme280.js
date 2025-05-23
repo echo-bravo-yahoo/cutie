@@ -51,6 +51,7 @@ export default class BME280 extends Sensor {
 
 /*
 {
+  "type": "bme280",
   "enabled": true,
   "i2cAddress": 0x76,
   "sampling": {

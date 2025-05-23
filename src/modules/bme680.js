@@ -1,7 +1,7 @@
 import { globals } from "../index.js";
 import { Sensor } from "../util/generic-sensor.js";
 
-export class BME680 extends Sensor {
+export default class BME680 extends Sensor {
   constructor(config) {
     super(config);
   }
@@ -55,4 +55,16 @@ export class BME680 extends Sensor {
   }
 }
 
-export default BME680;
+/*
+{
+  "type": "bme280",
+  "enabled": true,
+  "i2cAddress": 0x76,
+  "sampling": {
+    "interval": "",
+  },
+  "reporting": {
+    "interval": ""
+  }
+}
+*/

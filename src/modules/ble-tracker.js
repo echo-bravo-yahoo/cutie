@@ -175,12 +175,12 @@ export default class BLETracker extends Sensor {
 
 /*
 {
+  "name": "",
+  "type": "ble-tracker",
   "enabled": true,
-  "macAddress": "00:00:00:00:00:00",
-  "alias": "some name to use for the MQTT topic",
+  "devices": [{ "alias": "", "macAddress": "00:00:00:00:00:00" }],
   "sampling": {
     "interval": "",
-    "aggregation": "latest|average|median|pX"
   },
   "reporting": {
     "interval": ""
