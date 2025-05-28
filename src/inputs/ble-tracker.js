@@ -8,16 +8,10 @@ let ble, adapter;
 const deviceMap = {};
 
 export default class BLETracker extends Sensor {
-  constructor(config) {
-    super(config);
+  constructor(config, task) {
+    super(config, task);
 
     this.samples = {};
-  }
-
-  async register() {
-    if (this.config.enabled) {
-      this.enable();
-    }
   }
 
   aggregateOne(deviceKey) {
@@ -177,7 +171,7 @@ export default class BLETracker extends Sensor {
 {
   "name": "",
   "type": "ble-tracker",
-  "enabled": true,
+  "disabled": false,
   "devices": [{ "alias": "", "macAddress": "00:00:00:00:00:00" }],
   "sampling": {
     "interval": "",

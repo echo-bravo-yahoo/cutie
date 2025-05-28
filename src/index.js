@@ -7,8 +7,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 import { read } from "node-yaml";
 
 import loggerFactory from "pino";
-import { registerModules } from "./util/modules.js";
 import { registerConnections } from "./util/connections.js";
+import { registerTasks } from "./util/tasks.js";
 
 export let globals = {};
 
@@ -26,15 +26,18 @@ export async function start(args) {
   const packageJson = await packageJsonPromise;
 
   globals = {
-    modules: [],
+    tasks: [],
     connections: [],
+    inputs: [],
+    // outputs: [],
     name: config.name,
     version: packageJson.version,
     logger: loggerFactory({ level: config.logLevel || "debug" }),
   };
 
   await registerConnections(config.connections);
-  await registerModules(config.modules);
+  // TODO: this should really register tasks, which create chains to be called later...
+  await registerTasks(config.tasks);
 
   console.log("globals", {
     ...globals,

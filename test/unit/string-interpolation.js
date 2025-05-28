@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import MQTT from "../../src/modules/mqtt.js";
+import MQTT from "../../src/outputs/mqtt.js";
 import { setGlobals } from "../../src/index.js";
 
 describe("string interpolation", function () {

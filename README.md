@@ -43,6 +43,8 @@ Once you have it configured to your liking, you can install it to systemctl so i
 
 ### To-do
 
+- [ ] Clean up stateKey use
+- [ ] Clean up dirname use
 - [x] Generalize transforms to work for either single or set operations
 - [x] Normalize how sensors work compared to mqtt module
   - [ ] Normalize BLE sensor

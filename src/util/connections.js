@@ -5,6 +5,7 @@ import { globals } from "../index.js";
 
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { Step } from "./generic-step.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export async function registerConnections(connectionConfigs) {
@@ -16,10 +17,13 @@ export async function registerConnections(connectionConfigs) {
   const promises = [];
 
   for (const connectionConfig of connectionConfigs) {
-    if (connectionNames.includes(connectionConfig.type)) {
+    const connectionTypeInfo = Step.parseTypeString(connectionConfig.type);
+    if (connectionNames.includes(connectionTypeInfo.subType)) {
       const Connection = (
         await import(
-          normalize(`${__dirname}/../connections/${connectionConfig.type}.js`)
+          normalize(
+            `${__dirname}/../${connectionTypeInfo.type}s/${connectionTypeInfo.subType}.js`
+          )
         )
       ).default;
 
@@ -44,7 +48,7 @@ export async function registerConnections(connectionConfigs) {
 
 export function getConnection(connectionKey) {
   return globals.connections.find(
-    (connection) => connection.config.name === connectionKey
+    (connection) => connection.name === connectionKey
   );
 }
 

@@ -21,7 +21,7 @@ export default class Convert extends Transformation {
 /*
 single path form:
 {
-  "type": "convert",
+  "type": "transformation:convert",
   "path": "a.b.c",
   "from": celsius,
   "to": fahrenheit
@@ -29,7 +29,7 @@ single path form:
 
 multi-path form:
 {
-  "type": "convert",
+  "type": "transformation:convert",
   "paths": {
     "a.b.c": {
       "convert": {

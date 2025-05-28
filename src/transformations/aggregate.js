@@ -85,14 +85,14 @@ export default class Aggregate extends Transformation {
 /*
 single path form:
 {
-  "type": "aggregate",
+  "type": "transformation:aggregate",
   "path": "a.b.c",
   "aggregation": "latest|average|median|pX"
 }
 
 multi-path form:
 {
-  "type": "aggregate",
+  "type": "transformation:aggregate",
   "paths": {
     "a.b.c": { "aggregation": "latest|average|median|pX" }
   }

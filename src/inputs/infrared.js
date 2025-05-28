@@ -1,10 +1,10 @@
-import { Module } from "../util/generic-module.js";
+import Input from "../util/generic-input.js";
 
 let pigpio, Gpio;
 
-export class Infrared extends Module {
-  constructor(stateKey) {
-    super(stateKey);
+export class Infrared extends Input {
+  constructor(config, task) {
+    super(config, task);
 
     this.paths = {
       virtual: { handler: this.copyState, order: 0 },
@@ -74,7 +74,7 @@ export class Infrared extends Module {
 
 /*
 {
-  "enabled": boolean,
+  "disabled": false,
   "ledPin": number
 }
 */

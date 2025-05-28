@@ -1,16 +1,11 @@
-import { Module } from "../util/generic-module.js";
 import { TimerBasedCronScheduler as scheduler } from "cron-schedule/schedulers/timer-based.js";
 import { parseCronExpression } from "cron-schedule";
 
-export default class Interval extends Module {
-  constructor(config) {
-    super(config);
-  }
+import Input from "../util/generic-input";
 
-  async register() {
-    if (this.config.enabled) {
-      this.enable();
-    }
+export default class Interval extends Input {
+  constructor(config, task) {
+    super(config, task);
   }
 
   errorHandler() {}
@@ -18,11 +13,15 @@ export default class Interval extends Module {
   async enable() {
     this.cronHandle = scheduler.setTimeout(
       parseCronExpression(this.config.expression),
-      this.runAllTransformations.bind(this, this.config.message),
+      this.handleMessage.bind(this, this.config.message),
       { errorHandler: this.errorHandler }
     );
     this.info({}, `Enabled cron task.`);
     this.enabled = true;
+  }
+
+  async handleMessage(message) {
+    if (this.next) this.next.handleMessage(message);
   }
 
   async disable() {
@@ -35,7 +34,7 @@ export default class Interval extends Module {
 /*
 {
   "type": "cron",
-  "enabled": true,
+  "disabled": false,
   "message": { ... },
   "expression": "* * * * *" // in cron format
 }

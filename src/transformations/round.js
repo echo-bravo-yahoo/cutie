@@ -32,7 +32,7 @@ export default class Round extends Transformation {
 
 single path form:
 {
-  "type": "round",
+  "type": "transformation:round",
   "path": "a.b.c",
   "precision": 2,
   "direction": "up"|"down"|"round"
@@ -40,7 +40,7 @@ single path form:
 
 multi-path form:
 {
-  "type": "round",
+  "type": "transformation:round",
   "paths": {
     "a.b.c": {
       "precision": 2,

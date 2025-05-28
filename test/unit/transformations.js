@@ -1,42 +1,50 @@
 import { expect } from "chai";
 
-import { Module } from "../../src/util/generic-module.js";
+import Task from "../../src/util/generic-task.js";
+import { setGlobals } from "../../src/index.js";
 
 describe("transformations", function () {
+  before(() => {
+    setGlobals({ logger: { info: () => {}, debug: () => {} } });
+  });
+
   describe("specific transformers", function () {
     describe("offset", function () {
       it("works on primitive readings", async function () {
-        const module = new Module({
-          transformations: [{ type: "offset", offset: -5 }],
+        const task = new Task({
+          steps: [{ type: "transformation:offset", offset: -5 }],
         });
+        await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await module.runAllTransformations(5);
+        const transformed = await task.handleMessage(5);
         expect(transformed).to.deep.equal(0);
       });
 
       it("works on simple readings", async function () {
-        const module = new Module({
-          transformations: [{ type: "offset", path: "temp", offset: -5 }],
+        const task = new Task({
+          steps: [{ type: "transformation:offset", path: "temp", offset: -5 }],
         });
+        await task.register();
 
         // a simple reading is one with only one key/value pair in it
-        const transformed = await module.runAllTransformations({ temp: 5 });
+        const transformed = await task.handleMessage({ temp: 5 });
         expect(transformed).to.deep.equal({ temp: 0 });
       });
 
       it("works on composite readings", async function () {
-        const module = new Module({
-          transformations: [
+        const task = new Task({
+          steps: [
             {
-              type: "offset",
+              type: "transformation:offset",
               paths: { temp: { offset: -5 }, humidity: { offset: 10 } },
             },
           ],
         });
+        await task.register();
 
         // a composite reading is one with multiple key/value pairs in it
-        const transformed = await module.runAllTransformations({
+        const transformed = await task.handleMessage({
           temp: 5,
           humidity: 30,
         });
@@ -44,36 +52,39 @@ describe("transformations", function () {
       });
 
       it("works on arrays of primitive readings", async function () {
-        const module = new Module({
-          transformations: [{ type: "offset", offset: -5 }],
+        const task = new Task({
+          steps: [{ type: "transformation:offset", offset: -5 }],
         });
+        await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await module.runAllTransformations([1, 2, 3, 4, 5]);
+        const transformed = await task.handleMessage([1, 2, 3, 4, 5]);
         expect(transformed).to.deep.equal([-4, -3, -2, -1, 0]);
       });
 
       it("works on arrays of primitive readings with a base path", async function () {
-        const module = new Module({
-          transformations: [
-            { type: "offset", offset: -5, basePath: "weather" },
+        const task = new Task({
+          steps: [
+            { type: "transformation:offset", offset: -5, basePath: "weather" },
           ],
         });
+        await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await module.runAllTransformations({
+        const transformed = await task.handleMessage({
           weather: [1, 2, 3, 4, 5],
         });
         expect(transformed).to.deep.equal({ weather: [-4, -3, -2, -1, 0] });
       });
 
       it("works on arrays of simple readings", async function () {
-        const module = new Module({
-          transformations: [{ type: "offset", path: "temp", offset: -5 }],
+        const task = new Task({
+          steps: [{ type: "transformation:offset", path: "temp", offset: -5 }],
         });
+        await task.register();
 
         // a simple reading is one with only one key/value pair in it
-        const transformed = await module.runAllTransformations([
+        const transformed = await task.handleMessage([
           { temp: 1 },
           { temp: 2 },
           { temp: 3 },
@@ -90,14 +101,20 @@ describe("transformations", function () {
       });
 
       it("works on arrays of simple readings with a base path", async function () {
-        const module = new Module({
-          transformations: [
-            { type: "offset", basePath: "weather", path: "temp", offset: -5 },
+        const task = new Task({
+          steps: [
+            {
+              type: "transformation:offset",
+              basePath: "weather",
+              path: "temp",
+              offset: -5,
+            },
           ],
         });
+        await task.register();
 
         // a simple reading is one with only one key/value pair in it
-        const transformed = await module.runAllTransformations({
+        const transformed = await task.handleMessage({
           weather: [
             { temp: 1 },
             { temp: 2 },
@@ -118,17 +135,18 @@ describe("transformations", function () {
       });
 
       it("works on arrays of composite readings", async function () {
-        const module = new Module({
-          transformations: [
+        const task = new Task({
+          steps: [
             {
-              type: "offset",
+              type: "transformation:offset",
               paths: { temp: { offset: -5 }, humidity: { offset: -10 } },
             },
           ],
         });
+        await task.register();
 
         // a composite reading is one with only one key/value pair in it
-        const transformed = await module.runAllTransformations([
+        const transformed = await task.handleMessage([
           { temp: 1, humidity: 30 },
           { temp: 2, humidity: 31 },
           { temp: 3, humidity: 32 },
@@ -145,18 +163,19 @@ describe("transformations", function () {
       });
 
       it("works on arrays of composite readings with a base path", async function () {
-        const module = new Module({
-          transformations: [
+        const task = new Task({
+          steps: [
             {
-              type: "offset",
+              type: "transformation:offset",
               basePath: "weather",
               paths: { temp: { offset: -5 }, humidity: { offset: 1 } },
             },
           ],
         });
+        await task.register();
 
         // a composite reading is one with only one key/value pair in it
-        const transformed = await module.runAllTransformations({
+        const transformed = await task.handleMessage({
           weather: [
             { temp: 1, humidity: 30 },
             { temp: 2, humidity: 31 },
@@ -195,19 +214,18 @@ describe("transformations", function () {
         ];
 
         for (let testCase of testCases) {
-          const module = new Module({
-            transformations: [
+          const task = new Task({
+            steps: [
               {
-                type: "round",
+                type: "transformation:round",
                 precision: 2,
                 direction: testCase.direction,
               },
             ],
           });
+          await task.register();
 
-          const transformed = await module.runAllTransformations(
-            testCase.input
-          );
+          const transformed = await task.handleMessage(testCase.input);
           expect(transformed).to.equal(testCase.output);
         }
       });
@@ -229,19 +247,18 @@ describe("transformations", function () {
         ];
 
         for (let testCase of testCases) {
-          const module = new Module({
-            transformations: [
+          const task = new Task({
+            steps: [
               {
-                type: "round",
+                type: "transformation:round",
                 precision: 0,
                 direction: testCase.direction,
               },
             ],
           });
+          await task.register();
 
-          const transformed = await module.runAllTransformations(
-            testCase.input
-          );
+          const transformed = await task.handleMessage(testCase.input);
           expect(transformed).to.equal(testCase.output);
         }
       });
@@ -251,24 +268,30 @@ describe("transformations", function () {
     });
     describe("aggregate", function () {
       it("works on arrays of primitive readings", async function () {
-        const module = new Module({
-          transformations: [{ type: "aggregate", aggregation: "average" }],
+        const task = new Task({
+          steps: [{ type: "transformation:aggregate", aggregation: "average" }],
         });
+        await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await module.runAllTransformations([2, 3, 4, 5]);
+        const transformed = await task.handleMessage([2, 3, 4, 5]);
         expect(transformed).to.deep.equal(3.5);
       });
 
       it("works on arrays of simple readings", async function () {
-        const module = new Module({
-          transformations: [
-            { type: "aggregate", aggregation: "average", path: "temp" },
+        const task = new Task({
+          steps: [
+            {
+              type: "transformation:aggregate",
+              aggregation: "average",
+              path: "temp",
+            },
           ],
         });
+        await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await module.runAllTransformations([
+        const transformed = await task.handleMessage([
           { temp: 2 },
           { temp: 3 },
           { temp: 4 },
@@ -278,10 +301,10 @@ describe("transformations", function () {
       });
 
       it("works on arrays of composite readings", async function () {
-        const module = new Module({
-          transformations: [
+        const task = new Task({
+          steps: [
             {
-              type: "aggregate",
+              type: "transformation:aggregate",
               paths: {
                 temp: { aggregation: "average" },
                 humidity: { aggregation: "latest" },
@@ -289,9 +312,10 @@ describe("transformations", function () {
             },
           ],
         });
+        await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await module.runAllTransformations([
+        const transformed = await task.handleMessage([
           { temp: 2, humidity: 20 },
           { temp: 3, humidity: 20 },
           { temp: 4, humidity: 20 },
@@ -304,17 +328,18 @@ describe("transformations", function () {
     describe("convert", function () {
       describe("celsius to fahrenheit", function () {
         it("works on primitive readings", async function () {
-          const module = new Module({
-            transformations: [
+          const task = new Task({
+            steps: [
               {
-                type: "convert",
+                type: "transformation:convert",
                 from: "celsius",
                 to: "fahrenheit",
               },
             ],
           });
+          await task.register();
 
-          const transformed = await module.runAllTransformations(21.1);
+          const transformed = await task.handleMessage(21.1);
           expect(transformed).to.deep.equal(69.98);
         });
         it.skip("works on simple readings", async function () {});
@@ -323,17 +348,18 @@ describe("transformations", function () {
 
       describe("fahrenheit to celsius ", () => {
         it("works on primitive readings", async function () {
-          const module = new Module({
-            transformations: [
+          const task = new Task({
+            steps: [
               {
-                type: "convert",
+                type: "transformation:convert",
                 from: "fahrenheit",
                 to: "celsius",
               },
             ],
           });
+          await task.register();
 
-          const transformed = await module.runAllTransformations(69.98);
+          const transformed = await task.handleMessage(69.98);
           expect(transformed).to.deep.equal(21.1);
         });
         it.skip("works on simple readings", async function () {});

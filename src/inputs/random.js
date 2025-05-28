@@ -2,16 +2,9 @@ import { globals } from "../index.js";
 import { Sensor } from "../util/generic-sensor.js";
 
 export default class Random extends Sensor {
-  constructor(config) {
-    super(config);
-
+  constructor(config, task) {
+    super(config, task);
     this.lastNumber = config.start || 0;
-  }
-
-  async register() {
-    if (this.config.enabled) {
-      this.enable();
-    }
   }
 
   generateNextNumber() {
@@ -42,7 +35,7 @@ export default class Random extends Sensor {
   }
 
   async sample() {
-    if (!this.config.enabled) return;
+    if (this.config.disabled) return;
 
     const datapoint = {
       metadata: {
@@ -76,17 +69,14 @@ export default class Random extends Sensor {
 {
   "name": "fake-thermometer",
   "type": "random",
-  "enabled": true,
+  "disabled": false,
   "start": 22,
   "minStep": .05,
   "maxStep": .5,
   "max": 30,
   "min": 20,
-  "sampling": {
-    "interval": 10000,
-  },
-  "reporting": {
-    "interval": 10000
+  "samplingInterval": 10000,
+  "reportingInterval": 10000
   }
 }
 */

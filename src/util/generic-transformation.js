@@ -1,7 +1,6 @@
 import get from "lodash/get.js";
 import set from "lodash/set.js";
-
-import { Loggable } from "./generic-loggable.js";
+import { Step } from "./generic-step.js";
 
 // some notes on terminology:
 // a primitive reading is one where the reading is a primitive/literal
@@ -15,12 +14,18 @@ import { Loggable } from "./generic-loggable.js";
 // a basePath points to an array to iterate through
 // a path pulls a value from one of the iterables in the basePath
 
-export class Transformation extends Loggable {
-  constructor(config) {
-    super();
+export class Transformation extends Step {
+  constructor(config, task) {
+    super(config, task);
+  }
 
-    this.config = config;
-    this.stateKey = config.name || config.type;
+  async handleMessage(message) {
+    const transformed = this.transform(message);
+    if (this.next) {
+      return this.next.handleMessage(transformed);
+    } else {
+      return transformed;
+    }
   }
 
   transform(message) {

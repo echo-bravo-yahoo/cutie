@@ -1,19 +1,13 @@
 import { globals } from "../index.js";
 import { Sensor } from "../util/generic-sensor.js";
 
-export default class BME280 extends Sensor {
-  constructor(config) {
-    super(config);
-  }
-
-  async register() {
-    if (this.config.enabled) {
-      this.enable();
-    }
+export default class BME680 extends Sensor {
+  constructor(config, task) {
+    super(config, task);
   }
 
   async sample() {
-    if (!this.config.enabled) return;
+    if (!this.enabled) return;
     const sensorData = await this.sensor.read();
 
     const datapoint = {
@@ -24,6 +18,7 @@ export default class BME280 extends Sensor {
       temp: sensorData.temperature,
       humidity: sensorData.humidity,
       pressure: sensorData.pressure,
+      gas: sensorData.gas_resistance,
     };
 
     this.debug({}, `Sampled new data point`);
@@ -31,20 +26,25 @@ export default class BME280 extends Sensor {
   }
 
   async enable() {
-    const bme280Sensor = await import("bme280");
-    this.sensor = await bme280Sensor.open({
-      i2cAddress: Number(this.config.i2cAddress) || 0x76,
-    });
-    this.setupSampler();
+    if (!this.config.virtual) {
+      const Bme680 = (await import("bme680-sensor")).default.Bme680;
+      this.sensor = new Bme680(1, Number(this.config.i2cAddress) || 0x77);
+      await this.sensor.initialize();
+    }
+
+    // TODO: ideally, this would re-calculate the next invocation to the correct time
+    // right now, it sort of just is randomly between (newInterval) and
+    // (newInterval+oldInterval)
     this.setupPublisher();
-    this.info({}, `Enabled bme280.`);
+    this.setupSampler();
+    this.info({}, `Enabled bme680.`);
     this.enabled = true;
   }
 
   async disable() {
+    // TODO: do I need to turn off the sensor / close the connection?
     clearInterval(this.interval);
-    if (this.sensor) await this.sensor.close();
-    this.info({}, `Disabled bme280.`);
+    this.info({}, `Disabled bme680.`);
     this.enabled = false;
   }
 }
@@ -52,6 +52,7 @@ export default class BME280 extends Sensor {
 /*
 {
   "type": "bme280",
+  "disabled": false,
   "enabled": true,
   "i2cAddress": 0x76,
   "sampling": {

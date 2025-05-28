@@ -14,7 +14,7 @@ export default class MQTT extends Connection {
   }
 
   async register() {
-    if (this.config.enabled) {
+    if (!this.config.disabled) {
       return this.enable();
     }
   }
@@ -45,7 +45,8 @@ export default class MQTT extends Connection {
     });
     this.debug(`Found ${triggers.length} matching triggers.`);
     for (let triggerModule of triggers) {
-      if (triggerModule.matchesTopic(topic)) triggerModule.dispatch(message);
+      if (triggerModule.matchesTopic(topic))
+        triggerModule.handleMessage(message);
     }
   }
 

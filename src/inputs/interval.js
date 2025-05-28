@@ -1,23 +1,21 @@
-import { Module } from "../util/generic-module.js";
+import Input from "../util/generic-input.js";
 
-export default class Interval extends Module {
-  constructor(config) {
-    super(config);
-  }
-
-  async register() {
-    if (this.config.enabled) {
-      this.enable();
-    }
+export default class Interval extends Input {
+  constructor(config, task) {
+    super(config, task);
   }
 
   async enable() {
     this.interval = setInterval(
-      this.runAllTransformations.bind(this, this.config.message),
+      this.handleMessage.bind(this, this.config.message),
       config.interval
     );
     this.info({}, `Enabled interval.`);
     this.enabled = true;
+  }
+
+  async handleMessage(message) {
+    if (this.next) this.next.handleMessage(message);
   }
 
   async disable() {
@@ -30,7 +28,7 @@ export default class Interval extends Module {
 /*
 {
   "type": "interval",
-  "enabled": true,
+  "disabled": false,
   "message": { ... },
   "interval": 10000 // in ms
 }

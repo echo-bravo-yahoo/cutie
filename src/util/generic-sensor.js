@@ -1,17 +1,22 @@
 import get from "lodash/get.js";
 import map from "lodash/map.js";
 
-import { Module } from "./generic-module.js";
-import { getConnection } from "./connections.js";
+import Input from "./generic-input.js";
 
-export class Sensor extends Module {
-  constructor(config) {
-    super(config);
+export class Sensor extends Input {
+  constructor(config, task) {
+    super(config, task);
 
     this.reportInterval = undefined;
     this.sampleInterval = undefined;
     this.sensor = undefined;
     this.samples = [];
+  }
+
+  async register() {
+    if (!this.config.disabled && !this.task.disabled) {
+      this.enable();
+    }
   }
 
   async publishReading() {
@@ -23,24 +28,12 @@ export class Sensor extends Module {
     }
 
     const payload = this.collateSamples();
+    this.info(
+      { role: "blob", blob: payload },
+      `Publishing new ${this.stateKey} data: ${JSON.stringify(payload)}`
+    );
 
-    for (let toFind of this.config.destinations) {
-      const found = getConnection(toFind.name);
-
-      if (found) {
-        this.info(
-          { role: "blob", blob: payload },
-          `Publishing new ${this.config.name} data to ${toFind.measurement}: ${JSON.stringify(payload)}`
-        );
-        found.send(
-          toFind.measurement || toFind.topic,
-          { ...payload, metadata: undefined, aggregationMetadata: undefined },
-          payload.metadata,
-          payload.aggregationMetadata
-        );
-      }
-    }
-
+    if (this.next) this.next.handleMessage(payload);
     this.samples = [];
   }
 
@@ -109,10 +102,10 @@ export class Sensor extends Module {
   }
 
   getSamplingInterval() {
-    return get(this.config, "sampling.interval", 60 * 1000);
+    return get(this, "config.samplingInterval", 60 * 1000);
   }
 
   getReportingInterval() {
-    return get(this.config, "reporting.interval", 60 * 1000);
+    return get(this, "config.reportingInterval", 60 * 1000);
   }
 }

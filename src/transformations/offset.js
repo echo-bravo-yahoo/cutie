@@ -13,14 +13,14 @@ export default class Offset extends Transformation {
 /*
 single path form:
 {
-  "type": "offset",
+  "type": "transformation:offset",
   "path": "",
   "offset": -5
 }
 
 multi-path form:
 {
-  "type": "offset",
+  "type": "transformation:offset",
   "paths": {
     "a.b.c": {
       "offset": -5

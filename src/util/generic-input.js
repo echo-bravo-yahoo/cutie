@@ -6,15 +6,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import get from "lodash/get.js";
 
-import { Loggable } from "./generic-loggable.js";
 import { globals } from "../index.js";
+import { Step } from "./generic-step.js";
 
-export class Module extends Loggable {
-  constructor(config) {
-    super();
-
-    this.config = config;
-    this.stateKey = config.name || config.type;
+export default class Input extends Step {
+  constructor(config, task) {
+    super(config, task);
   }
 
   async runAllTransformations(message) {
@@ -34,15 +31,5 @@ export class Module extends Loggable {
     }
 
     return result;
-  }
-
-  interpolateConfigString(template) {
-    const inject = (str, obj) =>
-      str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));
-
-    return inject(template, {
-      module: this.config,
-      globals: { ...globals, logger: undefined },
-    });
   }
 }

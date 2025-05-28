@@ -1,16 +1,10 @@
-import { Module } from "../util/generic-module.js";
 import { getConnection } from "../util/connections.js";
 import MqttTopics from "mqtt-topics";
+import Input from "../util/generic-input.js";
 
-export default class MQTT extends Module {
-  constructor(config) {
-    super(config);
-  }
-
-  async register() {
-    if (this.config.enabled) {
-      this.enable();
-    }
+export default class MQTT extends Input {
+  constructor(config, task) {
+    super(config, task);
   }
 
   async enable() {
@@ -38,17 +32,8 @@ export default class MQTT extends Module {
     this.enabled = false;
   }
 
-  async dispatch(message) {
-    message = await this.runAllTransformations(message);
-
-    for (let destination of this.config.destinations) {
-      const connection = getConnection(destination.name);
-      this.debug(
-        { role: "blob", blob: message },
-        `Dispatching on topic "${destination.topic}" for connection "${connection.config.name}": ${JSON.stringify(message)}`
-      );
-      connection.sendRaw(destination.topic, JSON.stringify(message));
-    }
+  async handleMessage(message) {
+    if (this.next) this.next.handleMessage(message);
   }
 
   matchesTopic(messageTopic) {
@@ -61,7 +46,7 @@ export default class MQTT extends Module {
 /*
 {
   "type": "mqtt",
-  "enabled": true,
+  "disabled": false,
   "topics": [],
   "transformations": [],
   "destinations": []
