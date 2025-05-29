@@ -13,23 +13,4 @@ export default class Input extends Step {
   constructor(config, task) {
     super(config, task);
   }
-
-  async runAllTransformations(message) {
-    let result = message;
-
-    for (let transformationConfig of this.config.transformations) {
-      const Transformation = (
-        await import(
-          normalize(
-            `${__dirname}/../transformations/${transformationConfig.type}.js`
-          )
-        )
-      ).default;
-      const transformer = new Transformation(transformationConfig);
-
-      result = transformer.transform(result, this);
-    }
-
-    return result;
-  }
 }
