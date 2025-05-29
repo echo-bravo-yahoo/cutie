@@ -12,7 +12,7 @@ export class Loggable {
         {
           role: "breadcrumb",
           ...obj,
-          tags: [...(obj.tags || []), this.stateKey],
+          tags: [...(obj.tags || [])],
         },
         msg,
         args
@@ -29,7 +29,7 @@ export class Loggable {
         {
           role: "breadcrumb",
           ...obj,
-          tags: [...(obj.tags || []), this.stateKey],
+          tags: [...(obj.tags || [])],
         },
         msg,
         args
@@ -47,7 +47,7 @@ export class Loggable {
       globals.logger.error({
         ...obj,
         role: 'breadcrumb',
-        tags: [...(obj.tags || []), this.stateKey]
+        tags: [...(obj.tags || [])]
       }, msg, args)
       */
     };

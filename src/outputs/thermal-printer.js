@@ -12,8 +12,8 @@ import { Module } from "../util/generic-module.js";
 let SerialPort, Printer;
 
 export class ThermalPrinter extends Module {
-  constructor(stateKey) {
-    super(stateKey);
+  constructor() {
+    super();
 
     this.lastReceived = 0;
 

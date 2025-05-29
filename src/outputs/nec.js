@@ -8,8 +8,8 @@ const { transmitNECCommand } = necPkg;
 let pigpio, Gpio;
 
 export class NEC extends Infrared {
-  constructor(stateKey) {
-    super(stateKey);
+  constructor() {
+    super();
   }
 
   runCommand(topicName, _body) {

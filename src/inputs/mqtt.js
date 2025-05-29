@@ -8,7 +8,7 @@ export default class MQTT extends Input {
   }
 
   async enable() {
-    this.mqtt = getConnection(this.stateKey);
+    this.mqtt = getConnection(this.name);
     if (this.config.topics && this.config.topics.length) {
       await this.mqtt.subscribe(this.config.topics);
 

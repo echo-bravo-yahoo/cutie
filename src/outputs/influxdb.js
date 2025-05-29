@@ -9,7 +9,7 @@ export default class InfluxDB extends Output {
   }
 
   async enable() {
-    this.mqtt = getConnection(this.stateKey);
+    this.mqtt = getConnection(this.name);
     this.enabled = true;
   }
 

@@ -16,8 +16,6 @@ export class Step extends Loggable {
       this.subType = typeInfo.subType;
       this.name = typeInfo.name;
     }
-
-    this.stateKey = config.name || config.type;
   }
 
   static parseTypeString(typeString) {

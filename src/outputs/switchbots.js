@@ -9,8 +9,8 @@ import { Module } from "../util/generic-module.js";
 import { updateWholeShadow } from "../shadow.js";
 
 export class Switchbots extends Module {
-  constructor(stateKey) {
-    super(stateKey);
+  constructor() {
+    super();
 
     this.switchbot = undefined;
     this.paths = {
@@ -77,13 +77,13 @@ export class Switchbots extends Module {
     this.info({}, `Updating shadow for index ${index} to ${desiredState}.`);
     let reported = set(
       {},
-      `modules[${this.stateKey}].switchbots]`,
+      `modules[${this.name}].switchbots]`,
       this.currentState.switchbots
     );
     // TODO: this isn't quite right - it should use a sparse document instead of copying the whole document. Subtle bugs...
     reported = set(
       reported,
-      `modules[${this.stateKey}].switchbots[${index}].on`,
+      `modules[${this.name}].switchbots[${index}].on`,
       desiredState
     );
     updateWholeShadow({ reported: reported, desired: reported });

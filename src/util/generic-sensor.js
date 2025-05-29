@@ -30,7 +30,7 @@ export class Sensor extends Input {
     const payload = this.collateSamples();
     this.info(
       { role: "blob", blob: payload },
-      `Publishing new ${this.stateKey} data: ${JSON.stringify(payload)}`
+      `Publishing new ${this.name} data: ${JSON.stringify(payload)}`
     );
 
     if (this.next) this.next.handleMessage(payload);

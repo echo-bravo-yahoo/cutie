@@ -14,6 +14,5 @@ export class Connection extends Loggable {
 
     this.config = config;
     this.task = task;
-    this.stateKey = config.name || config.type;
   }
 }
