@@ -28,7 +28,7 @@ export class Step extends Loggable {
   }
 
   register() {
-    // TODO: no-op to satisfy tasks.js::registerTasks()
+    // no-op to satisfy tasks.js::registerTasks()
   }
 
   interpolateConfigString(template) {

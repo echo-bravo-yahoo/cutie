@@ -29,19 +29,10 @@ export async function start(args) {
   globals = {
     tasks: [],
     connections: [],
-    inputs: [],
-    // outputs: [],
-    name: config.name,
     version: packageJson.version,
     logger: loggerFactory({ level: config.logLevel || "debug" }),
   };
 
   await registerConnections(config.connections);
-  // TODO: this should really register tasks, which create chains to be called later...
   await registerTasks(config.tasks);
-
-  console.log("globals", {
-    ...globals,
-    logger: undefined,
-  });
 }

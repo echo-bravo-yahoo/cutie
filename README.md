@@ -43,26 +43,21 @@ Once you have it configured to your liking, you can install it to systemctl so i
 
 ### To-do
 
-- [x] Clean up stateKey use
-- [x] Clean up dirname use
-- [x] Generalize transforms to work for either single or set operations
-- [x] Normalize how sensors work compared to mqtt module
-  - [ ] Normalize BLE sensor
-- [x] Add interval / cron modules
-- [x] Add temperature transformations
+- [ ] Add log rotation to cutie service file
+- [ ] Add file src/destination
+- [ ] Test that MQTT +/# topics work for listening
+- [ ] Move to Typescript
+- [ ] Add conditional transformation / filter
 - [ ] Add cookbook for common tasks
 - [ ] Move from using `./config/config-real.json` to `./config/config-sample.json` and having users copy.
-- [ ] Support dynamic substitution in MQTT destination keys (everywhere?)
 - [ ] Fix up logging
 - [ ] Confirm full range of usable nodeJS versions (`engines` field in package.json)
-- [ ] Build listen/repeat behavior
-  - [x] Customizable data transformations
-  - [x] Listen to topic pattern
-  - [ ] Persistent queue vs transient queue
+- [ ] Support distributed listen/repeat queues
 - [ ] Allow configuring `cutie` via MQTT
 - [ ] Support other MQTT auth strategies
-- [ ] Look for better sensor dependency management strategy
-- [ ] Reimplement old `islands` sensors and outputs
+- [ ] Look for a better sensor dependency management strategy
+- [ ] Fix old / rarely used inputs and outputs
+  - [ ] BLE
   - [ ] infrared
   - [ ] NEC
   - [ ] switchbot
@@ -71,7 +66,6 @@ Once you have it configured to your liking, you can install it to systemctl so i
 - [ ] Document `outputs` concept
 - [ ] Document `provisioner` concept
 - [ ] Update `provisioner`
-- [x] Update `Dockerfile`
 
 ### Common issues
 

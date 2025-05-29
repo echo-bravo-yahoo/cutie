@@ -67,7 +67,6 @@ export class NEC extends Infrared {
   }
 
   async enable(newState) {
-    // TODO: init or enable?
     pigpio = import("pigpio").pigpio;
     Gpio = pigpio.Gpio;
     if (

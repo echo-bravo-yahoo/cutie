@@ -31,8 +31,8 @@ export default class MQTT extends Output {
   }
 
   async send(message) {
-    // TODO: interpolation goes here
-    this.mqtt.sendRaw(this.config.topic, JSON.stringify(message));
+    const interpolatedTopic = this.interpolateConfigString(this.config.topic);
+    this.mqtt.sendRaw(interpolatedTopic, JSON.stringify(message));
   }
 }
 
