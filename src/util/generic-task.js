@@ -1,10 +1,6 @@
 import { normalize } from "node:path";
 
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-import { globals } from "../index.js";
+import { globals, srcDir } from "../index.js";
 import { Loggable } from "./generic-loggable.js";
 
 export default class Task extends Loggable {
@@ -22,7 +18,7 @@ export default class Task extends Loggable {
   async importStep(step, task) {
     const [type, subType] = step.type.split(":");
     const Factory = (
-      await import(normalize(`${__dirname}/../${type}s/${subType}.js`))
+      await import(normalize(`${srcDir}/${type}s/${subType}.js`))
     ).default;
     return new Factory(step, task);
   }

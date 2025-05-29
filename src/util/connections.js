@@ -1,16 +1,13 @@
 import { readdir } from "node:fs/promises";
 import { basename, normalize } from "node:path";
 
-import { globals } from "../index.js";
+import { globals, srcDir } from "../index.js";
 
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { Step } from "./generic-step.js";
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export async function registerConnections(connectionConfigs) {
   const connectionNames = (
-    await readdir(normalize(`${__dirname}/../connections`))
+    await readdir(normalize(`${srcDir}/connections`))
   ).map((name) => basename(name, ".js"));
 
   globals.logger.info({ role: "breadcrumb" }, "Registering connections...");
@@ -22,7 +19,7 @@ export async function registerConnections(connectionConfigs) {
       const Connection = (
         await import(
           normalize(
-            `${__dirname}/../${connectionTypeInfo.type}s/${connectionTypeInfo.subType}.js`
+            `${srcDir}/${connectionTypeInfo.type}s/${connectionTypeInfo.subType}.js`
           )
         )
       ).default;
