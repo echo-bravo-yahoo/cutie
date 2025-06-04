@@ -2,20 +2,15 @@
 
 ## What is this?
 
-`cutie` is an application to make it easier to develop and glue together IoT & home automation applications. It primarily consists of three parts, all works-in-progress: a sensor platform, a system for reading from and writing to a remote data store (intended primarily as an MQTT listener/repeater), and a provisioning script that installs `cutie` on a raspberry pi. It aims to be configuration-first, with code extensions to support use cases the configuration cannot. I wrote [a little bit about the motivation behind it here](https://blog.echobravoyahoo.net/the-problem-with-home-automation-software/).
+`cutie` is an application to make it easier to develop and glue together IoT & home automation applications. It primarily consists of three parts: a data transformation & routing layer (intended primarily as an MQTT listener/repeater), a software sensor platform for linux computers, and a provisioning script that installs `cutie` on a raspberry pi. It aims to be configuration-first, with code extensions to support use cases the configuration cannot. I wrote [a little bit about the motivation behind it here](https://blog.echobravoyahoo.net/the-problem-with-home-automation-software/).
+
+### `cutie` as a data transformation & routing layer
+
+`cutie` can listen to sensors or MQTT topics and transform the data or rebroadcast it to other MQTT topics or other data stores. This should enable users to integrate MQTT services that were not intended to be used together. Take a look at `./cookbook.md` for examples of how this functionality can be used.
 
 ### `cutie` as a sensor platform
 
-`cutie` can be used as a sensor platform for a limited number of sensors (BME280 and BME680 temperature sensors, BLE presence tracking). It's primarily intended for deployment to small, linux-based computers (e.g., raspberry pi). You can see a default config file at `./config/config.json`. Currently, the sensor platform supports:
-
-- Sampling multiple times per reporting window
-- Aggregating samples in various ways (avg, latest, p25/50/75/X)
-- Offsetting values before publishing them
-- Delivering data to one or multiple MQTT or InfluxDB connections
-
-### `cutie` as an MQTT listener/repeater
-
-This functionality is not implemented yet, but I plan to allow defining subscribe/transform/publish in config with the intent that users can integrate MQTT services that were not intended to be used together.
+`cutie` can be used as a sensor platform for a limited number of sensors (BME280 and BME680 temperature sensors, BLE presence tracking). It's primarily intended for deployment to small, linux-based computers (e.g., raspberry pi). Take a look at `./sensors.md` for an overview of currently supported sensors and how you can configure them.
 
 ### `cutie` as a raspberry pi provisioner
 
@@ -41,6 +36,19 @@ This starts `cutie` up using the config file present in `./config/config.json`. 
 
 Once you have it configured to your liking, you can install it to systemctl so it's run on startup and restarted on crash. First, modify `./config/cutie.service` to confirm that the `WorkingDirectory` and `user` fields are correct, then run `npm add-service`.
 
+### Mental model for using `cutie`
+
+There are not very many parts to a `cutie` installation, but they look like this:
+
+- A linux computer (optionally with some sensors attached)
+  - With `cutie` installed (optionally installed as a sysctl service)
+    - With a config file consisting of:
+      - Connection configs, which define what data stores `cutie` can reach and what information it needs to reach them. To actually use a Connection, you'll need a Connection config and an Input or Output config - the Connection config contains the settings required to reach the data store at all, and the Input/Output configs contain the settings for that particular task.
+      - Tasks, a description of one 'input, transform, output' pipeline. This usually represents some discrete sensor or task and contains Input, Transformation, and Output configs.
+        - Input configs, which define what remote data sources and local sensors `cutie` should watch for changes in.
+        - Transformation configs, which define how `cutie` should transform Messages after an Input but before an Output.
+        - Output configs, which define destinations for cutie to send data to. These can be intermediate or final destinations.
+
 ### To-do
 
 - [ ] Add log rotation to cutie service file
@@ -62,8 +70,8 @@ Once you have it configured to your liking, you can install it to systemctl so i
   - [ ] NEC
   - [ ] switchbot
   - [ ] thermal-printer
-- [ ] Document `connections` concept
-- [ ] Document `outputs` concept
+- [x] Document `connections` concept
+- [x] Document `outputs` concept
 - [ ] Document `provisioner` concept
 - [ ] Update `provisioner`
 
