@@ -1,0 +1,125 @@
+{
+  "connections": [
+    {
+      "type": "connection:mqtt:personal-mqtt",
+      "disabled": false,
+      "username": "",
+      "password": "",
+      "endpoint": ""
+    }
+  ],
+  "tasks": {
+    "measure-weather": {
+      "disabled": true,
+      "data": {
+        "location": "bedroom",
+        "hvacLocation": "upstairs-ac"
+      },
+      "steps": [
+        {
+          "type": "input:bme280",
+          "samplingInterval": 10000,
+          "reportingInterval": 10000
+        },
+        {
+          "type": "transformation:aggregate",
+          "paths": {
+            "temp": { "aggregation": "average" },
+            "humidity": { "aggregation": "average" },
+            "pressure": { "aggregation": "average" }
+          }
+        },
+        {
+          "type": "transformation:offset",
+          "paths": {
+            "temp": { "offset": -5 },
+            "humidity": { "offset": 1 },
+            "pressure": { "offset": 0 }
+          }
+        },
+        {
+          "type": "transformation:convert",
+          "paths": {
+            "temp": { "convert": "celsius_to_fahrenheit" }
+          }
+        },
+        {
+          "type": "transformation:round",
+          "paths": {
+            "temp": { "precision": 2 },
+            "humidity": { "precision": 2 },
+            "pressure": { "precision": 2 }
+          }
+        },
+        {
+          "type": "output:mqtt:personal-mqtt",
+          "topic": "data/weather/${state.location}"
+        },
+        {
+          "type": "output:mqtt:personal-mqtt",
+          "topic": "cmnd/${module.hvacLocation}/HVACRemoteTemp"
+        },
+        {
+          "type": "output:influxdb",
+          "measurement": "weather"
+        }
+      ]
+    },
+    "multi-sample-fake-thermometer": {
+      "disabled": false,
+      "steps": [
+        {
+          "type": "input:random",
+          "start": 24,
+          "minStep": 0.05,
+          "maxStep": 0.35,
+          "max": 32,
+          "min": 18,
+          "samplingInterval": 1000,
+          "reportingInterval": 5000
+        },
+        {
+          "type": "output:mqtt:personal-mqtt",
+          "topic": "development/multi-sample-fake-thermometer"
+        }
+      ]
+    },
+    "aggregated-fake-thermometer": {
+      "disabled": false,
+      "steps": [
+        {
+          "type": "input:mqtt:personal-mqtt",
+          "topic": "development/multi-sample-fake-thermometer"
+        },
+        {
+          "type": "transformation:aggregate",
+          "basePath": "number",
+          "path": "number",
+          "aggregation": "average"
+        },
+        {
+          "type": "output:mqtt:personal-mqtt",
+          "topic": "development/aggregated-fake-thermometer"
+        }
+      ]
+    },
+    "round-fake-thermometer": {
+      "disabled": false,
+      "steps": [
+        {
+          "type": "input:mqtt:personal-mqtt",
+          "topic": "development/aggregated-fake-thermometer"
+        },
+        {
+          "type": "transformation:round",
+          "path": "number",
+          "precision": 2
+        },
+        {
+          "type": "output:mqtt:personal-mqtt",
+          "topic": "development/rounded-fake-thermometer"
+        }
+      ]
+    }
+  }
+}
