@@ -85,7 +85,12 @@ npm ERR! gyp ERR! configure error
 npm ERR! gyp ERR! stack Error: `gyp` failed with exit code: 1
 ```
 
-Ensure you're installing with python < 3.11, e.g., `npm install --python=python3.10 # or other older python that's on your PATH`.
+Ensure you're installing with python < 3.11, e.g., `PYTHON="$(which python3.10)" npm install # or other older python that's on your PATH`. To install python 3.10 on ubuntu systems:
+```bash
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install python3.10 python3.10-venv python3.10-dev
+```
 
 ### FAQ
 
