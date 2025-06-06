@@ -38,16 +38,26 @@ export default class MQTT extends Connection {
       `Received new message on topic "${topic}": ${JSON.stringify(message)}`
     );
     const mqttConnectionNames = getConnectionsByType("mqtt").map(
-      (connection) => connection.config.name
+      (connection) => connection.name
     );
-    const triggers = globals.modules.filter((module) => {
-      return mqttConnectionNames.includes(module.config.name);
-    });
-    this.debug(`Found ${triggers.length} matching triggers.`);
-    for (let triggerModule of triggers) {
-      if (triggerModule.matchesTopic(topic))
-        triggerModule.handleMessage(message);
+    let triggers = 0;
+
+    for (let i = 0; i < globals.tasks.length; i++) {
+      const desiredConnection =
+        globals.tasks[i].steps[0].config.type.split(":")[2];
+
+      if (mqttConnectionNames.includes(desiredConnection)) {
+        if (
+          globals.tasks[i].steps[0].matchesTopic &&
+          globals.tasks[i].steps[0].matchesTopic(topic)
+        ) {
+          globals.tasks[i].steps[0].handleMessage(message);
+          triggers++;
+        }
+      }
     }
+
+    this.debug(`Found ${triggers} matching triggers.`);
   }
 
   async subscribe(topics) {

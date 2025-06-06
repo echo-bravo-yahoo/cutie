@@ -20,7 +20,12 @@ export class Transformation extends Step {
   }
 
   async handleMessage(message) {
+    console.log("Before:", JSON.stringify(message, null, 2));
     const transformed = this.transform(message);
+    // console.log(
+    //   `Step "${this.config.type}": transforming message: ${JSON.stringify(message, null, 2)}\nto
+    // message: ${JSON.stringify(transformed, null, 2)}`
+    // );
     if (this.next) {
       return this.next.handleMessage(transformed);
     } else {
@@ -41,6 +46,11 @@ export class Transformation extends Step {
       paths: this.config.paths,
       current: this.config.basePath || "",
     };
+
+    // console.log("isArrayOfReadings", isArrayOfReadings);
+    // console.log("isSimpleReading", isSimpleReading);
+    // console.log("isCompositeReading", isCompositeReading);
+    // console.log("isPrimitiveReading", isPrimitiveReading);
 
     let replacement;
     if (isArrayOfReadings) {
@@ -70,8 +80,17 @@ export class Transformation extends Step {
       : this.config;
     const oldValue = get(context.message, context.current, context.message);
     const newValue = this.transformSingle(oldValue, config, context);
-    set(context.message, context.current, newValue);
 
+    console.log(
+      "TRANSFORM SINGLE",
+      "context",
+      JSON.stringify(context, null, 2)
+    );
+    if (context.current === "") {
+      context.message = newValue;
+    } else {
+      set(context.message, context.current, newValue);
+    }
     return newValue;
   }
 
@@ -119,7 +138,7 @@ export class Transformation extends Step {
   }
 
   transformSimpleReading(context) {
-    this.doTransformSingle({
+    return this.doTransformSingle({
       ...context,
       current: `${context.current}${context.path && context.current ? "." : ""}${context.path || ""}`,
     });

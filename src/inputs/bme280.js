@@ -20,8 +20,11 @@ export default class BME280 extends Sensor {
       pressure: sensorData.pressure,
     };
 
-    this.debug({}, `Sampled new data point`);
     this.samples.push(datapoint);
+    this.debug(
+      {},
+      `Sampled new data point, ${JSON.stringify(this.samples, null, 2)}`
+    );
   }
 
   async enable() {
@@ -40,6 +43,10 @@ export default class BME280 extends Sensor {
     if (this.sensor) await this.sensor.close();
     this.info({}, `Disabled bme280.`);
     this.enabled = false;
+  }
+
+  collateSamples() {
+    return this.samples;
   }
 }
 

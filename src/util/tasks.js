@@ -7,6 +7,7 @@ export async function registerTasks(tasks) {
   for (const task of Object.values(tasks)) {
     const taskObject = new Task(task);
     await taskObject.register();
+    globals.tasks.push(taskObject);
 
     globals.logger.info(
       { role: "breadcrumb" },

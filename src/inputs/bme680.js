@@ -47,6 +47,10 @@ export default class BME680 extends Sensor {
     this.info({}, `Disabled bme680.`);
     this.enabled = false;
   }
+
+  collateSamples() {
+    return this.samples;
+  }
 }
 
 /*

@@ -51,6 +51,8 @@ There are not very many parts to a `cutie` installation, but they look like this
 
 ### To-do
 
+- [ ] Fix influxdb output
+- [ ] Fix confusion in message transformation path (half of the APIs use mutation, half use return values)
 - [ ] Add log rotation to cutie service file
 - [ ] Add file src/destination
 - [ ] Test that MQTT +/# topics work for listening
@@ -86,6 +88,7 @@ npm ERR! gyp ERR! stack Error: `gyp` failed with exit code: 1
 ```
 
 Ensure you're installing with python < 3.11, e.g., `PYTHON="$(which python3.10)" npm install # or other older python that's on your PATH`. To install python 3.10 on ubuntu systems:
+
 ```bash
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update

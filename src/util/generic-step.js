@@ -35,9 +35,12 @@ export class Step extends Loggable {
     const inject = (str, obj) =>
       str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));
 
-    return inject(template, {
+    const result = inject(template, {
+      task: this.task,
       module: this.config,
       globals: { ...globals, logger: undefined },
     });
+
+    return result;
   }
 }

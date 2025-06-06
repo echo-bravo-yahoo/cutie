@@ -6,6 +6,11 @@ export default class Output extends Step {
   }
 
   async handleMessage(message) {
-    return this.send(message);
+    if (this.next) {
+      await this.send(message);
+      return this.next.handleMessage(message);
+    } else {
+      return this.send(message);
+    }
   }
 }

@@ -51,7 +51,7 @@ export function getConnection(connectionKey) {
 
 export function getConnectionsByType(connectionType) {
   return globals.connections.filter(
-    (connection) => connection.config.type === connectionType
+    (connection) => connection.config.type.split(":")[1] === connectionType
   );
 }
 

@@ -1,5 +1,5 @@
 [Unit]
-Description=a little MQTT service
+Description=a cute little MQTT service
 
 [Service]
 User=pi
