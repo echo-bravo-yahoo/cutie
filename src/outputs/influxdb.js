@@ -8,21 +8,17 @@ export default class InfluxDB extends Output {
     super(config, task);
   }
 
+  async register() {
+    if (!this.config.disabled && !this.task.disabled) {
+      return this.enable();
+    }
+  }
+
   async enable() {
-    this.mqtt = getConnection(this.name);
     this.enabled = true;
   }
 
   async disable() {
-    // BUG: double subscriptions, single unsubscribe will break
-    // the other subscriber
-    await this.mqtt.unsubscribe(this.config.topics);
-    this.mqtt = undefined;
-
-    this.info(
-      {},
-      `Stopped listening to MQTT topics ${this.config.topics.join(", ")}.`
-    );
     this.enabled = false;
   }
 
@@ -46,7 +42,7 @@ export default class InfluxDB extends Output {
     data = data.join(",");
 
     let line = `${measurementName}${labelsString} ${data} ${new Date().valueOf()}`;
-    const { url, organization, bucket, precision, token } = this.moduleState;
+    const { url, organization, bucket, precision, token } = this.config;
     let command = `curl --request POST \
 --header "Authorization: Token ${token}" \
 --header "Content-Type: text/plain; charset=utf-8" \
