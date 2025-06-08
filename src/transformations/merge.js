@@ -8,8 +8,16 @@ export default class Merge extends Transformation {
     super(config);
   }
 
-  transformSingle(value, config, _context) {
-    return merge(value, config);
+  transformSingle(value, config, context) {
+    let result = { ...context.message };
+    const merged = merge(value, config);
+    if (config.to === "") {
+      result = merged;
+      context.current = "";
+    } else {
+      set(result, context.pathChosen, merged);
+    }
+    return result;
   }
 }
 

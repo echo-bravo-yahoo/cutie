@@ -10,7 +10,7 @@ export default class MQTT extends Output {
 
   async register() {
     if (!this.config.disabled && !this.task.disabled) {
-      this.enable();
+      return this.enable();
     }
   }
 
