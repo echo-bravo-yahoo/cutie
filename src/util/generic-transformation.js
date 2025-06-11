@@ -20,12 +20,7 @@ export class Transformation extends Step {
   }
 
   async handleMessage(message) {
-    console.log("Before:", JSON.stringify(message, null, 2));
     const transformed = this.transform(message);
-    // console.log(
-    //   `Step "${this.config.type}": transforming message: ${JSON.stringify(message, null, 2)}\nto
-    // message: ${JSON.stringify(transformed, null, 2)}`
-    // );
     if (this.next) {
       return this.next.handleMessage(transformed);
     } else {
@@ -40,7 +35,10 @@ export class Transformation extends Step {
     const isCompositeReading = this.config.paths !== undefined;
     const isPrimitiveReading = !isSimpleReading && !isCompositeReading;
     const context = {
-      message,
+      message: {
+        in: message,
+        out: undefined,
+      },
       basePath: this.config.basePath,
       path: this.config.path,
       paths: this.config.paths,
@@ -52,68 +50,92 @@ export class Transformation extends Step {
     // console.log("isCompositeReading", isCompositeReading);
     // console.log("isPrimitiveReading", isPrimitiveReading);
 
-    let replacement;
     if (isArrayOfReadings) {
       if (isPrimitiveReading) {
-        replacement = this.transformPrimitiveReadingArray(context);
+        this.transformPrimitiveReadingArray(context);
       } else if (isSimpleReading) {
-        replacement = this.transformSimpleReadingArray(context);
+        this.transformSimpleReadingArray(context);
       } else if (isCompositeReading) {
-        replacement = this.transformCompositeReadingArray(context);
+        this.transformCompositeReadingArray(context);
       }
     } else {
       if (isPrimitiveReading) {
-        replacement = this.transformPrimitiveReading(context);
+        this.transformPrimitiveReading(context);
       } else if (isSimpleReading) {
-        replacement = this.transformSimpleReading(context);
+        this.transformSimpleReading(context);
       } else if (isCompositeReading) {
-        replacement = this.transformCompositeReading(context);
+        this.transformCompositeReading(context);
       }
     }
 
-    return replacement !== undefined ? replacement : message;
+    return context.message.out;
   }
 
   doTransformSingle(context) {
     const config = context.pathChosen
       ? this.config.paths[context.pathChosen]
       : this.config;
-    const oldValue = get(context.message, context.current, context.message);
+    const oldValue = get(context.message.in, context.current, context.message.in);
     const newValue = this.transformSingle(oldValue, config, context);
 
-    console.log(
-      "TRANSFORM SINGLE",
-      "context",
-      JSON.stringify(context, null, 2)
-    );
+    // console.log(
+    //   "Context before transforming single value",
+    //   JSON.stringify(context, null, 2)
+    // );
     if (context.current === "") {
-      context.message = newValue;
+      context.message.out = newValue;
     } else {
-      set(context.message, context.current, newValue);
+      if (context.message.out === undefined) context.message.out = {}
+      set(context.message.out, context.current, newValue);
     }
-    return newValue;
+    // console.log(
+    //   "Context after transforming single value",
+    //   JSON.stringify(context, null, 2)
+    // );
   }
 
   transformPrimitiveReadingArray(context) {
-    let array = get(context.message, context.current, context.message);
+    let array = get(context.message.in, context.current, context.message.in);
+    if (context.message.out === undefined) {
+      if (context.basePath) {
+        context.message.out = {}
+      } else {
+        context.message.out = []
+      }
+    }
+
     for (let i = 0; i < array.length; i++) {
       context.current = `${context.basePath || ""}[${i}]`;
       this.transformPrimitiveReading(context);
     }
-    return context.message;
   }
 
   transformSimpleReadingArray(context) {
-    let array = get(context.message, context.current, context.message);
+    let array = get(context.message.in, context.current, context.message.in);
+    if (context.message.out === undefined) {
+      if (context.basePath) {
+        context.message.out = {}
+      } else {
+        context.message.out = []
+      }
+    }
+
     for (let i = 0; i < array.length; i++) {
       context.current = `${context.basePath || ""}[${i}]`;
       this.transformSimpleReading(context);
     }
-    return context.message;
   }
 
   transformCompositeReadingArray(context) {
-    let array = get(context.message, context.current, context.message);
+    let array = get(context.message.in, context.current, context.message.in);
+    if (context.message.out === undefined) {
+      if (context.basePath) {
+        context.message.out = {}
+      } else {
+        context.message.out = []
+      }
+    }
+
     for (let i = 0; i < array.length; i++) {
       context.current = `${context.basePath || ""}[${i}]`;
       this.transformCompositeReading(context);
@@ -131,14 +153,14 @@ export class Transformation extends Step {
   }
 
   transformPrimitiveReading(context) {
-    return this.doTransformSingle({
+    this.doTransformSingle({
       ...context,
       current: `${context.current}${context.path && context.current ? "." : ""}${context.path || ""}`,
     });
   }
 
   transformSimpleReading(context) {
-    return this.doTransformSingle({
+    this.doTransformSingle({
       ...context,
       current: `${context.current}${context.path && context.current ? "." : ""}${context.path || ""}`,
     });
