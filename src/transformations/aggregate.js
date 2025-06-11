@@ -13,10 +13,19 @@ export default class Aggregate extends Transformation {
     const config = context.pathChosen
       ? this.config.paths[context.pathChosen]
       : this.config;
+    let oldValue;
 
-    const oldValue = get(context.message, context.current, context.message);
+    if (context.current === '') {
+      oldValue = context.message.in
+    } else {
+      oldValue = get(context.message.in, context.current, context.message.in);
+    }
     const newValue = Sensor.doAggregation(oldValue, config.aggregation);
-    set(context.message, context.current, newValue);
+    if (context.current === '') {
+      context.message.out = newValue;
+    } else {
+      set(context.message.out, context.current, newValue);
+    }
 
     return newValue;
   }
@@ -25,17 +34,22 @@ export default class Aggregate extends Transformation {
     const config = context.pathChosen
       ? this.config.paths[context.pathChosen]
       : this.config;
+    let oldValue;
 
-    const oldValue = get(context.message, context.current, context.message);
+    if (context.current === '') {
+      oldValue = context.message.in
+    } else {
+      oldValue = get(context.message.in, context.current, context.message.in);
+    }
     let newValue = Sensor.doAggregation(
       oldValue,
       config.aggregation,
       context.path
     );
-    if (context.current) {
-      set(context.message, context.current, newValue);
+    if (context.current === '') {
+      context.message.out = set({}, context.path, newValue);
     } else {
-      newValue = set({}, context.path, newValue);
+      set(context.message.out, context.current, newValue);
     }
 
     return newValue;
@@ -43,7 +57,7 @@ export default class Aggregate extends Transformation {
 
   transformCompositeReadingArray(context) {
     const oldArray = [
-      ...get(context.message, context.current, context.message),
+      ...get(context.message.in, context.current, context.message.in),
     ];
     const newSubObject = {};
 
@@ -65,19 +79,27 @@ export default class Aggregate extends Transformation {
     }
 
     if (context.basePath) {
-      set(context.message, context.basePath, newSubObject);
+      set(context.message.out, context.basePath, newSubObject);
     } else {
-      context.message = newSubObject;
+      context.message.out = newSubObject;
     }
 
     return newSubObject;
   }
 
-  doTransformSingle(value, aggregation) {
-    if (value.length) {
-      return Sensor.doAggregation(value, aggregation);
+  doTransformSingle(context) {
+    const config = context.pathChosen
+      ? this.config.paths[context.pathChosen]
+      : this.config;
+    const oldValue = get(context.message.in, context.current, context.message.in);
+    let newValue;
+
+    if (oldValue.length) {
+      newValue = Sensor.doAggregation(oldValue, config.aggregation);
+      set(context.message.out, context.current, newValue);
     } else {
-      return value;
+      newValue = oldValue;
+      set(context.message.out, context.current, newValue);
     }
   }
 }

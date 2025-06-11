@@ -1,16 +1,11 @@
 import get from "lodash/get.js";
 import set from "lodash/set.js";
-import unset from "lodash/unset.js";
 
 import { Transformation } from "../util/generic-transformation.js";
 
-export default class Rearrange extends Transformation {
+export default class Pluck extends Transformation {
   constructor(config) {
     super(config);
-  }
-
-  transformSingle(value, config, context) {
-    return value;
   }
 
   doTransformSingle(context) {
@@ -24,12 +19,8 @@ export default class Rearrange extends Transformation {
     //   "Context before transforming single value",
     //   JSON.stringify(context, null, 2)
     // );
-    if (!context.message.out) context.message.out = { ... context.message.in };
-    if (config.to) {
-      // delete the value at the old path before we add it at the new path
-      unset(context.message.out, context.current);
-    }
-    set(context.message.out, config.to || context.current, newValue);
+    if (!context.message.out) context.message.out = {};
+    set(context.message.out, config.destination || context.current, newValue);
     // console.log(
     //   "Context after transforming single value",
     //   JSON.stringify(context, null, 2)
@@ -42,21 +33,21 @@ export default class Rearrange extends Transformation {
 }
 
 /*
-
 single path form:
 {
-  "type": "transformation:rearrange",
-  "path": "a.b.c",
-  "to": "a.d"
+  "type": "transformation:pluck",
+  "path": "",
+  "destination": ""
 }
 
 multi-path form:
 {
-  "type": "transformation:rearrange",
+  "type": "transformation:pluck",
   "paths": {
     "a.b.c": {
-      "to": "a.d"
+      "destination": ""
     }
   }
 }
 */
+
