@@ -6,13 +6,19 @@ import { Transformation } from "../util/generic-transformation.js";
 export default class Pluck extends Transformation {
   constructor(config) {
     super(config);
+
+    this.preservePaths = false;
   }
 
   doTransformSingle(context) {
     const config = context.pathChosen
       ? this.config.paths[context.pathChosen]
       : this.config;
-    const oldValue = get(context.message.in, context.current, context.message.in);
+    const oldValue = get(
+      context.message.in,
+      context.current,
+      context.message.in
+    );
     const newValue = this.transformSingle(oldValue, config, context);
 
     // console.log(
@@ -20,7 +26,11 @@ export default class Pluck extends Transformation {
     //   JSON.stringify(context, null, 2)
     // );
     if (!context.message.out) context.message.out = {};
-    set(context.message.out, config.destination || context.current, newValue);
+    if (this.config.destination === ".") {
+      context.message.out = newValue;
+    } else {
+      set(context.message.out, config.destination || context.current, newValue);
+    }
     // console.log(
     //   "Context after transforming single value",
     //   JSON.stringify(context, null, 2)
@@ -50,4 +60,3 @@ multi-path form:
   }
 }
 */
-

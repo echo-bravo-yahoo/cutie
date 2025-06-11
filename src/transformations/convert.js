@@ -6,15 +6,21 @@ export default class Convert extends Transformation {
   }
 
   transformSingle(value, config, context) {
+    let result;
     if (config.from === "celsius" && config.to === "fahrenheit") {
-      return (9 / 5) * value + 32;
+      result = (9 / 5) * value + 32;
     } else if (config.from === "fahrenheit" && config.to === "celsius") {
-      return (5 / 9) * (value - 32);
+      result = (5 / 9) * (value - 32);
     } else {
       throw new Error(
         `Unknown conversion from "${config.from}" to "${config.to}" in config at path "${context.current}".`
       );
     }
+
+    // console.log(
+    //   `CONVERT::: context: ${JSON.stringify(context)}, value: ${value}, config: ${JSON.stringify(config)}, result: ${result}`
+    // );
+    return result;
   }
 }
 

@@ -15,6 +15,7 @@ export default class InfluxDB extends Output {
   }
 
   async enable() {
+    this.influxdb = getConnection(this.name);
     this.enabled = true;
   }
 
@@ -22,36 +23,46 @@ export default class InfluxDB extends Output {
     this.enabled = false;
   }
 
-  async send({ measurementName, event, labels }) {
-    let data = [],
-      labelsArray = [],
-      labelsString = "";
-
-    for (const [key, value] of Object.entries(event)) {
-      if (key !== "metadata" && key !== "aggregationMetadata") {
-        data.push(`${key}=${value}`);
-      }
+  objectToLine(object) {
+    const result = [];
+    delete object.labels;
+    for (const [key, value] of Object.entries(object)) {
+      result.push(`${key}=${value}`);
     }
 
-    for (const [labelKey, labelValue] of Object.entries(labels)) {
-      labelsArray.push(`${labelKey}=${labelValue}`);
-    }
+    return result.join(",");
+  }
 
-    labelsString = labelsArray.join(",");
-    if (labelsString.length) labelsString = `,${labelsString}`;
-    data = data.join(",");
+  // raw or { event, labels } object
+  async send(message) {
+    // console.log("message:", message);
 
-    let line = `${measurementName}${labelsString} ${data} ${new Date().valueOf()}`;
-    const { url, organization, bucket, precision, token } = this.config;
+    const measurementName = this.config.measurement;
+    let labelsString = "";
+
+    // TO-DO: do interpolation here
+    if (message.labels || this.config.labels)
+      labelsString = this.objectToLine({
+        ...this.config.labels,
+        ...message.labels,
+      });
+
+    if (labelsString) labelsString = `,${labelsString}`;
+    const data = this.objectToLine(message);
+
+    let line = `${measurementName}${labelsString || ""} ${data} ${new Date().valueOf()}`;
+    const { url, organization, bucket, precision, token } =
+      this.influxdb.config;
     let command = `curl --request POST \
 --header "Authorization: Token ${token}" \
 --header "Content-Type: text/plain; charset=utf-8" \
 --header "Accept: application/json" \
 --data-binary "${line}" \
 "${url}?org=${organization}&bucket=${bucket}&precision=${precision}"`;
-    console.log(`Running command: ${command}`);
-    const result = exec(command);
-    console.log(`Result: ${result}`);
+    // console.log(`Running command: ${command}`);
+    exec(command, (_error, stdout, _stderr) => {
+      console.log(`Result: ${stdout}`);
+    });
   }
 }
 
