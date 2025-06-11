@@ -5,6 +5,8 @@ export default class Random extends Sensor {
   constructor(config, task) {
     super(config, task);
     this.lastNumber = config.start || 0;
+
+    this.name = "random";
   }
 
   generateNextNumber() {

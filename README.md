@@ -51,7 +51,7 @@ There are not very many parts to a `cutie` installation, but they look like this
 
 ### To-do
 
-- [ ] Fix influxdb output
+- [x] Test influxdb fix
 - [x] Fix confusion in message transformation path (half of the APIs use mutation, half use return values)
 - [ ] Add log rotation to cutie service file
 - [ ] Add file src/destination

@@ -12,6 +12,7 @@ export default class BLETracker extends Sensor {
     super(config, task);
 
     this.samples = {};
+    this.name = "BLETracker";
   }
 
   aggregateOne(deviceKey) {

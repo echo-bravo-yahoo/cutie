@@ -5,7 +5,7 @@ export default class Round extends Transformation {
     super(config);
   }
 
-  transformSingle(value, config, _context) {
+  transformSingle(value, config, context) {
     const integer = Math.floor(value);
     const fractional = value - integer;
     const precision = config.precision || 0;
@@ -24,6 +24,9 @@ export default class Round extends Transformation {
       );
     }
 
+    // console.log(
+    //   `ROUND::: context: ${JSON.stringify(context)}, value: ${JSON.stringify(value)}, config: ${JSON.stringify(config)}, result: ${result}`
+    // );
     return result;
   }
 }

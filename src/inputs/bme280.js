@@ -4,6 +4,8 @@ import { Sensor } from "../util/generic-sensor.js";
 export default class BME280 extends Sensor {
   constructor(config, task) {
     super(config, task);
+
+    this.name = "BME280";
   }
 
   async sample() {

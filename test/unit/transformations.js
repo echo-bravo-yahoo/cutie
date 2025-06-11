@@ -327,14 +327,14 @@ describe("transformations", function () {
       });
     });
 
-    describe("pluck", function() {
-      it.skip("works on primitive readings", async function() {
+    describe("pluck", function () {
+      it.skip("works on primitive readings", async function () {
         // pluck doesn't _do anything_ for primitive readings
         // should it error?
         // until i've made a decision, leaving a skipped test here
       });
 
-      it("works on simple readings", async function() {
+      it("works on simple readings", async function () {
         const task = new Task({
           steps: [
             {
@@ -345,82 +345,86 @@ describe("transformations", function () {
         });
         await task.register();
 
-        const transformed = await task.handleMessage(
-          { weather: { temp: 5, humidity: 23 } },
-        );
+        const transformed = await task.handleMessage({
+          weather: { temp: 5, humidity: 23 },
+        });
         expect(transformed).to.deep.equal({ weather: { temp: 5 } });
       });
 
-      it("works on composite readings", async function() {
+      it("works on composite readings", async function () {
         const task = new Task({
           steps: [
             {
               type: "transformation:pluck",
               path: "environment.sound",
-              destination: "noise"
+              destination: "noise",
             },
           ],
         });
         await task.register();
 
-        const transformed = await task.handleMessage(
-          { weather: { temp: 5, humidity: 15 }, environment: { sound: 75 } },
-        );
+        const transformed = await task.handleMessage({
+          weather: { temp: 5, humidity: 15 },
+          environment: { sound: 75 },
+        });
         expect(transformed).to.deep.equal({ noise: 75 });
       });
 
-      it("works with multiple paths", async function() {
+      it("works with multiple paths", async function () {
         const task = new Task({
           steps: [
             {
               type: "transformation:pluck",
               paths: {
                 "environment.sound": {
-                  destination: "noise"
+                  destination: "noise",
                 },
                 "weather.temp": {
-                  destination: "temp"
-                }
-              }
+                  destination: "temp",
+                },
+              },
             },
           ],
         });
         await task.register();
 
-        const transformed = await task.handleMessage(
-          { weather: { temp: 5, humidity: 15 }, environment: { sound: 75 } },
-        );
+        const transformed = await task.handleMessage({
+          weather: { temp: 5, humidity: 15 },
+          environment: { sound: 75 },
+        });
         expect(transformed).to.deep.equal({ temp: 5, noise: 75 });
       });
     });
 
-    describe("rearrange", function() {
-      it.skip("works on primitive readings", async function() {
+    describe("rearrange", function () {
+      it.skip("works on primitive readings", async function () {
         // rearrange doesn't _do anything_ for primitive readings
         // should it error?
         // until i've made a decision, leaving a skipped test here
       });
 
-      it("works on simple readings", async function() {
+      it("works on simple readings", async function () {
         const task = new Task({
           steps: [
             {
               type: "transformation:rearrange",
               path: "weather.temp",
-              to: "heat"
+              to: "heat",
             },
           ],
         });
         await task.register();
 
-        const transformed = await task.handleMessage(
-          { weather: { temp: 5, humidity: 23 } },
-        );
-        expect(transformed).to.deep.equal({ heat: 5, weather: { humidity: 23 } });
+        const transformed = await task.handleMessage({
+          weather: { temp: 5, humidity: 23 },
+        });
+        expect(transformed).to.deep.equal({
+          heat: 5,
+          weather: { humidity: 23 },
+        });
       });
 
-      it.skip("works on composite readings", async function() {
-      });
+      it.skip("works on composite readings", async function () {});
     });
 
     describe("convert", function () {
