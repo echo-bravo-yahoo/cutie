@@ -17,7 +17,7 @@
     "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo systemctl enable cutie",
     "update-service": "npm run add-service && sudo systemctl restart cutie"
   },
-  "engines": "~17.9.0",
+  "engines": "~17.9.0 - ^24",
   "author": "ashton eby",
   "license": "ISC",
   "dependencies": {
