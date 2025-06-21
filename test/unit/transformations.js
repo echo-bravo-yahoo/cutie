@@ -470,69 +470,140 @@ describe("transformations", function () {
     });
 
     describe("shell", function () {
-      it("works for objects", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:shell",
-              command: "echo '${message}'",
-              outputType: "object"
-            },
-          ],
-        });
-        await task.register();
+      describe("files", function() {
+        it("works for objects", async function () {
+          const task = new Task({
+            steps: [
+              {
+                type: "transformation:shell",
+                codePath: "./test/unit/fixtures/echo.sh",
+                outputType: "object"
+              },
+            ],
+          });
+          await task.register();
 
-        const transformed = await task.handleMessage({ "test": { "object": "is deep" } });
-        expect(transformed).to.deep.equal({ test: { object: "is deep" } });
+          const transformed = await task.handleMessage({ "test": { "object": "is deep" } });
+          expect(transformed).to.deep.equal({ test: { object: "is deep" } });
+        });
+
+        it("works for strings", async function () {
+          const task = new Task({
+            steps: [
+              {
+                type: "transformation:shell",
+                codePath: "./test/unit/fixtures/echo.sh",
+                outputType: "string"
+              },
+            ],
+          });
+          await task.register();
+
+          const transformed = await task.handleMessage("cutie");
+          expect(transformed).to.deep.equal("cutie");
+        });
+
+        it("works for numbers", async function () {
+          const task = new Task({
+            steps: [
+              {
+                type: "transformation:shell",
+                codePath: "./test/unit/fixtures/echo.sh",
+                outputType: "number"
+              },
+            ],
+          });
+          await task.register();
+
+          const transformed = await task.handleMessage(5);
+          expect(transformed).to.deep.equal(5);
+        });
       });
 
-      it("works for strings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:shell",
-              command: "echo 'hello, ${message}'",
-              outputType: "string"
-            },
-          ],
+      describe("commands", function() {
+        it("works for objects", async function () {
+          const task = new Task({
+            steps: [
+              {
+                type: "transformation:shell",
+                command: "echo '${message}'",
+                outputType: "object"
+              },
+            ],
+          });
+          await task.register();
+
+          const transformed = await task.handleMessage({ "test": { "object": "is deep" } });
+          expect(transformed).to.deep.equal({ test: { object: "is deep" } });
         });
-        await task.register();
 
-        const transformed = await task.handleMessage("cutie");
-        expect(transformed).to.deep.equal("hello, cutie");
-      });
+        it("works for strings", async function () {
+          const task = new Task({
+            steps: [
+              {
+                type: "transformation:shell",
+                command: "echo 'hello, ${message}'",
+                outputType: "string"
+              },
+            ],
+          });
+          await task.register();
 
-      it("works for numbers", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:shell",
-              command: "echo $((1+${message}))",
-              outputType: "number"
-            },
-          ],
+          const transformed = await task.handleMessage("cutie");
+          expect(transformed).to.deep.equal("hello, cutie");
         });
-        await task.register();
 
-        const transformed = await task.handleMessage(5);
-        expect(transformed).to.deep.equal(6);
+        it("works for numbers", async function () {
+          const task = new Task({
+            steps: [
+              {
+                type: "transformation:shell",
+                command: "echo $((1+${message}))",
+                outputType: "number"
+              },
+            ],
+          });
+          await task.register();
+
+          const transformed = await task.handleMessage(5);
+          expect(transformed).to.deep.equal(6);
+        });
       });
     });
 
     describe("javascript", function () {
-      it("works for number literals", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:javascript",
-              codePath: "./test/unit/fixtures/addOne.js",
-            },
-          ],
-        });
-        await task.register();
+      describe("commands", function() {
+        it("works for number literals", async function () {
+          const task = new Task({
+            steps: [
+              {
+                type: "transformation:javascript",
+                command: "10 + message",
+              },
+            ],
+          });
+          await task.register();
 
-        const transformed = await task.handleMessage(8);
-        expect(transformed).to.deep.equal(9);
+          const transformed = await task.handleMessage(8);
+          expect(transformed).to.deep.equal(18);
+        });
+      });
+
+      describe("files", function() {
+        it("works for number literals", async function () {
+          const task = new Task({
+            steps: [
+              {
+                type: "transformation:javascript",
+                codePath: "./test/unit/fixtures/addOne.js",
+              },
+            ],
+          });
+          await task.register();
+
+          const transformed = await task.handleMessage(8);
+          expect(transformed).to.deep.equal(9);
+        });
       });
     });
   });

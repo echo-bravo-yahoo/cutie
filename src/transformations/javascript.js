@@ -10,10 +10,25 @@ export default class Javascript extends Transformation {
     super(config);
   }
 
+  // TO-DO: functionally a copy of generateCommand in src/transformations/shell.js
+  generateCode(message) {
+    if (this.config.codePath) {
+      const codePath = normalize(join(srcDir, "..", this.config.codePath));
+      return readFileSync(codePath, { encoding: "utf8" });
+    } else if (this.config.command) {
+      if (this.config.outputType === "object") {
+        return this.interpolateConfigString(this.config.command, { message: JSON.stringify(message) });
+      } else {
+        return this.interpolateConfigString(this.config.command, { message });
+      }
+    } else {
+      throw new Error(`Configuration should either specify a codePath or a command.`);
+    }
+  }
+
   transform(message) {
+    const code = this.generateCode(message);
     const context = vm.createContext({ message });
-    const codePath = normalize(join(srcDir, "..", this.config.codePath));
-    const code = readFileSync(codePath, { encoding: "utf8" });
     const script = new vm.Script(code);
 
     return script.runInContext(context);
