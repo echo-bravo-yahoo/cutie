@@ -518,5 +518,22 @@ describe("transformations", function () {
         expect(transformed).to.deep.equal(6);
       });
     });
+
+    describe("javascript", function () {
+      it("works for number literals", async function () {
+        const task = new Task({
+          steps: [
+            {
+              type: "transformation:javascript",
+              codePath: "./test/unit/fixtures/addOne.js",
+            },
+          ],
+        });
+        await task.register();
+
+        const transformed = await task.handleMessage(8);
+        expect(transformed).to.deep.equal(9);
+      });
+    });
   });
 });

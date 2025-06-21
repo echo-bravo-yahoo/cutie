@@ -8,7 +8,7 @@
     "cutie": "src/cli-entrypoint.js"
   },
   "scripts": {
-    "test": "mocha --recursive ./test",
+    "test": "mocha --recursive test --exclude test/unit/fixtures/**",
     "test:ci": "npm run test",
     "build": "sudo docker build . -t cutie -f ./Dockerfile",
     "build-wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
