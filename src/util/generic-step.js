@@ -31,7 +31,7 @@ export class Step extends Loggable {
     // no-op to satisfy tasks.js::registerTasks()
   }
 
-  interpolateConfigString(template) {
+  interpolateConfigString(template, additionalContext) {
     const inject = (str, obj) =>
       str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));
 
@@ -39,6 +39,7 @@ export class Step extends Loggable {
       task: this.task,
       module: this.config,
       globals: { ...globals, logger: undefined },
+      ...additionalContext
     });
 
     return result;
