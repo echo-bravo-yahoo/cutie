@@ -468,5 +468,55 @@ describe("transformations", function () {
         it.skip("works on composite readings", async function () {});
       });
     });
+
+    describe("shell", function () {
+      it("works for objects", async function () {
+        const task = new Task({
+          steps: [
+            {
+              type: "transformation:shell",
+              command: "echo '${message}'",
+              outputType: "object"
+            },
+          ],
+        });
+        await task.register();
+
+        const transformed = await task.handleMessage({ "test": { "object": "is deep" } });
+        expect(transformed).to.deep.equal({ test: { object: "is deep" } });
+      });
+
+      it("works for strings", async function () {
+        const task = new Task({
+          steps: [
+            {
+              type: "transformation:shell",
+              command: "echo 'hello, ${message}'",
+              outputType: "string"
+            },
+          ],
+        });
+        await task.register();
+
+        const transformed = await task.handleMessage("cutie");
+        expect(transformed).to.deep.equal("hello, cutie");
+      });
+
+      it("works for numbers", async function () {
+        const task = new Task({
+          steps: [
+            {
+              type: "transformation:shell",
+              command: "echo $((1+${message}))",
+              outputType: "number"
+            },
+          ],
+        });
+        await task.register();
+
+        const transformed = await task.handleMessage(5);
+        expect(transformed).to.deep.equal(6);
+      });
+    });
   });
 });
