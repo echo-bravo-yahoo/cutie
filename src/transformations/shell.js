@@ -1,5 +1,8 @@
 import { execSync } from "node:child_process";
+import { join, normalize } from "node:path";
+import { readFileSync } from "node:fs";
 
+import { srcDir } from "../index.js";
 import { Transformation } from "../util/generic-transformation.js";
 
 export default class Shell extends Transformation {
@@ -7,13 +10,27 @@ export default class Shell extends Transformation {
     super(config);
   }
 
-  transform(message) {
-    let command;
-    if (this.config.outputType === "object") {
-      command = this.interpolateConfigString(this.config.command, { message: JSON.stringify(message) });
+  // TO-DO: functionally a copy of generateCode in src/transformations/javascript.js
+  generateCommand(message) {
+    if (this.config.codePath) {
+      const codePath = normalize(join(srcDir, "..", this.config.codePath));
+      const code = readFileSync(codePath, { encoding: "utf8" });
+      return typeof message !== "string"
+        ? this.interpolateConfigString(code, { message: JSON.stringify(message) })
+        : this.interpolateConfigString(code, { message });
+    } else if (this.config.command) {
+      if (this.config.outputType === "object") {
+        return this.interpolateConfigString(this.config.command, { message: JSON.stringify(message) });
+      } else {
+        return this.interpolateConfigString(this.config.command, { message });
+      }
     } else {
-      command = this.interpolateConfigString(this.config.command, { message });
+      throw new Error(`Configuration should either specify a codePath or a command.`);
     }
+  }
+
+  transform(message) {
+    let command = this.generateCommand(message);
 
     const result = execSync(command, { encoding: "utf8" })
     if (this.config.outputType === "object") {
