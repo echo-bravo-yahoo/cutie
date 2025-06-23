@@ -12,7 +12,8 @@ export default class Task extends Loggable {
   }
 
   async register() {
-    return this.registerSteps(this.config);
+    await this.registerSteps(this.config);
+    if (this.postRegister) await this.postRegister();
   }
 
   async importStep(step, task) {
@@ -28,6 +29,7 @@ export default class Task extends Loggable {
 
     for (const step of taskConfig.steps) {
       const currentStep = await this.importStep(step, taskConfig);
+      currentStep.liveTask = this;
 
       currentStep.register();
       globals.logger.info(
