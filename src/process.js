@@ -16,7 +16,7 @@ export function setupProcess(process) {
   process.on("SIGTERM", (_signal) => {
     globals.logger.info(
       { role: "breadcrumb" },
-      `Process ${process.pid} received SIGTERM signal. Terminating.`
+      `Process ${process.pid} received SIGTERM signal. Terminating.`,
     );
     process.exit(1);
   });
@@ -24,7 +24,7 @@ export function setupProcess(process) {
   process.on("SIGINT", async (_signal) => {
     globals.logger.info(
       { role: "breadcrumb" },
-      `Process ${process.pid} received SIGINT signal. Terminating.`
+      `Process ${process.pid} received SIGINT signal. Terminating.`,
     );
     await cleanUp();
     process.exit(1);

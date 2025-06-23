@@ -21,15 +21,15 @@ const arch = "armv6l";
 
 const certFilePath = resolve(
   `${config.authorizedKeys}`,
-  `../cutie/${config.hostname}-certificate.pem.crt`
+  `../cutie/${config.hostname}-certificate.pem.crt`,
 );
 const privateKeyFilePath = resolve(
   `${config.authorizedKeys}`,
-  `../cutie/${config.hostname}-private.pem.key`
+  `../cutie/${config.hostname}-private.pem.key`,
 );
 const publicKeyFilePath = resolve(
   `${config.authorizedKeys}`,
-  `../cutie/${config.hostname}-public.pem.key`
+  `../cutie/${config.hostname}-public.pem.key`,
 );
 // const awsCertFilePath = '/home/pi/.ssh/cutie/AmazonRootCA1.pem'
 
@@ -43,7 +43,7 @@ try {
 } catch (e) {
   if (e.code === "ENOENT") {
     console.log(
-      `Keys not found for hostname ${config.hostname}. Creating new keys now.`
+      `Keys not found for hostname ${config.hostname}. Creating new keys now.`,
     );
     await createKeysAndRegisterThing();
   } else {
@@ -64,12 +64,12 @@ cutieConfig.privateKeyFilePath = `/home/pi/cutie/${config.hostname}-private.pem.
 cutieConfig.publicKeyFilePath = `/home/pi/cutie/${config.hostname}-public.pem.key`;
 await writeFile(
   resolve(__dirname, "../config/config.json"),
-  JSON.stringify(cutieConfig, null, 2)
+  JSON.stringify(cutieConfig, null, 2),
 );
 
 try {
   accessSync(
-    resolve(__dirname, "./cache/", `node-v${nodeVersion}-linux-armv6l`)
+    resolve(__dirname, "./cache/", `node-v${nodeVersion}-linux-armv6l`),
   );
   console.log(`Found node v${nodeVersion}, using that.`);
 } catch (e) {
@@ -106,7 +106,7 @@ try {
 
 await sh(`rm ${resolve(__dirname, "./cache/", customImg)}`);
 await sh(
-  `cp ${resolve(__dirname, "./cache/", baseImg)} ${resolve(__dirname, "./cache/", customImg)}`
+  `cp ${resolve(__dirname, "./cache/", baseImg)} ${resolve(__dirname, "./cache/", customImg)}`,
 );
 
 if (false) {
@@ -119,7 +119,7 @@ if (false) {
   cpSync(
     resolve(__dirname, "./cache/node_modules_prebuilt"),
     resolve(__dirname, "../node_modules"),
-    { recursive: true }
+    { recursive: true },
   );
 }
 

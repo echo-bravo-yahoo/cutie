@@ -19,7 +19,7 @@ export async function registerConnections(connectionConfigs) {
       const Connection = (
         await import(
           normalize(
-            `${srcDir}/${connectionTypeInfo.type}s/${connectionTypeInfo.subType}.js`
+            `${srcDir}/${connectionTypeInfo.type}s/${connectionTypeInfo.subType}.js`,
           )
         )
       ).default;
@@ -31,7 +31,7 @@ export async function registerConnections(connectionConfigs) {
       promises.push(newConnection.register());
       globals.logger.info(
         { role: "breadcrumb" },
-        `Registered connection of type ${connectionConfig.type} in index ${newIndex}.`
+        `Registered connection of type ${connectionConfig.type} in index ${newIndex}.`,
       );
     }
   }
@@ -39,24 +39,24 @@ export async function registerConnections(connectionConfigs) {
   await Promise.all(promises);
   globals.logger.info(
     { role: "breadcrumb" },
-    "Connection registration completed."
+    "Connection registration completed.",
   );
 }
 
 export function getConnection(connectionKey) {
   return globals.connections.find(
-    (connection) => connection.name === connectionKey
+    (connection) => connection.name === connectionKey,
   );
 }
 
 export function getConnectionsByType(connectionType) {
   return globals.connections.filter(
-    (connection) => connection.config.type.split(":")[1] === connectionType
+    (connection) => connection.config.type.split(":")[1] === connectionType,
   );
 }
 
 export function getConnectionTriggers(connectionKey) {
   return globals.config.modules.filter(
-    (module) => module.name === connectionKey
+    (module) => module.name === connectionKey,
   );
 }

@@ -30,7 +30,7 @@ export class Sensor extends Input {
     const payload = this.collateSamples();
     this.info(
       { role: "blob", blob: payload },
-      `Publishing new ${this.name} data: ${JSON.stringify(payload)}`
+      `Publishing new ${this.name} data: ${JSON.stringify(payload)}`,
     );
 
     if (this.next) this.next.handleMessage(payload);
@@ -41,7 +41,7 @@ export class Sensor extends Input {
   aggregateMeasurement(path, prefixKey = "") {
     const samples = !!prefixKey ? this.samples[prefixKey] : this.samples;
     const result = this.doAggregation(
-      map(samples, (sample) => get(sample, path))
+      map(samples, (sample) => get(sample, path)),
     );
 
     return result;
@@ -58,7 +58,7 @@ export class Sensor extends Input {
       return data[data.length - 1];
     } else {
       throw new Error(
-        `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`
+        `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`,
       );
     }
   }
@@ -76,7 +76,7 @@ export class Sensor extends Input {
       return sum / data.length;
     } else {
       throw new Error(
-        `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`
+        `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`,
       );
     }
   }
@@ -86,7 +86,7 @@ export class Sensor extends Input {
     this.publishReading().then(() => {
       this.reportInterval = setInterval(
         this.publishReading.bind(this),
-        this.getReportingInterval()
+        this.getReportingInterval(),
       );
     });
   }
@@ -96,7 +96,7 @@ export class Sensor extends Input {
     this.publishReading().then(() => {
       this.sampleInterval = setInterval(
         this.sample.bind(this),
-        this.getSamplingInterval()
+        this.getSamplingInterval(),
       );
     });
   }

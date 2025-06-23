@@ -1,6 +1,6 @@
 import * as vm from "node:vm";
-import { readFileSync } from 'node:fs';
-import { normalize, join } from 'node:path'
+import { readFileSync } from "node:fs";
+import { normalize, join } from "node:path";
 
 import { Transformation } from "../util/generic-transformation.js";
 import { srcDir } from "../index.js";
@@ -17,12 +17,16 @@ export default class Javascript extends Transformation {
       return readFileSync(codePath, { encoding: "utf8" });
     } else if (this.config.command) {
       if (this.config.outputType === "object") {
-        return this.interpolateConfigString(this.config.command, { message: JSON.stringify(message) });
+        return this.interpolateConfigString(this.config.command, {
+          message: JSON.stringify(message),
+        });
       } else {
         return this.interpolateConfigString(this.config.command, { message });
       }
     } else {
-      throw new Error(`Configuration should either specify a codePath or a command.`);
+      throw new Error(
+        `Configuration should either specify a codePath or a command.`,
+      );
     }
   }
 

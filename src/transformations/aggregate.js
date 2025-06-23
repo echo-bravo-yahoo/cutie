@@ -15,13 +15,13 @@ export default class Aggregate extends Transformation {
       : this.config;
     let oldValue;
 
-    if (context.current === '') {
-      oldValue = context.message.in
+    if (context.current === "") {
+      oldValue = context.message.in;
     } else {
       oldValue = get(context.message.in, context.current, context.message.in);
     }
     const newValue = Sensor.doAggregation(oldValue, config.aggregation);
-    if (context.current === '') {
+    if (context.current === "") {
       context.message.out = newValue;
     } else {
       set(context.message.out, context.current, newValue);
@@ -36,17 +36,17 @@ export default class Aggregate extends Transformation {
       : this.config;
     let oldValue;
 
-    if (context.current === '') {
-      oldValue = context.message.in
+    if (context.current === "") {
+      oldValue = context.message.in;
     } else {
       oldValue = get(context.message.in, context.current, context.message.in);
     }
     let newValue = Sensor.doAggregation(
       oldValue,
       config.aggregation,
-      context.path
+      context.path,
     );
-    if (context.current === '') {
+    if (context.current === "") {
       context.message.out = set({}, context.path, newValue);
     } else {
       set(context.message.out, context.current, newValue);
@@ -73,7 +73,7 @@ export default class Aggregate extends Transformation {
       let newValue = Sensor.doAggregation(
         oldArray,
         config.aggregation,
-        context.pathChosen
+        context.pathChosen,
       );
       set(newSubObject, context.current, newValue);
     }
@@ -91,7 +91,11 @@ export default class Aggregate extends Transformation {
     const config = context.pathChosen
       ? this.config.paths[context.pathChosen]
       : this.config;
-    const oldValue = get(context.message.in, context.current, context.message.in);
+    const oldValue = get(
+      context.message.in,
+      context.current,
+      context.message.in,
+    );
     let newValue;
 
     if (oldValue.length) {

@@ -14,7 +14,7 @@ export default class Interval extends Input {
     this.cronHandle = scheduler.setTimeout(
       parseCronExpression(this.config.expression),
       this.handleMessage.bind(this, this.config.message),
-      { errorHandler: this.errorHandler }
+      { errorHandler: this.errorHandler },
     );
     this.info({}, `Enabled cron task.`);
     this.enabled = true;

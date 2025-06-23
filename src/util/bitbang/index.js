@@ -1,26 +1,26 @@
-const pigpio = require('pigpio')
-const Gpio = pigpio.Gpio
+const pigpio = require("pigpio");
+const Gpio = pigpio.Gpio;
 
 // const { necListener } = require('./adapters/nec.js')
 // const { rawListener } = require('./adapters/raw.js')
-const { mitsubishiListener, heat } = require('./adapters/mitsubishi-ac.js')
+const { mitsubishiListener, heat } = require("./adapters/mitsubishi-ac.js");
 // const { standby } = require('./adapters/epson-projector.js')
 
-const ledPin = 23
-const infraredSensor = new Gpio(17, { mode: Gpio.INPUT, alert: true })
-new Gpio(ledPin, { mode: Gpio.OUTPUT })
+const ledPin = 23;
+const infraredSensor = new Gpio(17, { mode: Gpio.INPUT, alert: true });
+new Gpio(ledPin, { mode: Gpio.OUTPUT });
 
-pigpio.waveClear()
-console.log(`Max wave length, pulses: ${pigpio.waveGetMaxPulses()}`)
-console.log(`Max wave length, uS: ${pigpio.waveGetMaxMicros()}`)
-console.log(`Max control blocks: ${pigpio.waveGetMaxCbs()}`)
+pigpio.waveClear();
+console.log(`Max wave length, pulses: ${pigpio.waveGetMaxPulses()}`);
+console.log(`Max wave length, uS: ${pigpio.waveGetMaxMicros()}`);
+console.log(`Max control blocks: ${pigpio.waveGetMaxCbs()}`);
 
 // infraredSensor.on('alert', (level, tick) => necListener(level, tick, pigpio))
 // infraredSensor.on('alert', (level, tick) => rawListener(level, tick, pigpio))
-heat(pigpio)
+heat(pigpio);
 // .then(() => {
-  // console.log(`Listening for new infrared pulses...`)
-  // infraredSensor.on('alert', (level, tick) => mitsubishiListener(level, tick, pigpio))
+// console.log(`Listening for new infrared pulses...`)
+// infraredSensor.on('alert', (level, tick) => mitsubishiListener(level, tick, pigpio))
 // })
 
 /*
@@ -52,5 +52,4 @@ console.log(graphToTerminal(wave, [
 
 // standby(pigpio)
 
-module.exports = {}
-
+module.exports = {};

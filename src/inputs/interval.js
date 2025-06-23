@@ -12,7 +12,7 @@ export default class Interval extends Input {
   async enable() {
     this.interval = setInterval(
       this.handleMessage.bind(this, this.config.message),
-      this.config.interval
+      this.config.interval,
     );
     this.info({}, `Enabled interval.`);
     this.enabled = true;

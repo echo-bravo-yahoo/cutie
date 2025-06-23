@@ -470,20 +470,22 @@ describe("transformations", function () {
     });
 
     describe("shell", function () {
-      describe("files", function() {
+      describe("files", function () {
         it("works for objects", async function () {
           const task = new Task({
             steps: [
               {
                 type: "transformation:shell",
                 codePath: "./test/unit/fixtures/echo.sh",
-                outputType: "object"
+                outputType: "object",
               },
             ],
           });
           await task.register();
 
-          const transformed = await task.handleMessage({ "test": { "object": "is deep" } });
+          const transformed = await task.handleMessage({
+            test: { object: "is deep" },
+          });
           expect(transformed).to.deep.equal({ test: { object: "is deep" } });
         });
 
@@ -493,7 +495,7 @@ describe("transformations", function () {
               {
                 type: "transformation:shell",
                 codePath: "./test/unit/fixtures/echo.sh",
-                outputType: "string"
+                outputType: "string",
               },
             ],
           });
@@ -509,7 +511,7 @@ describe("transformations", function () {
               {
                 type: "transformation:shell",
                 codePath: "./test/unit/fixtures/echo.sh",
-                outputType: "number"
+                outputType: "number",
               },
             ],
           });
@@ -520,20 +522,22 @@ describe("transformations", function () {
         });
       });
 
-      describe("commands", function() {
+      describe("commands", function () {
         it("works for objects", async function () {
           const task = new Task({
             steps: [
               {
                 type: "transformation:shell",
                 command: "echo '${message}'",
-                outputType: "object"
+                outputType: "object",
               },
             ],
           });
           await task.register();
 
-          const transformed = await task.handleMessage({ "test": { "object": "is deep" } });
+          const transformed = await task.handleMessage({
+            test: { object: "is deep" },
+          });
           expect(transformed).to.deep.equal({ test: { object: "is deep" } });
         });
 
@@ -543,7 +547,7 @@ describe("transformations", function () {
               {
                 type: "transformation:shell",
                 command: "echo 'hello, ${message}'",
-                outputType: "string"
+                outputType: "string",
               },
             ],
           });
@@ -559,7 +563,7 @@ describe("transformations", function () {
               {
                 type: "transformation:shell",
                 command: "echo $((1+${message}))",
-                outputType: "number"
+                outputType: "number",
               },
             ],
           });
@@ -572,7 +576,7 @@ describe("transformations", function () {
     });
 
     describe("javascript", function () {
-      describe("commands", function() {
+      describe("commands", function () {
         it("works for number literals", async function () {
           const task = new Task({
             steps: [
@@ -589,7 +593,7 @@ describe("transformations", function () {
         });
       });
 
-      describe("files", function() {
+      describe("files", function () {
         it("works for number literals", async function () {
           const task = new Task({
             steps: [

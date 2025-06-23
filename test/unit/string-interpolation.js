@@ -14,7 +14,7 @@ describe("string interpolation", function () {
     });
 
     const interpolated = module.interpolateConfigString(
-      "devices/${module.device.location.shortName}"
+      "devices/${module.device.location.shortName}",
     );
     expect(interpolated).to.deep.equal("devices/livingRoom");
   });
@@ -23,7 +23,7 @@ describe("string interpolation", function () {
     const module = new MQTT({});
 
     const interpolated = module.interpolateConfigString(
-      "devices/${globals.deeply.nested}"
+      "devices/${globals.deeply.nested}",
     );
     expect(interpolated).to.deep.equal("devices/metadata");
   });

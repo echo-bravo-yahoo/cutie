@@ -15,7 +15,7 @@ export class Loggable {
           tags: [...(obj.tags || [])],
         },
         msg,
-        args
+        args,
       );
     };
 
@@ -32,7 +32,7 @@ export class Loggable {
           tags: [...(obj.tags || [])],
         },
         msg,
-        args
+        args,
       );
     };
 
