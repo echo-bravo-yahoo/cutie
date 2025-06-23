@@ -14,6 +14,7 @@
     "build-wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
     "sync": "lsyncd config.lua",
     "start": "./src/cli-entrypoint.js",
+    "prettify": "prettier -w .",
     "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo systemctl enable cutie",
     "update-service": "npm run add-service && sudo systemctl restart cutie"
   },
@@ -38,7 +39,8 @@
   },
   "devDependencies": {
     "chai": "^5.2.0",
-    "mocha": "^11.4.0"
+    "mocha": "^11.4.0",
+    "prettier": "^3.6.0"
   },
   "overrides": {
     "node-gyp": "^11.0.0",
