@@ -49,34 +49,6 @@ There are not very many parts to a `cutie` installation, but they look like this
         - Transformation configs, which define how `cutie` should transform Messages after an Input but before an Output.
         - Output configs, which define destinations for cutie to send data to. These can be intermediate or final destinations.
 
-### To-do
-
-- [x] Test influxdb fix
-- [x] Fix confusion in message transformation path (half of the APIs use mutation, half use return values)
-- [ ] Add log rotation to cutie service file
-- [ ] Add file src/destination
-- [ ] Test that MQTT +/# topics work for listening
-- [ ] Move to Typescript
-- [ ] Add conditional transformation / filter
-- [ ] Add cookbook for common tasks
-- [ ] Move from using `./config/config-real.json` to `./config/config-sample.json` and having users copy.
-- [ ] Fix up logging
-- [x] Confirm full range of usable nodeJS versions (`engines` field in package.json)
-- [ ] Support distributed listen/repeat queues
-- [ ] Allow configuring `cutie` via MQTT
-- [ ] Support other MQTT auth strategies
-- [ ] Look for a better sensor dependency management strategy
-- [ ] Fix old / rarely used inputs and outputs
-  - [ ] BLE
-  - [ ] infrared
-  - [ ] NEC
-  - [ ] switchbot
-  - [ ] thermal-printer
-- [x] Document `connections` concept
-- [x] Document `outputs` concept
-- [ ] Document `provisioner` concept
-- [ ] Update `provisioner`
-
 ### Common issues
 
 #### `npm install` fails because of node-gyp failure
