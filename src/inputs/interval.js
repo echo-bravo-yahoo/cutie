@@ -5,10 +5,14 @@ export default class Interval extends Input {
     super(config, task);
   }
 
+  register() {
+    this.enable();
+  }
+
   async enable() {
     this.interval = setInterval(
       this.handleMessage.bind(this, this.config.message),
-      config.interval
+      this.config.interval
     );
     this.info({}, `Enabled interval.`);
     this.enabled = true;
