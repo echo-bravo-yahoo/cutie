@@ -34,7 +34,7 @@ export default class Task extends Loggable {
       currentStep.register();
       globals.logger.info(
         { role: "breadcrumb" },
-        `Registered step ${JSON.stringify(step)}.`
+        `Registered step ${JSON.stringify(step)}.`,
       );
 
       this.steps.push(currentStep);

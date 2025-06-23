@@ -32,12 +32,12 @@ export default class BLETracker extends Sensor {
         aggregation,
       },
       rssi: Number(this.aggregateMeasurement(`rssi.result`, deviceKey)).toFixed(
-        0
+        0,
       ),
     };
     this.info(
       { before: this.samples[deviceKey], after: aggregated },
-      `Aggregated.`
+      `Aggregated.`,
     );
 
     this.samples[deviceKey] = [];
@@ -96,13 +96,13 @@ export default class BLETracker extends Sensor {
       if (found) {
         this.info(
           { role: "blob", blob: payload },
-          `Publishing new ${this.config.name} data to ${toFind.measurement}: ${JSON.stringify(payload)}`
+          `Publishing new ${this.config.name} data to ${toFind.measurement}: ${JSON.stringify(payload)}`,
         );
         found.send(
           toFind.measurement,
           { ...payload, metadata: undefined, aggregationMetadata: undefined },
           payload.metadata,
-          payload.aggregationMetadata
+          payload.aggregationMetadata,
         );
       }
     }
@@ -138,7 +138,7 @@ export default class BLETracker extends Sensor {
       try {
         deviceMap[deviceKey] = await adapter.waitDevice(
           device.macAddress,
-          30000
+          30000,
         );
         this.debug({}, `Device with key ${deviceKey} found.`);
       } catch (e) {

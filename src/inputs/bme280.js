@@ -25,7 +25,7 @@ export default class BME280 extends Sensor {
     this.samples.push(datapoint);
     this.debug(
       {},
-      `Sampled new data point, ${JSON.stringify(this.samples, null, 2)}`
+      `Sampled new data point, ${JSON.stringify(this.samples, null, 2)}`,
     );
   }
 

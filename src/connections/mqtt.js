@@ -35,10 +35,10 @@ export default class MQTT extends Connection {
     message = JSON.parse(message.toString());
     this.debug(
       { role: "blob", blob: message },
-      `Received new message on topic "${topic}": ${JSON.stringify(message)}`
+      `Received new message on topic "${topic}": ${JSON.stringify(message)}`,
     );
     const mqttConnectionNames = getConnectionsByType("mqtt").map(
-      (connection) => connection.name
+      (connection) => connection.name,
     );
     let triggers = 0;
 
@@ -75,7 +75,7 @@ export default class MQTT extends Connection {
         ...event,
         metadata: labels,
         aggregationMetadata: aggregationMetadata,
-      })
+      }),
     );
   }
 }

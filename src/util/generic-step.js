@@ -39,7 +39,7 @@ export class Step extends Loggable {
       task: this.task,
       module: this.config,
       globals: { ...globals, logger: undefined },
-      ...additionalContext
+      ...additionalContext,
     });
 
     return result;

@@ -27,7 +27,7 @@ export default class MQTT extends Output {
 
     this.info(
       {},
-      `Stopped listening to MQTT topics ${this.config.topics.join(", ")}.`
+      `Stopped listening to MQTT topics ${this.config.topics.join(", ")}.`,
     );
     this.enabled = false;
   }
@@ -47,7 +47,7 @@ export default class MQTT extends Output {
     }
 
     return this.config.topics.some((topic) =>
-      MqttTopics.match(topic, messageTopic)
+      MqttTopics.match(topic, messageTopic),
     );
   }
 }

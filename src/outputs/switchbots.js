@@ -52,7 +52,7 @@ export class Switchbots extends Module {
     } else {
       this.debug(
         {},
-        `No action necessary for switchbot ${botToNameString(bot)}.`
+        `No action necessary for switchbot ${botToNameString(bot)}.`,
       );
     }
   }
@@ -68,7 +68,7 @@ export class Switchbots extends Module {
   async mutateBotState(bot, desiredState) {
     const index = this.findBotIndex(bot.id);
     this.info(
-      `Received MQTT request to change bot ${bot.id} (with index ${index}) from state ${bot.on} (${this.toUpDown(bot.on, bot.reverseOnOff)}) to state ${desiredState} (${this.toUpDown(desiredState, bot.reverseOnOff)}).`
+      `Received MQTT request to change bot ${bot.id} (with index ${index}) from state ${bot.on} (${this.toUpDown(bot.on, bot.reverseOnOff)}) to state ${desiredState} (${this.toUpDown(desiredState, bot.reverseOnOff)}).`,
     );
     // TODO: this is really broken and always believes that state.on is true
     // so let's bypass if for now and always attempt to set the switchbot state
@@ -78,13 +78,13 @@ export class Switchbots extends Module {
     let reported = set(
       {},
       `modules[${this.name}].switchbots]`,
-      this.currentState.switchbots
+      this.currentState.switchbots,
     );
     // TODO: this isn't quite right - it should use a sparse document instead of copying the whole document. Subtle bugs...
     reported = set(
       reported,
       `modules[${this.name}].switchbots[${index}].on`,
-      desiredState
+      desiredState,
     );
     updateWholeShadow({ reported: reported, desired: reported });
     // } else {
@@ -102,7 +102,7 @@ export class Switchbots extends Module {
   async setBotState(bot, current, desired = bot.on) {
     this.debug(
       {},
-      `Changing state from ${current ? "on" : "off"} (${this.toUpDown(current, bot.reverseOnOff)}) to ${desired ? "on" : "off"} (${this.toUpDown(desired, bot.reverseOnOff)}) for switchbot ${this.botToNameString(bot)}...`
+      `Changing state from ${current ? "on" : "off"} (${this.toUpDown(current, bot.reverseOnOff)}) to ${desired ? "on" : "off"} (${this.toUpDown(desired, bot.reverseOnOff)}) for switchbot ${this.botToNameString(bot)}...`,
     );
     if (this.isScanning)
       throw new Error("Attempting to scan and send commands simultaneously.");
@@ -113,7 +113,7 @@ export class Switchbots extends Module {
 
     this.debug(
       {},
-      `Changed state from ${current ? "on" : "off"} (${this.toUpDown(current, bot.reverseOnOff)}) to ${desired ? "on" : "off"} (${this.toUpDown(desired, bot.reverseOnOff)}) for switchbot ${this.botToNameString(bot)}.`
+      `Changed state from ${current ? "on" : "off"} (${this.toUpDown(current, bot.reverseOnOff)}) to ${desired ? "on" : "off"} (${this.toUpDown(desired, bot.reverseOnOff)}) for switchbot ${this.botToNameString(bot)}.`,
     );
   }
 
@@ -126,58 +126,58 @@ export class Switchbots extends Module {
 
     if (bot.onTopic) {
       this.debug(
-        `Subscribing bot ${nameString} to ON notifications on mqtt topic ${bot.onTopic}...`
+        `Subscribing bot ${nameString} to ON notifications on mqtt topic ${bot.onTopic}...`,
       );
       promises.push(
         globals.connection
           .subscribe(
             bot.onTopic,
             mqtt.QoS.AtLeastOnce,
-            this.mutateBotState.bind(this, bot, true)
+            this.mutateBotState.bind(this, bot, true),
           )
           .then(() =>
             this.debug(
-              `Subscribed bot ${nameString} to ON notifications on mqtt topic ${bot.onTopic}.`
-            )
-          )
+              `Subscribed bot ${nameString} to ON notifications on mqtt topic ${bot.onTopic}.`,
+            ),
+          ),
       );
     }
 
     if (bot.offTopic) {
       this.debug(
-        `Subscribing bot ${nameString} to OFF notifications on mqtt topic ${bot.offTopic}...`
+        `Subscribing bot ${nameString} to OFF notifications on mqtt topic ${bot.offTopic}...`,
       );
       promises.push(
         globals.connection
           .subscribe(
             bot.offTopic,
             mqtt.QoS.AtLeastOnce,
-            this.mutateBotState.bind(this, bot, false)
+            this.mutateBotState.bind(this, bot, false),
           )
           .then(() =>
             this.debug(
-              `Subscribed bot ${nameString} to OFF notifications on mqtt topic ${bot.offTopic}.`
-            )
-          )
+              `Subscribed bot ${nameString} to OFF notifications on mqtt topic ${bot.offTopic}.`,
+            ),
+          ),
       );
     }
 
     if (bot.pressTopic) {
       this.debug(
-        `Subscribing bot ${nameString} to PRESS notifications on mqtt topic ${bot.pressTopic}...`
+        `Subscribing bot ${nameString} to PRESS notifications on mqtt topic ${bot.pressTopic}...`,
       );
       promises.push(
         globals.connection
           .subscribe(
             bot.pressTopic,
             mqtt.QoS.AtLeastOnce,
-            this.pressBot.bind(this, bot)
+            this.pressBot.bind(this, bot),
           )
           .then(() =>
             this.debug(
-              `Subscribed bot ${nameString} to PRESS notifications on mqtt topic ${bot.pressTopic}.`
-            )
-          )
+              `Subscribed bot ${nameString} to PRESS notifications on mqtt topic ${bot.pressTopic}.`,
+            ),
+          ),
       );
     }
 
@@ -195,7 +195,7 @@ export class Switchbots extends Module {
             set(this.bleInfo, `${ad.id}.ad`, ad);
             idsToFind = idsToFind.filter((id) => id !== ad.id);
             this.debug(
-              `Found device with id ${ad.id}. Still need to find ${idsToFind.join(", ")}.`
+              `Found device with id ${ad.id}. Still need to find ${idsToFind.join(", ")}.`,
             );
           }
 
@@ -223,8 +223,8 @@ export class Switchbots extends Module {
         this.switchbot.onadvertisement = () => {};
         reject(
           new Error(
-            `Only found ${Object.keys(this.bleInfo).length} / ${this.currentState.switchbots.length} switchbots.`
-          )
+            `Only found ${Object.keys(this.bleInfo).length} / ${this.currentState.switchbots.length} switchbots.`,
+          ),
         );
       }, 10 * 1000);
     });
@@ -265,7 +265,7 @@ export class Switchbots extends Module {
 
     this.info(
       {},
-      `Enabled switchbots module, controlling ${Object.keys(this.bleInfo).length} bots.`
+      `Enabled switchbots module, controlling ${Object.keys(this.bleInfo).length} bots.`,
     );
   }
 
@@ -274,7 +274,7 @@ export class Switchbots extends Module {
     this.switchbot = new Switchbot();
     this.info(
       {},
-      `Enabling switchbots module to control ${this.currentState.switchbots ? this.currentState.switchbots.length : 0} bots...`
+      `Enabling switchbots module to control ${this.currentState.switchbots ? this.currentState.switchbots.length : 0} bots...`,
     );
     await this.startScan();
   }

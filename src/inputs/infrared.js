@@ -17,7 +17,7 @@ export class Infrared extends Input {
   handleLedPin(newState) {
     if (this.currentState.ledPin !== newState.ledPin) {
       console.log(
-        `Changing infrared LED from pin ${this.currentState.ledPin} to ${newState.ledPin}.`
+        `Changing infrared LED from pin ${this.currentState.ledPin} to ${newState.ledPin}.`,
       );
       return this.enable(newState);
     }
@@ -26,7 +26,7 @@ export class Infrared extends Input {
   handleReceiverPin(newState) {
     if (this.currentState.receiverPin !== newState.receiverPin) {
       console.log(
-        `Changing infrared receiver from pin ${this.currentState.receiverPin} to ${newState.receiverPin}.`
+        `Changing infrared receiver from pin ${this.currentState.receiverPin} to ${newState.receiverPin}.`,
       );
       return this.enable(newState);
     }
@@ -49,7 +49,7 @@ export class Infrared extends Input {
         this.currentState.receiverPin = newState.receiverPin;
         this.info(
           {},
-          `Enabled infrared receiver on pin ${newState.receiverPin}.`
+          `Enabled infrared receiver on pin ${newState.receiverPin}.`,
         );
       }
     }

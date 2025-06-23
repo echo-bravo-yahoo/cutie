@@ -20,7 +20,7 @@ export default class Round extends Transformation {
       result = integer + Math.floor(intermediate) / Math.pow(10, precision);
     } else {
       throw new Error(
-        `Unrecognized direction "${config.direction}" for transformation "round"; should be one of "up", "down", "round".`
+        `Unrecognized direction "${config.direction}" for transformation "round"; should be one of "up", "down", "round".`,
       );
     }
 

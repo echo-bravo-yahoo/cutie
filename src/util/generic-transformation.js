@@ -83,7 +83,7 @@ export class Transformation extends Step {
     const oldValue = get(
       context.message.in,
       context.current,
-      context.message.in
+      context.message.in,
     );
     const newValue = this.transformSingle(oldValue, config, context);
 
@@ -170,7 +170,7 @@ export class Transformation extends Step {
         set(
           context.message.out,
           `${context.current ? `${context.current}.` : ""}${path}`,
-          get(context.message.in, path)
+          get(context.message.in, path),
         );
       }
     }

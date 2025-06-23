@@ -5,6 +5,7 @@ This file contains increasingly complex examples (recipes) of how to configure `
 ### MQTT transformations
 
 #### Rebroadcast messages on a given MQTT topic
+
 This recipe listens to all MQTT topics under `alarms` and rebroadcasts them to `notify`.
 
 ```javascript
@@ -35,7 +36,8 @@ This recipe listens to all MQTT topics under `alarms` and rebroadcasts them to `
 ```
 
 #### Transform and rebroadcast messages
-This recipe listens to the MQTT topic `weather/temp`, then rebroadcasts messages  raw to `temp/outside/raw`, then rebroadcasts them in fahrenheit, rounded, to `temp/outside`. This example demonstrates the ability to do partial transformations inbetween outputs.
+
+This recipe listens to the MQTT topic `weather/temp`, then rebroadcasts messages raw to `temp/outside/raw`, then rebroadcasts them in fahrenheit, rounded, to `temp/outside`. This example demonstrates the ability to do partial transformations inbetween outputs.
 
 ```javascript
 {

@@ -17,14 +17,18 @@ export default class Rearrange extends Transformation {
     const config = context.pathChosen
       ? this.config.paths[context.pathChosen]
       : this.config;
-    const oldValue = get(context.message.in, context.current, context.message.in);
+    const oldValue = get(
+      context.message.in,
+      context.current,
+      context.message.in,
+    );
     const newValue = this.transformSingle(oldValue, config, context);
 
     // console.log(
     //   "Context before transforming single value",
     //   JSON.stringify(context, null, 2)
     // );
-    if (!context.message.out) context.message.out = { ... context.message.in };
+    if (!context.message.out) context.message.out = { ...context.message.in };
     if (config.to) {
       // delete the value at the old path before we add it at the new path
       unset(context.message.out, context.current);

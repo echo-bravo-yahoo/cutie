@@ -11,7 +11,7 @@ export async function registerTasks(tasks) {
 
     globals.logger.info(
       { role: "breadcrumb" },
-      `Registered task ${JSON.stringify(task)}.`
+      `Registered task ${JSON.stringify(task)}.`,
     );
   }
 }

@@ -17,7 +17,7 @@ export default class MQTT extends Input {
 
       this.info(
         {},
-        `Started listening to MQTT topics ${this.config.topic || this.config.topics.join(", ")}.`
+        `Started listening to MQTT topics ${this.config.topic || this.config.topics.join(", ")}.`,
       );
     }
     this.enabled = true;
@@ -30,7 +30,7 @@ export default class MQTT extends Input {
 
     this.info(
       {},
-      `Stopped listening to MQTT topics ${this.config.topic || this.config.topics.join(", ")}.`
+      `Stopped listening to MQTT topics ${this.config.topic || this.config.topics.join(", ")}.`,
     );
     this.enabled = false;
   }
@@ -46,7 +46,7 @@ export default class MQTT extends Input {
     }
 
     return this.config.topics.some((topic) =>
-      MqttTopics.match(topic, messageTopic)
+      MqttTopics.match(topic, messageTopic),
     );
   }
 

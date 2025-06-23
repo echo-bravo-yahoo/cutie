@@ -2,7 +2,7 @@ export class Temp {
   constructor(temp, unit, offset = true) {
     if (unit === undefined)
       throw new Error(
-        `Undefined unit (should be one of "c", "celsius", "f", "fahrenheit").`
+        `Undefined unit (should be one of "c", "celsius", "f", "fahrenheit").`,
       );
     this.unit = this.userUnitToInternalUnit(unit);
     this.temp = temp;
@@ -14,7 +14,7 @@ export class Temp {
     if (["celsius", "c"].includes(userUnit.toLowerCase())) return "c";
     if (["fahrenheit", "f"].includes(userUnit.toLowerCase())) return "f";
     throw new Error(
-      `Could not determine unit for input "${JSON.stringify(unit)}"`
+      `Could not determine unit for input "${JSON.stringify(unit)}"`,
     );
   }
 
