@@ -5,7 +5,7 @@ export default class Round extends Transformation {
     super(config);
   }
 
-  transformSingle(value, config, context) {
+  transformSingle(value, config, _context) {
     const integer = Math.floor(value);
     const fractional = value - integer;
     const precision = config.precision || 0;

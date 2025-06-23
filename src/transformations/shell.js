@@ -50,5 +50,6 @@ full object form:
 {
   "type": "transformation:shell",
   "command": "node -e console.log(\"\")",
+  "outputType": "string"|"number"|"object"
 }
 */
