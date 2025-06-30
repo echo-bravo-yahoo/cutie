@@ -25,6 +25,13 @@ export default class Task extends Loggable {
   }
 
   async registerSteps(taskConfig) {
+    const localLogger = globals.logger.child(
+      {},
+      {
+        msgPrefix: "[core.registration.steps] ",
+      }
+    );
+
     let previousStep;
 
     for (const step of taskConfig.steps) {
@@ -32,10 +39,7 @@ export default class Task extends Loggable {
       currentStep.liveTask = this;
 
       currentStep.register();
-      globals.logger.info(
-        { role: "breadcrumb" },
-        `Registered step ${JSON.stringify(step)}.`,
-      );
+      localLogger.info({ context: step }, "Registered step.");
 
       this.steps.push(currentStep);
       if (previousStep) {

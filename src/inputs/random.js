@@ -47,13 +47,13 @@ export default class Random extends Sensor {
       number: this.generateNextNumber(),
     };
 
-    this.debug({}, `Sampled new data point`);
+    this.debug("Sampled new data point.");
     this.samples.push(datapoint);
     this.lastNumber = datapoint.number;
   }
 
   async enable() {
-    this.info({}, `Enabled random number module.`);
+    this.info("Enabled random number module.");
     this.setupPublisher();
     this.setupSampler();
     this.enabled = true;
@@ -62,7 +62,7 @@ export default class Random extends Sensor {
   async disable() {
     clearInterval(this.reportInterval);
     clearInterval(this.sampleInterval);
-    this.info({}, `Disabled random number module.`);
+    this.info("Disabled random number module.");
     this.enabled = false;
   }
 }

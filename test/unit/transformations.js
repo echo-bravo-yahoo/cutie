@@ -4,8 +4,14 @@ import Task from "../../src/util/generic-task.js";
 import { setGlobals } from "../../src/index.js";
 
 describe("transformations", function () {
+  const fakeLogger = {
+    info: () => {},
+    debug: () => {},
+    child: () => fakeLogger,
+  };
+
   before(() => {
-    setGlobals({ logger: { info: () => {}, debug: () => {} } });
+    setGlobals({ logger: fakeLogger });
   });
 
   describe("specific transformers", function () {

@@ -47,10 +47,16 @@ export class Transformation extends Step {
       current: this.config.basePath || "",
     };
 
-    // console.log("isArrayOfReadings", isArrayOfReadings);
-    // console.log("isSimpleReading", isSimpleReading);
-    // console.log("isCompositeReading", isCompositeReading);
-    // console.log("isPrimitiveReading", isPrimitiveReading);
+    this.debug(
+      {
+        isArrayOfReadings,
+        isSimpleReading,
+        isCompositeReading,
+        isPrimitiveReading,
+        message,
+      },
+      "Transforming message."
+    );
 
     if (isArrayOfReadings) {
       if (isPrimitiveReading) {
@@ -70,9 +76,16 @@ export class Transformation extends Step {
       }
     }
 
-    // console.log(
-    //   `Transformed message from ${JSON.stringify(context.message.in)} to ${JSON.stringify(context.message.out)}`
-    // );
+    this.debug(
+      {
+        context: {
+          before: context.message.in,
+          after: context.message.out,
+        },
+      },
+      "Transformed message."
+    );
+
     return context.message.out;
   }
 
@@ -83,24 +96,16 @@ export class Transformation extends Step {
     const oldValue = get(
       context.message.in,
       context.current,
-      context.message.in,
+      context.message.in
     );
     const newValue = this.transformSingle(oldValue, config, context);
 
-    // console.log(
-    //   "Context before transforming single value",
-    //   JSON.stringify(context, null, 2)
-    // );
     if (context.current === "") {
       context.message.out = newValue;
     } else {
       if (context.message.out === undefined) context.message.out = {};
       set(context.message.out, context.current, newValue);
     }
-    // console.log(
-    //   "Context after transforming single value",
-    //   JSON.stringify(context, null, 2)
-    // );
   }
 
   transformPrimitiveReadingArray(context) {
@@ -156,25 +161,19 @@ export class Transformation extends Step {
       ? Object.keys(get(context.message.in, context.current))
       : Object.keys(context.message.in);
 
-    // console.log(`allPaths: ${JSON.stringify(allPaths)}`);
-
     // TO-DO: figure out where this logical should (centrally) live
-
     if (context.message.out === undefined) context.message.out = {};
+
     // copy every path so we don't drop any
     if (this.preservePaths) {
       for (let path of allPaths) {
-        // console.log(
-        //   `Setting message path ${path} to value ${get(context.message.in, path)}.`
-        // );
         set(
           context.message.out,
           `${context.current ? `${context.current}.` : ""}${path}`,
-          get(context.message.in, path),
+          get(context.message.in, path)
         );
       }
     }
-    // console.log("OUT:", context.message.out);
 
     // overwrite the specific paths
     for (let path of Object.keys(this.config.paths)) {

@@ -83,8 +83,7 @@ The `random` sensor runs without any hardware; use it to test changes to the run
 
 #### Logging
 
-- Pretty logs: `npm run start -- --config ./config/config-real.json | pino-pretty`
-- Pretty logs for only one tag (in this case, "shadow"): `npm run start -- --config ./config/config-real.json | jq 'select(.tags | index( "shadow" ))' | pino-pretty`
+- Pretty logs for only one tag (in this case, "shadow"): `npm run start -- --config ./config/config-real.json | jq 'select(.tags | index( "shadow" ))'`
 
 #### Deploying to a raspi for development
 

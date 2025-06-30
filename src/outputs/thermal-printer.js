@@ -55,17 +55,19 @@ export class ThermalPrinter extends Module {
     }
   }
 
-  handlePrintRequest(topic, request) {
+  handlePrintRequest(_topic, request) {
     const payload = JSON.parse(
-      String.fromCharCode.apply(null, new Uint8Array(request)),
+      String.fromCharCode.apply(null, new Uint8Array(request))
     );
     try {
-      this.info({}, `Handling thermal printer print request...`);
-      this.info({ role: "blob", blob: payload }, `Print request:`);
+      this.info(
+        { context: { payload } },
+        "Handling thermal printer print request..."
+      );
       if (payload.timestamp <= this.lastReceived) {
         this.info(
           {},
-          `Disregarding old message with timestamp ${payload.timestamp}, which is older than lastReceived of ${this.lastReceived}.`,
+          `Disregarding old message with timestamp ${payload.timestamp}, which is older than lastReceived of ${this.lastReceived}.`
         );
       } else {
         const message = payload.message;
@@ -77,12 +79,12 @@ export class ThermalPrinter extends Module {
         }
         this.printer.printLine("\n\n\n");
         this.printer.print(() => {
-          this.info({}, `Handled thermal printer print request.`);
+          this.info("Handled thermal printer print request.");
         });
       }
     } catch (e) {
       this.error(
-        `Error handling print request:\n${JSON.stringify(payload)}\n\n${e}`,
+        `Error handling print request:\n${JSON.stringify(payload)}\n\n${e}`
       );
     }
   }
@@ -92,16 +94,16 @@ export class ThermalPrinter extends Module {
     Printer = (await import("thermalprinter")).default;
 
     if (this.printer) {
-      this.info({}, `Thermal printer already subscribed to topic ${topic}.`);
+      this.info(`Thermal printer already subscribed to topic ${topic}.`);
       return;
     }
 
-    this.info({}, `Enabling thermal printer...`);
+    this.info("Enabling thermal printer...");
 
     return new Promise((resolve, reject) => {
       // TODO: Support checking paper status
       // TODO: Consider printing QR codes or arbitrary images
-      this.info({}, `Enabling thermal printer serial connection...`);
+      this.info("Enabling thermal printer serial connection...");
       this.serialPort = new SerialPort({ path: "/dev/ttyS0", baudRate: 19200 });
 
       this.serialPort.on("open", () => {
@@ -114,22 +116,20 @@ export class ThermalPrinter extends Module {
 
         this.printer.on("ready", async () => {
           const topic = `commands/printer/${globals.location}`;
-          this.info({}, `Enabled thermal printer serial connection.`);
+          this.info("Enabled thermal printer serial connection.");
           this.info(
-            {},
-            `Enabling thermal printer mqtt subscription to topic ${topic}...`,
+            `Enabling thermal printer mqtt subscription to topic ${topic}...`
           );
           await globals.connection.subscribe(
             topic,
             mqtt.QoS.AtLeastOnce,
-            this.handlePrintRequest.bind(this),
+            this.handlePrintRequest.bind(this)
           );
           this.info(
-            {},
-            `Enabled thermal printer mqtt subscription to topic ${topic}.`,
+            `Enabled thermal printer mqtt subscription to topic ${topic}.`
           );
           this.currentState.enabled = true;
-          this.info({}, `Enabled thermal printer.`);
+          this.info("Enabled thermal printer.");
           resolve();
         });
 
@@ -150,11 +150,11 @@ export class ThermalPrinter extends Module {
   }
 
   async disable() {
-    this.info({ role: "breadcrumb" }, `Disabling thermal printer...`);
+    this.info("Disabling thermal printer...");
     this.currentState.enabled = false;
     this.printer = undefined;
     this.serialPort.close();
-    this.info({ role: "breadcrumb" }, `Disabled thermal printer.`);
+    this.info("Disabled thermal printer.");
   }
 
   async cleanUp() {

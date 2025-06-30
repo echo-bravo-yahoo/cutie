@@ -23,7 +23,7 @@ export default class BME680 extends Sensor {
       gas: sensorData.gas_resistance,
     };
 
-    this.debug({}, `Sampled new data point`);
+    this.debug("Sampled new data point");
     this.samples.push(datapoint);
   }
 
@@ -39,14 +39,14 @@ export default class BME680 extends Sensor {
     // (newInterval+oldInterval)
     this.setupPublisher();
     this.setupSampler();
-    this.info({}, `Enabled bme680.`);
+    this.info("Enabled bme680.");
     this.enabled = true;
   }
 
   async disable() {
     // TODO: do I need to turn off the sensor / close the connection?
     clearInterval(this.interval);
-    this.info({}, `Disabled bme680.`);
+    this.info("Disabled bme680.");
     this.enabled = false;
   }
 

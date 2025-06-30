@@ -12,9 +12,9 @@ export default class Immediately extends Input {
   async enable() {
     this.liveTask.postRegister = this.handleMessage.bind(
       this,
-      this.config.message,
+      this.config.message
     );
-    this.info({}, `Running immediate task.`);
+    this.info("Running immediate task.");
     this.enabled = true;
   }
 
@@ -25,7 +25,7 @@ export default class Immediately extends Input {
 
   async disable() {
     clearInterval(this.interval);
-    this.info({}, `Skipping running immediate task.`);
+    this.info("Skipping running immediate task.");
     this.enabled = false;
   }
 }

@@ -30,7 +30,17 @@ export async function start(args) {
     tasks: [],
     connections: [],
     version: packageJson.version,
-    logger: loggerFactory({ level: config.logLevel || "debug" }),
+    logger: loggerFactory({
+      level: config.logLevel || "debug",
+      messageKey: "log",
+      errorKey: "error",
+      transport: {
+        target: "pino-pretty",
+        options: {
+          colorize: true,
+        },
+      },
+    }),
   };
 
   await registerConnections(config.connections);
