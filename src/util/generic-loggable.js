@@ -2,54 +2,34 @@ import { globals } from "../index.js";
 
 export class Loggable {
   constructor() {
-    this.debug = (obj, msg, args) => {
-      if (typeof obj === "string") {
-        msg = obj;
-        obj = {};
-      }
-
-      globals.logger.debug(
-        {
-          role: "breadcrumb",
-          ...obj,
-          tags: [...(obj.tags || [])],
-        },
-        msg,
-        args,
-      );
+    this.debug = (obj, msg) => {
+      globals.logger.debug(...Loggable.buildLoggerArgs(obj, msg));
     };
 
-    this.info = (obj, msg, args) => {
-      if (typeof obj === "string") {
-        msg = obj;
-        obj = {};
-      }
-
-      globals.logger.info(
-        {
-          role: "breadcrumb",
-          ...obj,
-          tags: [...(obj.tags || [])],
-        },
-        msg,
-        args,
-      );
+    this.info = (obj, msg) => {
+      globals.logger.info(...Loggable.buildLoggerArgs(obj, msg));
     };
 
-    this.error = (obj, msg, args) => {
-      if (typeof obj === "string") {
-        msg = obj;
-        obj = {};
-      }
+    this.error = (obj, error) => {
+      globals.logger.error(...Loggable.buildLoggerArgs(obj, error));
+    };
+  }
 
-      globals.logger.error(obj, msg, args);
-      /*
-      globals.logger.error({
+  static buildLoggerArgs(obj, msgOrError) {
+    if (obj.isError && obj.isError()) {
+      msgOrError = obj;
+      obj = {};
+    } else if (typeof obj === "string") {
+      msgOrError = obj;
+      obj = {};
+    }
+
+    return [
+      {
         ...obj,
-        role: 'breadcrumb',
-        tags: [...(obj.tags || [])]
-      }, msg, args)
-      */
-    };
+        tags: [...(obj.tags || [])],
+      },
+      msgOrError,
+    ];
   }
 }

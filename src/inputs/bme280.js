@@ -25,7 +25,7 @@ export default class BME280 extends Sensor {
     this.samples.push(datapoint);
     this.debug(
       {},
-      `Sampled new data point, ${JSON.stringify(this.samples, null, 2)}`,
+      `Sampled new data point, ${JSON.stringify(this.samples, null, 2)}`
     );
   }
 
@@ -36,14 +36,14 @@ export default class BME280 extends Sensor {
     });
     this.setupSampler();
     this.setupPublisher();
-    this.info({}, `Enabled bme280.`);
+    this.info("Enabled bme280.");
     this.enabled = true;
   }
 
   async disable() {
     clearInterval(this.interval);
     if (this.sensor) await this.sensor.close();
-    this.info({}, `Disabled bme280.`);
+    this.info("Disabled bme280.");
     this.enabled = false;
   }
 

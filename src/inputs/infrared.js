@@ -17,7 +17,7 @@ export class Infrared extends Input {
   handleLedPin(newState) {
     if (this.currentState.ledPin !== newState.ledPin) {
       console.log(
-        `Changing infrared LED from pin ${this.currentState.ledPin} to ${newState.ledPin}.`,
+        `Changing infrared LED from pin ${this.currentState.ledPin} to ${newState.ledPin}.`
       );
       return this.enable(newState);
     }
@@ -26,7 +26,7 @@ export class Infrared extends Input {
   handleReceiverPin(newState) {
     if (this.currentState.receiverPin !== newState.receiverPin) {
       console.log(
-        `Changing infrared receiver from pin ${this.currentState.receiverPin} to ${newState.receiverPin}.`,
+        `Changing infrared receiver from pin ${this.currentState.receiverPin} to ${newState.receiverPin}.`
       );
       return this.enable(newState);
     }
@@ -40,7 +40,7 @@ export class Infrared extends Input {
       if (newState.ledPin) {
         this.infraredLed = new Gpio(newState.ledPin, { mode: Gpio.OUTPUT });
         this.currentState.ledPin = newState.ledPin;
-        this.info({}, `Enabled infrared LED on pin ${newState.ledPin}.`);
+        this.info(`Enabled infrared LED on pin ${newState.ledPin}.`);
       }
       if (newState.receiverPin) {
         this.infraredReceiver = new Gpio(newState.receiverPin, {
@@ -49,7 +49,7 @@ export class Infrared extends Input {
         this.currentState.receiverPin = newState.receiverPin;
         this.info(
           {},
-          `Enabled infrared receiver on pin ${newState.receiverPin}.`,
+          `Enabled infrared receiver on pin ${newState.receiverPin}.`
         );
       }
     }
@@ -61,12 +61,12 @@ export class Infrared extends Input {
     if (this.infraredLed) {
       this.infraredLed = undefined;
       this.currentState.ledPin = undefined;
-      this.info({}, `Disabled infrared LED.`);
+      this.info("Disabled infrared LED.");
     }
     if (this.infraredReceiver) {
       this.infraredReceiver = undefined;
       this.currentState.receiverPin = undefined;
-      this.info({}, `Disabled infrared receiver.`);
+      this.info("Disabled infrared receiver.");
     }
     this.currentState.enabled = false;
   }
