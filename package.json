@@ -8,7 +8,7 @@
     "cutie": "src/cli-entrypoint.js"
   },
   "scripts": {
-    "test": "mocha --recursive test --exclude 'test/unit/fixtures/**'",
+    "test": "TS_NODE_PROJECT='./tsconfig.test.json' mocha --loader=ts-node/esm",
     "test:ci": "npm run test",
     "build": "sudo docker build . -t cutie -f ./Dockerfile",
     "build-wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
@@ -38,11 +38,14 @@
     "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
+    "@types/chai": "^5.2.2",
     "@types/lodash": "^4.17.19",
+    "@types/mocha": "^10.0.10",
     "@types/yargs-parser": "^21.0.3",
     "chai": "^5.2.0",
     "mocha": "^11.4.0",
-    "prettier": "^3.6.0"
+    "prettier": "^3.6.0",
+    "ts-node": "^10.9.2"
   },
   "overrides": {
     "node-gyp": "^11.0.0",

@@ -44,7 +44,7 @@ export function isSingleConfig(
 export function isMultiConfig(
   config: TransformationConfig
 ): config is MultiConfig {
-  return typeof (config as MultiConfig).paths ? true : false;
+  return typeof (config as MultiConfig).paths === "object" ? true : false;
 }
 
 export interface Context {
@@ -59,7 +59,11 @@ export interface Context {
 export default abstract class Transformation extends Step {
   declare config: TransformationConfig;
   preservePaths: boolean;
-  abstract transformSingle(value: any, config: any, context: Context): any;
+  abstract transformSingle(
+    value: number,
+    config: any,
+    context: Context
+  ): number;
 
   constructor(config: TransformationConfig, task: Task) {
     super(config, task);
