@@ -3,6 +3,15 @@ import { expect } from "chai";
 import Task from "../../src/util/generic-task.js";
 import { setGlobals } from "../../src/index.js";
 
+import { OffsetConfig } from "../../src/transformations/offset.js";
+import { RoundConfig } from "../../src/transformations/round.js";
+import { PluckConfig } from "../../src/transformations/pluck.js";
+import { ShellConfig } from "../../src/transformations/shell.js";
+import { ConvertConfig } from "../../src/transformations/convert.js";
+import { RearrangeConfig } from "../../src/transformations/rearrange.js";
+import { JavascriptConfig } from "../../src/transformations/javascript.js";
+// import { AggregateConfig } from "../transformations/aggregate.js";
+
 describe("transformations", function () {
   const fakeLogger = {
     info: () => {},
@@ -18,7 +27,9 @@ describe("transformations", function () {
     describe("offset", function () {
       it("works on primitive readings", async function () {
         const task = new Task({
-          steps: [{ type: "transformation:offset", offset: -5 }],
+          steps: [
+            { type: "transformation:offset", offset: -5 } as OffsetConfig,
+          ],
         });
         await task.register();
 
@@ -29,7 +40,13 @@ describe("transformations", function () {
 
       it("works on simple readings", async function () {
         const task = new Task({
-          steps: [{ type: "transformation:offset", path: "temp", offset: -5 }],
+          steps: [
+            {
+              type: "transformation:offset",
+              path: "temp",
+              offset: -5,
+            } as OffsetConfig,
+          ],
         });
         await task.register();
 
@@ -44,7 +61,7 @@ describe("transformations", function () {
             {
               type: "transformation:offset",
               paths: { temp: { offset: -5 }, humidity: { offset: 10 } },
-            },
+            } as OffsetConfig,
           ],
         });
         await task.register();
@@ -59,7 +76,9 @@ describe("transformations", function () {
 
       it("works on arrays of primitive readings", async function () {
         const task = new Task({
-          steps: [{ type: "transformation:offset", offset: -5 }],
+          steps: [
+            { type: "transformation:offset", offset: -5 } as OffsetConfig,
+          ],
         });
         await task.register();
 
@@ -71,7 +90,11 @@ describe("transformations", function () {
       it("works on arrays of primitive readings with a base path", async function () {
         const task = new Task({
           steps: [
-            { type: "transformation:offset", offset: -5, basePath: "weather" },
+            {
+              type: "transformation:offset",
+              offset: -5,
+              basePath: "weather",
+            } as OffsetConfig,
           ],
         });
         await task.register();
@@ -85,7 +108,13 @@ describe("transformations", function () {
 
       it("works on arrays of simple readings", async function () {
         const task = new Task({
-          steps: [{ type: "transformation:offset", path: "temp", offset: -5 }],
+          steps: [
+            {
+              type: "transformation:offset",
+              path: "temp",
+              offset: -5,
+            } as OffsetConfig,
+          ],
         });
         await task.register();
 
@@ -114,7 +143,7 @@ describe("transformations", function () {
               basePath: "weather",
               path: "temp",
               offset: -5,
-            },
+            } as OffsetConfig,
           ],
         });
         await task.register();
@@ -146,7 +175,7 @@ describe("transformations", function () {
             {
               type: "transformation:offset",
               paths: { temp: { offset: -5 }, humidity: { offset: -10 } },
-            },
+            } as OffsetConfig,
           ],
         });
         await task.register();
@@ -175,7 +204,7 @@ describe("transformations", function () {
               type: "transformation:offset",
               basePath: "weather",
               paths: { temp: { offset: -5 }, humidity: { offset: 1 } },
-            },
+            } as OffsetConfig,
           ],
         });
         await task.register();
@@ -227,7 +256,7 @@ describe("transformations", function () {
                 type: "transformation:round",
                 precision: 2,
                 direction: testCase.direction,
-              },
+              } as RoundConfig,
             ],
           });
           await task.register();
@@ -260,7 +289,7 @@ describe("transformations", function () {
                 type: "transformation:round",
                 precision: 0,
                 direction: testCase.direction,
-              },
+              } as RoundConfig,
             ],
           });
           await task.register();
@@ -277,7 +306,12 @@ describe("transformations", function () {
     describe("aggregate", function () {
       it("works on arrays of primitive readings", async function () {
         const task = new Task({
-          steps: [{ type: "transformation:aggregate", aggregation: "average" }],
+          steps: [
+            {
+              type: "transformation:aggregate",
+              aggregation: "average",
+            } as any,
+          ],
         });
         await task.register();
 
@@ -293,7 +327,7 @@ describe("transformations", function () {
               type: "transformation:aggregate",
               aggregation: "average",
               path: "temp",
-            },
+            } as any,
           ],
         });
         await task.register();
@@ -317,7 +351,7 @@ describe("transformations", function () {
                 temp: { aggregation: "average" },
                 humidity: { aggregation: "latest" },
               },
-            },
+            } as any,
           ],
         });
         await task.register();
@@ -346,7 +380,7 @@ describe("transformations", function () {
             {
               type: "transformation:pluck",
               path: "weather.temp",
-            },
+            } as PluckConfig,
           ],
         });
         await task.register();
@@ -364,7 +398,7 @@ describe("transformations", function () {
               type: "transformation:pluck",
               path: "environment.sound",
               destination: "noise",
-            },
+            } as PluckConfig,
           ],
         });
         await task.register();
@@ -389,7 +423,7 @@ describe("transformations", function () {
                   destination: "temp",
                 },
               },
-            },
+            } as PluckConfig,
           ],
         });
         await task.register();
@@ -416,7 +450,7 @@ describe("transformations", function () {
               type: "transformation:rearrange",
               path: "weather.temp",
               to: "heat",
-            },
+            } as RearrangeConfig,
           ],
         });
         await task.register();
@@ -442,7 +476,7 @@ describe("transformations", function () {
                 type: "transformation:convert",
                 from: "celsius",
                 to: "fahrenheit",
-              },
+              } as ConvertConfig,
             ],
           });
           await task.register();
@@ -462,7 +496,7 @@ describe("transformations", function () {
                 type: "transformation:convert",
                 from: "fahrenheit",
                 to: "celsius",
-              },
+              } as ConvertConfig,
             ],
           });
           await task.register();
@@ -484,7 +518,7 @@ describe("transformations", function () {
                 type: "transformation:shell",
                 codePath: "./test/unit/fixtures/echo.sh",
                 outputType: "object",
-              },
+              } as ShellConfig,
             ],
           });
           await task.register();
@@ -502,7 +536,7 @@ describe("transformations", function () {
                 type: "transformation:shell",
                 codePath: "./test/unit/fixtures/echo.sh",
                 outputType: "string",
-              },
+              } as ShellConfig,
             ],
           });
           await task.register();
@@ -518,7 +552,7 @@ describe("transformations", function () {
                 type: "transformation:shell",
                 codePath: "./test/unit/fixtures/echo.sh",
                 outputType: "number",
-              },
+              } as ShellConfig,
             ],
           });
           await task.register();
@@ -536,7 +570,7 @@ describe("transformations", function () {
                 type: "transformation:shell",
                 command: "echo '${message}'",
                 outputType: "object",
-              },
+              } as ShellConfig,
             ],
           });
           await task.register();
@@ -554,7 +588,7 @@ describe("transformations", function () {
                 type: "transformation:shell",
                 command: "echo 'hello, ${message}'",
                 outputType: "string",
-              },
+              } as ShellConfig,
             ],
           });
           await task.register();
@@ -570,7 +604,7 @@ describe("transformations", function () {
                 type: "transformation:shell",
                 command: "echo $((1+${message}))",
                 outputType: "number",
-              },
+              } as ShellConfig,
             ],
           });
           await task.register();
@@ -589,7 +623,7 @@ describe("transformations", function () {
               {
                 type: "transformation:javascript",
                 command: "10 + message",
-              },
+              } as JavascriptConfig,
             ],
           });
           await task.register();
@@ -606,7 +640,7 @@ describe("transformations", function () {
               {
                 type: "transformation:javascript",
                 codePath: "./test/unit/fixtures/addOne.js",
-              },
+              } as JavascriptConfig,
             ],
           });
           await task.register();

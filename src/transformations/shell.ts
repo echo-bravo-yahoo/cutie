@@ -63,7 +63,9 @@ export default class Shell extends Transformation {
   }
 
   // no-op
-  transformSingle(value: any, config: any, context: Context) {}
+  transformSingle(value: number, config: any, context: Context) {
+    return value;
+  }
 }
 
 /*

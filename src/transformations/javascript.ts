@@ -52,7 +52,9 @@ export default class Javascript extends Transformation {
   }
 
   // no-op for class composition reasons
-  transformSingle(value: any, config: any, context: Context) {}
+  transformSingle(value: number, config: any, context: Context) {
+    return value;
+  }
 }
 
 /*

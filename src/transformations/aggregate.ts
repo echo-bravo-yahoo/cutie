@@ -122,7 +122,9 @@ export default class Aggregate extends Transformation {
   }
 
   // no-op for class composition reasons
-  transformSingle(_value: any, _config: any, _context: Context) {}
+  transformSingle(value: number, _config: any, _context: Context) {
+    return value;
+  }
 }
 
 /*
