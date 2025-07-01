@@ -10,7 +10,7 @@ export interface CronConfig extends InputConfig {
 }
 
 export default class Cron extends Input {
-  config: CronConfig;
+  declare config: CronConfig;
   cronHandle: any;
   enabled: boolean;
 

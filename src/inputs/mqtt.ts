@@ -11,7 +11,7 @@ export interface MQTTConfig extends InputConfig {
 }
 
 export default class MQTT extends Input {
-  config: MQTTConfig;
+  declare config: MQTTConfig;
   mqtt: MQTTConnection;
   enabled: boolean;
 

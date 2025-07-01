@@ -57,7 +57,7 @@ export interface Context {
 }
 
 export default abstract class Transformation extends Step {
-  config: TransformationConfig;
+  declare config: TransformationConfig;
   preservePaths: boolean;
   abstract transformSingle(value: any, config: any, context: Context): any;
 

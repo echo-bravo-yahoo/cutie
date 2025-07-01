@@ -17,8 +17,7 @@ export default abstract class Sensor extends Input {
   sampleInterval?: NodeJS.Timeout;
   sensor?: any;
   samples: Array<any> | Record<string, Array<any>>;
-  config: SensorConfig;
-  name: string;
+  declare config: SensorConfig;
   enabled: boolean;
   abstract enable(): Promise<void>;
   abstract sample(): Promise<void>;

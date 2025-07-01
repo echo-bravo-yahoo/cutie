@@ -16,7 +16,7 @@ export interface MQTTConnectionConfig
 }
 
 export default class MQTTConnection extends Connection {
-  config: MQTTConnectionConfig;
+  declare config: MQTTConnectionConfig;
   state: { subscriptions: Array<any> };
   connection: mqtt.MqttClient;
 

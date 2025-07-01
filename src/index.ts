@@ -11,12 +11,11 @@ import loggerFactory, { Logger, LoggerOptions } from "pino";
 import { registerConnections } from "./util/connections.js";
 import { registerTasks } from "./util/tasks.js";
 import { CLIArgs } from "./cli-entrypoint.js";
-import { Globals } from "./util/generic-loggable.js";
 
 export let globals = {};
 
 // used for testing
-export function setGlobals(newValue: Partial<Globals>) {
+export function setGlobals(newValue: any) {
   globals = newValue;
 }
 

@@ -6,7 +6,7 @@ export interface ConsoleConfig extends OutputConfig {
 }
 
 export default class Console extends Output {
-  config: ConsoleConfig;
+  declare config: ConsoleConfig;
 
   constructor(config: ConsoleConfig, task: Task) {
     super(config, task);

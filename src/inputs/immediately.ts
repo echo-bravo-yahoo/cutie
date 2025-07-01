@@ -7,8 +7,8 @@ export interface ImmediatelyConfig extends InputConfig {
 }
 
 export default class Immediately extends Input {
-  config: ImmediatelyConfig;
-  task: any;
+  declare config: ImmediatelyConfig;
+  declare task: any;
   enabled: boolean;
 
   constructor(config: ImmediatelyConfig, task: Task) {

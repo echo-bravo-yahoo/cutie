@@ -5,7 +5,6 @@ import { Globals, Loggable } from "./generic-loggable.js";
 import Step, { StepConfig } from "./generic-step.js";
 
 export interface TaskConfig {
-  type: string;
   steps: Array<StepConfig>;
 }
 

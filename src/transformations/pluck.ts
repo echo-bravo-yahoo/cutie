@@ -22,7 +22,7 @@ interface MultiPathPluckConfig extends MultiConfig {
 export type PluckConfig = SinglePathPluckConfig | MultiPathPluckConfig;
 
 export default class Pluck extends Transformation {
-  config: PluckConfig;
+  declare config: PluckConfig;
 
   constructor(config: PluckConfig, task: Task) {
     super(config, task);

@@ -12,7 +12,7 @@ export class NEC extends Infrared {
     super();
   }
 
-  runCommand(topicName, _body) {
+  runCommand(_topicName, _body) {
     const body = JSON.parse(new TextDecoder().decode(_body));
     if (body.id) {
       this.runSavedCommand(body.id);

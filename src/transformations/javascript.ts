@@ -17,7 +17,7 @@ export interface JavascriptConfig extends WholeMessageConfig {
 }
 
 export default class Javascript extends Transformation {
-  config: JavascriptConfig;
+  declare config: JavascriptConfig;
 
   constructor(config: JavascriptConfig, task: Task) {
     super(config as unknown as TransformationConfig, task);

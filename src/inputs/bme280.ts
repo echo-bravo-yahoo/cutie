@@ -6,8 +6,8 @@ export interface BME280Config extends SensorConfig {
 }
 
 export default class BME280 extends Sensor {
-  config: BME280Config;
-  samples: Array<any>;
+  declare config: BME280Config;
+  declare samples: Array<any>;
 
   constructor(config: BME280Config, task: Task) {
     super(config, task);

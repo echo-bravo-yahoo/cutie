@@ -16,7 +16,7 @@ export interface ShellConfig extends WholeMessageConfig {
 }
 
 export default class Shell extends Transformation {
-  config: ShellConfig;
+  declare config: ShellConfig;
 
   constructor(config: ShellConfig, task: Task) {
     super(config, task);

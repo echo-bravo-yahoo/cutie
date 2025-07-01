@@ -10,7 +10,7 @@ export interface MQTTConfig extends OutputConfig {
 }
 
 export default class MQTT extends Output {
-  config: MQTTConfig;
+  declare config: MQTTConfig;
   mqtt?: MQTTConnection;
 
   constructor(config: MQTTConfig, task: Task) {

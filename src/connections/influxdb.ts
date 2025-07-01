@@ -12,7 +12,7 @@ export interface InfluxDBConnectionConfig extends ConnectionConfig {
 }
 
 export default class InfluxDBConnection extends Connection {
-  config: InfluxDBConnectionConfig;
+  declare config: InfluxDBConnectionConfig;
 
   constructor(config: InfluxDBConnectionConfig, task: Task) {
     super(config, task);

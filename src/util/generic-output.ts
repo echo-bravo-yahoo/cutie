@@ -7,7 +7,6 @@ export interface OutputConfig {
 }
 
 export default abstract class Output extends Step {
-  next?: Step;
   enabled: boolean;
   abstract send(message: any): Promise<void>;
 

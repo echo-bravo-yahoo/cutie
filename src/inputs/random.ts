@@ -11,9 +11,9 @@ export interface RandomConfig extends SensorConfig {
 }
 
 export default class Random extends Sensor {
-  config: RandomConfig;
+  declare config: RandomConfig;
   lastNumber: number;
-  samples: Array<any>;
+  declare samples: Array<any>;
 
   constructor(config: RandomConfig, task: Task) {
     super(config, task);

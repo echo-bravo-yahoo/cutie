@@ -11,7 +11,7 @@ export interface InfluxDBConfig extends OutputConfig {
 }
 
 export default class InfluxDB extends Output {
-  config: InfluxDBConfig;
+  declare config: InfluxDBConfig;
   influxdb: InfluxDBConnection;
 
   constructor(config: InfluxDBConfig, task: Task) {

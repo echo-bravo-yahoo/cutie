@@ -7,7 +7,7 @@ export interface IntervalConfig extends InputConfig {
 }
 
 export default class Interval extends Input {
-  config: IntervalConfig;
+  declare config: IntervalConfig;
   interval: NodeJS.Timeout;
   enabled: boolean;
 
