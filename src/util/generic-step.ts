@@ -47,7 +47,7 @@ export default abstract class Step extends Loggable {
   // always includes the context of task, module/config, and globals
   interpolateConfigString(
     template: string,
-    additionalContext?: Record<string, any>
+    additionalContext?: Record<string, any>,
   ) {
     const inject = (str: string, obj: Record<string, any>) =>
       str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));

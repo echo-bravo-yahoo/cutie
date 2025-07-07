@@ -36,13 +36,13 @@ export interface MultiConfig extends BaseTransformationConfig {
 export interface WholeMessageConfig extends BaseTransformationConfig {}
 
 export function isSingleConfig(
-  config: TransformationConfig
+  config: TransformationConfig,
 ): config is SingleConfig {
   return typeof (config as SingleConfig).path === "string" ? true : false;
 }
 
 export function isMultiConfig(
-  config: TransformationConfig
+  config: TransformationConfig,
 ): config is MultiConfig {
   return typeof (config as MultiConfig).paths === "object" ? true : false;
 }
@@ -62,7 +62,7 @@ export default abstract class Transformation extends Step {
   abstract transformSingle(
     value: number,
     config: any,
-    context: Context
+    context: Context,
   ): number;
 
   constructor(config: TransformationConfig, task: Task) {
@@ -106,7 +106,7 @@ export default abstract class Transformation extends Step {
         isPrimitiveReading,
         message,
       },
-      "Transforming message."
+      "Transforming message.",
     );
 
     if (isArrayOfReadings) {
@@ -134,7 +134,7 @@ export default abstract class Transformation extends Step {
           after: context.message.out,
         },
       },
-      "Transformed message."
+      "Transformed message.",
     );
 
     return context.message.out;
@@ -148,7 +148,7 @@ export default abstract class Transformation extends Step {
     const oldValue = get(
       context.message.in,
       context.current,
-      context.message.in
+      context.message.in,
     );
     const newValue = this.transformSingle(oldValue, config, context);
 
@@ -222,7 +222,7 @@ export default abstract class Transformation extends Step {
         set(
           context.message.out,
           `${context.current ? `${context.current}.` : ""}${path}`,
-          get(context.message.in, path)
+          get(context.message.in, path),
         );
       }
     }

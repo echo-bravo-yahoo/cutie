@@ -26,14 +26,14 @@ export class Loggable {
 
     this.error = (obj, error) => {
       (globals as Globals).logger.error(
-        ...Loggable.buildLoggerArgs(obj, error)
+        ...Loggable.buildLoggerArgs(obj, error),
       );
     };
   }
 
   static buildLoggerArgs(
     obj: string | Record<string, any>,
-    msgOrError?: string
+    msgOrError?: string,
   ): [Record<string, any>, message: string | undefined] {
     if (typeof obj === "string") {
       msgOrError = obj;

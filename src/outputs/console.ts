@@ -20,7 +20,7 @@ export default class Console extends Output {
 
   async send(message: any) {
     console.log(
-      `CONSOLE OUTPUT: ${JSON.stringify(message, null, this.config.spaces || 0)}`
+      `CONSOLE OUTPUT: ${JSON.stringify(message, null, this.config.spaces || 0)}`,
     );
   }
 }

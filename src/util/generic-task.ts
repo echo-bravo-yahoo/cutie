@@ -39,7 +39,7 @@ export default class Task extends Loggable {
       {},
       {
         msgPrefix: "[core.registration.steps] ",
-      }
+      },
     );
 
     let previousStep;

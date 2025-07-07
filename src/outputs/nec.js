@@ -28,7 +28,7 @@ export class NEC extends Infrared {
   runNECCommand(body) {
     this.info(
       {},
-      `Received NEC command with address 0x${Number(body.address).toString(16)} (extended/complement 0x${Number(body.extendedAddress ? body.extendedAddress : ~body.extendedAddress).toString(16)}) and command 0x${Number(body.command).toString(16)} (extended/complement 0x${Number(body.extendedAddress ? body.extendedAddress : ~body.extendedAdress).toString(16)}).`
+      `Received NEC command with address 0x${Number(body.address).toString(16)} (extended/complement 0x${Number(body.extendedAddress ? body.extendedAddress : ~body.extendedAddress).toString(16)}) and command 0x${Number(body.command).toString(16)} (extended/complement 0x${Number(body.extendedAddress ? body.extendedAddress : ~body.extendedAdress).toString(16)}).`,
     );
 
     if (this.currentState.virtual) return;
@@ -54,7 +54,7 @@ export class NEC extends Infrared {
       address,
       command,
       extendedAddress,
-      extendedCommand
+      extendedCommand,
     ).then((waveId) => {
       this.info(`Done transmitting wave ${waveId}.`);
       try {
@@ -75,15 +75,15 @@ export class NEC extends Infrared {
         newState.commandTopic !== this.currentState.commandTopic)
     ) {
       this.debug(
-        `Subscribing to NEC command requests on topic ${this.currentState.commandTopic}...`
+        `Subscribing to NEC command requests on topic ${this.currentState.commandTopic}...`,
       );
       await globals.connection.subscribe(
         this.currentState.commandTopic,
         mqtt.QoS.AtLeastOnce,
-        this.runCommand.bind(this)
+        this.runCommand.bind(this),
       );
       this.debug(
-        `Subscribed to NEC command requests on topic ${this.currentState.scriptTopic}.`
+        `Subscribed to NEC command requests on topic ${this.currentState.scriptTopic}.`,
       );
     }
 

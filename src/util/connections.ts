@@ -8,7 +8,7 @@ import { ConnectionConfig } from "./generic-connection.js";
 import { Globals } from "./generic-loggable.js";
 
 export async function registerConnections(
-  connectionConfigs: Array<ConnectionConfig>
+  connectionConfigs: Array<ConnectionConfig>,
 ) {
   const connectionNames = (
     await readdir(normalize(`${srcDir}/connections`))
@@ -19,7 +19,7 @@ export async function registerConnections(
     {
       msgPrefix: "[core.registration.connections] ",
       redact: ["context.password", "context.username", "context.token"],
-    }
+    },
   );
   localLogger.info("Registering connections...");
   const promises = [];
@@ -30,7 +30,7 @@ export async function registerConnections(
       const Connection = (
         await import(
           normalize(
-            `${srcDir}/${connectionTypeInfo.type}s/${connectionTypeInfo.subType}.js`
+            `${srcDir}/${connectionTypeInfo.type}s/${connectionTypeInfo.subType}.js`,
           )
         )
       ).default;
@@ -49,12 +49,12 @@ export async function registerConnections(
 
 export function getConnection(connectionKey: string) {
   return (globals as Globals).connections.find(
-    (connection) => connection.name === connectionKey
+    (connection) => connection.name === connectionKey,
   );
 }
 
 export function getConnectionsByType(connectionType: string) {
   return (globals as Globals).connections.filter(
-    (connection) => connection.config.type.split(":")[1] === connectionType
+    (connection) => connection.config.type.split(":")[1] === connectionType,
   );
 }

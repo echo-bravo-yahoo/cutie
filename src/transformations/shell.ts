@@ -42,7 +42,7 @@ export default class Shell extends Transformation {
       }
     } else {
       throw new Error(
-        `Configuration should either specify a codePath or a command.`
+        `Configuration should either specify a codePath or a command.`,
       );
     }
   }

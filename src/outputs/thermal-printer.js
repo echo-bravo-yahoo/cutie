@@ -57,17 +57,17 @@ export class ThermalPrinter extends Module {
 
   handlePrintRequest(_topic, request) {
     const payload = JSON.parse(
-      String.fromCharCode.apply(null, new Uint8Array(request))
+      String.fromCharCode.apply(null, new Uint8Array(request)),
     );
     try {
       this.info(
         { context: { payload } },
-        "Handling thermal printer print request..."
+        "Handling thermal printer print request...",
       );
       if (payload.timestamp <= this.lastReceived) {
         this.info(
           {},
-          `Disregarding old message with timestamp ${payload.timestamp}, which is older than lastReceived of ${this.lastReceived}.`
+          `Disregarding old message with timestamp ${payload.timestamp}, which is older than lastReceived of ${this.lastReceived}.`,
         );
       } else {
         const message = payload.message;
@@ -84,7 +84,7 @@ export class ThermalPrinter extends Module {
       }
     } catch (e) {
       this.error(
-        `Error handling print request:\n${JSON.stringify(payload)}\n\n${e}`
+        `Error handling print request:\n${JSON.stringify(payload)}\n\n${e}`,
       );
     }
   }
@@ -118,15 +118,15 @@ export class ThermalPrinter extends Module {
           const topic = `commands/printer/${globals.location}`;
           this.info("Enabled thermal printer serial connection.");
           this.info(
-            `Enabling thermal printer mqtt subscription to topic ${topic}...`
+            `Enabling thermal printer mqtt subscription to topic ${topic}...`,
           );
           await globals.connection.subscribe(
             topic,
             mqtt.QoS.AtLeastOnce,
-            this.handlePrintRequest.bind(this)
+            this.handlePrintRequest.bind(this),
           );
           this.info(
-            `Enabled thermal printer mqtt subscription to topic ${topic}.`
+            `Enabled thermal printer mqtt subscription to topic ${topic}.`,
           );
           this.currentState.enabled = true;
           this.info("Enabled thermal printer.");

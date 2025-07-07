@@ -38,7 +38,7 @@ export default class Javascript extends Transformation {
       }
     } else {
       throw new Error(
-        `Configuration should either specify a codePath or a command.`
+        `Configuration should either specify a codePath or a command.`,
       );
     }
   }
