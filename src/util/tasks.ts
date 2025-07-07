@@ -7,7 +7,7 @@ export async function registerTasks(tasks: Array<TaskConfig>) {
     {},
     {
       msgPrefix: "[core.registration.tasks] ",
-    }
+    },
   );
   localLogger.info("Registering tasks...");
 

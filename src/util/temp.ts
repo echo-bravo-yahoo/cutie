@@ -9,7 +9,7 @@ export class Temp {
   constructor(temp: number, unit: UserUnit, offset = true) {
     if (unit === undefined)
       throw new Error(
-        `Undefined unit (should be one of "c", "celsius", "f", "fahrenheit").`
+        `Undefined unit (should be one of "c", "celsius", "f", "fahrenheit").`,
       );
     this.unit = this.userUnitToInternalUnit(unit);
     this.temp = temp;

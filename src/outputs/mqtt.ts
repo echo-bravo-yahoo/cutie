@@ -53,7 +53,7 @@ export default class MQTT extends Output {
     // }
 
     return this.config.topics.some((topic) =>
-      MqttTopics.match(topic, messageTopic)
+      MqttTopics.match(topic, messageTopic),
     );
   }
 }
