@@ -7,11 +7,19 @@
   "bin": {
     "cutie": "src/cli-entrypoint.js"
   },
+  "files": [
+    "built/",
+    "config/cutie.conf.json",
+    "config/cutie.service",
+    "cookbook.md"
+  ],
   "scripts": {
     "test": "TS_NODE_PROJECT='./tsconfig.test.json' mocha --loader=ts-node/esm",
     "test:ci": "npm run test",
-    "build": "sudo docker build . -t cutie -f ./Dockerfile",
-    "build-wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
+    "build": "npm run build:clean && tsc",
+    "build:clean": "rm -rf built/*",
+    "build:docker": "sudo docker build . -t cutie -f ./Dockerfile",
+    "build:docker:wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
     "sync": "lsyncd config.lua",
     "start": "./src/cli-entrypoint.js",
     "prettify": "prettier -w .",
