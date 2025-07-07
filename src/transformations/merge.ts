@@ -35,7 +35,7 @@ export default class Merge extends Transformation {
       if (!context.pathChosen) throw new Error(`???`);
       set(result, context.pathChosen, merged);
     }
-    return result;
+    return result.out;
   }
 }
 

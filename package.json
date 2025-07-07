@@ -5,7 +5,7 @@
   "description": "a general-purpose cli & library for automating mqtt interactions.",
   "main": "src/index.js",
   "bin": {
-    "cutie": "src/cli-entrypoint.js"
+    "cutie": "built/cli-entrypoint.js"
   },
   "files": [
     "built/",
