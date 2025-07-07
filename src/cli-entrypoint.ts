@@ -11,7 +11,7 @@ export interface CLIArgs {
 const argv = parser(process.argv.slice(2) || "", {
   string: ["config"],
   default: {
-    config: `${srcDir}/../config/config.json`,
+    config: `${process.cwd()}/cutie.conf.json`,
   },
 }) as Arguments & CLIArgs;
 
