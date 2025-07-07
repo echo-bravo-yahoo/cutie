@@ -25,16 +25,10 @@ Right now, `cutie` should run on any nodeJS environment between 17.9.0 - 24.x.x.
 To use `cutie` as a CLI tool:
 
 ```bash
-git clone git@github.com:echo-bravo-yahoo/cutie.git
-cd cutie
-npm install --python=python3.10 # won't build with newer python versions on ARMv6
-npm link # optional, installs the CLI to your path as `cutie`
-cutie
+npm install --global @echobravoyahoo/cutie
+cutie init # this creates a default/blank config file in your current directory
+cutie # this runs cutie using the config file in the current directory
 ```
-
-This starts `cutie` up using the config file present in `./config/config.json`. You'll need to customize it to fit your use-case. You can also pass a flag to the CLI to specify the location of a different config file, e.g., `cutie --config ~/my-config-file.json`. Config files can be JSON or YAML, with any extension.
-
-Once you have it configured to your liking, you can install it to systemctl so it's run on startup and restarted on crash. First, modify `./config/cutie.service` to confirm that the `WorkingDirectory` and `user` fields are correct, then run `npm add-service`.
 
 ### Mental model for using `cutie`
 
@@ -76,6 +70,20 @@ If you say M**QT**T fast, it sounds like "em-cutie-tee". And software could stan
 ### Developing on `cutie`
 
 These are primarily notes to myself for the time being.
+
+#### Installing for development
+
+```bash
+git clone git@github.com:echo-bravo-yahoo/cutie.git
+cd cutie
+npm install --python=python3.10 # won't build with newer python versions on ARMv6
+npm link # optional, installs the CLI to your path as `cutie`
+cutie
+```
+
+This starts `cutie` up using the config file present in `./config/config.json`. You'll need to customize it to fit your use-case. You can also pass a flag to the CLI to specify the location of a different config file, e.g., `cutie --config ~/my-config-file.json`. Config files can be JSON or YAML, with any extension.
+
+Once you have it configured to your liking, you can install it to systemctl so it's run on startup and restarted on crash. First, modify `./config/cutie.service` to confirm that the `WorkingDirectory` and `user` fields are correct, then run `npm add-service`.
 
 #### Sensors
 

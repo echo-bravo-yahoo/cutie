@@ -1,5 +1,5 @@
 {
-  "name": "cutie",
+  "name": "@echobravoyahoo/cutie",
   "type": "module",
   "version": "2.1.0",
   "description": "a general-purpose cli & library for automating mqtt interactions.",
