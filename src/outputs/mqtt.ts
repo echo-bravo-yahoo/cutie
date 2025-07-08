@@ -1,5 +1,3 @@
-import MqttTopics from "mqtt-topics";
-
 import { getConnection } from "../util/connections.js";
 import Output, { OutputConfig } from "../util/generic-output.js";
 import Task from "../util/generic-task.js";
@@ -7,6 +5,7 @@ import MQTTConnection from "../connections/mqtt.js";
 
 export interface MQTTConfig extends OutputConfig {
   topics: Array<string>;
+  connectionName: string;
 }
 
 export default class MQTT extends Output {
@@ -17,14 +16,8 @@ export default class MQTT extends Output {
     super(config, task);
   }
 
-  async register() {
-    if (!this.config.disabled && !this.task.disabled) {
-      return this.enable();
-    }
-  }
-
   async enable() {
-    this.mqtt = getConnection(this.name);
+    this.mqtt = getConnection(this.config.connectionName) as MQTTConnection;
     this.enabled = true;
   }
 
@@ -38,23 +31,12 @@ export default class MQTT extends Output {
       const interpolatedTopic = this.interpolateConfigString(topic, {
         message,
       });
-      // console.log(
-      //   `Sending message to topic "${interpolatedTopic}":\n${JSON.stringify(message, null, 2)}`
-      // );
+
       this.mqtt &&
         this.mqtt.sendRaw(interpolatedTopic, JSON.stringify(message));
     });
-  }
 
-  // TODO: dupe of inputs/mqtt.js:::matchesTopic
-  matchesTopic(messageTopic: string) {
-    // if (this.config.topic) {
-    //   return MqttTopics.match(topic, messageTopic);
-    // }
-
-    return this.config.topics.some((topic) =>
-      MqttTopics.match(topic, messageTopic),
-    );
+    return message;
   }
 }
 

@@ -43,6 +43,7 @@
     "pino-pretty": "^9.4.1",
     "serialport": "^10.4.0",
     "thermalprinter": "^0.3.10",
+    "uuid": "^11.1.0",
     "yargs-parser": "^21.1.1"
   },
   "devDependencies": {

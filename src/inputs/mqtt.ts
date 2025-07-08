@@ -3,11 +3,21 @@ import MqttTopics from "mqtt-topics";
 import Input, { InputConfig } from "../util/generic-input.js";
 import Task from "../util/generic-task.js";
 import MQTTConnection from "../connections/mqtt.js";
+import Step from "../util/generic-step.js";
 
 export interface MQTTConfig extends InputConfig {
+  connectionName: string;
   topic: string;
   topics?: Array<string>;
   disabled: boolean;
+}
+
+export function isMQTT(step: Step): step is MQTT {
+  const hasTopicOrTopics =
+    typeof (step as unknown as MQTT).config.topic === "string" ||
+    (step as unknown as MQTT).config.topics?.length !== undefined;
+
+  return step && hasTopicOrTopics;
 }
 
 export default class MQTT extends Input {
@@ -20,7 +30,8 @@ export default class MQTT extends Input {
   }
 
   async enable() {
-    this.mqtt = getConnection(this.name);
+    this.mqtt = getConnection(this.name) as unknown as MQTTConnection;
+
     if (
       this.config.topic ||
       (this.config.topics && this.config.topics.length)
@@ -47,10 +58,6 @@ export default class MQTT extends Input {
     this.enabled = false;
   }
 
-  async handleMessage(message: any) {
-    if (this.next) this.next.handleMessage(message);
-  }
-
   // TODO: dupe of inputs/mqtt.js:::matchesTopic
   matchesTopic(messageTopic: string) {
     if (this.config.topic) {
@@ -60,12 +67,6 @@ export default class MQTT extends Input {
     return (this.config.topics || []).some((topic) =>
       MqttTopics.match(topic, messageTopic),
     );
-  }
-
-  async register() {
-    if (!this.config.disabled && !this.task.disabled) {
-      this.enable();
-    }
   }
 }
 

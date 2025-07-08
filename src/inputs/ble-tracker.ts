@@ -34,10 +34,6 @@ export default class BLETracker extends Sensor {
     return undefined;
   }
 
-  async handleMessage(_message: any): Promise<any> {
-    return undefined;
-  }
-
   aggregateOne(deviceKey: string) {
     const aggregation: Aggregation =
       this.samples[deviceKey].length === 1

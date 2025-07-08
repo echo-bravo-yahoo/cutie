@@ -18,19 +18,9 @@ export default class InfluxDB extends Output {
     super(config, task);
   }
 
-  async register() {
-    if (!this.config.disabled && !this.task.disabled) {
-      return this.enable();
-    }
-  }
-
   async enable() {
-    this.influxdb = getConnection(this.name);
+    this.influxdb = getConnection(this.name) as unknown as InfluxDBConnection;
     this.enabled = true;
-  }
-
-  async disable() {
-    this.enabled = false;
   }
 
   objectToLine(object: Record<string, any>) {
@@ -73,6 +63,8 @@ export default class InfluxDB extends Output {
     exec(command, (_error, stdout, _stderr) => {
       console.log(`Result: ${stdout}`);
     });
+
+    return message;
   }
 }
 

@@ -1,30 +1,17 @@
-import { Loggable } from "./generic-loggable.js";
-import Step from "./generic-step.js";
-import Task from "./generic-task.js";
+import {
+  TypedConfig,
+  TypedConfigurable,
+} from "./generic-typed-configurable.js";
 
-export interface ConnectionConfig {
-  type: string;
+export interface ConnectionConfig extends TypedConfig {
   disabled: boolean;
+  name: string;
 }
 
-export class Connection extends Loggable {
-  type: string;
-  subType: string;
-  name: string;
+export class Connection extends TypedConfigurable {
   config: ConnectionConfig;
-  task: Task;
 
-  constructor(config: ConnectionConfig, task: Task) {
-    super();
-
-    if (config.type && config.type.includes(":")) {
-      const typeInfo = Step.parseType(config.type);
-      this.type = typeInfo.type;
-      this.subType = typeInfo.subType;
-      this.name = typeInfo.name;
-    }
-
-    this.config = config;
-    this.task = task;
+  constructor(config: ConnectionConfig) {
+    super(config);
   }
 }

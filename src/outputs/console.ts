@@ -12,16 +12,8 @@ export default class Console extends Output {
     super(config, task);
   }
 
-  async register() {}
-
-  async enable() {}
-
-  async disable() {}
-
   async send(message: any) {
-    console.log(
-      `CONSOLE OUTPUT: ${JSON.stringify(message, null, this.config.spaces || 0)}`,
-    );
+    console.log(`${JSON.stringify(message, null, this.config.spaces || 0)}`);
   }
 }
 

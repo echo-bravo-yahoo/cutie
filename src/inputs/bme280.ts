@@ -57,10 +57,6 @@ export default class BME280 extends Sensor {
   collateSamples() {
     return this.samples;
   }
-
-  async handleMessage(message: any) {
-    if (this.next) this.next.handleMessage(message);
-  }
 }
 
 /*

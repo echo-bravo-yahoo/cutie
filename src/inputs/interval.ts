@@ -16,7 +16,7 @@ export default class Interval extends Input {
   }
 
   register() {
-    this.enable();
+    return this.enable();
   }
 
   async enable() {
@@ -26,10 +26,6 @@ export default class Interval extends Input {
     );
     this.info("Enabled interval.");
     this.enabled = true;
-  }
-
-  async handleMessage(message: any) {
-    if (this.next) this.next.handleMessage(message);
   }
 
   async disable() {

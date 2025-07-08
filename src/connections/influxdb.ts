@@ -1,5 +1,4 @@
 import { Connection, ConnectionConfig } from "../util/generic-connection.js";
-import Task from "../util/generic-task.js";
 
 export interface InfluxDBConnectionConfig extends ConnectionConfig {
   measurement: string;
@@ -14,14 +13,8 @@ export interface InfluxDBConnectionConfig extends ConnectionConfig {
 export default class InfluxDBConnection extends Connection {
   declare config: InfluxDBConnectionConfig;
 
-  constructor(config: InfluxDBConnectionConfig, task: Task) {
-    super(config, task);
-  }
-
-  async register() {
-    if (!this.config.disabled) {
-      return this.enable();
-    }
+  constructor(config: InfluxDBConnectionConfig) {
+    super(config);
   }
 
   async enable() {}
