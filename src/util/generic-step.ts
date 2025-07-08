@@ -1,47 +1,23 @@
 import get from "lodash/get.js";
 
 import { globals } from "../index.js";
-import { Loggable } from "./generic-loggable.js";
 import Task from "./generic-task.js";
+import {
+  TypedConfig,
+  TypedConfigurable,
+} from "./generic-typed-configurable.js";
 
-export interface StepConfig {
-  type: string;
-}
+export interface StepConfig extends TypedConfig {}
 
-export default abstract class Step extends Loggable {
-  type: string;
-  subType: string;
-  name: string;
+export default abstract class Step extends TypedConfigurable {
   config: StepConfig;
   task: Task;
   next?: Step;
-  abstract handleMessage(message: any): Promise<any>;
 
   constructor(config: StepConfig, task: Task) {
-    super();
+    super(config);
 
-    this.config = config;
     this.task = task;
-
-    if (config.type && config.type.includes(":")) {
-      const typeInfo = Step.parseType(config.type);
-      this.type = typeInfo.type;
-      this.subType = typeInfo.subType;
-      this.name = typeInfo.name;
-    }
-  }
-
-  static parseType(type: string) {
-    const parts = type.split(":");
-    return {
-      type: parts[0],
-      subType: parts[1],
-      name: parts[2],
-    };
-  }
-
-  register() {
-    // no-op to satisfy tasks.js::registerTasks()
   }
 
   // always includes the context of task, module/config, and globals
@@ -60,5 +36,24 @@ export default abstract class Step extends Loggable {
     });
 
     return result;
+  }
+
+  // TO-DO: implement some callback behavior here
+  async endMessage(message: any, _traceId?: string) {
+    return message;
+  }
+
+  async handleMessage(message: any, traceId?: string): Promise<any> {
+    message = await this.doHandleMessage(message, traceId);
+
+    if (this.next) {
+      return this.next.handleMessage(message, traceId);
+    } else {
+      return this.endMessage(message, traceId);
+    }
+  }
+
+  async doHandleMessage(message: any, _traceId?: string) {
+    return message;
   }
 }

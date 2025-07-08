@@ -30,10 +30,6 @@ export default class Cron extends Input {
     this.enabled = true;
   }
 
-  async handleMessage(message: any) {
-    if (this.next) this.next.handleMessage(message);
-  }
-
   async disable() {
     scheduler.clearTimeoutOrInterval(this.cronHandle);
     this.info("Disabled cron task.");

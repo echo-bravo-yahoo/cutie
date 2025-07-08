@@ -11,8 +11,18 @@ import loggerFactory, { Logger, LoggerOptions } from "pino";
 import { registerConnections } from "./util/connections.js";
 import { registerTasks } from "./util/tasks.js";
 import { CLIArgs } from "./cli-entrypoint.js";
+import Task from "./util/generic-task.js";
+import { Connection } from "./util/generic-connection.js";
 
-export let globals = {};
+export interface Globals {
+  tasks: Array<Task>;
+  connections: Array<Connection>;
+  version: string;
+  logger: Logger;
+}
+
+// by the time consumers see this object, it's been properly instantiated
+export let globals: Globals = {} as unknown as Globals;
 
 // used for testing
 export function setGlobals(newValue: any) {

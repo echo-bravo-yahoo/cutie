@@ -1,7 +1,8 @@
 {
   "connections": [
     {
-      "type": "connection:mqtt:personal-mqtt",
+      "type": "connection:mqtt",
+      "name": "personal-mqtt",
       "disabled": false,
       "username": "mqtt_user",
       "password": "mqtt_password",
@@ -52,11 +53,13 @@
           }
         },
         {
-          "type": "output:mqtt:personal-mqtt",
+          "type": "output:mqtt",
+          "connectionName": "personal-mqtt",
           "topic": "data/weather/${state.location}"
         },
         {
-          "type": "output:mqtt:personal-mqtt",
+          "type": "output:mqtt",
+          "connectionName": "personal-mqtt",
           "topic": "cmnd/${module.hvacLocation}/HVACRemoteTemp"
         },
         {
@@ -79,7 +82,8 @@
           "reportingInterval": 5000
         },
         {
-          "type": "output:mqtt:personal-mqtt",
+          "type": "output:mqtt",
+          "connectionName": "personal-mqtt",
           "topic": "development/multi-sample-fake-thermometer"
         }
       ]
@@ -88,7 +92,8 @@
       "disabled": false,
       "steps": [
         {
-          "type": "input:mqtt:personal-mqtt",
+          "type": "input:mqtt",
+          "connectionName": "personal-mqtt",
           "topic": "development/multi-sample-fake-thermometer"
         },
         {
@@ -98,7 +103,8 @@
           "aggregation": "average"
         },
         {
-          "type": "output:mqtt:personal-mqtt",
+          "type": "output:mqtt",
+          "connectionName": "personal-mqtt",
           "topic": "development/aggregated-fake-thermometer"
         }
       ]
@@ -107,7 +113,8 @@
       "disabled": false,
       "steps": [
         {
-          "type": "input:mqtt:personal-mqtt",
+          "type": "input:mqtt",
+          "connectionName": "personal-mqtt",
           "topic": "development/aggregated-fake-thermometer"
         },
         {
@@ -116,7 +123,8 @@
           "precision": 2
         },
         {
-          "type": "output:mqtt:personal-mqtt",
+          "type": "output:mqtt",
+          "connectionName": "personal-mqtt",
           "topic": "development/rounded-fake-thermometer"
         }
       ]

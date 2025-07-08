@@ -1,16 +1,15 @@
 import mqtt from "mqtt";
+import MqttTopics from "mqtt-topics";
 
 import { Connection, ConnectionConfig } from "../util/generic-connection.js";
 import { getConnectionsByType } from "../util/connections.js";
 import { globals } from "../index.js";
-import Task from "../util/generic-task.js";
-import { Globals } from "../util/generic-loggable.js";
+import { isMQTT } from "../inputs/mqtt.js";
 
 export interface MQTTConnectionConfig
   extends ConnectionConfig,
     mqtt.IClientOptions {
   endpoint: string;
-  name: string;
   type: string;
   enabled: boolean;
 }
@@ -20,18 +19,12 @@ export default class MQTTConnection extends Connection {
   state: { subscriptions: Array<any> };
   connection: mqtt.MqttClient;
 
-  constructor(config: MQTTConnectionConfig, task: Task) {
-    super(config, task);
+  constructor(config: MQTTConnectionConfig) {
+    super(config);
 
     this.state = {
       subscriptions: [],
     };
-  }
-
-  async register() {
-    if (!this.config.disabled) {
-      return this.enable();
-    }
   }
 
   async enable() {
@@ -50,24 +43,27 @@ export default class MQTTConnection extends Connection {
     message = JSON.parse(message.toString());
     this.debug(
       { role: "blob", blob: message },
-      `Received new message on topic "${topic}": ${JSON.stringify(message)}`,
+      `Received new message on topic "${topic}": ${JSON.stringify(message)}`
     );
     const mqttConnectionNames = getConnectionsByType("mqtt").map(
-      (connection) => connection.name,
+      (connection) => connection.name
     );
     let triggers = 0;
 
-    for (let i = 0; i < (globals as Globals).tasks.length; i++) {
-      const desiredConnection = (globals as Globals).tasks[
-        i
-      ].steps[0].config.type.split(":")[2];
+    for (let i = 0; i < globals.tasks.length; i++) {
+      const firstStep = globals.tasks[i].steps[0];
+      if (!isMQTT(firstStep)) continue;
+      const desiredConnection = firstStep.config.connectionName;
 
       if (mqttConnectionNames.includes(desiredConnection)) {
         if (
-          (globals as Globals).tasks[i].steps[0].matchesTopic &&
-          (globals as Globals).tasks[i].steps[0].matchesTopic(topic)
+          isMQTT(firstStep) &&
+          MQTTConnection.matchesTopic(
+            topic,
+            firstStep.config.topic || firstStep.config.topics || ""
+          )
         ) {
-          (globals as Globals).tasks[i].steps[0].handleMessage(message);
+          globals.tasks[i].steps[0].handleMessage(message);
           triggers++;
         }
       }
@@ -77,20 +73,20 @@ export default class MQTTConnection extends Connection {
   }
 
   async subscribe(
-    topics: Parameters<typeof this.connection.subscribeAsync>[0],
+    topics: Parameters<typeof this.connection.subscribeAsync>[0]
   ) {
     return this.connection.subscribeAsync(topics);
   }
 
   async unsubscribe(
-    topics: Parameters<typeof this.connection.unsubscribeAsync>[0],
+    topics: Parameters<typeof this.connection.unsubscribeAsync>[0]
   ) {
     return this.connection.unsubscribeAsync(topics);
   }
 
   sendRaw(
     topic: Parameters<typeof this.connection.publish>[0],
-    message: Parameters<typeof this.connection.publish>[1],
+    message: Parameters<typeof this.connection.publish>[1]
   ) {
     return this.connection.publish(topic, message);
   }
@@ -99,7 +95,7 @@ export default class MQTTConnection extends Connection {
     topic: Parameters<typeof this.connection.publish>[0],
     event: any,
     labels: Array<string>,
-    aggregationMetadata: any,
+    aggregationMetadata: any
   ) {
     return this.connection.publish(
       topic,
@@ -107,7 +103,19 @@ export default class MQTTConnection extends Connection {
         ...event,
         metadata: labels,
         aggregationMetadata: aggregationMetadata,
-      }),
+      })
+    );
+  }
+
+  static matchesTopic(
+    topicToMatch: string,
+    possibleMatches: Array<string> | string
+  ) {
+    if (typeof possibleMatches === "string")
+      return MqttTopics.match(topicToMatch, possibleMatches);
+
+    return possibleMatches.some((topic) =>
+      MqttTopics.match(topic, topicToMatch)
     );
   }
 }

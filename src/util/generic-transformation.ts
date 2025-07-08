@@ -1,8 +1,9 @@
 import get from "lodash/get.js";
 import set from "lodash/set.js";
 
-import Step from "./generic-step.js";
+import Step, { StepConfig } from "./generic-step.js";
 import Task from "./generic-task.js";
+import { Configurable } from "./generic-configurable.js";
 
 // some notes on terminology:
 // a primitive reading is one where the reading is a primitive/literal
@@ -20,7 +21,7 @@ export type TransformationConfig =
   | MultiConfig
   | WholeMessageConfig;
 
-interface BaseTransformationConfig {
+interface BaseTransformationConfig extends StepConfig {
   type: string;
   basePath?: string;
 }
@@ -36,13 +37,13 @@ export interface MultiConfig extends BaseTransformationConfig {
 export interface WholeMessageConfig extends BaseTransformationConfig {}
 
 export function isSingleConfig(
-  config: TransformationConfig,
+  config: TransformationConfig
 ): config is SingleConfig {
   return typeof (config as SingleConfig).path === "string" ? true : false;
 }
 
 export function isMultiConfig(
-  config: TransformationConfig,
+  config: TransformationConfig
 ): config is MultiConfig {
   return typeof (config as MultiConfig).paths === "object" ? true : false;
 }
@@ -62,7 +63,7 @@ export default abstract class Transformation extends Step {
   abstract transformSingle(
     value: number,
     config: any,
-    context: Context,
+    context: Context
   ): number;
 
   constructor(config: TransformationConfig, task: Task) {
@@ -71,18 +72,36 @@ export default abstract class Transformation extends Step {
     this.preservePaths = true;
   }
 
-  async handleMessage(message: any) {
-    const transformed = this.transform(message);
-    if (this.next) {
-      return this.next.handleMessage(transformed);
+  async doHandleMessage(message: any, traceId: string) {
+    return this.transform(message, traceId);
+  }
+
+  determineInitialMessageOut(
+    isArrayOfReadings: boolean,
+    hasBasePath: boolean,
+    isPrimitiveReading: boolean,
+    messageIn: any
+  ) {
+    if (isArrayOfReadings) {
+      if (hasBasePath) {
+        return {};
+      } else {
+        return [];
+      }
+    } else if (isPrimitiveReading) {
+      return undefined;
+    } else if (this.preservePaths) {
+      return messageIn;
     } else {
-      return transformed;
+      return {};
     }
   }
 
-  transform(message: any) {
-    const isArrayOfReadings =
-      this.config.basePath !== undefined || message.length;
+  transform(message: any, traceId: string) {
+    const isArrayOfReadings = !!(
+      this.config.basePath !== undefined ||
+      (message && message.length)
+    );
     const isSimpleReading = isSingleConfig(this.config);
     const isCompositeReading = isMultiConfig(this.config);
     const isPrimitiveReading = !isSimpleReading && !isCompositeReading;
@@ -90,7 +109,12 @@ export default abstract class Transformation extends Step {
     const context: Context = {
       message: {
         in: message,
-        out: undefined,
+        out: this.determineInitialMessageOut(
+          isArrayOfReadings,
+          !!this.config.basePath,
+          isPrimitiveReading,
+          message
+        ),
       },
       basePath: this.config.basePath,
       path: (this.config as SingleConfig).path,
@@ -104,9 +128,12 @@ export default abstract class Transformation extends Step {
         isSimpleReading,
         isCompositeReading,
         isPrimitiveReading,
-        message,
+        context,
       },
-      "Transforming message.",
+      Configurable.prefix("Transforming message.", {
+        type: this.config.type,
+        traceId,
+      })
     );
 
     if (isArrayOfReadings) {
@@ -130,11 +157,14 @@ export default abstract class Transformation extends Step {
     this.debug(
       {
         context: {
-          before: context.message.in,
-          after: context.message.out,
+          in: context.message.in,
+          out: context.message.out,
         },
       },
-      "Transformed message.",
+      Configurable.prefix("Transforming message.", {
+        type: this.config.type,
+        traceId,
+      })
     );
 
     return context.message.out;
@@ -148,7 +178,7 @@ export default abstract class Transformation extends Step {
     const oldValue = get(
       context.message.in,
       context.current,
-      context.message.in,
+      context.message.in
     );
     const newValue = this.transformSingle(oldValue, config, context);
 
@@ -162,13 +192,6 @@ export default abstract class Transformation extends Step {
 
   transformPrimitiveReadingArray(context: Context) {
     let array = get(context.message.in, context.current, context.message.in);
-    if (context.message.out === undefined) {
-      if (context.basePath) {
-        context.message.out = {};
-      } else {
-        context.message.out = [];
-      }
-    }
 
     for (let i = 0; i < array.length; i++) {
       context.current = `${context.basePath || ""}[${i}]`;
@@ -178,13 +201,6 @@ export default abstract class Transformation extends Step {
 
   transformSimpleReadingArray(context: Context) {
     let array = get(context.message.in, context.current, context.message.in);
-    if (context.message.out === undefined) {
-      if (context.basePath) {
-        context.message.out = {};
-      } else {
-        context.message.out = [];
-      }
-    }
 
     for (let i = 0; i < array.length; i++) {
       context.current = `${context.basePath || ""}[${i}]`;
@@ -194,13 +210,6 @@ export default abstract class Transformation extends Step {
 
   transformCompositeReadingArray(context: Context) {
     let array = get(context.message.in, context.current, context.message.in);
-    if (context.message.out === undefined) {
-      if (context.basePath) {
-        context.message.out = {};
-      } else {
-        context.message.out = [];
-      }
-    }
 
     for (let i = 0; i < array.length; i++) {
       context.current = `${context.basePath || ""}[${i}]`;
@@ -209,25 +218,6 @@ export default abstract class Transformation extends Step {
   }
 
   transformCompositeReading(context: Context) {
-    const allPaths = context.current
-      ? Object.keys(get(context.message.in, context.current))
-      : Object.keys(context.message.in);
-
-    // TO-DO: figure out where this logical should (centrally) live
-    if (context.message.out === undefined) context.message.out = {};
-
-    // copy every path so we don't drop any
-    if (this.preservePaths) {
-      for (let path of allPaths) {
-        set(
-          context.message.out,
-          `${context.current ? `${context.current}.` : ""}${path}`,
-          get(context.message.in, path),
-        );
-      }
-    }
-
-    // overwrite the specific paths
     for (let path of Object.keys((this.config as MultiConfig).paths || {})) {
       this.doTransformSingle({
         ...context,

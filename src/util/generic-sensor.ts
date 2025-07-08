@@ -1,13 +1,14 @@
 import get from "lodash/get.js";
 import map from "lodash/map.js";
+import { v7 as uuidV7 } from "uuid";
 
-import Input from "./generic-input.js";
+import Input, { InputConfig } from "./generic-input.js";
 import Task from "./generic-task.js";
+import { Configurable } from "./generic-configurable.js";
 
 export type Aggregation = "average" | "latest" | "sum";
 
-export interface SensorConfig {
-  type: string;
+export interface SensorConfig extends InputConfig {
   disabled?: boolean;
   sampling: { aggregation: Aggregation };
 }
@@ -32,12 +33,6 @@ export default abstract class Sensor extends Input {
     this.samples = [];
   }
 
-  async register() {
-    if (!this.config.disabled && !this.task.disabled) {
-      this.enable();
-    }
-  }
-
   async publishReading() {
     if (
       get(this.config, "sampling") === undefined ||
@@ -47,12 +42,16 @@ export default abstract class Sensor extends Input {
     }
 
     const payload = this.collateSamples();
-    this.info(
-      { role: "blob", blob: payload },
-      `Publishing new ${this.name} data: ${JSON.stringify(payload)}`,
-    );
+    const traceId = uuidV7();
 
-    if (this.next) this.next.handleMessage(payload);
+    this.info(
+      payload,
+      Configurable.prefix(`Publishing new ${this.name} data.`, {
+        type: this.config.type,
+        traceId,
+      }),
+    );
+    this.startMessage(payload, traceId);
     this.samples = [];
   }
 
@@ -63,7 +62,7 @@ export default abstract class Sensor extends Input {
         ? this.samples[prefixKey]
         : this.samples;
     const result = this.doAggregation(
-      map(samples, (sample) => get(sample, path)),
+      map(samples, (sample: any) => get(sample, path)),
     );
 
     return result;

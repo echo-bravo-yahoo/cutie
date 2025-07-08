@@ -26,11 +26,14 @@ describe("transformations", function () {
   describe("specific transformers", function () {
     describe("offset", function () {
       it("works on primitive readings", async function () {
-        const task = new Task({
-          steps: [
-            { type: "transformation:offset", offset: -5 } as OffsetConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              { type: "transformation:offset", offset: -5 } as OffsetConfig,
+            ],
+          },
+          "works on primitive readings"
+        );
         await task.register();
 
         // a primitive reading is one not wrapped in an object
@@ -39,15 +42,18 @@ describe("transformations", function () {
       });
 
       it("works on simple readings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:offset",
-              path: "temp",
-              offset: -5,
-            } as OffsetConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:offset",
+                path: "temp",
+                offset: -5,
+              } as OffsetConfig,
+            ],
+          },
+          "works on simple readings"
+        );
         await task.register();
 
         // a simple reading is one with only one key/value pair in it
@@ -56,14 +62,17 @@ describe("transformations", function () {
       });
 
       it("works on composite readings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:offset",
-              paths: { temp: { offset: -5 }, humidity: { offset: 10 } },
-            } as OffsetConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:offset",
+                paths: { temp: { offset: -5 }, humidity: { offset: 10 } },
+              } as OffsetConfig,
+            ],
+          },
+          "works on composite readings"
+        );
         await task.register();
 
         // a composite reading is one with multiple key/value pairs in it
@@ -75,11 +84,14 @@ describe("transformations", function () {
       });
 
       it("works on arrays of primitive readings", async function () {
-        const task = new Task({
-          steps: [
-            { type: "transformation:offset", offset: -5 } as OffsetConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              { type: "transformation:offset", offset: -5 } as OffsetConfig,
+            ],
+          },
+          "works on arrays of primitive readings"
+        );
         await task.register();
 
         // a primitive reading is one not wrapped in an object
@@ -88,15 +100,18 @@ describe("transformations", function () {
       });
 
       it("works on arrays of primitive readings with a base path", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:offset",
-              offset: -5,
-              basePath: "weather",
-            } as OffsetConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:offset",
+                offset: -5,
+                basePath: "weather",
+              } as OffsetConfig,
+            ],
+          },
+          "works on arrays of primitive readings with a base path"
+        );
         await task.register();
 
         // a primitive reading is one not wrapped in an object
@@ -107,15 +122,18 @@ describe("transformations", function () {
       });
 
       it("works on arrays of simple readings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:offset",
-              path: "temp",
-              offset: -5,
-            } as OffsetConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:offset",
+                path: "temp",
+                offset: -5,
+              } as OffsetConfig,
+            ],
+          },
+          "works on arrays of simple readings"
+        );
         await task.register();
 
         // a simple reading is one with only one key/value pair in it
@@ -136,16 +154,19 @@ describe("transformations", function () {
       });
 
       it("works on arrays of simple readings with a base path", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:offset",
-              basePath: "weather",
-              path: "temp",
-              offset: -5,
-            } as OffsetConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:offset",
+                basePath: "weather",
+                path: "temp",
+                offset: -5,
+              } as OffsetConfig,
+            ],
+          },
+          "works on arrays of simple readings with a base path"
+        );
         await task.register();
 
         // a simple reading is one with only one key/value pair in it
@@ -170,14 +191,17 @@ describe("transformations", function () {
       });
 
       it("works on arrays of composite readings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:offset",
-              paths: { temp: { offset: -5 }, humidity: { offset: -10 } },
-            } as OffsetConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:offset",
+                paths: { temp: { offset: -5 }, humidity: { offset: -10 } },
+              } as OffsetConfig,
+            ],
+          },
+          "works on arrays of composite readings"
+        );
         await task.register();
 
         // a composite reading is one with only one key/value pair in it
@@ -198,15 +222,18 @@ describe("transformations", function () {
       });
 
       it("works on arrays of composite readings with a base path", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:offset",
-              basePath: "weather",
-              paths: { temp: { offset: -5 }, humidity: { offset: 1 } },
-            } as OffsetConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:offset",
+                basePath: "weather",
+                paths: { temp: { offset: -5 }, humidity: { offset: 1 } },
+              } as OffsetConfig,
+            ],
+          },
+          "works on arrays of composite readings with a base path"
+        );
         await task.register();
 
         // a composite reading is one with only one key/value pair in it
@@ -250,15 +277,18 @@ describe("transformations", function () {
         ];
 
         for (let testCase of testCases) {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:round",
-                precision: 2,
-                direction: testCase.direction,
-              } as RoundConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:round",
+                  precision: 2,
+                  direction: testCase.direction,
+                } as RoundConfig,
+              ],
+            },
+            "works for all directions"
+          );
           await task.register();
 
           const transformed = await task.handleMessage(testCase.input);
@@ -283,15 +313,18 @@ describe("transformations", function () {
         ];
 
         for (let testCase of testCases) {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:round",
-                precision: 0,
-                direction: testCase.direction,
-              } as RoundConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:round",
+                  precision: 0,
+                  direction: testCase.direction,
+                } as RoundConfig,
+              ],
+            },
+            "works for precision of 0 (integer)"
+          );
           await task.register();
 
           const transformed = await task.handleMessage(testCase.input);
@@ -305,14 +338,17 @@ describe("transformations", function () {
 
     describe("aggregate", function () {
       it("works on arrays of primitive readings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:aggregate",
-              aggregation: "average",
-            } as any,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:aggregate",
+                aggregation: "average",
+              } as any,
+            ],
+          },
+          "works on arrays of primitive readings"
+        );
         await task.register();
 
         // a primitive reading is one not wrapped in an object
@@ -321,15 +357,18 @@ describe("transformations", function () {
       });
 
       it("works on arrays of simple readings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:aggregate",
-              aggregation: "average",
-              path: "temp",
-            } as any,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:aggregate",
+                aggregation: "average",
+                path: "temp",
+              } as any,
+            ],
+          },
+          "works on arrays of simple readings"
+        );
         await task.register();
 
         // a primitive reading is one not wrapped in an object
@@ -343,17 +382,20 @@ describe("transformations", function () {
       });
 
       it("works on arrays of composite readings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:aggregate",
-              paths: {
-                temp: { aggregation: "average" },
-                humidity: { aggregation: "latest" },
-              },
-            } as any,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:aggregate",
+                paths: {
+                  temp: { aggregation: "average" },
+                  humidity: { aggregation: "latest" },
+                },
+              } as any,
+            ],
+          },
+          "works on arrays of composite readings"
+        );
         await task.register();
 
         // a primitive reading is one not wrapped in an object
@@ -375,14 +417,17 @@ describe("transformations", function () {
       });
 
       it("works on simple readings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:pluck",
-              path: "weather.temp",
-            } as PluckConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:pluck",
+                path: "weather.temp",
+              } as PluckConfig,
+            ],
+          },
+          "works on simple readings"
+        );
         await task.register();
 
         const transformed = await task.handleMessage({
@@ -392,15 +437,18 @@ describe("transformations", function () {
       });
 
       it("works on composite readings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:pluck",
-              path: "environment.sound",
-              destination: "noise",
-            } as PluckConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:pluck",
+                path: "environment.sound",
+                destination: "noise",
+              } as PluckConfig,
+            ],
+          },
+          "works on composite readings"
+        );
         await task.register();
 
         const transformed = await task.handleMessage({
@@ -411,21 +459,24 @@ describe("transformations", function () {
       });
 
       it("works with multiple paths", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:pluck",
-              paths: {
-                "environment.sound": {
-                  destination: "noise",
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:pluck",
+                paths: {
+                  "environment.sound": {
+                    destination: "noise",
+                  },
+                  "weather.temp": {
+                    destination: "temp",
+                  },
                 },
-                "weather.temp": {
-                  destination: "temp",
-                },
-              },
-            } as PluckConfig,
-          ],
-        });
+              } as PluckConfig,
+            ],
+          },
+          "works with multiple paths"
+        );
         await task.register();
 
         const transformed = await task.handleMessage({
@@ -444,15 +495,18 @@ describe("transformations", function () {
       });
 
       it("works on simple readings", async function () {
-        const task = new Task({
-          steps: [
-            {
-              type: "transformation:rearrange",
-              path: "weather.temp",
-              to: "heat",
-            } as RearrangeConfig,
-          ],
-        });
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:rearrange",
+                path: "weather.temp",
+                to: "heat",
+              } as RearrangeConfig,
+            ],
+          },
+          "works on simple readings"
+        );
         await task.register();
 
         const transformed = await task.handleMessage({
@@ -470,15 +524,18 @@ describe("transformations", function () {
     describe("convert", function () {
       describe("celsius to fahrenheit", function () {
         it("works on primitive readings", async function () {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:convert",
-                from: "celsius",
-                to: "fahrenheit",
-              } as ConvertConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:convert",
+                  from: "celsius",
+                  to: "fahrenheit",
+                } as ConvertConfig,
+              ],
+            },
+            "works on primitive readings"
+          );
           await task.register();
 
           const transformed = await task.handleMessage(21.1);
@@ -490,15 +547,18 @@ describe("transformations", function () {
 
       describe("fahrenheit to celsius ", () => {
         it("works on primitive readings", async function () {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:convert",
-                from: "fahrenheit",
-                to: "celsius",
-              } as ConvertConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:convert",
+                  from: "fahrenheit",
+                  to: "celsius",
+                } as ConvertConfig,
+              ],
+            },
+            "works on primitive readings"
+          );
           await task.register();
 
           const transformed = await task.handleMessage(69.98);
@@ -512,15 +572,18 @@ describe("transformations", function () {
     describe("shell", function () {
       describe("files", function () {
         it("works for objects", async function () {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:shell",
-                codePath: "./test/unit/fixtures/echo.sh",
-                outputType: "object",
-              } as ShellConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:shell",
+                  codePath: "./test/unit/fixtures/echo.sh",
+                  outputType: "object",
+                } as ShellConfig,
+              ],
+            },
+            "works for objects"
+          );
           await task.register();
 
           const transformed = await task.handleMessage({
@@ -530,15 +593,18 @@ describe("transformations", function () {
         });
 
         it("works for strings", async function () {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:shell",
-                codePath: "./test/unit/fixtures/echo.sh",
-                outputType: "string",
-              } as ShellConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:shell",
+                  codePath: "./test/unit/fixtures/echo.sh",
+                  outputType: "string",
+                } as ShellConfig,
+              ],
+            },
+            "works for strings"
+          );
           await task.register();
 
           const transformed = await task.handleMessage("cutie");
@@ -546,15 +612,18 @@ describe("transformations", function () {
         });
 
         it("works for numbers", async function () {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:shell",
-                codePath: "./test/unit/fixtures/echo.sh",
-                outputType: "number",
-              } as ShellConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:shell",
+                  codePath: "./test/unit/fixtures/echo.sh",
+                  outputType: "number",
+                } as ShellConfig,
+              ],
+            },
+            "works for numbers"
+          );
           await task.register();
 
           const transformed = await task.handleMessage(5);
@@ -564,15 +633,18 @@ describe("transformations", function () {
 
       describe("commands", function () {
         it("works for objects", async function () {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:shell",
-                command: "echo '${message}'",
-                outputType: "object",
-              } as ShellConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:shell",
+                  command: "echo '${message}'",
+                  outputType: "object",
+                } as ShellConfig,
+              ],
+            },
+            "works for objects"
+          );
           await task.register();
 
           const transformed = await task.handleMessage({
@@ -582,15 +654,18 @@ describe("transformations", function () {
         });
 
         it("works for strings", async function () {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:shell",
-                command: "echo 'hello, ${message}'",
-                outputType: "string",
-              } as ShellConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:shell",
+                  command: "echo 'hello, ${message}'",
+                  outputType: "string",
+                } as ShellConfig,
+              ],
+            },
+            "works for strings"
+          );
           await task.register();
 
           const transformed = await task.handleMessage("cutie");
@@ -598,15 +673,18 @@ describe("transformations", function () {
         });
 
         it("works for numbers", async function () {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:shell",
-                command: "echo $((1+${message}))",
-                outputType: "number",
-              } as ShellConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:shell",
+                  command: "echo $((1+${message}))",
+                  outputType: "number",
+                } as ShellConfig,
+              ],
+            },
+            "works for numbers"
+          );
           await task.register();
 
           const transformed = await task.handleMessage(5);
@@ -618,14 +696,17 @@ describe("transformations", function () {
     describe("javascript", function () {
       describe("commands", function () {
         it("works for number literals", async function () {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:javascript",
-                command: "10 + message",
-              } as JavascriptConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:javascript",
+                  command: "10 + message",
+                } as JavascriptConfig,
+              ],
+            },
+            "works for number literals"
+          );
           await task.register();
 
           const transformed = await task.handleMessage(8);
@@ -635,14 +716,17 @@ describe("transformations", function () {
 
       describe("files", function () {
         it("works for number literals", async function () {
-          const task = new Task({
-            steps: [
-              {
-                type: "transformation:javascript",
-                codePath: "./test/unit/fixtures/addOne.js",
-              } as JavascriptConfig,
-            ],
-          });
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:javascript",
+                  codePath: "./test/unit/fixtures/addOne.js",
+                } as JavascriptConfig,
+              ],
+            },
+            "works for number literals"
+          );
           await task.register();
 
           const transformed = await task.handleMessage(8);

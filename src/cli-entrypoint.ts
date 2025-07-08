@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { srcDir, start } from "./index.js";
+import { start } from "./index.js";
 import parser, { Arguments } from "yargs-parser";
 import initializeConfig from "./util/init.js";
 

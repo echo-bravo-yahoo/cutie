@@ -1,4 +1,3 @@
-import { globals } from "../index.js";
 import Sensor, { SensorConfig } from "../util/generic-sensor.js";
 import Task from "../util/generic-task.js";
 
@@ -57,7 +56,7 @@ export default class Random extends Sensor {
       number: this.generateNextNumber(),
     };
 
-    this.debug("Sampled new data point.");
+    this.debug({ datapoint }, "Sampled new data point.");
     this.samples.push(datapoint);
     this.lastNumber = datapoint.number;
   }
@@ -74,10 +73,6 @@ export default class Random extends Sensor {
     clearInterval(this.sampleInterval);
     this.info("Disabled random number module.");
     this.enabled = false;
-  }
-
-  async handleMessage(message: any) {
-    if (this.next) this.next.handleMessage(message);
   }
 }
 

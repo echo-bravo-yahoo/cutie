@@ -1,21 +1,21 @@
 import { normalize } from "node:path";
 
 import { globals, srcDir } from "../index.js";
-import { Globals, Loggable } from "./generic-loggable.js";
+import { Configurable, Config } from "./generic-configurable.js";
 import Step, { StepConfig } from "./generic-step.js";
 
-export interface TaskConfig {
+export interface TaskConfig extends Config {
   steps: Array<StepConfig>;
 }
 
-export default class Task extends Loggable {
+export default class Task extends Configurable {
   config: TaskConfig;
   steps: Array<Step>;
+  // TODO: remove this hack
   postRegister?(): Promise<void>;
-  disabled?: boolean;
 
-  constructor(config: TaskConfig) {
-    super();
+  constructor(config: TaskConfig, name: string) {
+    super(config, name);
 
     this.config = config;
     this.steps = [];
@@ -24,6 +24,7 @@ export default class Task extends Loggable {
   async register() {
     await this.registerSteps(this.config);
     if (this.postRegister) await this.postRegister();
+    this.enabled = true;
   }
 
   async importStep(step: StepConfig, task: TaskConfig) {
@@ -31,22 +32,23 @@ export default class Task extends Loggable {
     const Factory = (
       await import(normalize(`${srcDir}/${type}s/${subType}.js`))
     ).default;
+
     return new Factory(step, task);
   }
 
   async registerSteps(taskConfig: TaskConfig) {
-    const localLogger = (globals as Globals).logger.child(
+    const localLogger = globals.logger.child(
       {},
       {
         msgPrefix: "[core.registration.steps] ",
-      },
+      }
     );
 
     let previousStep;
 
     for (const step of taskConfig.steps) {
       const currentStep = await this.importStep(step, taskConfig);
-      currentStep.liveTask = this;
+      currentStep.task = this;
 
       currentStep.register();
       localLogger.info({ context: step }, "Registered step.");
@@ -61,7 +63,7 @@ export default class Task extends Loggable {
   }
 
   // primarily used for testing to cause input-less tasks to still emit events
-  async handleMessage(message: any) {
-    return this.steps[0].handleMessage(message);
+  async handleMessage(message: any, traceId?: string) {
+    return this.steps[0].handleMessage(message, traceId);
   }
 }
