@@ -1,11 +1,11 @@
-import { Configurable } from "./generic-configurable.js";
-import { Connection } from "./generic-connection.js";
-import Input from "./generic-input.js";
-import Output from "./generic-output.js";
-import Step from "./generic-step.js";
-import Task, { TaskConfig } from "./generic-task.js";
-import Transformation from "./generic-transformation.js";
-import { TypedConfigurable } from "./generic-typed-configurable.js";
+import { Configurable } from "./Configurable.js";
+import { Connection } from "./Connection.js";
+import Input from "./Input.js";
+import Output from "./Output.js";
+import Step from "./Step.js";
+import Task, { TaskConfig } from "./Task.js";
+import Transformation from "./Transformation.js";
+import { TypedConfigurable } from "./TypedConfigurable.js";
 
 export function isStep(configurable: Configurable): configurable is Step {
   return (

@@ -1,7 +1,7 @@
 import get from "lodash/get.js";
 
-import Sensor, { Aggregation, SensorConfig } from "../util/generic-sensor.js";
-import Task from "../util/generic-task.js";
+import Sensor, { Aggregation, SensorConfig } from "../util/Sensor.js";
+import Task from "../util/Task.js";
 import NodeBle from "node-ble";
 
 let ble: ReturnType<typeof NodeBle.createBluetooth>;
@@ -40,7 +40,11 @@ export default class BLETracker extends Sensor {
         ? "latest"
         : get(this.config, "sampling.aggregation", "average");
 
-    this.info({ context: this.samples[deviceKey] }, "Aggregating.");
+    this.info(
+      "Aggregating.",
+      { topic: this.logPrefix },
+      { context: this.samples[deviceKey] },
+    );
     const aggregated = {
       metadata: {
         timestamp: new Date(),
@@ -54,8 +58,9 @@ export default class BLETracker extends Sensor {
       ),
     };
     this.info(
+      "Aggregated.",
+      { topic: this.logPrefix },
       { before: this.samples[deviceKey], after: aggregated },
-      `Aggregated.`,
     );
 
     this.samples[deviceKey] = [];
@@ -83,7 +88,7 @@ export default class BLETracker extends Sensor {
       },
     };
 
-    this.debug("Sampled new data point");
+    this.debug("Sampled new data point", { topic: this.logPrefix });
     if (!this.samples[deviceKey] || !this.samples[deviceKey].length)
       this.samples[deviceKey] = [];
     this.samples[deviceKey].push(datapoint);
@@ -156,9 +161,13 @@ export default class BLETracker extends Sensor {
           device.macAddress,
           30000,
         );
-        this.debug(`Device with key ${deviceKey} found.`);
+        this.debug(`Device with key ${deviceKey} found.`, {
+          topic: this.logPrefix,
+        });
       } catch (e) {
-        this.debug(`No device found for key ${deviceKey}`);
+        this.debug(`No device found for key ${deviceKey}`, {
+          topic: this.logPrefix,
+        });
         // it's normal for missing devices to timeout
       }
     }
@@ -168,7 +177,7 @@ export default class BLETracker extends Sensor {
     await this.discoverAdvertisements();
 
     this.setupPublisher();
-    this.info("Enabled BLE tracker.");
+    this.info("Enabled BLE tracker.", { topic: this.logPrefix });
     this.enabled = true;
   }
 
@@ -179,7 +188,7 @@ export default class BLETracker extends Sensor {
     }
     ble.destroy();
 
-    this.info("Disabled BLE tracker.");
+    this.info("Disabled BLE tracker.", { topic: this.logPrefix });
     this.enabled = false;
   }
 }

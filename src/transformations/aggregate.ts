@@ -1,14 +1,14 @@
 import get from "lodash/get.js";
 import set from "lodash/set.js";
 
-import Sensor from "../util/generic-sensor.js";
+import Sensor from "../util/Sensor.js";
 import Transformation, {
   Context,
   isMultiConfig,
   MultiConfig,
   TransformationConfig,
-} from "../util/generic-transformation.js";
-import Task from "../util/generic-task.js";
+} from "../util/Transformation.js";
+import Task from "../util/Task.js";
 
 export default class Aggregate extends Transformation {
   constructor(config: TransformationConfig, task: Task) {

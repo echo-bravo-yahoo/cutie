@@ -6,9 +6,9 @@ import Transformation, {
   Context,
   TransformationConfig,
   WholeMessageConfig,
-} from "../util/generic-transformation.js";
+} from "../util/Transformation.js";
 import { srcDir } from "../index.js";
-import Task from "../util/generic-task.js";
+import Task from "../util/Task.js";
 
 export interface JavascriptConfig extends WholeMessageConfig {
   codePath: string;

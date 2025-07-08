@@ -1,4 +1,4 @@
-import { Connection, ConnectionConfig } from "../util/generic-connection.js";
+import { Connection, ConnectionConfig } from "../util/Connection.js";
 
 export interface InfluxDBConnectionConfig extends ConnectionConfig {
   measurement: string;

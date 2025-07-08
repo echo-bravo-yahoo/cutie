@@ -1,5 +1,5 @@
-import Input, { InputConfig } from "../util/generic-input.js";
-import Task from "../util/generic-task.js";
+import Input, { InputConfig } from "../util/Input.js";
+import Task from "../util/Task.js";
 
 export interface IntervalConfig extends InputConfig {
   interval: number;
@@ -24,13 +24,13 @@ export default class Interval extends Input {
       this.handleMessage.bind(this, this.config.message),
       this.config.interval,
     );
-    this.info("Enabled interval.");
+    this.info("Enabled interval.", { topic: this.logPrefix });
     this.enabled = true;
   }
 
   async disable() {
     clearInterval(this.interval);
-    this.info("Disabled interval.");
+    this.info("Disabled interval.", { topic: this.logPrefix });
     this.enabled = false;
   }
 }

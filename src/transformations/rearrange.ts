@@ -7,8 +7,8 @@ import Transformation, {
   isMultiConfig,
   MultiConfig,
   SingleConfig,
-} from "../util/generic-transformation.js";
-import Task from "../util/generic-task.js";
+} from "../util/Transformation.js";
+import Task from "../util/Task.js";
 
 export interface RearrangeArgs {
   to: string;
@@ -37,7 +37,7 @@ export default class Rearrange extends Transformation {
     const oldValue = get(
       context.message.in,
       context.current,
-      context.message.in
+      context.message.in,
     );
     const newValue = this.transformSingle(oldValue, config, context);
 

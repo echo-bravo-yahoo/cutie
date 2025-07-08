@@ -1,6 +1,6 @@
 import { getConnection } from "../util/connections.js";
-import Output, { OutputConfig } from "../util/generic-output.js";
-import Task from "../util/generic-task.js";
+import Output, { OutputConfig } from "../util/Output.js";
+import Task from "../util/Task.js";
 import MQTTConnection from "../connections/mqtt.js";
 
 export interface MQTTConfig extends OutputConfig {

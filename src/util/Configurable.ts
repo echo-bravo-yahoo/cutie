@@ -6,31 +6,46 @@ export interface Config {
   disabled?: boolean;
 }
 
-export interface PrefixInfo {
-  type?: string;
+export interface LogLineOptions {
+  topic: string;
   traceId?: string;
 }
 
 export class Configurable {
-  debug: (obj: string | Record<string, any>, msg?: string) => void;
-  info: (obj: string | Record<string, any>, msg?: string) => void;
-  error: (obj: string | Record<string, any>, msg?: string) => void;
+  debug: (msg: string, opts: LogLineOptions, obj?: Record<string, any>) => void;
+  info: (msg: string, opts: LogLineOptions, obj?: Record<string, any>) => void;
+  error: (msg: string, opts: LogLineOptions, obj?: Record<string, any>) => void;
   logPrefix: string;
   config: Config;
   enabled: boolean;
   name: string;
 
   constructor(config: Config, name: string) {
-    this.debug = (obj, msg) => {
-      globals.logger.debug(...Configurable.buildLoggerArgs(obj, msg));
+    this.debug = (msg, opts, obj) => {
+      globals.logger.emit(
+        Configurable.formatLogLine(msg, opts),
+        "debug",
+        opts.topic,
+        obj,
+      );
     };
 
-    this.info = (obj, msg) => {
-      globals.logger.info(...Configurable.buildLoggerArgs(obj, msg));
+    this.info = (msg, opts, obj) => {
+      globals.logger.emit(
+        Configurable.formatLogLine(msg, opts),
+        "info",
+        opts.topic,
+        obj,
+      );
     };
 
-    this.error = (obj, error) => {
-      globals.logger.error(...Configurable.buildLoggerArgs(obj, error));
+    this.error = (msg, opts, obj) => {
+      globals.logger.emit(
+        Configurable.formatLogLine(msg, opts),
+        "error",
+        opts.topic,
+        obj,
+      );
     };
 
     // TO-DO: fix
@@ -62,10 +77,14 @@ export class Configurable {
     };
   }
 
+  static formatLogLine(message: string, context: LogLineOptions) {
+    return `${context.topic ? `[${context.topic}] ` : ""} ${message}${context.traceId ? ` (${context.traceId})` : ""}`;
+  }
+
   // always includes the context of task, module/config, and globals
   interpolateConfigString(
     template: string,
-    additionalContext?: Record<string, any>
+    additionalContext?: Record<string, any>,
   ) {
     const inject = (str: string, obj: Record<string, any>) =>
       str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));
@@ -87,13 +106,9 @@ export class Configurable {
     return result;
   }
 
-  static prefix(message: string, prefixInfo: PrefixInfo) {
-    return `${prefixInfo.type ? `[${prefixInfo.type}] ` : ""}${message}${prefixInfo.traceId ? ` (${prefixInfo.traceId})` : ""}`;
-  }
-
   static buildLoggerArgs(
     obj: string | Record<string, any>,
-    msgOrError?: string
+    msgOrError?: string,
   ): [Record<string, any>, message: string | undefined] {
     if (typeof obj === "string") {
       msgOrError = obj;

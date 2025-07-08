@@ -1,5 +1,5 @@
-import Input, { InputConfig } from "../util/generic-input.js";
-import Task from "../util/generic-task.js";
+import Input, { InputConfig } from "../util/Input.js";
+import Task from "../util/Task.js";
 
 export interface ImmediatelyConfig extends InputConfig {
   expression: string;
@@ -21,12 +21,12 @@ export default class Immediately extends Input {
 
   async enable() {
     this.task.postRegister = this.handleMessage.bind(this, this.config.message);
-    this.info("Running immediate task.");
+    this.info("Running immediate task.", { topic: this.logPrefix });
     this.enabled = true;
   }
 
   async disable() {
-    this.info("Skipping running immediate task.");
+    this.info("Skipping running immediate task.", { topic: this.logPrefix });
     this.enabled = false;
   }
 }

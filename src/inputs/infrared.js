@@ -1,4 +1,4 @@
-import Input from "../util/generic-input.js";
+import Input from "../util/Input.js";
 
 let pigpio, Gpio;
 

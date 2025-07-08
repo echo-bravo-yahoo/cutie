@@ -1,11 +1,8 @@
 import get from "lodash/get.js";
 
 import { globals } from "../index.js";
-import Task from "./generic-task.js";
-import {
-  TypedConfig,
-  TypedConfigurable,
-} from "./generic-typed-configurable.js";
+import Task from "./Task.js";
+import { TypedConfig, TypedConfigurable } from "./TypedConfigurable.js";
 
 export interface StepConfig extends TypedConfig {}
 
@@ -13,11 +10,15 @@ export default abstract class Step extends TypedConfigurable {
   config: StepConfig;
   task: Task;
   next?: Step;
+  logPrefix: string;
 
   constructor(config: StepConfig, task: Task) {
     super(config);
 
     this.task = task;
+    const index =
+      task && task.steps && task.steps.findIndex((step) => step === this);
+    this.logPrefix = `core.runtime.tasks.${task.name}.steps.${index}`;
   }
 
   // always includes the context of task, module/config, and globals

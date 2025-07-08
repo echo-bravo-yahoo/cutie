@@ -1,5 +1,5 @@
-import Output, { OutputConfig } from "../util/generic-output.js";
-import Task from "../util/generic-task.js";
+import Output, { OutputConfig } from "../util/Output.js";
+import Task from "../util/Task.js";
 
 export interface ConsoleConfig extends OutputConfig {
   spaces?: number;
