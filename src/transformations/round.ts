@@ -1,9 +1,9 @@
-import Task from "../util/generic-task.js";
+import Task from "../util/Task.js";
 import Transformation, {
   Context,
   MultiConfig,
   SingleConfig,
-} from "../util/generic-transformation.js";
+} from "../util/Transformation.js";
 
 export interface RoundArgs {
   precision: number;

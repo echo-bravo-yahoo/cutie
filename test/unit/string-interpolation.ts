@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import MQTT, { MQTTConfig } from "../../src/outputs/mqtt.js";
 import { setGlobals } from "../../src/index.js";
-import Task from "../../src/util/generic-task.js";
+import Task from "../../src/util/Task.js";
 
 describe("string interpolation", function () {
   before(() => {

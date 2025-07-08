@@ -1,8 +1,8 @@
 import { exec } from "node:child_process";
 
 import { getConnection } from "../util/connections.js";
-import Output, { OutputConfig } from "../util/generic-output.js";
-import Task from "../util/generic-task.js";
+import Output, { OutputConfig } from "../util/Output.js";
+import Task from "../util/Task.js";
 import InfluxDBConnection from "../connections/influxdb.js";
 
 export interface InfluxDBConfig extends OutputConfig {

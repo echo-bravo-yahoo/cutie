@@ -1,4 +1,4 @@
-import { Config, Configurable } from "./generic-configurable.js";
+import { Config, Configurable } from "./Configurable.js";
 
 export interface TypedConfig extends Config {
   type: string;

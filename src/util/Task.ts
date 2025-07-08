@@ -1,8 +1,8 @@
 import { normalize } from "node:path";
 
 import { globals, srcDir } from "../index.js";
-import { Configurable, Config } from "./generic-configurable.js";
-import Step, { StepConfig } from "./generic-step.js";
+import { Configurable, Config } from "./Configurable.js";
+import Step, { StepConfig } from "./Step.js";
 
 export interface TaskConfig extends Config {
   steps: Array<StepConfig>;
@@ -37,13 +37,6 @@ export default class Task extends Configurable {
   }
 
   async registerSteps(taskConfig: TaskConfig) {
-    const localLogger = globals.logger.child(
-      {},
-      {
-        msgPrefix: "[core.registration.steps] ",
-      }
-    );
-
     let previousStep;
 
     for (const step of taskConfig.steps) {
@@ -51,7 +44,12 @@ export default class Task extends Configurable {
       currentStep.task = this;
 
       currentStep.register();
-      localLogger.info({ context: step }, "Registered step.");
+      globals.logger.emit(
+        "Registered step.",
+        "info",
+        "[core.registration.steps]",
+        step,
+      );
 
       this.steps.push(currentStep);
       if (previousStep) {

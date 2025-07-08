@@ -1,7 +1,7 @@
 import mqtt from "mqtt";
 import MqttTopics from "mqtt-topics";
 
-import { Connection, ConnectionConfig } from "../util/generic-connection.js";
+import { Connection, ConnectionConfig } from "../util/Connection.js";
 import { getConnectionsByType } from "../util/connections.js";
 import { globals } from "../index.js";
 import { isMQTT } from "../inputs/mqtt.js";
@@ -42,11 +42,12 @@ export default class MQTTConnection extends Connection {
   handleMessage(topic: string, message: Buffer, _packet: mqtt.IPublishPacket) {
     message = JSON.parse(message.toString());
     this.debug(
-      { role: "blob", blob: message },
-      `Received new message on topic "${topic}": ${JSON.stringify(message)}`
+      `Received new message on topic "${topic}".}`,
+      { topic: this.logPrefix },
+      { message },
     );
     const mqttConnectionNames = getConnectionsByType("mqtt").map(
-      (connection) => connection.name
+      (connection) => connection.name,
     );
     let triggers = 0;
 
@@ -60,7 +61,7 @@ export default class MQTTConnection extends Connection {
           isMQTT(firstStep) &&
           MQTTConnection.matchesTopic(
             topic,
-            firstStep.config.topic || firstStep.config.topics || ""
+            firstStep.config.topic || firstStep.config.topics || "",
           )
         ) {
           globals.tasks[i].steps[0].handleMessage(message);
@@ -69,24 +70,26 @@ export default class MQTTConnection extends Connection {
       }
     }
 
-    this.debug(`Found ${triggers} matching triggers.`);
+    this.debug(`Found ${triggers} matching triggers.`, {
+      topic: this.logPrefix,
+    });
   }
 
   async subscribe(
-    topics: Parameters<typeof this.connection.subscribeAsync>[0]
+    topics: Parameters<typeof this.connection.subscribeAsync>[0],
   ) {
     return this.connection.subscribeAsync(topics);
   }
 
   async unsubscribe(
-    topics: Parameters<typeof this.connection.unsubscribeAsync>[0]
+    topics: Parameters<typeof this.connection.unsubscribeAsync>[0],
   ) {
     return this.connection.unsubscribeAsync(topics);
   }
 
   sendRaw(
     topic: Parameters<typeof this.connection.publish>[0],
-    message: Parameters<typeof this.connection.publish>[1]
+    message: Parameters<typeof this.connection.publish>[1],
   ) {
     return this.connection.publish(topic, message);
   }
@@ -95,7 +98,7 @@ export default class MQTTConnection extends Connection {
     topic: Parameters<typeof this.connection.publish>[0],
     event: any,
     labels: Array<string>,
-    aggregationMetadata: any
+    aggregationMetadata: any,
   ) {
     return this.connection.publish(
       topic,
@@ -103,19 +106,19 @@ export default class MQTTConnection extends Connection {
         ...event,
         metadata: labels,
         aggregationMetadata: aggregationMetadata,
-      })
+      }),
     );
   }
 
   static matchesTopic(
     topicToMatch: string,
-    possibleMatches: Array<string> | string
+    possibleMatches: Array<string> | string,
   ) {
     if (typeof possibleMatches === "string")
       return MqttTopics.match(topicToMatch, possibleMatches);
 
     return possibleMatches.some((topic) =>
-      MqttTopics.match(topic, topicToMatch)
+      MqttTopics.match(topic, topicToMatch),
     );
   }
 }

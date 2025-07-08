@@ -1,5 +1,5 @@
-import Sensor, { SensorConfig } from "../util/generic-sensor.js";
-import Task from "../util/generic-task.js";
+import Sensor, { SensorConfig } from "../util/Sensor.js";
+import Task from "../util/Task.js";
 
 export interface BME280Config extends SensorConfig {
   i2cAddress: number;
@@ -30,8 +30,8 @@ export default class BME280 extends Sensor {
 
     this.samples.push(datapoint);
     this.debug(
-      {},
       `Sampled new data point, ${JSON.stringify(this.samples, null, 2)}`,
+      { topic: this.logPrefix },
     );
   }
 
@@ -42,7 +42,7 @@ export default class BME280 extends Sensor {
     });
     this.setupSampler();
     this.setupPublisher();
-    this.info("Enabled bme280.");
+    this.info("Enabled bme280.", { topic: this.logPrefix });
     this.enabled = true;
   }
 
@@ -50,7 +50,7 @@ export default class BME280 extends Sensor {
     clearInterval(this.reportInterval);
     clearInterval(this.sampleInterval);
     if (this.sensor) await this.sensor.close();
-    this.info("Disabled bme280.");
+    this.info("Disabled bme280.", { topic: this.logPrefix });
     this.enabled = false;
   }
 

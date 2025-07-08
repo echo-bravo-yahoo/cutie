@@ -1,7 +1,4 @@
-import {
-  TypedConfig,
-  TypedConfigurable,
-} from "./generic-typed-configurable.js";
+import { TypedConfig, TypedConfigurable } from "./TypedConfigurable.js";
 
 export interface ConnectionConfig extends TypedConfig {
   disabled: boolean;

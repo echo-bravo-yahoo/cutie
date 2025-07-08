@@ -1,5 +1,5 @@
-import Sensor, { SensorConfig } from "../util/generic-sensor.js";
-import Task from "../util/generic-task.js";
+import Sensor, { SensorConfig } from "../util/Sensor.js";
+import Task from "../util/Task.js";
 
 export interface BME680Config extends SensorConfig {
   i2cAddress: number;
@@ -29,7 +29,7 @@ export default class BME680 extends Sensor {
       gas: sensorData.gas_resistance,
     };
 
-    this.debug("Sampled new data point");
+    this.debug("Sampled new data point", { topic: this.logPrefix });
     this.samples.push(datapoint);
   }
 
@@ -45,7 +45,7 @@ export default class BME680 extends Sensor {
     // (newInterval+oldInterval)
     this.setupPublisher();
     this.setupSampler();
-    this.info("Enabled bme680.");
+    this.info("Enabled bme680.", { topic: this.logPrefix });
     this.enabled = true;
   }
 
@@ -53,7 +53,7 @@ export default class BME680 extends Sensor {
     clearInterval(this.reportInterval);
     clearInterval(this.sampleInterval);
     // TODO: do I need to turn off the sensor / close the connection?
-    this.info("Disabled bme680.");
+    this.info("Disabled bme680.", { topic: this.logPrefix });
     this.enabled = false;
   }
 

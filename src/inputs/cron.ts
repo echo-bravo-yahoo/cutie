@@ -1,8 +1,8 @@
 import { TimerBasedCronScheduler as scheduler } from "cron-schedule/schedulers/timer-based.js";
 import { parseCronExpression } from "cron-schedule";
 
-import Input, { InputConfig } from "../util/generic-input.js";
-import Task from "../util/generic-task.js";
+import Input, { InputConfig } from "../util/Input.js";
+import Task from "../util/Task.js";
 
 export interface CronConfig extends InputConfig {
   expression: string;
@@ -26,13 +26,13 @@ export default class Cron extends Input {
       this.handleMessage.bind(this, this.config.message),
       { errorHandler: this.errorHandler },
     );
-    this.info("Enabled cron task.");
+    this.info("Enabled cron task.", { topic: this.logPrefix });
     this.enabled = true;
   }
 
   async disable() {
     scheduler.clearTimeoutOrInterval(this.cronHandle);
-    this.info("Disabled cron task.");
+    this.info("Disabled cron task.", { topic: this.logPrefix });
     this.enabled = false;
   }
 }

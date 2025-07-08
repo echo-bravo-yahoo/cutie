@@ -7,18 +7,18 @@ export const srcDir = __dirname;
 
 import { read } from "node-yaml";
 
-import loggerFactory, { Logger, LoggerOptions } from "pino";
 import { registerConnections } from "./util/connections.js";
 import { registerTasks } from "./util/tasks.js";
 import { CLIArgs } from "./cli-entrypoint.js";
-import Task from "./util/generic-task.js";
-import { Connection } from "./util/generic-connection.js";
+import Task from "./util/Task.js";
+import { Connection } from "./util/Connection.js";
+import LogHelper from "./util/LogHelper.js";
 
 export interface Globals {
   tasks: Array<Task>;
   connections: Array<Connection>;
   version: string;
-  logger: Logger;
+  logger: LogHelper;
 }
 
 // by the time consumers see this object, it's been properly instantiated
@@ -41,19 +41,7 @@ export async function start(args: CLIArgs) {
     tasks: [],
     connections: [],
     version: packageJson.version,
-    logger: (
-      loggerFactory as unknown as (options?: LoggerOptions<any>) => Logger
-    )({
-      level: config.logLevel || "debug",
-      messageKey: "log",
-      errorKey: "error",
-      transport: {
-        target: "pino-pretty",
-        options: {
-          colorize: true,
-        },
-      },
-    }),
+    logger: new LogHelper(),
   };
 
   await registerConnections(config.connections);

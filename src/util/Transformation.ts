@@ -1,9 +1,8 @@
 import get from "lodash/get.js";
 import set from "lodash/set.js";
 
-import Step, { StepConfig } from "./generic-step.js";
-import Task from "./generic-task.js";
-import { Configurable } from "./generic-configurable.js";
+import Step, { StepConfig } from "./Step.js";
+import Task from "./Task.js";
 
 // some notes on terminology:
 // a primitive reading is one where the reading is a primitive/literal
@@ -37,13 +36,13 @@ export interface MultiConfig extends BaseTransformationConfig {
 export interface WholeMessageConfig extends BaseTransformationConfig {}
 
 export function isSingleConfig(
-  config: TransformationConfig
+  config: TransformationConfig,
 ): config is SingleConfig {
   return typeof (config as SingleConfig).path === "string" ? true : false;
 }
 
 export function isMultiConfig(
-  config: TransformationConfig
+  config: TransformationConfig,
 ): config is MultiConfig {
   return typeof (config as MultiConfig).paths === "object" ? true : false;
 }
@@ -63,7 +62,7 @@ export default abstract class Transformation extends Step {
   abstract transformSingle(
     value: number,
     config: any,
-    context: Context
+    context: Context,
   ): number;
 
   constructor(config: TransformationConfig, task: Task) {
@@ -80,7 +79,7 @@ export default abstract class Transformation extends Step {
     isArrayOfReadings: boolean,
     hasBasePath: boolean,
     isPrimitiveReading: boolean,
-    messageIn: any
+    messageIn: any,
   ) {
     if (isArrayOfReadings) {
       if (hasBasePath) {
@@ -113,7 +112,7 @@ export default abstract class Transformation extends Step {
           isArrayOfReadings,
           !!this.config.basePath,
           isPrimitiveReading,
-          message
+          message,
         ),
       },
       basePath: this.config.basePath,
@@ -123,6 +122,8 @@ export default abstract class Transformation extends Step {
     };
 
     this.debug(
+      "Transforming message.",
+      { topic: this.logPrefix, traceId },
       {
         isArrayOfReadings,
         isSimpleReading,
@@ -130,10 +131,6 @@ export default abstract class Transformation extends Step {
         isPrimitiveReading,
         context,
       },
-      Configurable.prefix("Transforming message.", {
-        type: this.config.type,
-        traceId,
-      })
     );
 
     if (isArrayOfReadings) {
@@ -155,16 +152,14 @@ export default abstract class Transformation extends Step {
     }
 
     this.debug(
+      "Transforming message.",
+      { topic: this.logPrefix, traceId },
       {
         context: {
           in: context.message.in,
           out: context.message.out,
         },
       },
-      Configurable.prefix("Transforming message.", {
-        type: this.config.type,
-        traceId,
-      })
     );
 
     return context.message.out;
@@ -178,7 +173,7 @@ export default abstract class Transformation extends Step {
     const oldValue = get(
       context.message.in,
       context.current,
-      context.message.in
+      context.message.in,
     );
     const newValue = this.transformSingle(oldValue, config, context);
 

@@ -1,5 +1,5 @@
-import Step, { StepConfig } from "./generic-step.js";
-import Task from "./generic-task.js";
+import Step, { StepConfig } from "./Step.js";
+import Task from "./Task.js";
 
 export interface OutputConfig extends StepConfig {
   type: string;

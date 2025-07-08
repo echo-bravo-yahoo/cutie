@@ -2,14 +2,12 @@ import get from "lodash/get.js";
 import map from "lodash/map.js";
 import { v7 as uuidV7 } from "uuid";
 
-import Input, { InputConfig } from "./generic-input.js";
-import Task from "./generic-task.js";
-import { Configurable } from "./generic-configurable.js";
+import Input, { InputConfig } from "./Input.js";
+import Task from "./Task.js";
 
 export type Aggregation = "average" | "latest" | "sum";
 
 export interface SensorConfig extends InputConfig {
-  disabled?: boolean;
   sampling: { aggregation: Aggregation };
 }
 
@@ -45,11 +43,12 @@ export default abstract class Sensor extends Input {
     const traceId = uuidV7();
 
     this.info(
-      payload,
-      Configurable.prefix(`Publishing new ${this.name} data.`, {
-        type: this.config.type,
+      `Publishing new ${this.name} data.`,
+      {
+        topic: this.config.type,
         traceId,
-      }),
+      },
+      payload,
     );
     this.startMessage(payload, traceId);
     this.samples = [];

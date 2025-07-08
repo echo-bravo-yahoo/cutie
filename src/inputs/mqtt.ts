@@ -1,15 +1,14 @@
 import { getConnection } from "../util/connections.js";
 import MqttTopics from "mqtt-topics";
-import Input, { InputConfig } from "../util/generic-input.js";
-import Task from "../util/generic-task.js";
+import Input, { InputConfig } from "../util/Input.js";
+import Task from "../util/Task.js";
 import MQTTConnection from "../connections/mqtt.js";
-import Step from "../util/generic-step.js";
+import Step from "../util/Step.js";
 
 export interface MQTTConfig extends InputConfig {
   connectionName: string;
   topic: string;
   topics?: Array<string>;
-  disabled: boolean;
 }
 
 export function isMQTT(step: Step): step is MQTT {
@@ -39,8 +38,8 @@ export default class MQTT extends Input {
       await this.mqtt.subscribe(this.config.topic || this.config.topics || []);
 
       this.info(
-        {},
         `Started listening to MQTT topics ${this.config.topic || (this.config.topics || []).join(", ")}.`,
+        { topic: this.logPrefix },
       );
     }
     this.enabled = true;
@@ -52,8 +51,8 @@ export default class MQTT extends Input {
     await this.mqtt.unsubscribe(this.config.topic || this.config.topics || []);
 
     this.info(
-      {},
       `Stopped listening to MQTT topics ${this.config.topic || (this.config.topics || []).join(", ")}.`,
+      { topic: this.logPrefix },
     );
     this.enabled = false;
   }

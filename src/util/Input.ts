@@ -1,15 +1,18 @@
-import Step from "./generic-step.js";
-import Task from "./generic-task.js";
-import { TypedConfig } from "./generic-typed-configurable.js";
+import { v7 as uuidV7 } from "uuid";
 
-export interface InputConfig extends TypedConfig {}
+import Step, { StepConfig } from "./Step.js";
+import Task from "./Task.js";
+
+export interface InputConfig extends StepConfig {}
 
 export default abstract class Input extends Step {
   constructor(config: InputConfig, task: Task) {
     super(config, task);
   }
 
-  startMessage(message: any, traceId: string) {
+  startMessage(message: any, traceId?: string) {
+    if (traceId === undefined) traceId = uuidV7();
+
     if (this.next) {
       this.next.handleMessage(message, traceId);
     } else {

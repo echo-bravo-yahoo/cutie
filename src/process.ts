@@ -14,21 +14,21 @@ export function setupProcess(process: NodeJS.Process) {
 
   process.on("SIGTERM", (_signal) => {
     globals.logger.info(
-      `Process ${process.pid} received SIGTERM signal. Terminating.`
+      `Process ${process.pid} received SIGTERM signal. Terminating.`,
     );
     process.exit(1);
   });
 
   process.on("SIGINT", async (_signal) => {
     globals.logger.info(
-      `Process ${process.pid} received SIGINT signal. Terminating.`
+      `Process ${process.pid} received SIGINT signal. Terminating.`,
     );
     await cleanUp();
     process.exit(1);
   });
 
   process.on("uncaughtException", async (err) => {
-    globals.logger.fatal({ err }, "Uncaught Exception. Terminating now.");
+    globals.logger.fatal("Uncaught Exception. Terminating now.", { err });
     await cleanUp();
     process.exit(1);
   });

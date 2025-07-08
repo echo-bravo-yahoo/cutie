@@ -5,8 +5,8 @@ import Transformation, {
   Context,
   MultiConfig,
   SingleConfig,
-} from "../util/generic-transformation.js";
-import Task from "../util/generic-task.js";
+} from "../util/Transformation.js";
+import Task from "../util/Task.js";
 
 export interface MergeArgs {
   to: string;
