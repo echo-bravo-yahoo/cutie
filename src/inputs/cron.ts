@@ -23,7 +23,7 @@ export default class Cron extends Input {
   async enable() {
     this.cronHandle = scheduler.setTimeout(
       parseCronExpression(this.config.expression),
-      this.handleMessage.bind(this, this.config.message),
+      this.startMessage.bind(this, this.config.message),
       { errorHandler: this.errorHandler },
     );
     this.info("Enabled cron task.", { topic: this.logPrefix });

@@ -21,7 +21,7 @@ export default class Interval extends Input {
 
   async enable() {
     this.interval = setInterval(
-      this.handleMessage.bind(this, this.config.message),
+      this.startMessage.bind(this, this.config.message),
       this.config.interval,
     );
     this.info("Enabled interval.", { topic: this.logPrefix });
