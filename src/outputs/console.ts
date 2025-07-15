@@ -1,9 +1,7 @@
 import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
 
-export interface ConsoleConfig extends OutputConfig {
-  spaces?: number;
-}
+export interface ConsoleConfig extends OutputConfig {}
 
 export default class Console extends Output {
   declare config: ConsoleConfig;
@@ -13,7 +11,9 @@ export default class Console extends Output {
   }
 
   async send(message: any) {
-    console.log(`${JSON.stringify(message, null, this.config.spaces || 0)}`);
+    if (typeof message === "object") message = JSON.stringify(message);
+
+    console.log(message);
     return message;
   }
 }
@@ -21,7 +21,6 @@ export default class Console extends Output {
 /*
 {
   "type": "output:console",
-  "disabled": false,
-  "spaces": number
+  "disabled": false
 }
 */
