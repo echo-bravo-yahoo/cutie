@@ -6,6 +6,7 @@ import Task from "../util/Task.js";
 export interface FileConfig extends OutputConfig {
   path: string;
   append?: boolean;
+  insertNewlines?: boolean;
 }
 
 export default class File extends Output {
@@ -15,15 +16,17 @@ export default class File extends Output {
     super(config, task);
   }
 
-  addDefaultsToConfig(config: FileConfig) {
+  addDefaultsToConfig(config: FileConfig): FileConfig {
     return {
       append: true,
+      insertNewlines: true,
       ...config,
     };
   }
 
   async send(message: any) {
     if (typeof message === "object") message = JSON.stringify(message);
+    if (this.config.insertNewlines === true) message = `\n${message}`;
 
     if (this.config.append) {
       await appendFile(this.config.path, message);
