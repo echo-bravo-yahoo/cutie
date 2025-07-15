@@ -4,7 +4,7 @@ import MqttTopics from "mqtt-topics";
 import { Connection, ConnectionConfig } from "../util/Connection.js";
 import { getConnectionsByType } from "../util/connections.js";
 import { globals } from "../index.js";
-import { isMQTT } from "../inputs/mqtt.js";
+import MQTT, { isMQTT } from "../inputs/mqtt.js";
 
 export interface MQTTConnectionConfig
   extends ConnectionConfig,
@@ -64,7 +64,7 @@ export default class MQTTConnection extends Connection {
             firstStep.config.topic || firstStep.config.topics || "",
           )
         ) {
-          globals.tasks[i].steps[0].handleMessage(message);
+          (globals.tasks[i].steps[0] as unknown as MQTT).startMessage(message);
           triggers++;
         }
       }
