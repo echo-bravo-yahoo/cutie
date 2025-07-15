@@ -3,9 +3,7 @@ import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
 import { SerializedLogLine } from "../util/LogHelper.js";
 
-export interface LogsConfig extends OutputConfig {
-  spaces?: number;
-}
+export interface LogsConfig extends OutputConfig {}
 
 export default class Logs extends Output {
   declare config: LogsConfig;
@@ -29,6 +27,5 @@ export default class Logs extends Output {
 {
   "type": "output:console",
   "disabled": false,
-  "spaces": number
 }
 */

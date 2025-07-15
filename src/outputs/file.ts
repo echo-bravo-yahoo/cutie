@@ -5,7 +5,6 @@ import Task from "../util/Task.js";
 
 export interface FileConfig extends OutputConfig {
   path: string;
-  spaces?: number;
   append?: boolean;
 }
 
@@ -24,16 +23,12 @@ export default class File extends Output {
   }
 
   async send(message: any) {
+    if (typeof message === "object") message = JSON.stringify(message);
+
     if (this.config.append) {
-      await appendFile(
-        this.config.path,
-        JSON.stringify(message, null, this.config.spaces),
-      );
+      await appendFile(this.config.path, message);
     } else {
-      await writeFile(
-        this.config.path,
-        JSON.stringify(message, null, this.config.spaces),
-      );
+      await writeFile(this.config.path, message);
     }
 
     return message;
