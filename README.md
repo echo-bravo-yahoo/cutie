@@ -65,7 +65,7 @@ sudo apt install python3.10 python3.10-venv python3.10-dev
 
 #### What's with the name `cutie`?
 
-If you say M**QT**T fast, it sounds like "em-cutie-tee". And software could stand to be a little cuter and more whimsical.
+If you say M**QT**T fast, it sounds like "em-cutie-tee". And software could stand to be a little cuter and more whimsical. Oh, and as an added benefit, if you run `cutie` on a raspberry pi, you have a `cutie pi`!
 
 ### Developing on `cutie`
 
