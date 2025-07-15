@@ -2,7 +2,7 @@ import Input, { InputConfig } from "../util/Input.js";
 import Task from "../util/Task.js";
 
 export interface ImmediatelyConfig extends InputConfig {
-  expression: string;
+  delay?: number;
   message: any;
 }
 
@@ -15,13 +15,25 @@ export default class Immediately extends Input {
     super(config, task);
   }
 
-  register() {
-    return this.enable();
+  addDefaultsToConfig(config: ImmediatelyConfig): ImmediatelyConfig {
+    return {
+      delay: 0,
+      ...config,
+    };
+  }
+
+  delayedStartMessage() {
+    setTimeout(() => {
+      this.info(
+        `Running one shot task after a delay of ${this.config.delay} ms.`,
+        { topic: this.logPrefix },
+      );
+      this.startMessage(this.config.message);
+    }, this.config.delay);
   }
 
   async enable() {
-    this.task.postRegister = this.handleMessage.bind(this, this.config.message);
-    this.info("Running immediate task.", { topic: this.logPrefix });
+    this.delayedStartMessage();
     this.enabled = true;
   }
 
@@ -33,9 +45,8 @@ export default class Immediately extends Input {
 
 /*
 {
-  "type": "interval",
+  "type": "immediately",
   "disabled": false,
-  "message": { ... },
-  "interval": 10000 // in ms
+  "delay": 10000 // in ms
 }
 */
