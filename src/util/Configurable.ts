@@ -56,13 +56,14 @@ export class Configurable {
     this.name = name;
   }
 
-  async register() {
+  async register() {}
+
+  shouldEnable() {
     const hasDisabledParent =
       (this as unknown as any).task &&
       (this as unknown as any).task.config.disabled;
-    if (!this.config.disabled && !hasDisabledParent) await this.enable();
+    return !this.config.disabled && !hasDisabledParent;
   }
-
   async enable() {
     this.enabled = true;
   }

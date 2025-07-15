@@ -11,8 +11,6 @@ export interface TaskConfig extends Config {
 export default class Task extends Configurable {
   config: TaskConfig;
   steps: Array<Step>;
-  // TODO: remove this hack
-  postRegister?(): Promise<void>;
 
   constructor(config: TaskConfig, name: string) {
     super(config, name);
@@ -23,7 +21,6 @@ export default class Task extends Configurable {
 
   async register() {
     await this.registerSteps(this.config);
-    if (this.postRegister) await this.postRegister();
     this.enabled = true;
   }
 
@@ -44,7 +41,7 @@ export default class Task extends Configurable {
       const currentStep = await this.importStep(step, taskConfig);
       currentStep.task = this;
 
-      currentStep.register();
+      await currentStep.register();
       globals.logger.emit(
         Configurable.formatLogLine("Registered step.", { topic }),
         "info",
@@ -58,6 +55,10 @@ export default class Task extends Configurable {
       }
 
       previousStep = currentStep;
+    }
+
+    for (const step of this.steps) {
+      if (step.shouldEnable()) await step.enable();
     }
   }
 
