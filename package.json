@@ -16,7 +16,8 @@
   "scripts": {
     "test": "TS_NODE_PROJECT='./tsconfig.test.json' mocha --loader=ts-node/esm",
     "test:ci": "npm run test",
-    "build": "npm run build:clean && tsc && chmod +x ./built/cli-entrypoint.js",
+    "build": "tsc && chmod +x ./built/cli-entrypoint.js",
+    "build:watch": "tsc --watch",
     "build:clean": "rm -rf built/*",
     "build:docker": "sudo docker build . -t cutie -f ./Dockerfile",
     "build:docker:wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
