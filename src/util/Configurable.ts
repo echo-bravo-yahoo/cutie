@@ -78,7 +78,7 @@ export class Configurable {
   }
 
   static formatLogLine(message: string, context: LogLineOptions) {
-    return `${context.topic ? `[${context.topic}] ` : ""} ${message}${context.traceId ? ` (${context.traceId})` : ""}`;
+    return `${context.topic ? `[${context.topic}] ` : ""}${message}${context.traceId ? ` (${context.traceId})` : ""}`;
   }
 
   // always includes the context of task, module/config, and globals

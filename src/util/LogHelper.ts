@@ -58,7 +58,12 @@ export default class LogHelper {
   emit(message: string, verbosity: Verbosity, topic: string, object?: Object) {
     for (const listener of this.logListeners) {
       if (listener.shouldEmit(topic, verbosity))
-        listener.startMessage({ object, log: message, verbosity, topic });
+        listener.startMessage({
+          object,
+          log: message,
+          verbosity,
+          topic,
+        });
     }
   }
 }

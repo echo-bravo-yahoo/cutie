@@ -1,11 +1,14 @@
 import { globals } from "../index.js";
+import { Configurable } from "./Configurable.js";
 import Task, { TaskConfig } from "./Task.js";
+
+const topic = "core.registration.tasks";
 
 export async function registerTasks(tasks: Array<TaskConfig>) {
   globals.logger.emit(
-    "Registering tasks.",
+    Configurable.formatLogLine("Registering tasks.", { topic }),
     "info",
-    "[core.registration.tasks]",
+    topic,
   );
 
   for (const [name, task] of Object.entries(tasks)) {
@@ -14,9 +17,9 @@ export async function registerTasks(tasks: Array<TaskConfig>) {
     globals.tasks.push(taskObject);
 
     globals.logger.emit(
-      "Registered step.",
+      Configurable.formatLogLine("Registered task.", { topic }),
       "info",
-      "[core.registration.tasks]",
+      topic,
       task,
     );
   }
