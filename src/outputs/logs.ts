@@ -20,6 +20,8 @@ export default class Logs extends Output {
       typedMessage.log,
       typedMessage.object,
     );
+
+    return message;
   }
 }
 

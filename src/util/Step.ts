@@ -54,7 +54,7 @@ export default abstract class Step extends TypedConfigurable {
     }
   }
 
-  async doHandleMessage(message: any, _traceId?: string) {
+  async doHandleMessage(message: any, _traceId?: string): Promise<string> {
     return message;
   }
 }
