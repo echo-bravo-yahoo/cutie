@@ -19,6 +19,7 @@ export class Configurable {
   config: Config;
   enabled: boolean;
   name: string;
+  addDefaultsToConfig?(config: Config): Config;
 
   constructor(config: Config, name: string) {
     this.debug = (msg, opts, obj) => {
@@ -50,6 +51,7 @@ export class Configurable {
 
     // TO-DO: fix
     this.logPrefix = "";
+    if (this.addDefaultsToConfig) config = this.addDefaultsToConfig(config);
     this.config = config;
     this.name = name;
   }
