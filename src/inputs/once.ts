@@ -1,21 +1,21 @@
 import Input, { InputConfig } from "../util/Input.js";
 import Task from "../util/Task.js";
 
-export interface ImmediatelyConfig extends InputConfig {
+export interface OnceConfig extends InputConfig {
   delay?: number;
   message: any;
 }
 
-export default class Immediately extends Input {
-  declare config: ImmediatelyConfig;
+export default class Once extends Input {
+  declare config: OnceConfig;
   declare task: any;
   enabled: boolean;
 
-  constructor(config: ImmediatelyConfig, task: Task) {
+  constructor(config: OnceConfig, task: Task) {
     super(config, task);
   }
 
-  addDefaultsToConfig(config: ImmediatelyConfig): ImmediatelyConfig {
+  addDefaultsToConfig(config: OnceConfig): OnceConfig {
     return {
       delay: 0,
       ...config,
@@ -24,10 +24,9 @@ export default class Immediately extends Input {
 
   delayedStartMessage() {
     setTimeout(() => {
-      this.info(
-        `Running one shot task after a delay of ${this.config.delay} ms.`,
-        { topic: this.logPrefix },
-      );
+      this.info(`Running step once after a delay of ${this.config.delay} ms.`, {
+        topic: this.logPrefix,
+      });
       this.startMessage(this.config.message);
     }, this.config.delay);
   }
@@ -38,14 +37,15 @@ export default class Immediately extends Input {
   }
 
   async disable() {
-    this.info("Skipping running immediate task.", { topic: this.logPrefix });
+    this.info("Skipping running step once.", { topic: this.logPrefix });
     this.enabled = false;
   }
 }
 
 /*
 {
-  "type": "immediately",
+  "type": "input:once",
+  "name": "setupStuff",
   "disabled": false,
   "delay": 10000 // in ms
 }
