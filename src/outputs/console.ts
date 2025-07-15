@@ -14,6 +14,7 @@ export default class Console extends Output {
 
   async send(message: any) {
     console.log(`${JSON.stringify(message, null, this.config.spaces || 0)}`);
+    return message;
   }
 }
 
