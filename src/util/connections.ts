@@ -9,19 +9,24 @@ import { Configurable } from "./Configurable.js";
 export async function registerConnections(
   connectionConfigs: Array<ConnectionConfig>,
 ) {
+  const topic = "core.registration.connections";
   const connectionNames = (
     await readdir(normalize(`${srcDir}/connections`))
   ).map((name) => basename(name, ".js"));
 
-  // TO-DO: leaving this because the redaction is actually useful :/
-  const localLogger = globals.logger.logger.child(
-    {},
-    {
-      msgPrefix: "[core.registration.connections] ",
-      redact: ["context.password", "context.username", "context.token"],
-    },
+  // TO-DO: add redaction back in...
+  // const localLogger = globals.logger.logger.child(
+  //   {},
+  //   {
+  //     msgPrefix: "[core.registration.connections] ",
+  //     redact: ["context.password", "context.username", "context.token"],
+  //   }
+  // );
+  globals.logger.emit(
+    Configurable.formatLogLine("Registering connections...", { topic }),
+    "info",
+    topic,
   );
-  localLogger.info("Registering connections...");
   const promises = [];
 
   for (const connectionConfig of connectionConfigs) {
@@ -39,12 +44,21 @@ export async function registerConnections(
 
       globals.connections.push(newConnection);
       promises.push(newConnection.register());
-      localLogger.info("Registered connection.");
+      globals.logger.emit(
+        Configurable.formatLogLine("Registered connection.", { topic }),
+        "info",
+        topic,
+        connectionConfig,
+      );
     }
   }
 
   await Promise.all(promises);
-  localLogger.info("Connection registration completed.");
+  globals.logger.emit(
+    Configurable.formatLogLine("Connection registration completed.", { topic }),
+    "info",
+    topic,
+  );
 }
 
 export function getConnection(connectionName: string) {

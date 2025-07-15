@@ -37,6 +37,7 @@ export default class Task extends Configurable {
   }
 
   async registerSteps(taskConfig: TaskConfig) {
+    const topic = "core.registration.steps";
     let previousStep;
 
     for (const step of taskConfig.steps) {
@@ -45,9 +46,9 @@ export default class Task extends Configurable {
 
       currentStep.register();
       globals.logger.emit(
-        "Registered step.",
+        Configurable.formatLogLine("Registered step.", { topic }),
         "info",
-        "[core.registration.steps]",
+        topic,
         step,
       );
 
