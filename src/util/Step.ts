@@ -7,10 +7,10 @@ import { TypedConfig, TypedConfigurable } from "./TypedConfigurable.js";
 export interface StepConfig extends TypedConfig {}
 
 export default abstract class Step extends TypedConfigurable {
-  config: StepConfig;
+  declare config: StepConfig;
   task: Task;
   next?: Step;
-  logPrefix: string;
+  declare logPrefix: string;
 
   constructor(config: StepConfig, task: Task) {
     super(config);
@@ -19,6 +19,10 @@ export default abstract class Step extends TypedConfigurable {
     const index =
       task && task.steps && task.steps.findIndex((step) => step === this);
     this.logPrefix = `core.runtime.tasks.${task.name}.steps.${index}`;
+    // TO-DO: why in the WORLD is this necessary?
+    // TypedConfigurable already sets this but for some reason,
+    // it's dropped by the time we get to here in tests
+    this.config = config;
   }
 
   // always includes the context of task, module/config, and globals

@@ -12,7 +12,6 @@ export interface CronConfig extends InputConfig {
 export default class Cron extends Input {
   declare config: CronConfig;
   cronHandle: any;
-  enabled: boolean;
 
   constructor(config: CronConfig, task: Task) {
     super(config, task);

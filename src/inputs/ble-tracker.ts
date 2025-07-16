@@ -19,7 +19,8 @@ export interface BLETrackerConfig extends SensorConfig {
 
 export default class BLETracker extends Sensor {
   declare config: BLETrackerConfig;
-  samples: Record<string, Array<any>>;
+  // TO-DO: remove this carveout
+  declare samples: Record<string, Array<any>>;
   interval: NodeJS.Timeout;
 
   constructor(config: BLETrackerConfig, task: Task) {

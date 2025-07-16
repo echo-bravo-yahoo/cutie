@@ -6,7 +6,7 @@ export interface ConnectionConfig extends TypedConfig {
 }
 
 export class Connection extends TypedConfigurable {
-  config: ConnectionConfig;
+  declare config: ConnectionConfig;
 
   constructor(config: ConnectionConfig) {
     super(config);

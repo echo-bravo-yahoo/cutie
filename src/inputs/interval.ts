@@ -9,7 +9,6 @@ export interface IntervalConfig extends InputConfig {
 export default class Interval extends Input {
   declare config: IntervalConfig;
   interval: NodeJS.Timeout;
-  enabled: boolean;
 
   constructor(config: IntervalConfig, task: Task) {
     super(config, task);
