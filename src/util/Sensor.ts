@@ -17,7 +17,6 @@ export default abstract class Sensor extends Input {
   sensor?: any;
   samples: Array<any> | Record<string, Array<any>>;
   declare config: SensorConfig;
-  enabled: boolean;
   abstract enable(): Promise<void>;
   abstract sample(): Promise<void>;
   abstract collateSamples(): any;

@@ -9,7 +9,6 @@ export interface OnceConfig extends InputConfig {
 export default class Once extends Input {
   declare config: OnceConfig;
   declare task: any;
-  enabled: boolean;
 
   constructor(config: OnceConfig, task: Task) {
     super(config, task);

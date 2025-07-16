@@ -22,7 +22,6 @@ export function isMQTT(step: Step): step is MQTT {
 export default class MQTT extends Input {
   declare config: MQTTConfig;
   mqtt: MQTTConnection;
-  enabled: boolean;
 
   constructor(config: MQTTConfig, task: Task) {
     super(config, task);
