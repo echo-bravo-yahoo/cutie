@@ -14,8 +14,8 @@
     "cookbook.md"
   ],
   "scripts": {
-    "test": "TS_NODE_PROJECT='./tsconfig.test.json' mocha --loader=ts-node/esm",
-    "test:ci": "npm run test",
+    "test": "npx tsx --test './test/**/*.ts'",
+    "test:coverage": "npx c8 --src './src' --all tsx --test './test/**/*.ts'",
     "build": "tsc && chmod +x ./built/cli-entrypoint.js",
     "build:watch": "tsc --watch",
     "build:clean": "rm -rf built/*",
@@ -50,12 +50,12 @@
   "devDependencies": {
     "@types/chai": "^5.2.2",
     "@types/lodash": "^4.17.19",
-    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.0.14",
     "@types/yargs-parser": "^21.0.3",
     "chai": "^5.2.0",
-    "mocha": "^11.4.0",
     "prettier": "^3.6.0",
-    "ts-node": "^10.9.2"
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   },
   "overrides": {
     "node-gyp": "^11.0.0",
