@@ -1,3 +1,5 @@
+import { describe, it, before } from "node:test";
+
 import { expect } from "chai";
 
 import Task from "../../src/util/Task.js";
@@ -35,7 +37,7 @@ describe("transformations", function () {
               { type: "transformation:offset", offset: -5 } as OffsetConfig,
             ],
           },
-          "works on primitive readings",
+          "works on primitive readings"
         );
         await task.register();
 
@@ -55,7 +57,7 @@ describe("transformations", function () {
               } as OffsetConfig,
             ],
           },
-          "works on simple readings",
+          "works on simple readings"
         );
         await task.register();
 
@@ -74,7 +76,7 @@ describe("transformations", function () {
               } as OffsetConfig,
             ],
           },
-          "works on composite readings",
+          "works on composite readings"
         );
         await task.register();
 
@@ -93,7 +95,7 @@ describe("transformations", function () {
               { type: "transformation:offset", offset: -5 } as OffsetConfig,
             ],
           },
-          "works on arrays of primitive readings",
+          "works on arrays of primitive readings"
         );
         await task.register();
 
@@ -113,7 +115,7 @@ describe("transformations", function () {
               } as OffsetConfig,
             ],
           },
-          "works on arrays of primitive readings with a base path",
+          "works on arrays of primitive readings with a base path"
         );
         await task.register();
 
@@ -135,7 +137,7 @@ describe("transformations", function () {
               } as OffsetConfig,
             ],
           },
-          "works on arrays of simple readings",
+          "works on arrays of simple readings"
         );
         await task.register();
 
@@ -168,7 +170,7 @@ describe("transformations", function () {
               } as OffsetConfig,
             ],
           },
-          "works on arrays of simple readings with a base path",
+          "works on arrays of simple readings with a base path"
         );
         await task.register();
 
@@ -203,7 +205,7 @@ describe("transformations", function () {
               } as OffsetConfig,
             ],
           },
-          "works on arrays of composite readings",
+          "works on arrays of composite readings"
         );
         await task.register();
 
@@ -235,7 +237,7 @@ describe("transformations", function () {
               } as OffsetConfig,
             ],
           },
-          "works on arrays of composite readings with a base path",
+          "works on arrays of composite readings with a base path"
         );
         await task.register();
 
@@ -290,7 +292,7 @@ describe("transformations", function () {
                 } as RoundConfig,
               ],
             },
-            "works for all directions",
+            "works for all directions"
           );
           await task.register();
 
@@ -326,7 +328,7 @@ describe("transformations", function () {
                 } as RoundConfig,
               ],
             },
-            "works for precision of 0 (integer)",
+            "works for precision of 0 (integer)"
           );
           await task.register();
 
@@ -350,7 +352,7 @@ describe("transformations", function () {
               } as any,
             ],
           },
-          "works on arrays of primitive readings",
+          "works on arrays of primitive readings"
         );
         await task.register();
 
@@ -370,7 +372,7 @@ describe("transformations", function () {
               } as any,
             ],
           },
-          "works on arrays of simple readings",
+          "works on arrays of simple readings"
         );
         await task.register();
 
@@ -397,7 +399,7 @@ describe("transformations", function () {
               } as any,
             ],
           },
-          "works on arrays of composite readings",
+          "works on arrays of composite readings"
         );
         await task.register();
 
@@ -429,7 +431,7 @@ describe("transformations", function () {
               } as PluckConfig,
             ],
           },
-          "works on simple readings",
+          "works on simple readings"
         );
         await task.register();
 
@@ -450,7 +452,7 @@ describe("transformations", function () {
               } as PluckConfig,
             ],
           },
-          "works on composite readings",
+          "works on composite readings"
         );
         await task.register();
 
@@ -478,7 +480,7 @@ describe("transformations", function () {
               } as PluckConfig,
             ],
           },
-          "works with multiple paths",
+          "works with multiple paths"
         );
         await task.register();
 
@@ -508,7 +510,7 @@ describe("transformations", function () {
               } as RearrangeConfig,
             ],
           },
-          "works on simple readings",
+          "works on simple readings"
         );
         await task.register();
 
@@ -537,7 +539,7 @@ describe("transformations", function () {
                 } as ConvertConfig,
               ],
             },
-            "works on primitive readings",
+            "works on primitive readings"
           );
           await task.register();
 
@@ -560,7 +562,7 @@ describe("transformations", function () {
                 } as ConvertConfig,
               ],
             },
-            "works on primitive readings",
+            "works on primitive readings"
           );
           await task.register();
 
@@ -585,7 +587,7 @@ describe("transformations", function () {
                 } as ShellConfig,
               ],
             },
-            "works for objects",
+            "works for objects"
           );
           await task.register();
 
@@ -606,7 +608,7 @@ describe("transformations", function () {
                 } as ShellConfig,
               ],
             },
-            "works for strings",
+            "works for strings"
           );
           await task.register();
 
@@ -625,7 +627,7 @@ describe("transformations", function () {
                 } as ShellConfig,
               ],
             },
-            "works for numbers",
+            "works for numbers"
           );
           await task.register();
 
@@ -646,7 +648,7 @@ describe("transformations", function () {
                 } as ShellConfig,
               ],
             },
-            "works for objects",
+            "works for objects"
           );
           await task.register();
 
@@ -667,7 +669,7 @@ describe("transformations", function () {
                 } as ShellConfig,
               ],
             },
-            "works for strings",
+            "works for strings"
           );
           await task.register();
 
@@ -686,7 +688,7 @@ describe("transformations", function () {
                 } as ShellConfig,
               ],
             },
-            "works for numbers",
+            "works for numbers"
           );
           await task.register();
 
@@ -708,7 +710,7 @@ describe("transformations", function () {
                 } as JavascriptConfig,
               ],
             },
-            "works for number literals",
+            "works for number literals"
           );
           await task.register();
 
@@ -728,7 +730,7 @@ describe("transformations", function () {
                 } as JavascriptConfig,
               ],
             },
-            "works for number literals",
+            "works for number literals"
           );
           await task.register();
 
