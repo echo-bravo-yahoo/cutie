@@ -3,15 +3,21 @@ import { parseCronExpression } from "cron-schedule";
 
 import Input, { InputConfig } from "../util/Input.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
+
+interface ITimerHandle {
+  timeoutId?: ReturnType<typeof setTimeout>;
+}
 
 export interface CronConfig extends InputConfig {
   expression: string;
-  message: any;
+  message: Message;
 }
 
 export default class Cron extends Input {
   declare config: CronConfig;
-  cronHandle: any;
+  // @ts-expect-error cronHandle is instantiated by enable()
+  cronHandle: ITimerHandle;
 
   constructor(config: CronConfig, task: Task) {
     super(config, task);

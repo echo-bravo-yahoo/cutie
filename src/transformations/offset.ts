@@ -22,7 +22,11 @@ export default class Offset extends Transformation {
     super(config, task);
   }
 
-  transformSingle(value: any, config: any, _context: Context) {
+  transformSingle(
+    value: number,
+    config: SinglePathOffsetConfig,
+    _context: Context,
+  ) {
     return value + config.offset;
   }
 }

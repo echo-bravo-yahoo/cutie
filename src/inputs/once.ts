@@ -1,14 +1,14 @@
 import Input, { InputConfig } from "../util/Input.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface OnceConfig extends InputConfig {
   delay?: number;
-  message: any;
+  message: Message;
 }
 
 export default class Once extends Input {
   declare config: OnceConfig;
-  declare task: any;
 
   constructor(config: OnceConfig, task: Task) {
     super(config, task);

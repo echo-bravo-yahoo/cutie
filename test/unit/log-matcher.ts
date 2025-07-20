@@ -1,6 +1,5 @@
 import { expect } from "chai";
 
-import { setGlobals } from "../../src/index.js";
 import Logs from "../../src/inputs/logs.js";
 import Task from "../../src/util/Task.js";
 

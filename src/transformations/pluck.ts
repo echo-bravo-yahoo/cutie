@@ -8,6 +8,7 @@ import Transformation, {
   SingleConfig,
 } from "../util/Transformation.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface PluckArgs {
   destination: string;
@@ -46,11 +47,15 @@ export default class Pluck extends Transformation {
     if (config.destination === ".") {
       context.message.out = newValue;
     } else {
+      if (typeof context.message.out !== "object")
+        throw new Error(
+          `Context.message.out should be an object, but instead is ${context.message.out} (${typeof context.message.out}).`,
+        );
       set(context.message.out, config.destination || context.current, newValue);
     }
   }
 
-  transformSingle(value: any, _config: any, _context: Context) {
+  transformSingle(value: Message, _config: PluckArgs, _context: Context) {
     return value;
   }
 }

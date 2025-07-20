@@ -24,12 +24,12 @@ export class Temp {
   }
 
   static ctof(degreesC: number, absolute = true) {
-    let offset = absolute ? 32 : 0;
+    const offset = absolute ? 32 : 0;
     return (9 / 5) * degreesC + offset;
   }
 
   static ftoc(degreesF: number, absolute = true) {
-    let offset = absolute ? 32 : 0;
+    const offset = absolute ? 32 : 0;
     return (5 / 9) * (degreesF - offset);
   }
 

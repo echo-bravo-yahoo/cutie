@@ -1,6 +1,4 @@
-import get from "lodash/get.js";
-
-import Sensor, { Aggregation, SensorConfig } from "../util/Sensor.js";
+import Sensor, { SensorConfig } from "../util/Sensor.js";
 import Task from "../util/Task.js";
 import NodeBle from "node-ble";
 
@@ -19,9 +17,9 @@ export interface BLETrackerConfig extends SensorConfig {
 
 export default class BLETracker extends Sensor {
   declare config: BLETrackerConfig;
-  // TO-DO: remove this carveout
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
   declare samples: Record<string, Array<any>>;
-  interval: NodeJS.Timeout;
+  interval?: NodeJS.Timeout;
 
   constructor(config: BLETrackerConfig, task: Task) {
     super(config, task);
@@ -36,11 +34,6 @@ export default class BLETracker extends Sensor {
   }
 
   aggregateOne(deviceKey: string) {
-    const aggregation: Aggregation =
-      this.samples[deviceKey].length === 1
-        ? "latest"
-        : get(this.config, "sampling.aggregation", "average");
-
     this.info(
       "Aggregating.",
       { topic: this.logPrefix },
@@ -49,10 +42,6 @@ export default class BLETracker extends Sensor {
     const aggregated = {
       metadata: {
         timestamp: new Date(),
-      },
-      aggregationMetadata: {
-        samples: this.samples[deviceKey].length,
-        aggregation,
       },
       rssi: Number(this.aggregateMeasurement(`rssi.result`, deviceKey)).toFixed(
         0,
@@ -76,7 +65,7 @@ export default class BLETracker extends Sensor {
     if (deviceMap[deviceKey]) {
       try {
         rssi = Number(await deviceMap[deviceKey].getRSSI());
-      } catch (e) {}
+      } catch (_e) {}
     }
 
     const datapoint = {
@@ -101,7 +90,7 @@ export default class BLETracker extends Sensor {
     await this.discoverAdvertisements();
 
     const promises = [];
-    for (let device of this.config.devices) {
+    for (const device of this.config.devices) {
       promises.push(this.sampleOne(device));
     }
 
@@ -155,7 +144,7 @@ export default class BLETracker extends Sensor {
 
     if (!(await adapter.isDiscovering())) await adapter.startDiscovery();
 
-    for (let device of this.config.devices) {
+    for (const device of this.config.devices) {
       const deviceKey = device.alias || device.macAddress;
       try {
         deviceMap[deviceKey] = await adapter.waitDevice(
@@ -165,7 +154,7 @@ export default class BLETracker extends Sensor {
         this.debug(`Device with key ${deviceKey} found.`, {
           topic: this.logPrefix,
         });
-      } catch (e) {
+      } catch (_e) {
         this.debug(`No device found for key ${deviceKey}`, {
           topic: this.logPrefix,
         });
@@ -184,7 +173,7 @@ export default class BLETracker extends Sensor {
 
   async disable() {
     clearInterval(this.interval);
-    for (let device of Object.values(deviceMap)) {
+    for (const device of Object.values(deviceMap)) {
       await device.disconnect();
     }
     ble.destroy();

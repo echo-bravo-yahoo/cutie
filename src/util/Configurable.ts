@@ -54,14 +54,17 @@ export class Configurable {
     if (this.addDefaultsToConfig) config = this.addDefaultsToConfig(config);
     this.config = config;
     this.name = name;
+    this.enabled = false;
   }
 
   async register() {}
 
-  shouldEnable() {
-    const hasDisabledParent =
-      (this as unknown as any).task &&
-      (this as unknown as any).task.config.disabled;
+  shouldEnable(): boolean {
+    let hasDisabledParent = false;
+    if (isStep(this) && typeof this.task.config.disabled === "boolean") {
+      hasDisabledParent = this.task.config.disabled;
+    }
+
     return !this.config.disabled && !hasDisabledParent;
   }
   async enable() {

@@ -1,3 +1,4 @@
+import isArray from "lodash/isArray.js";
 import get from "lodash/get.js";
 import set from "lodash/set.js";
 
@@ -9,6 +10,16 @@ import Transformation, {
   TransformationConfig,
 } from "../util/Transformation.js";
 import Task from "../util/Task.js";
+
+function isNumberArray(possibleArray: any): possibleArray is Array<number> {
+  return (
+    possibleArray !== undefined &&
+    possibleArray !== null &&
+    typeof possibleArray === "object" &&
+    possibleArray.length !== undefined &&
+    possibleArray.every((value: any) => typeof value === "number")
+  );
+}
 
 export default class Aggregate extends Transformation {
   constructor(config: TransformationConfig, task: Task) {
@@ -27,11 +38,19 @@ export default class Aggregate extends Transformation {
     } else {
       oldValue = get(context.message.in, context.current, context.message.in);
     }
+
+    if (!isNumberArray(oldValue))
+      throw new Error(`Expected to find a number array but did not!`);
+
     const newValue = Sensor.doAggregation(oldValue, config.aggregation);
     if (context.current === "") {
       context.message.out = newValue;
     } else {
-      set(context.message.out, context.current, newValue);
+      if (typeof context.message.out === "object") {
+        set(context.message.out, context.current, newValue);
+      } else {
+        throw new Error(`Expected to find an object!`);
+      }
     }
 
     return newValue;
@@ -49,7 +68,10 @@ export default class Aggregate extends Transformation {
     } else {
       oldValue = get(context.message.in, context.current, context.message.in);
     }
-    let newValue = Sensor.doAggregation(
+    if (!isArray(oldValue))
+      throw new Error(`Aggregate attempting to operate on non-array value`);
+
+    const newValue = Sensor.doAggregation(
       oldValue,
       config.aggregation,
       context.path,
@@ -61,7 +83,13 @@ export default class Aggregate extends Transformation {
         );
       context.message.out = set({}, context.path, newValue);
     } else {
-      set(context.message.out, context.current, newValue);
+      if (
+        context.message &&
+        typeof context.message === "object" &&
+        context.message.out &&
+        typeof context.message.out === "object"
+      )
+        set(context.message.out, context.current, newValue);
     }
 
     return newValue;
@@ -69,11 +97,15 @@ export default class Aggregate extends Transformation {
 
   transformCompositeReadingArray(context: Context) {
     const oldArray = [
-      ...get(context.message.in, context.current, context.message.in),
+      ...get(
+        context.message.in as unknown as any,
+        context.current,
+        context.message.in,
+      ),
     ];
     const newSubObject = {};
 
-    for (let path of Object.keys((this.config as MultiConfig).paths)) {
+    for (const path of Object.keys((this.config as MultiConfig).paths)) {
       context = {
         ...context,
         current: `${context.basePath ? `${context.basePath}.` : ""}${path}`,
@@ -83,7 +115,7 @@ export default class Aggregate extends Transformation {
         context.pathChosen && isMultiConfig(this.config)
           ? this.config.paths[context.pathChosen]
           : this.config;
-      let newValue = Sensor.doAggregation(
+      const newValue = Sensor.doAggregation(
         oldArray,
         config.aggregation,
         context.pathChosen,
@@ -92,7 +124,11 @@ export default class Aggregate extends Transformation {
     }
 
     if (context.basePath) {
-      set(context.message.out, context.basePath, newSubObject);
+      if (typeof context.message.out === "object") {
+        set(context.message.out, context.basePath, newSubObject);
+      } else {
+        throw new Error(`Expected to find an object!`);
+      }
     } else {
       context.message.out = newSubObject;
     }
@@ -101,6 +137,10 @@ export default class Aggregate extends Transformation {
   }
 
   doTransformSingle(context: Context) {
+    if (typeof context.message.out !== "object") {
+      throw new Error(`Expected to find an object!`);
+    }
+
     const config =
       context.pathChosen && isMultiConfig(this.config)
         ? this.config.paths[context.pathChosen]
@@ -112,7 +152,7 @@ export default class Aggregate extends Transformation {
     );
     let newValue;
 
-    if (oldValue.length) {
+    if (isArray(oldValue) && oldValue.length) {
       newValue = Sensor.doAggregation(oldValue, config.aggregation);
       set(context.message.out, context.current, newValue);
     } else {
@@ -122,7 +162,11 @@ export default class Aggregate extends Transformation {
   }
 
   // no-op for class composition reasons
-  transformSingle(value: number, _config: any, _context: Context) {
+  transformSingle(
+    value: number,
+    _config: TransformationConfig,
+    _context: Context,
+  ) {
     return value;
   }
 }

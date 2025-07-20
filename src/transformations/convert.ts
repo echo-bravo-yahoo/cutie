@@ -23,7 +23,11 @@ export default class Convert extends Transformation {
     super(config, task);
   }
 
-  transformSingle(value: any, config: any, context: Context) {
+  transformSingle(
+    value: number,
+    config: SinglePathConvertConfig,
+    context: Context,
+  ) {
     let result;
     if (config.from === "celsius" && config.to === "fahrenheit") {
       result = (9 / 5) * value + 32;

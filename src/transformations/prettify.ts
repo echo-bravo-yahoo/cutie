@@ -3,6 +3,7 @@ import Transformation, {
   WholeMessageConfig,
 } from "../util/Transformation.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface PrettifyConfig extends WholeMessageConfig {
   spaces?: number;
@@ -24,7 +25,7 @@ export default class Prettify extends Transformation {
     };
   }
 
-  transform(message: any) {
+  transform(message: Message) {
     if (typeof message === "string" && this.config.parseInput) {
       return JSON.stringify(JSON.parse(message), null, this.config.spaces);
     } else if (typeof message === "object") {
@@ -35,7 +36,7 @@ export default class Prettify extends Transformation {
   }
 
   // no-op
-  transformSingle(value: number, _config: any, _context: Context) {
+  transformSingle(value: number, _config: PrettifyConfig, _context: Context) {
     return value;
   }
 }

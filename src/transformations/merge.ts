@@ -7,6 +7,7 @@ import Transformation, {
   SingleConfig,
 } from "../util/Transformation.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface MergeArgs {
   to: string;
@@ -25,8 +26,17 @@ export default class Merge extends Transformation {
     super(config, task);
   }
 
-  transformSingle(value: any, config: any, context: Context) {
-    let result = { ...context.message };
+  transformSingle(
+    value: Message,
+    config: SinglePathMergeConfig,
+    context: Context,
+  ) {
+    if (typeof value !== "object")
+      throw new Error(
+        `Context.message.out should be an object, but instead is ${context.message.out} (${typeof context.message.out}).`,
+      );
+
+    let result: any = { ...context.message };
     const merged = merge(value, config);
     if (config.to === "") {
       result = merged;

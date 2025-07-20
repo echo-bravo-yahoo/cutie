@@ -23,7 +23,11 @@ export default class Round extends Transformation {
     super(config, task);
   }
 
-  transformSingle(value: any, config: any, _context: Context) {
+  transformSingle(
+    value: number,
+    config: SinglePathRoundConfig,
+    _context: Context,
+  ) {
     const integer = Math.floor(value);
     const fractional = value - integer;
     const precision = config.precision || 0;

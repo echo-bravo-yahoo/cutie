@@ -2,6 +2,7 @@ import { globals } from "../index.js";
 import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
 import { SerializedLogLine } from "../util/LogHelper.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface LogsConfig extends OutputConfig {}
 
@@ -12,14 +13,14 @@ export default class Logs extends Output {
     super(config, task);
   }
 
-  async send(message: any) {
+  async send(message: Message) {
     const typedMessage = message as unknown as SerializedLogLine;
     globals.logger[typedMessage.verbosity](
       typedMessage.log,
       typedMessage.object,
     );
 
-    return message;
+    return typeof message !== "string" ? JSON.stringify(message) : message;
   }
 }
 

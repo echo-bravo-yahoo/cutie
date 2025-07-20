@@ -2,6 +2,7 @@ import { getConnection } from "../util/connections.js";
 import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
 import MQTTConnection from "../connections/mqtt.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface MQTTConfig extends OutputConfig {
   topics: Array<string>;
@@ -26,17 +27,16 @@ export default class MQTT extends Output {
     this.enabled = false;
   }
 
-  async send(message: any) {
+  async send(message: Message) {
     this.config.topics.forEach((topic) => {
       const interpolatedTopic = this.interpolateConfigString(topic, {
         message,
       });
 
-      this.mqtt &&
-        this.mqtt.sendRaw(interpolatedTopic, JSON.stringify(message));
+      this.mqtt?.sendRaw(interpolatedTopic, JSON.stringify(message));
     });
 
-    return message;
+    return typeof message !== "string" ? JSON.stringify(message) : message;
   }
 }
 

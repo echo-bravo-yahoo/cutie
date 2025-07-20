@@ -8,6 +8,7 @@ import Transformation, {
   WholeMessageConfig,
 } from "../util/Transformation.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface ShellConfig extends WholeMessageConfig {
   codePath: string;
@@ -23,7 +24,7 @@ export default class Shell extends Transformation {
   }
 
   // TO-DO: functionally a copy of generateCode in src/transformations/javascript.js
-  generateCommand(message: any) {
+  generateCommand(message: Message) {
     if (this.config.codePath) {
       const codePath = normalize(join(srcDir, "..", this.config.codePath));
       const code = readFileSync(codePath, { encoding: "utf8" });
@@ -47,8 +48,8 @@ export default class Shell extends Transformation {
     }
   }
 
-  transform(message: any) {
-    let command = this.generateCommand(message);
+  transform(message: Message) {
+    const command = this.generateCommand(message);
 
     const result = execSync(command, { encoding: "utf8" });
     if (this.config.outputType === "object") {
@@ -63,7 +64,7 @@ export default class Shell extends Transformation {
   }
 
   // no-op
-  transformSingle(value: number, config: any, context: Context) {
+  transformSingle(value: number, _config: ShellConfig, _context: Context) {
     return value;
   }
 }

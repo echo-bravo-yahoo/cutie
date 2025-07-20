@@ -1,13 +1,15 @@
 import Input, { InputConfig } from "../util/Input.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface IntervalConfig extends InputConfig {
   interval: number;
-  message: any;
+  message: Message;
 }
 
 export default class Interval extends Input {
   declare config: IntervalConfig;
+  // @ts-expect-error interval is instantiated by enable()
   interval: NodeJS.Timeout;
 
   constructor(config: IntervalConfig, task: Task) {
