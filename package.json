@@ -23,6 +23,7 @@
     "build:docker:wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
     "sync": "lsyncd config.lua",
     "start": "./src/cli-entrypoint.js",
+    "lint": "npx eslint",
     "prettify": "prettier -w .",
     "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo systemctl enable cutie",
     "update-service": "npm run add-service && sudo systemctl restart cutie"
@@ -48,14 +49,17 @@
     "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.31.0",
     "@types/chai": "^5.2.2",
     "@types/lodash": "^4.17.19",
     "@types/node": "^24.0.14",
     "@types/yargs-parser": "^21.0.3",
     "chai": "^5.2.0",
-    "prettier": "^3.6.0",
     "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+    "eslint": "^9.31.0",
+    "prettier": "^3.6.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.37.0"
   },
   "overrides": {
     "node-gyp": "^11.0.0",
