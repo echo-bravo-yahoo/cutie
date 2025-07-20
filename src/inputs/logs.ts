@@ -27,10 +27,10 @@ export default class Logs extends Input {
 
     // TO-DO: improve the regex so the filter step isn't necessary
     const filterTokens = filter
-      .split(/([\.\*])/)
+      .split(/([.*])/)
       .filter((token) => token !== "." && token !== "")
       .reverse();
-    const topicTokens = topic.split(/[\.]/).reverse();
+    const topicTokens = topic.split(/[.]/).reverse();
 
     let currentTopicToken = topicTokens.shift();
     let currentFilterToken = filterTokens.shift();

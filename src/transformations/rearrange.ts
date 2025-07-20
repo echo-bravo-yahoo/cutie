@@ -9,6 +9,7 @@ import Transformation, {
   SingleConfig,
 } from "../util/Transformation.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface RearrangeArgs {
   to: string;
@@ -41,15 +42,24 @@ export default class Rearrange extends Transformation {
     );
     const newValue = this.transformSingle(oldValue, config, context);
 
-    if (!context.message.out) context.message.out = { ...context.message.in };
+    if (!context.message.out && typeof context.message.in === "object")
+      context.message.out = { ...context.message.in };
     if (config.to) {
       // delete the value at the old path before we add it at the new path
       unset(context.message.out, context.current);
     }
+    if (typeof context.message.out !== "object")
+      throw new Error(
+        `Context.message.out should be an object, but instead is ${context.message.out} (${typeof context.message.out}).`,
+      );
     set(context.message.out, config.to || context.current, newValue);
   }
 
-  transformSingle(value: any, _config: any, _context: Context) {
+  transformSingle(
+    value: Message,
+    _config: SinglePathRearrangeConfig,
+    _context: Context,
+  ) {
     return value;
   }
 }

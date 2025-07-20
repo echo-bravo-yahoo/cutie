@@ -64,3 +64,5 @@ export function isTransformation(
     )
   );
 }
+
+export type Message = number | string | object | undefined;

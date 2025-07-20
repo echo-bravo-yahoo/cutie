@@ -21,6 +21,7 @@ export function isMQTT(step: Step): step is MQTT {
 
 export default class MQTT extends Input {
   declare config: MQTTConfig;
+  // @ts-expect-error mqtt is instantiated by enable()
   mqtt: MQTTConnection;
 
   constructor(config: MQTTConfig, task: Task) {

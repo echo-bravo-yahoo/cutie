@@ -16,15 +16,11 @@ export interface MQTTConnectionConfig
 
 export default class MQTTConnection extends Connection {
   declare config: MQTTConnectionConfig;
-  state: { subscriptions: Array<any> };
+  // @ts-expect-error connection is instantiated by enable()
   connection: mqtt.MqttClient;
 
   constructor(config: MQTTConnectionConfig) {
     super(config);
-
-    this.state = {
-      subscriptions: [],
-    };
   }
 
   async enable() {
@@ -78,7 +74,7 @@ export default class MQTTConnection extends Connection {
   async subscribe(
     topics: Parameters<typeof this.connection.subscribeAsync>[0],
   ) {
-    return this.connection.subscribeAsync(topics);
+    if (this.enabled) return this.connection.subscribeAsync(topics);
   }
 
   async unsubscribe(
@@ -98,14 +94,12 @@ export default class MQTTConnection extends Connection {
     topic: Parameters<typeof this.connection.publish>[0],
     event: any,
     labels: Array<string>,
-    aggregationMetadata: any,
   ) {
     return this.connection.publish(
       topic,
       JSON.stringify({
         ...event,
         metadata: labels,
-        aggregationMetadata: aggregationMetadata,
       }),
     );
   }

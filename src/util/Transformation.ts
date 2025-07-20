@@ -1,8 +1,10 @@
+import isArray from "lodash/isArray.js";
 import get from "lodash/get.js";
 import set from "lodash/set.js";
 
 import Step, { StepConfig } from "./Step.js";
 import Task from "./Task.js";
+import { Message } from "./type-helpers.js";
 
 // some notes on terminology:
 // a primitive reading is one where the reading is a primitive/literal
@@ -48,7 +50,7 @@ export function isMultiConfig(
 }
 
 export interface Context {
-  message: { in: any; out?: any };
+  message: { in: Message; out?: Message };
   basePath?: string;
   path?: string;
   paths?: Record<string, any>;
@@ -60,10 +62,10 @@ export default abstract class Transformation extends Step {
   declare config: TransformationConfig;
   preservePaths: boolean;
   abstract transformSingle(
-    value: number,
-    config: any,
+    value: Message,
+    config: Message,
     context: Context,
-  ): number;
+  ): Message;
 
   constructor(config: TransformationConfig, task: Task) {
     super(config, task);
@@ -71,7 +73,7 @@ export default abstract class Transformation extends Step {
     this.preservePaths = true;
   }
 
-  async doHandleMessage(message: any, traceId: string) {
+  async doHandleMessage(message: Message, traceId: string) {
     return this.transform(message, traceId);
   }
 
@@ -79,7 +81,7 @@ export default abstract class Transformation extends Step {
     isArrayOfReadings: boolean,
     hasBasePath: boolean,
     isPrimitiveReading: boolean,
-    messageIn: any,
+    messageIn: Message,
   ) {
     if (isArrayOfReadings) {
       if (hasBasePath) {
@@ -96,10 +98,10 @@ export default abstract class Transformation extends Step {
     }
   }
 
-  transform(message: any, traceId: string) {
+  transform(message: Message, traceId: string) {
     const isArrayOfReadings = !!(
       this.config.basePath !== undefined ||
-      (message && message.length)
+      (isArray(message) && message.length)
     );
     const isSimpleReading = isSingleConfig(this.config);
     const isCompositeReading = isMultiConfig(this.config);
@@ -180,13 +182,18 @@ export default abstract class Transformation extends Step {
     if (context.current === "") {
       context.message.out = newValue;
     } else {
-      if (context.message.out === undefined) context.message.out = {};
-      set(context.message.out, context.current, newValue);
+      if (
+        typeof context.message !== "object" ||
+        context.message.out === undefined
+      )
+        context.message.out = {};
+      set(context.message.out as unknown as object, context.current, newValue);
     }
   }
 
   transformPrimitiveReadingArray(context: Context) {
-    let array = get(context.message.in, context.current, context.message.in);
+    const array = get(context.message.in, context.current, context.message.in);
+    if (!isArray(array)) return;
 
     for (let i = 0; i < array.length; i++) {
       context.current = `${context.basePath || ""}[${i}]`;
@@ -195,7 +202,8 @@ export default abstract class Transformation extends Step {
   }
 
   transformSimpleReadingArray(context: Context) {
-    let array = get(context.message.in, context.current, context.message.in);
+    const array = get(context.message.in, context.current, context.message.in);
+    if (!isArray(array)) return;
 
     for (let i = 0; i < array.length; i++) {
       context.current = `${context.basePath || ""}[${i}]`;
@@ -204,7 +212,8 @@ export default abstract class Transformation extends Step {
   }
 
   transformCompositeReadingArray(context: Context) {
-    let array = get(context.message.in, context.current, context.message.in);
+    const array = get(context.message.in, context.current, context.message.in);
+    if (!isArray(array)) return;
 
     for (let i = 0; i < array.length; i++) {
       context.current = `${context.basePath || ""}[${i}]`;
@@ -213,7 +222,7 @@ export default abstract class Transformation extends Step {
   }
 
   transformCompositeReading(context: Context) {
-    for (let path of Object.keys((this.config as MultiConfig).paths || {})) {
+    for (const path of Object.keys((this.config as MultiConfig).paths || {})) {
       this.doTransformSingle({
         ...context,
         current: `${context.current ? `${context.current}.` : ""}${path}`,

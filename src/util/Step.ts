@@ -3,6 +3,7 @@ import get from "lodash/get.js";
 import { globals } from "../index.js";
 import Task from "./Task.js";
 import { TypedConfig, TypedConfigurable } from "./TypedConfigurable.js";
+import { Message } from "./type-helpers.js";
 
 export interface StepConfig extends TypedConfig {}
 
@@ -44,11 +45,11 @@ export default abstract class Step extends TypedConfigurable {
   }
 
   // TO-DO: implement some callback behavior here
-  async endMessage(message: any, _traceId?: string) {
+  async endMessage(message: Message, _traceId?: string) {
     return message;
   }
 
-  async handleMessage(message: any, traceId?: string): Promise<any> {
+  async handleMessage(message: Message, traceId?: string): Promise<Message> {
     message = await this.doHandleMessage(message, traceId);
 
     if (this.next) {
@@ -58,7 +59,7 @@ export default abstract class Step extends TypedConfigurable {
     }
   }
 
-  async doHandleMessage(message: any, _traceId?: string): Promise<string> {
+  async doHandleMessage(message: Message, _traceId?: string): Promise<Message> {
     return message;
   }
 }

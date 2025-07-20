@@ -9,6 +9,7 @@ import Transformation, {
 } from "../util/Transformation.js";
 import { srcDir } from "../index.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface JavascriptConfig extends WholeMessageConfig {
   codePath: string;
@@ -24,7 +25,7 @@ export default class Javascript extends Transformation {
   }
 
   // TO-DO: functionally a copy of generateCommand in src/transformations/shell.js
-  generateCode(message: any) {
+  generateCode(message: Message) {
     if (this.config.codePath) {
       const codePath = normalize(join(srcDir, "..", this.config.codePath));
       return readFileSync(codePath, { encoding: "utf8" });
@@ -43,7 +44,7 @@ export default class Javascript extends Transformation {
     }
   }
 
-  transform(message: any) {
+  transform(message: Message) {
     const code = this.generateCode(message);
     const context = vm.createContext({ message });
     const script = new vm.Script(code);
@@ -52,7 +53,7 @@ export default class Javascript extends Transformation {
   }
 
   // no-op for class composition reasons
-  transformSingle(value: number, config: any, context: Context) {
+  transformSingle(value: number, _config: JavascriptConfig, _context: Context) {
     return value;
   }
 }

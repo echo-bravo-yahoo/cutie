@@ -5,9 +5,19 @@ export interface BME680Config extends SensorConfig {
   i2cAddress: number;
 }
 
+interface Sample {
+  metadata: {
+    timestamp: Date;
+  };
+  temp: number;
+  humidity: number;
+  pressure: number;
+  gas: number;
+}
+
 export default class BME680 extends Sensor {
   declare config: BME680Config;
-  declare samples: Array<any>;
+  declare samples: Array<Sample>;
 
   constructor(config: BME680Config, task: Task) {
     super(config, task);
@@ -19,7 +29,7 @@ export default class BME680 extends Sensor {
     if (!this.enabled) return;
     const sensorData = await this.sensor.read();
 
-    const datapoint = {
+    const datapoint: Sample = {
       metadata: {
         timestamp: new Date(),
       },

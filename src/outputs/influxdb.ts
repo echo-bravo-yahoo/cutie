@@ -4,14 +4,30 @@ import { getConnection } from "../util/connections.js";
 import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
 import InfluxDBConnection from "../connections/influxdb.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface InfluxDBConfig extends OutputConfig {
   measurement: string;
   labels: Array<string>;
 }
 
+export function isInfluxDBMessage(
+  message: Message,
+): message is InfluxDBMessage {
+  return (
+    typeof message === "object" &&
+    typeof (message as unknown as InfluxDBMessage).data === "string"
+  );
+}
+
+interface InfluxDBMessage {
+  data: string;
+  labels?: Array<string>;
+}
+
 export default class InfluxDB extends Output {
   declare config: InfluxDBConfig;
+  // @ts-expect-error config is instantiated by enable
   influxdb: InfluxDBConnection;
 
   constructor(config: InfluxDBConfig, task: Task) {
@@ -23,7 +39,7 @@ export default class InfluxDB extends Output {
     this.enabled = true;
   }
 
-  objectToLine(object: Record<string, any>) {
+  objectToLine(object: Record<string, Message> | InfluxDBMessage) {
     const result = [];
     delete object.labels;
     for (const [key, value] of Object.entries(object)) {
@@ -34,8 +50,12 @@ export default class InfluxDB extends Output {
   }
 
   // raw or { event, labels } object
-  async send(message: any) {
-    // console.log("message:", message);
+  async send(message: Message) {
+    if (!isInfluxDBMessage(message))
+      throw new Error(
+        `Invalid message shape for influxdb message ${JSON.stringify(message)}`,
+      );
+    if (typeof message !== "object") return message;
 
     const measurementName = this.config.measurement;
     let labelsString = "";
@@ -50,10 +70,10 @@ export default class InfluxDB extends Output {
     if (labelsString) labelsString = `,${labelsString}`;
     const data = this.objectToLine(message);
 
-    let line = `${measurementName}${labelsString || ""} ${data} ${new Date().valueOf()}`;
+    const line = `${measurementName}${labelsString || ""} ${data} ${new Date().valueOf()}`;
     const { url, organization, bucket, precision, token } =
       this.influxdb.config;
-    let command = `curl --request POST \
+    const command = `curl --request POST \
 --header "Authorization: Token ${token}" \
 --header "Content-Type: text/plain; charset=utf-8" \
 --header "Accept: application/json" \
@@ -64,7 +84,7 @@ export default class InfluxDB extends Output {
       console.log(`Result: ${stdout}`);
     });
 
-    return message;
+    return line;
   }
 }
 

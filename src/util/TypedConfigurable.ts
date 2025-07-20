@@ -16,6 +16,9 @@ export class TypedConfigurable extends Configurable {
       const typeInfo = Configurable.parseType(config.type);
       this.type = typeInfo.type;
       this.subType = typeInfo.subType;
+    } else {
+      this.type = "unknown";
+      this.subType = "unknown";
     }
   }
 }
