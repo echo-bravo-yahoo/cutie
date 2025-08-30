@@ -25,7 +25,7 @@ export interface Globals {
 export let globals: Globals = {} as unknown as Globals;
 
 // used for testing
-export function setGlobals(newValue: any) {
+export function setGlobals(newValue: Globals) {
   globals = newValue;
 }
 

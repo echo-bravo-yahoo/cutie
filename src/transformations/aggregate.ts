@@ -11,12 +11,14 @@ import Transformation, {
 } from "../util/Transformation.js";
 import Task from "../util/Task.js";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isNumberArray(possibleArray: any): possibleArray is Array<number> {
   return (
     possibleArray !== undefined &&
     possibleArray !== null &&
     typeof possibleArray === "object" &&
     possibleArray.length !== undefined &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     possibleArray.every((value: any) => typeof value === "number")
   );
 }
@@ -74,12 +76,12 @@ export default class Aggregate extends Transformation {
     const newValue = Sensor.doAggregation(
       oldValue,
       config.aggregation,
-      context.path,
+      context.path
     );
     if (context.current === "") {
       if (context.path === undefined)
         throw new Error(
-          `Need either context.current or context.path to be defined.`,
+          `Need either context.current or context.path to be defined.`
         );
       context.message.out = set({}, context.path, newValue);
     } else {
@@ -98,9 +100,10 @@ export default class Aggregate extends Transformation {
   transformCompositeReadingArray(context: Context) {
     const oldArray = [
       ...get(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         context.message.in as unknown as any,
         context.current,
-        context.message.in,
+        context.message.in
       ),
     ];
     const newSubObject = {};
@@ -118,7 +121,7 @@ export default class Aggregate extends Transformation {
       const newValue = Sensor.doAggregation(
         oldArray,
         config.aggregation,
-        context.pathChosen,
+        context.pathChosen
       );
       set(newSubObject, context.current, newValue);
     }
@@ -148,7 +151,7 @@ export default class Aggregate extends Transformation {
     const oldValue = get(
       context.message.in,
       context.current,
-      context.message.in,
+      context.message.in
     );
     let newValue;
 
@@ -165,7 +168,7 @@ export default class Aggregate extends Transformation {
   transformSingle(
     value: number,
     _config: TransformationConfig,
-    _context: Context,
+    _context: Context
   ) {
     return value;
   }

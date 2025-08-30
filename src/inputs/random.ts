@@ -12,6 +12,7 @@ export interface RandomConfig extends SensorConfig {
 export default class Random extends Sensor {
   declare config: RandomConfig;
   lastNumber: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   declare samples: Array<any>;
 
   constructor(config: RandomConfig, task: Task) {
@@ -59,7 +60,7 @@ export default class Random extends Sensor {
     this.debug(
       "Sampled new data point.",
       { topic: this.logPrefix },
-      { datapoint },
+      { datapoint }
     );
     this.samples.push(datapoint);
     this.lastNumber = datapoint.number;

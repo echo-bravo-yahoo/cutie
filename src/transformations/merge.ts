@@ -29,13 +29,14 @@ export default class Merge extends Transformation {
   transformSingle(
     value: Message,
     config: SinglePathMergeConfig,
-    context: Context,
+    context: Context
   ) {
     if (typeof value !== "object")
       throw new Error(
-        `Context.message.out should be an object, but instead is ${context.message.out} (${typeof context.message.out}).`,
+        `Context.message.out should be an object, but instead is ${context.message.out} (${typeof context.message.out}).`
       );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let result: any = { ...context.message };
     const merged = merge(value, config);
     if (config.to === "") {
