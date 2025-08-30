@@ -12,6 +12,7 @@ provisioner/authorized_keys/**
 **/node_modules/
 
 built/
+coverage/
 
 config/
 !config/cutie.conf.json
