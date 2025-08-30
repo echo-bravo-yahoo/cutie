@@ -2,6 +2,7 @@
 
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
+import eslintConfigPrettier from "eslint-config-prettier/flat";
 
 const universalIgnores = [
   "built/**",
@@ -10,6 +11,7 @@ const universalIgnores = [
   "test/util/fixtures/**",
   "**/*.js",
 ];
+
 export default tseslint.config(
   {
     plugins: {
@@ -53,7 +55,8 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
+  eslintConfigPrettier,
   {
     ignores: universalIgnores,
-  }
+  },
 );
