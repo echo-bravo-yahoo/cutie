@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "test": "npx tsx --test './test/**/*.ts'",
+    "test:watch": "npx tsx watch --test './test/**/*.ts'",
     "test:coverage": "npx c8 --src './src' --all tsx --test './test/**/*.ts'",
     "build": "tsc && chmod +x ./built/cli-entrypoint.js",
     "build:watch": "tsc --watch",
