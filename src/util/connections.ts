@@ -14,7 +14,7 @@ export async function registerConnections(
     await readdir(normalize(`${srcDir}/connections`))
   ).map((name) => basename(name, ".js"));
 
-  // TO-DO: add redaction back in...
+  // TODO: add redaction back in...
   // const localLogger = globals.logger.logger.child(
   //   {},
   //   {

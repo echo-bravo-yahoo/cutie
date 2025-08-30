@@ -60,7 +60,7 @@ export default class Random extends Sensor {
     this.debug(
       "Sampled new data point.",
       { topic: this.logPrefix },
-      { datapoint }
+      { datapoint },
     );
     this.samples.push(datapoint);
     this.lastNumber = datapoint.number;

@@ -39,13 +39,13 @@ export interface MultiConfig extends BaseTransformationConfig {
 export interface WholeMessageConfig extends BaseTransformationConfig {}
 
 export function isSingleConfig(
-  config: TransformationConfig
+  config: TransformationConfig,
 ): config is SingleConfig {
   return typeof (config as SingleConfig).path === "string" ? true : false;
 }
 
 export function isMultiConfig(
-  config: TransformationConfig
+  config: TransformationConfig,
 ): config is MultiConfig {
   return typeof (config as MultiConfig).paths === "object" ? true : false;
 }
@@ -66,7 +66,7 @@ export default abstract class Transformation extends Step {
   abstract transformSingle(
     value: Message,
     config: Message,
-    context: Context
+    context: Context,
   ): Message;
 
   constructor(config: TransformationConfig, task: Task) {
@@ -83,7 +83,7 @@ export default abstract class Transformation extends Step {
     isArrayOfReadings: boolean,
     hasBasePath: boolean,
     isPrimitiveReading: boolean,
-    messageIn: Message
+    messageIn: Message,
   ) {
     if (isArrayOfReadings) {
       if (hasBasePath) {
@@ -116,7 +116,7 @@ export default abstract class Transformation extends Step {
           isArrayOfReadings,
           !!this.config.basePath,
           isPrimitiveReading,
-          message
+          message,
         ),
       },
       basePath: this.config.basePath,
@@ -134,7 +134,7 @@ export default abstract class Transformation extends Step {
         isCompositeReading,
         isPrimitiveReading,
         context,
-      }
+      },
     );
 
     if (isArrayOfReadings) {
@@ -163,7 +163,7 @@ export default abstract class Transformation extends Step {
           in: context.message.in,
           out: context.message.out,
         },
-      }
+      },
     );
 
     return context.message.out;
@@ -177,7 +177,7 @@ export default abstract class Transformation extends Step {
     const oldValue = get(
       context.message.in,
       context.current,
-      context.message.in
+      context.message.in,
     );
     const newValue = this.transformSingle(oldValue, config, context);
 

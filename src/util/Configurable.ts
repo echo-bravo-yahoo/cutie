@@ -30,7 +30,7 @@ export class Configurable {
         Configurable.formatLogLine(msg, opts),
         "debug",
         opts.topic,
-        obj
+        obj,
       );
     };
 
@@ -39,7 +39,7 @@ export class Configurable {
         Configurable.formatLogLine(msg, opts),
         "info",
         opts.topic,
-        obj
+        obj,
       );
     };
 
@@ -48,11 +48,11 @@ export class Configurable {
         Configurable.formatLogLine(msg, opts),
         "error",
         opts.topic,
-        obj
+        obj,
       );
     };
 
-    // TO-DO: fix
+    // TODO: fix
     this.logPrefix = "";
     if (this.addDefaultsToConfig) config = this.addDefaultsToConfig(config);
     this.config = config;
@@ -94,7 +94,7 @@ export class Configurable {
   interpolateConfigString(
     template: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    additionalContext?: Record<string, any>
+    additionalContext?: Record<string, any>,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inject = (str: string, obj: Record<string, any>) =>
@@ -121,7 +121,7 @@ export class Configurable {
   static buildLoggerArgs(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     obj: string | Record<string, any>,
-    msgOrError?: string
+    msgOrError?: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): [Record<string, any>, message: string | undefined] {
     if (typeof obj === "string") {

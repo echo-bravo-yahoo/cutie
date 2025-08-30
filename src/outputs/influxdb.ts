@@ -60,7 +60,7 @@ export default class InfluxDB extends Output {
     const measurementName = this.config.measurement;
     let labelsString = "";
 
-    // TO-DO: do interpolation here
+    // TODO: do interpolation here
     if (message.labels || this.config.labels)
       labelsString = this.objectToLine({
         ...this.config.labels,

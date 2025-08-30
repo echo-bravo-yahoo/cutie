@@ -40,10 +40,10 @@ export default class MQTTConnection extends Connection {
     this.debug(
       `Received new message on topic "${topic}".}`,
       { topic: this.logPrefix },
-      { message }
+      { message },
     );
     const mqttConnectionNames = getConnectionsByType("mqtt").map(
-      (connection) => connection.name
+      (connection) => connection.name,
     );
     let triggers = 0;
 
@@ -57,7 +57,7 @@ export default class MQTTConnection extends Connection {
           isMQTT(firstStep) &&
           MQTTConnection.matchesTopic(
             topic,
-            firstStep.config.topic || firstStep.config.topics || ""
+            firstStep.config.topic || firstStep.config.topics || "",
           )
         ) {
           (globals.tasks[i].steps[0] as unknown as MQTT).startMessage(message);
@@ -72,20 +72,20 @@ export default class MQTTConnection extends Connection {
   }
 
   async subscribe(
-    topics: Parameters<typeof this.connection.subscribeAsync>[0]
+    topics: Parameters<typeof this.connection.subscribeAsync>[0],
   ) {
     if (this.enabled) return this.connection.subscribeAsync(topics);
   }
 
   async unsubscribe(
-    topics: Parameters<typeof this.connection.unsubscribeAsync>[0]
+    topics: Parameters<typeof this.connection.unsubscribeAsync>[0],
   ) {
     return this.connection.unsubscribeAsync(topics);
   }
 
   sendRaw(
     topic: Parameters<typeof this.connection.publish>[0],
-    message: Parameters<typeof this.connection.publish>[1]
+    message: Parameters<typeof this.connection.publish>[1],
   ) {
     return this.connection.publish(topic, message);
   }
@@ -94,26 +94,26 @@ export default class MQTTConnection extends Connection {
     topic: Parameters<typeof this.connection.publish>[0],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     event: any,
-    labels: Array<string>
+    labels: Array<string>,
   ) {
     return this.connection.publish(
       topic,
       JSON.stringify({
         ...event,
         metadata: labels,
-      })
+      }),
     );
   }
 
   static matchesTopic(
     topicToMatch: string,
-    possibleMatches: Array<string> | string
+    possibleMatches: Array<string> | string,
   ) {
     if (typeof possibleMatches === "string")
       return MqttTopics.match(topicToMatch, possibleMatches);
 
     return possibleMatches.some((topic) =>
-      MqttTopics.match(topic, topicToMatch)
+      MqttTopics.match(topic, topicToMatch),
     );
   }
 }

@@ -25,7 +25,7 @@ export default class Logs extends Input {
     if (filter === "") return false;
     if (filter[0] === "!") filter = filter.slice(1);
 
-    // TO-DO: improve the regex so the filter step isn't necessary
+    // TODO: improve the regex so the filter step isn't necessary
     const filterTokens = filter
       .split(/([.*])/)
       .filter((token) => token !== "." && token !== "")

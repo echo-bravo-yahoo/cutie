@@ -24,7 +24,7 @@ export default class BLETracker extends Sensor {
   constructor(config: BLETrackerConfig, task: Task) {
     super(config, task);
 
-    // TO-DO: rewrite this, it's bad
+    // TODO: rewrite this, it's bad
     this.samples = {};
     this.name = "BLETracker";
   }
