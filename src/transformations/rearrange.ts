@@ -27,7 +27,7 @@ export type RearrangeConfig =
 
 export default class Rearrange extends Transformation {
   constructor(config: RearrangeConfig, task: Task) {
-    super(config, task);
+    super(config, task, {});
   }
 
   doTransformSingle(context: Context) {

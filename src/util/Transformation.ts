@@ -5,6 +5,7 @@ import set from "lodash/set.js";
 import Step, { StepConfig } from "./Step.js";
 import Task from "./Task.js";
 import { Message } from "./type-helpers.js";
+import { ConfigurableImplementation } from "./Configurable.js";
 
 // some notes on terminology:
 // a primitive reading is one where the reading is a primitive/literal
@@ -69,8 +70,12 @@ export default abstract class Transformation extends Step {
     context: Context,
   ): Message;
 
-  constructor(config: TransformationConfig, task: Task) {
-    super(config, task);
+  constructor(
+    config: TransformationConfig,
+    task: Task,
+    implementation: ConfigurableImplementation,
+  ) {
+    super(config, task, implementation);
 
     this.preservePaths = true;
   }

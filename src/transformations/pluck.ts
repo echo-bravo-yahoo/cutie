@@ -26,7 +26,7 @@ export default class Pluck extends Transformation {
   declare config: PluckConfig;
 
   constructor(config: PluckConfig, task: Task) {
-    super(config, task);
+    super(config, task, {});
 
     this.preservePaths = false;
   }

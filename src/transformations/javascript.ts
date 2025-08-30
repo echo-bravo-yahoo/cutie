@@ -21,7 +21,7 @@ export default class Javascript extends Transformation {
   declare config: JavascriptConfig;
 
   constructor(config: JavascriptConfig, task: Task) {
-    super(config as unknown as TransformationConfig, task);
+    super(config as unknown as TransformationConfig, task, {});
   }
 
   // TODO: functionally a copy of generateCommand in src/transformations/shell.js

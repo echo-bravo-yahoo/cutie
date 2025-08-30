@@ -23,7 +23,7 @@ export type MergeConfig = SinglePathMergeConfig | MultiPathMergeConfig;
 
 export default class Merge extends Transformation {
   constructor(config: MergeConfig, task: Task) {
-    super(config, task);
+    super(config, task, {});
   }
 
   transformSingle(

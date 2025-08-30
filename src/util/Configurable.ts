@@ -11,6 +11,10 @@ export interface LogLineOptions {
   traceId?: string;
 }
 
+export interface ConfigurableImplementation {
+  addDefaultsToConfig?(config: Config): Config;
+}
+
 export class Configurable {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   debug: (msg: string, opts: LogLineOptions, obj?: Record<string, any>) => void;
@@ -22,9 +26,12 @@ export class Configurable {
   config: Config;
   enabled: boolean;
   name: string;
-  addDefaultsToConfig?(config: Config): Config;
 
-  constructor(config: Config, name: string) {
+  constructor(
+    config: Config,
+    name: string,
+    implementation?: ConfigurableImplementation,
+  ) {
     this.debug = (msg, opts, obj) => {
       globals.logger.emit(
         Configurable.formatLogLine(msg, opts),
@@ -54,7 +61,8 @@ export class Configurable {
 
     // TODO: fix
     this.logPrefix = "";
-    if (this.addDefaultsToConfig) config = this.addDefaultsToConfig(config);
+    if (implementation && implementation.addDefaultsToConfig)
+      config = implementation.addDefaultsToConfig(config);
     this.config = config;
     this.name = name;
     this.enabled = false;
