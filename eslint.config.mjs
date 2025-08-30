@@ -48,6 +48,12 @@ export default tseslint.config(
     },
   },
   {
-    ignores: universalIgnores,
+    files: ["test/**"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
   },
+  {
+    ignores: universalIgnores,
+  }
 );

@@ -29,8 +29,10 @@ export default abstract class Step extends TypedConfigurable {
   // always includes the context of task, module/config, and globals
   interpolateConfigString(
     template: string,
-    additionalContext?: Record<string, any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    additionalContext?: Record<string, any>
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inject = (str: string, obj: Record<string, any>) =>
       str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));
 

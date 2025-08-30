@@ -14,11 +14,14 @@ export interface SensorConfig extends InputConfig {
 export default abstract class Sensor extends Input {
   reportInterval?: NodeJS.Timeout;
   sampleInterval?: NodeJS.Timeout;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sensor?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   samples: Array<any> | Record<string, Array<any>>;
   declare config: SensorConfig;
   abstract enable(): Promise<void>;
   abstract sample(): Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abstract collateSamples(): any;
 
   constructor(config: SensorConfig, task: Task) {
@@ -47,7 +50,7 @@ export default abstract class Sensor extends Input {
         topic: this.config.type,
         traceId,
       },
-      payload,
+      payload
     );
     this.startMessage(payload, traceId);
     this.samples = [];
@@ -60,7 +63,8 @@ export default abstract class Sensor extends Input {
         ? this.samples[prefixKey]
         : this.samples;
     const result = this.doAggregation(
-      map(samples, (sample: any) => get(sample, path)),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      map(samples, (sample: any) => get(sample, path))
     );
 
     return result;
@@ -77,7 +81,7 @@ export default abstract class Sensor extends Input {
       return data[data.length - 1];
     } else {
       throw new Error(
-        `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`,
+        `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`
       );
     }
   }
@@ -95,7 +99,7 @@ export default abstract class Sensor extends Input {
       return sum / data.length;
     } else {
       throw new Error(
-        `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`,
+        `Unsupported aggregation "${aggregation}" for ${data.length} datapoints: ${JSON.stringify(data)}".`
       );
     }
   }
@@ -105,7 +109,7 @@ export default abstract class Sensor extends Input {
     this.publishReading().then(() => {
       this.reportInterval = setInterval(
         this.publishReading.bind(this),
-        this.getReportingInterval(),
+        this.getReportingInterval()
       );
     });
   }
@@ -115,7 +119,7 @@ export default abstract class Sensor extends Input {
     this.publishReading().then(() => {
       this.sampleInterval = setInterval(
         this.sample.bind(this),
-        this.getSamplingInterval(),
+        this.getSamplingInterval()
       );
     });
   }

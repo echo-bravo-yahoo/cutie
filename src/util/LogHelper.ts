@@ -14,9 +14,8 @@ export default class LogHelper {
   declare logger: Logger;
 
   constructor() {
-    this.logger = (
-      loggerFactory as unknown as (options?: LoggerOptions<any>) => Logger
-    )({
+    this.logger = // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (loggerFactory as unknown as (options?: LoggerOptions<any>) => Logger)({
       level: "debug",
       messageKey: "log",
       errorKey: "error",
