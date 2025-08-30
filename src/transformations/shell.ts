@@ -20,7 +20,7 @@ export default class Shell extends Transformation {
   declare config: ShellConfig;
 
   constructor(config: ShellConfig, task: Task) {
-    super(config, task);
+    super(config, task, {});
   }
 
   // TODO: functionally a copy of generateCode in src/transformations/javascript.js

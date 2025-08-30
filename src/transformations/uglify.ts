@@ -13,7 +13,7 @@ export default class Uglify extends Transformation {
   declare config: UglifyConfig;
 
   constructor(config: UglifyConfig, task: Task) {
-    super(config, task);
+    super(config, task, {});
   }
 
   addDefaultsToConfig(config: UglifyConfig): UglifyConfig {

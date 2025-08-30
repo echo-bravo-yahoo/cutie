@@ -25,7 +25,7 @@ function isNumberArray(possibleArray: any): possibleArray is Array<number> {
 
 export default class Aggregate extends Transformation {
   constructor(config: TransformationConfig, task: Task) {
-    super(config, task);
+    super(config, task, {});
   }
 
   transformPrimitiveReadingArray(context: Context) {

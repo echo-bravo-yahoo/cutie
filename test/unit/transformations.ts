@@ -12,6 +12,8 @@ import { ShellConfig } from "../../src/transformations/shell.js";
 import { ConvertConfig } from "../../src/transformations/convert.js";
 import { RearrangeConfig } from "../../src/transformations/rearrange.js";
 import { JavascriptConfig } from "../../src/transformations/javascript.js";
+import { PrettifyConfig } from "../../src/transformations/prettify.js";
+import { UglifyConfig } from "../../src/transformations/uglify.js";
 // import { AggregateConfig } from "../transformations/aggregate.js";
 
 describe("transformations", function () {
@@ -737,6 +739,196 @@ describe("transformations", function () {
           const transformed = await task.handleMessage(8);
           expect(transformed).to.deep.equal(9);
         });
+      });
+    });
+
+    describe("prettify", function () {
+      it("works for objects", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:prettify",
+              } as PrettifyConfig,
+            ],
+          },
+          "works for objects",
+        );
+        await task.register();
+
+        const transformed = await task.handleMessage({
+          a: 1,
+          b: "hi",
+          c: null,
+        });
+        expect(transformed).to.equal(
+          `{\n    "a": 1,\n    "b": "hi",\n    "c": null\n}`,
+        );
+      });
+
+      it("works for strings when parseInput is set", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:prettify",
+                parseInput: true,
+              } as PrettifyConfig,
+            ],
+          },
+          "works for strings when parseInput is set",
+        );
+        await task.register();
+
+        const transformed = await task.handleMessage(
+          '{"a":1, "b": "hi", "c": null}',
+        );
+        expect(transformed).to.equal(
+          `{\n    "a": 1,\n    "b": "hi",\n    "c": null\n}`,
+        );
+      });
+
+      it("passes through unknown values", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:prettify",
+              } as PrettifyConfig,
+            ],
+          },
+          "passes through unknown values",
+        );
+        await task.register();
+
+        let transformed = await task.handleMessage(undefined);
+        expect(transformed).to.equal(undefined);
+        transformed = await task.handleMessage(12.3);
+        expect(transformed).to.equal(12.3);
+      });
+
+      it("passes through strings if parseInput is not set", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:prettify",
+              } as PrettifyConfig,
+            ],
+          },
+          "passes through strings if parseInput is not set",
+        );
+        await task.register();
+
+        const transformed = await task.handleMessage(
+          '{"parseable": "but not modified"}',
+        );
+        expect(transformed).to.equal('{"parseable": "but not modified"}');
+      });
+
+      it("allows for customizing the amount of whitespace", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:prettify",
+                spaces: 2,
+              } as PrettifyConfig,
+            ],
+          },
+          "allows for customizing the amount of whitespace",
+        );
+        await task.register();
+
+        const transformed = await task.handleMessage({
+          a: 1,
+          b: "hi",
+          c: null,
+        });
+        expect(transformed).to.equal(
+          `{\n  "a": 1,\n  "b": "hi",\n  "c": null\n}`,
+        );
+      });
+    });
+
+    describe("uglify", function () {
+      it("works for objects", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:uglify",
+              } as UglifyConfig,
+            ],
+          },
+          "works for objects",
+        );
+        await task.register();
+
+        const transformed = await task.handleMessage({
+          a: 1,
+          b: "hi",
+          c: null,
+        });
+        expect(transformed).to.equal(`{"a":1,"b":"hi","c":null}`);
+      });
+
+      it("works for strings when parseInput is set", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:uglify",
+                parseInput: true,
+              } as UglifyConfig,
+            ],
+          },
+          "works for strings when parseInput is set",
+        );
+        await task.register();
+
+        const transformed = await task.handleMessage(
+          '{"a":1, "b": "hi", "c": null}',
+        );
+        expect(transformed).to.equal(`{"a":1,"b":"hi","c":null}`);
+      });
+
+      it("passes through unknown values", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:uglify",
+              } as UglifyConfig,
+            ],
+          },
+          "passes through unknown values",
+        );
+        await task.register();
+
+        let transformed = await task.handleMessage(undefined);
+        expect(transformed).to.equal(undefined);
+        transformed = await task.handleMessage(12.3);
+        expect(transformed).to.equal(12.3);
+      });
+
+      it("passes through strings if parseInput is not set", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transformation:uglify",
+              } as UglifyConfig,
+            ],
+          },
+          "passes through strings if parseInput is not set",
+        );
+        await task.register();
+
+        const transformed = await task.handleMessage(
+          '{"parseable": "but not modified"}',
+        );
+        expect(transformed).to.equal('{"parseable": "but not modified"}');
       });
     });
   });

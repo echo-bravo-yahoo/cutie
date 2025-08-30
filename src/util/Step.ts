@@ -4,6 +4,7 @@ import { globals } from "../index.js";
 import Task from "./Task.js";
 import { TypedConfig, TypedConfigurable } from "./TypedConfigurable.js";
 import { Message } from "./type-helpers.js";
+import { ConfigurableImplementation } from "./Configurable.js";
 
 export interface StepConfig extends TypedConfig {}
 
@@ -13,17 +14,17 @@ export default abstract class Step extends TypedConfigurable {
   next?: Step;
   declare logPrefix: string;
 
-  constructor(config: StepConfig, task: Task) {
-    super(config);
+  constructor(
+    config: StepConfig,
+    task: Task,
+    implementation?: ConfigurableImplementation,
+  ) {
+    super(config, implementation);
 
     this.task = task;
     const index =
       task && task.steps && task.steps.findIndex((step) => step === this);
     this.logPrefix = `core.runtime.tasks.${task.name}.steps.${index}`;
-    // TODO: why in the WORLD is this necessary?
-    // TypedConfigurable already sets this but for some reason,
-    // it's dropped by the time we get to here in tests
-    this.config = config;
   }
 
   // always includes the context of task, module/config, and globals
