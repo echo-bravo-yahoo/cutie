@@ -23,7 +23,7 @@ export default class Shell extends Transformation {
     super(config, task);
   }
 
-  // TO-DO: functionally a copy of generateCode in src/transformations/javascript.js
+  // TODO: functionally a copy of generateCode in src/transformations/javascript.js
   generateCommand(message: Message) {
     if (this.config.codePath) {
       const codePath = normalize(join(srcDir, "..", this.config.codePath));

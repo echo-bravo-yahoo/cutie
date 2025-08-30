@@ -15,17 +15,17 @@ export default class LogHelper {
 
   constructor() {
     this.logger = // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (loggerFactory as unknown as (options?: LoggerOptions<any>) => Logger)({
-      level: "debug",
-      messageKey: "log",
-      errorKey: "error",
-      transport: {
-        target: "pino-pretty",
-        options: {
-          colorize: true,
+      (loggerFactory as unknown as (options?: LoggerOptions<any>) => Logger)({
+        level: "debug",
+        messageKey: "log",
+        errorKey: "error",
+        transport: {
+          target: "pino-pretty",
+          options: {
+            colorize: true,
+          },
         },
-      },
-    });
+      });
 
     this.logListeners = [];
   }

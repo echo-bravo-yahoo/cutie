@@ -20,7 +20,7 @@ export default abstract class Step extends TypedConfigurable {
     const index =
       task && task.steps && task.steps.findIndex((step) => step === this);
     this.logPrefix = `core.runtime.tasks.${task.name}.steps.${index}`;
-    // TO-DO: why in the WORLD is this necessary?
+    // TODO: why in the WORLD is this necessary?
     // TypedConfigurable already sets this but for some reason,
     // it's dropped by the time we get to here in tests
     this.config = config;
@@ -30,7 +30,7 @@ export default abstract class Step extends TypedConfigurable {
   interpolateConfigString(
     template: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    additionalContext?: Record<string, any>
+    additionalContext?: Record<string, any>,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inject = (str: string, obj: Record<string, any>) =>
@@ -46,7 +46,7 @@ export default abstract class Step extends TypedConfigurable {
     return result;
   }
 
-  // TO-DO: implement some callback behavior here
+  // TODO: implement some callback behavior here
   async endMessage(message: Message, _traceId?: string) {
     return message;
   }

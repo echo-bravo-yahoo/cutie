@@ -16,7 +16,7 @@ export default class Task extends Configurable {
   constructor(config: TaskConfig, name: string) {
     super(config, name);
 
-    // TO-DO: why in the WORLD is this necessary?
+    // TODO: why in the WORLD is this necessary?
     // TypedConfigurable already sets this but for some reason,
     // it's dropped by the time we get to here in tests
     this.config = config;
