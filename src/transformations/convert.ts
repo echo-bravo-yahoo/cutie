@@ -35,7 +35,7 @@ export default class Convert extends Transformation {
       result = (5 / 9) * (value - 32);
     } else {
       throw new Error(
-        `Unknown conversion from "${config.from}" to "${config.to}" in config at path "${context.current}".`,
+        `Unknown conversion from "${config.from}" to "${config.to}" in config${context.current ? ` at path ${context.current}` : ""}.`,
       );
     }
 
