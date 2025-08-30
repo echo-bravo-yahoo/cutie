@@ -1,6 +1,9 @@
 import { describe, it, before } from "node:test";
 
-import { expect } from "chai";
+import * as chai from "chai";
+import chaiAsPromised from "chai-as-promised";
+chai.use(chaiAsPromised);
+const { expect } = chai;
 
 import Task from "../../src/util/Task.js";
 import { setGlobals } from "../../src/index.js";
@@ -573,6 +576,66 @@ describe("transformations", function () {
         });
         it.skip("works on simple readings", async function () {});
         it.skip("works on composite readings", async function () {});
+      });
+      describe("fails", function () {
+        it("when provided an incorrect 'to' or 'from'", async function () {
+          let task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:convert",
+                  from: "nonsense",
+                  to: "celsius",
+                } as unknown as ConvertConfig,
+              ],
+            },
+            "works on primitive readings",
+          );
+          await task.register();
+
+          expect(task.handleMessage(20)).to.eventually.be.rejectedWith(
+            Error,
+            /Unknown conversion from "nonsense" to "celsius" in config./,
+          );
+
+          task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:convert",
+                  from: "fahrenheit",
+                  to: "nonsense",
+                } as unknown as ConvertConfig,
+              ],
+            },
+            "works on primitive readings",
+          );
+          await task.register();
+
+          expect(task.handleMessage(20)).to.eventually.be.rejectedWith(
+            Error,
+            /Unknown conversion from "fahrenheit" to "nonsense" in config./,
+          );
+
+          task = new Task(
+            {
+              steps: [
+                {
+                  type: "transformation:convert",
+                  from: "nonsense",
+                  to: "double-nonsense",
+                } as unknown as ConvertConfig,
+              ],
+            },
+            "works on primitive readings",
+          );
+          await task.register();
+
+          expect(task.handleMessage(20)).to.eventually.be.rejectedWith(
+            Error,
+            /Unknown conversion from "nonsense" to "double-nonsense" in config./,
+          );
+        });
       });
     });
 
