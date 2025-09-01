@@ -1,4 +1,6 @@
-import { exec } from "node:child_process";
+import { promisify } from "node:util";
+import child_process from "node:child_process";
+const exec = promisify(child_process.exec);
 
 import { getConnection } from "../util/connections.js";
 import Output, { OutputConfig } from "../util/Output.js";
@@ -39,7 +41,7 @@ export default class InfluxDB extends Output {
     this.enabled = true;
   }
 
-  objectToLine(object: Record<string, Message> | InfluxDBMessage) {
+  objectToLine(object: Record<string, Message>) {
     const result = [];
     delete object.labels;
     for (const [key, value] of Object.entries(object)) {
@@ -49,28 +51,7 @@ export default class InfluxDB extends Output {
     return result.join(",");
   }
 
-  // raw or { event, labels } object
-  async send(message: Message) {
-    if (!isInfluxDBMessage(message))
-      throw new Error(
-        `Invalid message shape for influxdb message ${JSON.stringify(message)}`,
-      );
-    if (typeof message !== "object") return message;
-
-    const measurementName = this.config.measurement;
-    let labelsString = "";
-
-    // TODO: do interpolation here
-    if (message.labels || this.config.labels)
-      labelsString = this.objectToLine({
-        ...this.config.labels,
-        ...message.labels,
-      });
-
-    if (labelsString) labelsString = `,${labelsString}`;
-    const data = this.objectToLine(message);
-
-    const line = `${measurementName}${labelsString || ""} ${data} ${new Date().valueOf()}`;
+  async sendLine(line: string) {
     const { url, organization, bucket, precision, token } =
       this.influxdb.config;
     const command = `curl --request POST \
@@ -80,11 +61,35 @@ export default class InfluxDB extends Output {
 --data-binary "${line}" \
 "${url}?org=${organization}&bucket=${bucket}&precision=${precision}"`;
     // console.log(`Running command: ${command}`);
-    exec(command, (_error, stdout, _stderr) => {
-      console.log(`Result: ${stdout}`);
-    });
+    return exec(command);
+  }
 
-    return line;
+  // object to turn into a message _or_ a raw string already in message format
+  async send(message: Message) {
+    if (typeof message === "string") {
+      await this.sendLine(message);
+      return message;
+    } else if (typeof message === "object") {
+      const measurementName = this.config.measurement;
+      let labelsString = "";
+
+      // TO-DO: do interpolation here
+      if (message.labels || this.config.labels)
+        labelsString = this.objectToLine({
+          ...this.config.labels,
+          ...message.labels,
+        });
+
+      if (labelsString) labelsString = `,${labelsString}`;
+      const data = this.objectToLine(message);
+
+      const line = `${measurementName}${labelsString || ""} ${data} ${new Date().valueOf()}`;
+      await this.sendLine(line);
+
+      return line;
+    } else {
+      throw new Error(`Invalid InfluxDB message format.`);
+    }
   }
 }
 
