@@ -86,7 +86,7 @@ export default class InfluxDB extends Output {
       const line = `${measurementName}${labelsString || ""} ${data} ${new Date().valueOf()}`;
       await this.sendLine(line);
 
-      return line;
+      return message;
     } else {
       throw new Error(`Invalid InfluxDB message format.`);
     }
