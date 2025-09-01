@@ -6,13 +6,20 @@ import { globals, srcDir } from "../index.js";
 import { Connection, ConnectionConfig } from "./Connection.js";
 import { Configurable } from "./Configurable.js";
 
+function determineRuntimeExtension() {
+  const extension = process.argv
+    .find((string) => string.endsWith(".ts") || string.endsWith(".js"))
+    ?.slice(-3);
+  return extension;
+}
+
 export async function registerConnections(
   connectionConfigs: Array<ConnectionConfig>,
 ) {
   const topic = "core.registration.connections";
   const connectionNames = (
     await readdir(normalize(`${srcDir}/connections`))
-  ).map((name) => basename(name, ".js"));
+  ).map((name) => basename(name, determineRuntimeExtension()));
 
   // TODO: add redaction back in...
   // const localLogger = globals.logger.logger.child(

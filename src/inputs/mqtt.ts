@@ -29,7 +29,9 @@ export default class MQTT extends Input {
   }
 
   async enable() {
-    this.mqtt = getConnection(this.name) as unknown as MQTTConnection;
+    this.mqtt = getConnection(
+      this.config.connectionName,
+    ) as unknown as MQTTConnection;
 
     if (
       this.config.topic ||
