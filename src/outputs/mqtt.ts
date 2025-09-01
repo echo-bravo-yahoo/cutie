@@ -36,7 +36,7 @@ export default class MQTT extends Output {
       this.mqtt?.sendRaw(interpolatedTopic, JSON.stringify(message));
     });
 
-    return typeof message !== "string" ? JSON.stringify(message) : message;
+    return message;
   }
 }
 
