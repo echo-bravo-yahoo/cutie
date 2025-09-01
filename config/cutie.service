@@ -4,7 +4,7 @@ Description=a cute little MQTT service
 [Service]
 User=pi
 WorkingDirectory=/home/pi/cutie
-ExecStart=npm run start
+ExecStart=npm run start:prod
 Restart=always
 RestartSec=2
 
