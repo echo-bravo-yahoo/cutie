@@ -18,7 +18,7 @@ This functionality is also not really implemented yet, but you can take a look a
 
 ## Platform requirements
 
-Right now, `cutie` should run on any nodeJS environment between 17.9.0 - 24.x.x. My personal installation uses nodeJS 17 on 1st gen raspberry pi 0Ws. It should run in most linux environments, but individual sensors may fail to build or require OS utilities not present for some distributions. On ARMv6, it has to be built with python 3.10.8 or earlier.
+Right now, `cutie` should run on any nodeJS environment between 22.x.x - 24.x.x. My personal installation uses nodeJS 22 on 1st gen raspberry pi 0Ws. It should run in most linux environments, but individual sensors may fail to build or require OS utilities not present for some distributions. On ARMv6, it has to be built with python 3.10.8 or earlier.
 
 ## Installation & use
 
