@@ -65,4 +65,4 @@ export function isTransformation(
   );
 }
 
-export type Message = number | string | object | undefined;
+export type Message = number | string | Record<string, any> | undefined;

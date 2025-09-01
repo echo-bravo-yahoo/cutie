@@ -23,7 +23,7 @@ export default class MQTTConnection extends Connection {
     super(config);
   }
 
-  async enable() {
+  async register() {
     const mqttConfig: Partial<typeof this.config> = { ...this.config };
     delete mqttConfig.name;
     delete mqttConfig.type;
