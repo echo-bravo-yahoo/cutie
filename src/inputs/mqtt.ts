@@ -40,7 +40,7 @@ export default class MQTT extends Input {
       await this.mqtt.subscribe(this.config.topic || this.config.topics || []);
 
       this.info(
-        `Started listening to MQTT topics ${this.config.topic || (this.config.topics || []).join(", ")}.`,
+        `Started listening to MQTT topics ${this.config.topic || (this.config.topics || []).join(", ")} using client ${this.mqtt.connection.options.clientId}.`,
         { topic: this.logPrefix },
       );
     }
@@ -53,7 +53,7 @@ export default class MQTT extends Input {
     await this.mqtt.unsubscribe(this.config.topic || this.config.topics || []);
 
     this.info(
-      `Stopped listening to MQTT topics ${this.config.topic || (this.config.topics || []).join(", ")}.`,
+      `Stopped listening to MQTT topics ${this.config.topic || (this.config.topics || []).join(", ")} using client ${this.mqtt.connection.options.clientId}.`,
       { topic: this.logPrefix },
     );
     this.enabled = false;
