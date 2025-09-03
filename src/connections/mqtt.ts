@@ -5,6 +5,8 @@ import { Connection, ConnectionConfig } from "../util/Connection.js";
 import { getConnectionsByType } from "../util/connections.js";
 import { globals } from "../index.js";
 import MQTT, { isMQTT } from "../inputs/mqtt.js";
+import { ProviderConfig } from "../util/type-helpers.js";
+import { ConfigFile } from "../util/configs.js";
 
 export interface MQTTConnectionConfig
   extends ConnectionConfig,
@@ -14,13 +16,53 @@ export interface MQTTConnectionConfig
   enabled: boolean;
 }
 
+export interface MQTTProviderConfig extends ProviderConfig {
+  topic: string;
+}
+
 export default class MQTTConnection extends Connection {
   declare config: MQTTConnectionConfig;
-  // @ts-expect-error connection is instantiated by enable()
+  // @ts-expect-error connection is instantiated by register()
   connection: mqtt.MqttClient;
 
   constructor(config: MQTTConnectionConfig) {
     super(config);
+  }
+
+  // TODO: update config if remote config _changes_
+  // TODO: update _local_ config if _local_ config changes
+  async fetchConfig(
+    provider: MQTTProviderConfig,
+    connection: ConnectionConfig,
+  ): Promise<ConfigFile> {
+    const typedConnection = connection as unknown as MQTTConnectionConfig;
+    this.connection = await mqtt.connectAsync(
+      typedConnection.endpoint,
+      typedConnection,
+    );
+    console.log(
+      `Fetching remote config from MQTT topic ${provider.topic} using client ${this.connection.options.clientId}.`,
+    );
+    this.connection.subscribe(provider.topic);
+
+    return new Promise((resolve, _reject) => {
+      this.connection.on("message", async (topic, message) => {
+        if (topic === provider.topic) {
+          const config = JSON.parse(
+            message.toString(),
+          ) as unknown as ConfigFile;
+          await this.connection.endAsync();
+          globals.logger.info(
+            `Fetched remote config from MQTT topic ${provider.topic} using client ${this.connection.options.clientId}. Cleaning up.`,
+            { topic: this.logPrefix, config },
+          );
+          // @ts-expect-error connection is instantiated by register()
+          this.connection = undefined;
+          globals.connections = [];
+          resolve(config);
+        }
+      });
+    });
   }
 
   async register() {
@@ -33,6 +75,7 @@ export default class MQTTConnection extends Connection {
     this.connection = mqtt.connect(this.config.endpoint, mqttConfig);
 
     this.connection.on("message", this.handleMessage.bind(this));
+    this.enabled = true;
   }
 
   handleMessage(topic: string, message: Buffer, _packet: mqtt.IPublishPacket) {

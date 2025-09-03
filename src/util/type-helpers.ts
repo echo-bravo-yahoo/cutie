@@ -7,6 +7,10 @@ import Task, { TaskConfig } from "./Task.js";
 import Transformation from "./Transformation.js";
 import { TypedConfigurable } from "./TypedConfigurable.js";
 
+export interface ProviderConfig {
+  connectionName: "string";
+}
+
 export function isStep(configurable: Configurable): configurable is Step {
   return (
     !isConnection(configurable) &&

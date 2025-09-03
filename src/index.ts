@@ -13,6 +13,7 @@ import { CLIArgs } from "./cli-entrypoint.js";
 import Task from "./util/Task.js";
 import { Connection } from "./util/Connection.js";
 import LogHelper from "./util/LogHelper.js";
+import { fetchRemoteConfig } from "./util/configs.js";
 
 export interface Globals {
   tasks: Array<Task>;
@@ -34,7 +35,6 @@ export async function start(args: CLIArgs) {
   const packageJsonPromise = read(normalize(`${__dirname}/../package.json`));
 
   await Promise.all([configPromise, packageJsonPromise]);
-  const config = await configPromise;
   const packageJson = await packageJsonPromise;
 
   globals = {
@@ -43,6 +43,10 @@ export async function start(args: CLIArgs) {
     version: packageJson.version,
     logger: new LogHelper(),
   };
+
+  let config = await configPromise;
+  // TODO: write backup of config to file for later
+  if (config.configProvider) config = await fetchRemoteConfig(config);
 
   await registerConnections(config.connections);
   await registerTasks(config.tasks);
