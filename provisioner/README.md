@@ -1,12 +1,12 @@
 ## New notes
 
 ```
+curl -L https://unofficial-builds.nodejs.org/download/release/v22.19.0/node-v22.19.0-linux-armv6l.tar.xz | tar xJ
+cd node-*
+
 sudo mv /usr/bin/npx /usr/bin/npx-backup
 sudo mv /usr/bin/npm /usr/bin/npm-backup
 sudo mv /usr/bin/node /usr/bin/node-backup
-
-curl -L https://unofficial-builds.nodejs.org/download/release/v21.7.3/node-v21.7.3-linux-armv6l.tar.xz | tar xJ
-cd node-*
 
 sudo cp ./bin/node /usr/bin/node
 sudo cp ./bin/npx /usr/bin/npx
