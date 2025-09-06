@@ -14,12 +14,14 @@ import Task from "./util/Task.js";
 import { Connection } from "./util/Connection.js";
 import LogHelper from "./util/LogHelper.js";
 import { fetchRemoteConfig } from "./util/configs.js";
+import { EventEmitter } from "node:events";
 
 export interface Globals {
   tasks: Array<Task>;
   connections: Array<Connection>;
   version: string;
   logger: LogHelper;
+  eventBus: EventEmitter;
 }
 
 // by the time consumers see this object, it's been properly instantiated
@@ -42,6 +44,7 @@ export async function start(args: CLIArgs) {
     connections: [],
     version: packageJson.version,
     logger: new LogHelper(),
+    eventBus: new EventEmitter(),
   };
 
   let config = await configPromise;
