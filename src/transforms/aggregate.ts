@@ -3,12 +3,12 @@ import get from "lodash/get.js";
 import set from "lodash/set.js";
 
 import Sensor from "../util/Sensor.js";
-import Transformation, {
+import Transform, {
   Context,
   isMultiConfig,
   MultiConfig,
-  TransformationConfig,
-} from "../util/Transformation.js";
+  TransformConfig,
+} from "../util/Transform.js";
 import Task from "../util/Task.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,8 +23,8 @@ function isNumberArray(possibleArray: any): possibleArray is Array<number> {
   );
 }
 
-export default class Aggregate extends Transformation {
-  constructor(config: TransformationConfig, task: Task) {
+export default class Aggregate extends Transform {
+  constructor(config: TransformConfig, task: Task) {
     super(config, task, {});
   }
 
@@ -167,7 +167,7 @@ export default class Aggregate extends Transformation {
   // no-op for class composition reasons
   transformSingle(
     value: number,
-    _config: TransformationConfig,
+    _config: TransformConfig,
     _context: Context,
   ) {
     return value;
@@ -177,14 +177,14 @@ export default class Aggregate extends Transformation {
 /*
 single path form:
 {
-  "type": "transformation:aggregate",
+  "type": "transform:aggregate",
   "path": "a.b.c",
   "aggregation": "latest|average|median|pX"
 }
 
 multi-path form:
 {
-  "type": "transformation:aggregate",
+  "type": "transform:aggregate",
   "paths": {
     "a.b.c": { "aggregation": "latest|average|median|pX" }
   }

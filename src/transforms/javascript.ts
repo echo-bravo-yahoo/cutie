@@ -2,11 +2,11 @@ import * as vm from "node:vm";
 import { readFileSync } from "node:fs";
 import { normalize, join } from "node:path";
 
-import Transformation, {
+import Transform, {
   Context,
-  TransformationConfig,
+  TransformConfig,
   WholeMessageConfig,
-} from "../util/Transformation.js";
+} from "../util/Transform.js";
 import { srcDir } from "../index.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
@@ -17,14 +17,14 @@ export interface JavascriptConfig extends WholeMessageConfig {
   outputType: "object" | "string" | "number";
 }
 
-export default class Javascript extends Transformation {
+export default class Javascript extends Transform {
   declare config: JavascriptConfig;
 
   constructor(config: JavascriptConfig, task: Task) {
-    super(config as unknown as TransformationConfig, task, {});
+    super(config as unknown as TransformConfig, task, {});
   }
 
-  // TODO: functionally a copy of generateCommand in src/transformations/shell.js
+  // TODO: functionally a copy of generateCommand in src/transforms/shell.js
   generateCode(message: Message) {
     if (this.config.codePath) {
       const codePath = normalize(join(srcDir, "..", this.config.codePath));
@@ -61,7 +61,7 @@ export default class Javascript extends Transformation {
 /*
 whole message form:
 {
-  "type": "transformation:javascript",
+  "type": "transform:javascript",
   "codePath": ""
 }
 */

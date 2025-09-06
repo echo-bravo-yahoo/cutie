@@ -1,9 +1,9 @@
 import Task from "../util/Task.js";
-import Transformation, {
+import Transform, {
   Context,
   MultiConfig,
   SingleConfig,
-} from "../util/Transformation.js";
+} from "../util/Transform.js";
 
 export interface RoundArgs {
   precision: number;
@@ -18,7 +18,7 @@ interface MultiPathRoundConfig extends MultiConfig {
 
 export type RoundConfig = SinglePathRoundConfig | MultiPathRoundConfig;
 
-export default class Round extends Transformation {
+export default class Round extends Transform {
   constructor(config: RoundConfig, task: Task) {
     super(config, task, {});
   }
@@ -42,7 +42,7 @@ export default class Round extends Transformation {
       result = integer + Math.floor(intermediate) / Math.pow(10, precision);
     } else {
       throw new Error(
-        `Unrecognized direction "${config.direction}" for transformation "round"; should be one of "up", "down", "round".`,
+        `Unrecognized direction "${config.direction}" for transform "round"; should be one of "up", "down", "round".`,
       );
     }
 
@@ -54,7 +54,7 @@ export default class Round extends Transformation {
 
 single path form:
 {
-  "type": "transformation:round",
+  "type": "transform:round",
   "path": "a.b.c",
   "precision": 2,
   "direction": "up"|"down"|"round"
@@ -62,7 +62,7 @@ single path form:
 
 multi-path form:
 {
-  "type": "transformation:round",
+  "type": "transform:round",
   "paths": {
     "a.b.c": {
       "precision": 2,

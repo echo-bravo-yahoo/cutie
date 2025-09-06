@@ -1,11 +1,11 @@
 import set from "lodash/set.js";
 import merge from "lodash/merge.js";
 
-import Transformation, {
+import Transform, {
   Context,
   MultiConfig,
   SingleConfig,
-} from "../util/Transformation.js";
+} from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
@@ -21,7 +21,7 @@ interface MultiPathMergeConfig extends MultiConfig {
 
 export type MergeConfig = SinglePathMergeConfig | MultiPathMergeConfig;
 
-export default class Merge extends Transformation {
+export default class Merge extends Transform {
   constructor(config: MergeConfig, task: Task) {
     super(config, task, {});
   }
@@ -54,14 +54,14 @@ export default class Merge extends Transformation {
 
 single path form:
 {
-  "type": "transformation:merge",
+  "type": "transform:merge",
   "path": "a.b.c",
   "to": "a.d"
 }
 
 multi-path form:
 {
-  "type": "transformation:merge",
+  "type": "transform:merge",
   "paths": {
     "a.b.c": {
       "to": "a.d"

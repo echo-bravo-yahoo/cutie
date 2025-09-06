@@ -1,9 +1,9 @@
 import Task from "../util/Task.js";
-import Transformation, {
+import Transform, {
   Context,
   MultiConfig,
   SingleConfig,
-} from "../util/Transformation.js";
+} from "../util/Transform.js";
 
 export interface ConvertArgs {
   from: "celsius" | "fahrenheit";
@@ -18,7 +18,7 @@ interface MultiPathConvertConfig extends MultiConfig {
 
 export type ConvertConfig = SinglePathConvertConfig | MultiPathConvertConfig;
 
-export default class Convert extends Transformation {
+export default class Convert extends Transform {
   constructor(config: ConvertConfig, task: Task) {
     super(config, task, {});
   }
@@ -46,7 +46,7 @@ export default class Convert extends Transformation {
 /*
 single path form:
 {
-  "type": "transformation:convert",
+  "type": "transform:convert",
   "path": "a.b.c",
   "from": celsius,
   "to": fahrenheit
@@ -54,7 +54,7 @@ single path form:
 
 multi-path form:
 {
-  "type": "transformation:convert",
+  "type": "transform:convert",
   "paths": {
     "a.b.c": {
       "convert": {

@@ -1,9 +1,9 @@
 import Task from "../util/Task.js";
-import Transformation, {
+import Transform, {
   Context,
   MultiConfig,
   SingleConfig,
-} from "../util/Transformation.js";
+} from "../util/Transform.js";
 
 export interface OffsetArgs {
   offset: number;
@@ -17,7 +17,7 @@ interface MultiPathOffsetConfig extends MultiConfig {
 
 export type OffsetConfig = SinglePathOffsetConfig | MultiPathOffsetConfig;
 
-export default class Offset extends Transformation {
+export default class Offset extends Transform {
   constructor(config: OffsetConfig, task: Task) {
     super(config, task, {});
   }
@@ -34,14 +34,14 @@ export default class Offset extends Transformation {
 /*
 single path form:
 {
-  "type": "transformation:offset",
+  "type": "transform:offset",
   "path": "",
   "offset": -5
 }
 
 multi-path form:
 {
-  "type": "transformation:offset",
+  "type": "transform:offset",
   "paths": {
     "a.b.c": {
       "offset": -5

@@ -18,35 +18,35 @@ import { ConfigurableImplementation } from "./Configurable.js";
 //         get(message, path) is of type number, and we'll do it repeatedly
 // a basePath points to an array to iterate through
 // a path pulls a value from one of the iterables in the basePath
-export type TransformationConfig =
+export type TransformConfig =
   | SingleConfig
   | MultiConfig
   | WholeMessageConfig;
 
-interface BaseTransformationConfig extends StepConfig {
+interface BaseTransformConfig extends StepConfig {
   type: string;
   basePath?: string;
 }
 
-export interface SingleConfig extends BaseTransformationConfig {
+export interface SingleConfig extends BaseTransformConfig {
   path: string;
 }
 
-export interface MultiConfig extends BaseTransformationConfig {
+export interface MultiConfig extends BaseTransformConfig {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   paths: Record<string, any>;
 }
 
-export interface WholeMessageConfig extends BaseTransformationConfig {}
+export interface WholeMessageConfig extends BaseTransformConfig {}
 
 export function isSingleConfig(
-  config: TransformationConfig,
+  config: TransformConfig,
 ): config is SingleConfig {
   return typeof (config as SingleConfig).path === "string" ? true : false;
 }
 
 export function isMultiConfig(
-  config: TransformationConfig,
+  config: TransformConfig,
 ): config is MultiConfig {
   return typeof (config as MultiConfig).paths === "object" ? true : false;
 }
@@ -61,8 +61,8 @@ export interface Context {
   pathChosen?: string;
 }
 
-export default abstract class Transformation extends Step {
-  declare config: TransformationConfig;
+export default abstract class Transform extends Step {
+  declare config: TransformConfig;
   preservePaths: boolean;
   abstract transformSingle(
     value: Message,
@@ -71,7 +71,7 @@ export default abstract class Transformation extends Step {
   ): Message;
 
   constructor(
-    config: TransformationConfig,
+    config: TransformConfig,
     task: Task,
     implementation: ConfigurableImplementation,
   ) {

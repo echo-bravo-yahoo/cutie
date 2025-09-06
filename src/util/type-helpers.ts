@@ -4,7 +4,7 @@ import Input from "./Input.js";
 import Output from "./Output.js";
 import Step from "./Step.js";
 import Task, { TaskConfig } from "./Task.js";
-import Transformation from "./Transformation.js";
+import Transform from "./Transform.js";
 import { TypedConfigurable } from "./TypedConfigurable.js";
 
 export interface ProviderConfig {
@@ -17,7 +17,7 @@ export function isStep(configurable: Configurable): configurable is Step {
     !isTask(configurable) &&
     (isInput(configurable) ||
       isOutput(configurable) ||
-      isTransformation(configurable))
+      isTransform(configurable))
   );
 }
 
@@ -57,15 +57,13 @@ export function isConnection(
   );
 }
 
-export function isTransformation(
+export function isTransform(
   configurable: Configurable,
-): configurable is Transformation {
+): configurable is Transform {
   return !!(
     configurable &&
     (configurable as unknown as TypedConfigurable).type &&
-    (configurable as unknown as TypedConfigurable).type.startsWith(
-      "transformation:",
-    )
+    (configurable as unknown as TypedConfigurable).type.startsWith("transform:")
   );
 }
 
