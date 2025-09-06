@@ -1,14 +1,14 @@
 import { EventEmitter } from "stream";
 import { globals } from "../index.js";
-import Input, { InputConfig } from "../util/Input.js";
+import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
-export interface EventConfig extends InputConfig {
+export interface EventConfig extends TriggerConfig {
   key: string;
 }
 
-export default class Event extends Input {
+export default class Event extends Trigger {
   declare config: EventConfig;
   declare bus: EventEmitter;
 
@@ -28,8 +28,7 @@ export default class Event extends Input {
         event: message,
       },
     );
-    this.startMessage(typeof message === "object" ? { ...message } : message);
-    // this.startMessage(message);
+    this.startMessage(message);
   }
 
   async enable() {
@@ -51,7 +50,7 @@ export default class Event extends Input {
 
 /*
 {
-  "type": "input:event",
+  "type": "trigger:event",
   "key": "a-happening",
 }
 */

@@ -18,7 +18,7 @@
       },
       "steps": [
         {
-          "type": "input:bme280",
+          "type": "trigger:bme280",
           "samplingInterval": 10000,
           "reportingInterval": 10000
         },
@@ -72,7 +72,7 @@
       "disabled": false,
       "steps": [
         {
-          "type": "input:random",
+          "type": "trigger:random",
           "start": 24,
           "minStep": 0.05,
           "maxStep": 0.35,
@@ -92,7 +92,7 @@
       "disabled": false,
       "steps": [
         {
-          "type": "input:mqtt",
+          "type": "trigger:mqtt",
           "connectionName": "personal-mqtt",
           "topic": "development/multi-sample-fake-thermometer"
         },
@@ -113,7 +113,7 @@
       "disabled": false,
       "steps": [
         {
-          "type": "input:mqtt",
+          "type": "trigger:mqtt",
           "connectionName": "personal-mqtt",
           "topic": "development/aggregated-fake-thermometer"
         },

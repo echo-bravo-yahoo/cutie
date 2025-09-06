@@ -38,16 +38,14 @@ describe("transforms", function () {
       it("works on primitive readings", async function () {
         const task = new Task(
           {
-            steps: [
-              { type: "transform:offset", offset: -5 } as OffsetConfig,
-            ],
+            steps: [{ type: "transform:offset", offset: -5 } as OffsetConfig],
           },
           "works on primitive readings",
         );
         await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await task.handleMessage(5);
+        const transformed = await task.startMessage(5);
         expect(transformed).to.deep.equal(0);
       });
 
@@ -67,7 +65,7 @@ describe("transforms", function () {
         await task.register();
 
         // a simple reading is one with only one key/value pair in it
-        const transformed = await task.handleMessage({ temp: 5 });
+        const transformed = await task.startMessage({ temp: 5 });
         expect(transformed).to.deep.equal({ temp: 0 });
       });
 
@@ -86,7 +84,7 @@ describe("transforms", function () {
         await task.register();
 
         // a composite reading is one with multiple key/value pairs in it
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           temp: 5,
           humidity: 30,
         });
@@ -96,16 +94,14 @@ describe("transforms", function () {
       it("works on arrays of primitive readings", async function () {
         const task = new Task(
           {
-            steps: [
-              { type: "transform:offset", offset: -5 } as OffsetConfig,
-            ],
+            steps: [{ type: "transform:offset", offset: -5 } as OffsetConfig],
           },
           "works on arrays of primitive readings",
         );
         await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await task.handleMessage([1, 2, 3, 4, 5]);
+        const transformed = await task.startMessage([1, 2, 3, 4, 5]);
         expect(transformed).to.deep.equal([-4, -3, -2, -1, 0]);
       });
 
@@ -125,7 +121,7 @@ describe("transforms", function () {
         await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           weather: [1, 2, 3, 4, 5],
         });
         expect(transformed).to.deep.equal({ weather: [-4, -3, -2, -1, 0] });
@@ -147,7 +143,7 @@ describe("transforms", function () {
         await task.register();
 
         // a simple reading is one with only one key/value pair in it
-        const transformed = await task.handleMessage([
+        const transformed = await task.startMessage([
           { temp: 1 },
           { temp: 2 },
           { temp: 3 },
@@ -180,7 +176,7 @@ describe("transforms", function () {
         await task.register();
 
         // a simple reading is one with only one key/value pair in it
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           weather: [
             { temp: 1 },
             { temp: 2 },
@@ -215,7 +211,7 @@ describe("transforms", function () {
         await task.register();
 
         // a composite reading is one with only one key/value pair in it
-        const transformed = await task.handleMessage([
+        const transformed = await task.startMessage([
           { temp: 1, humidity: 30 },
           { temp: 2, humidity: 31 },
           { temp: 3, humidity: 32 },
@@ -247,7 +243,7 @@ describe("transforms", function () {
         await task.register();
 
         // a composite reading is one with only one key/value pair in it
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           weather: [
             { temp: 1, humidity: 30 },
             { temp: 2, humidity: 31 },
@@ -301,7 +297,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage(testCase.input);
+          const transformed = await task.startMessage(testCase.input);
           expect(transformed).to.equal(testCase.output);
         }
       });
@@ -337,7 +333,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage(testCase.input);
+          const transformed = await task.startMessage(testCase.input);
           expect(transformed).to.equal(testCase.output);
         }
       });
@@ -362,7 +358,7 @@ describe("transforms", function () {
         await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await task.handleMessage([2, 3, 4, 5]);
+        const transformed = await task.startMessage([2, 3, 4, 5]);
         expect(transformed).to.deep.equal(3.5);
       });
 
@@ -382,7 +378,7 @@ describe("transforms", function () {
         await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await task.handleMessage([
+        const transformed = await task.startMessage([
           { temp: 2 },
           { temp: 3 },
           { temp: 4 },
@@ -409,7 +405,7 @@ describe("transforms", function () {
         await task.register();
 
         // a primitive reading is one not wrapped in an object
-        const transformed = await task.handleMessage([
+        const transformed = await task.startMessage([
           { temp: 2, humidity: 20 },
           { temp: 3, humidity: 20 },
           { temp: 4, humidity: 20 },
@@ -440,7 +436,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           weather: { temp: 5, humidity: 23 },
         });
         expect(transformed).to.deep.equal({ weather: { temp: 5 } });
@@ -461,7 +457,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           weather: { temp: 5, humidity: 15 },
           environment: { sound: 75 },
         });
@@ -489,7 +485,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           weather: { temp: 5, humidity: 15 },
           environment: { sound: 75 },
         });
@@ -519,7 +515,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           weather: { temp: 5, humidity: 23 },
         });
         expect(transformed).to.deep.equal({
@@ -548,7 +544,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage(21.1);
+          const transformed = await task.startMessage(21.1);
           expect(transformed).to.deep.equal(69.98);
         });
         it.skip("works on simple readings", async function () {});
@@ -571,7 +567,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage(69.98);
+          const transformed = await task.startMessage(69.98);
           expect(transformed).to.deep.equal(21.1);
         });
         it.skip("works on simple readings", async function () {});
@@ -593,7 +589,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          expect(task.handleMessage(20)).to.eventually.be.rejectedWith(
+          expect(task.startMessage(20)).to.eventually.be.rejectedWith(
             Error,
             /Unknown conversion from "nonsense" to "celsius" in config./,
           );
@@ -612,7 +608,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          expect(task.handleMessage(20)).to.eventually.be.rejectedWith(
+          expect(task.startMessage(20)).to.eventually.be.rejectedWith(
             Error,
             /Unknown conversion from "fahrenheit" to "nonsense" in config./,
           );
@@ -631,7 +627,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          expect(task.handleMessage(20)).to.eventually.be.rejectedWith(
+          expect(task.startMessage(20)).to.eventually.be.rejectedWith(
             Error,
             /Unknown conversion from "nonsense" to "double-nonsense" in config./,
           );
@@ -656,7 +652,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage({
+          const transformed = await task.startMessage({
             test: { object: "is deep" },
           });
           expect(transformed).to.deep.equal({ test: { object: "is deep" } });
@@ -677,7 +673,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage("cutie");
+          const transformed = await task.startMessage("cutie");
           expect(transformed).to.deep.equal("cutie");
         });
 
@@ -696,7 +692,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage(5);
+          const transformed = await task.startMessage(5);
           expect(transformed).to.deep.equal(5);
         });
       });
@@ -717,7 +713,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage({
+          const transformed = await task.startMessage({
             test: { object: "is deep" },
           });
           expect(transformed).to.deep.equal({ test: { object: "is deep" } });
@@ -738,7 +734,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage("cutie");
+          const transformed = await task.startMessage("cutie");
           expect(transformed).to.deep.equal("hello, cutie");
         });
 
@@ -757,7 +753,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage(5);
+          const transformed = await task.startMessage(5);
           expect(transformed).to.deep.equal(6);
         });
       });
@@ -779,7 +775,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage(8);
+          const transformed = await task.startMessage(8);
           expect(transformed).to.deep.equal(18);
         });
       });
@@ -799,7 +795,7 @@ describe("transforms", function () {
           );
           await task.register();
 
-          const transformed = await task.handleMessage(8);
+          const transformed = await task.startMessage(8);
           expect(transformed).to.deep.equal(9);
         });
       });
@@ -819,7 +815,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           a: 1,
           b: "hi",
           c: null,
@@ -843,7 +839,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage(
+        const transformed = await task.startMessage(
           '{"a":1, "b": "hi", "c": null}',
         );
         expect(transformed).to.equal(
@@ -864,9 +860,9 @@ describe("transforms", function () {
         );
         await task.register();
 
-        let transformed = await task.handleMessage(undefined);
+        let transformed = await task.startMessage(undefined);
         expect(transformed).to.equal(undefined);
-        transformed = await task.handleMessage(12.3);
+        transformed = await task.startMessage(12.3);
         expect(transformed).to.equal(12.3);
       });
 
@@ -883,7 +879,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage(
+        const transformed = await task.startMessage(
           '{"parseable": "but not modified"}',
         );
         expect(transformed).to.equal('{"parseable": "but not modified"}');
@@ -903,7 +899,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           a: 1,
           b: "hi",
           c: null,
@@ -928,7 +924,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage({
+        const transformed = await task.startMessage({
           a: 1,
           b: "hi",
           c: null,
@@ -950,7 +946,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage(
+        const transformed = await task.startMessage(
           '{"a":1, "b": "hi", "c": null}',
         );
         expect(transformed).to.equal(`{"a":1,"b":"hi","c":null}`);
@@ -969,9 +965,9 @@ describe("transforms", function () {
         );
         await task.register();
 
-        let transformed = await task.handleMessage(undefined);
+        let transformed = await task.startMessage(undefined);
         expect(transformed).to.equal(undefined);
-        transformed = await task.handleMessage(12.3);
+        transformed = await task.startMessage(12.3);
         expect(transformed).to.equal(12.3);
       });
 
@@ -988,7 +984,7 @@ describe("transforms", function () {
         );
         await task.register();
 
-        const transformed = await task.handleMessage(
+        const transformed = await task.startMessage(
           '{"parseable": "but not modified"}',
         );
         expect(transformed).to.equal('{"parseable": "but not modified"}');

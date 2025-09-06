@@ -1,13 +1,13 @@
-import Input, { InputConfig } from "../util/Input.js";
+import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
-export interface IntervalConfig extends InputConfig {
+export interface IntervalConfig extends TriggerConfig {
   interval: number;
   message: Message;
 }
 
-export default class Interval extends Input {
+export default class Interval extends Trigger {
   declare config: IntervalConfig;
   // @ts-expect-error interval is instantiated by enable()
   interval: NodeJS.Timeout;

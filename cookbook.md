@@ -22,7 +22,7 @@ This recipe listens to all MQTT topics under `alarms` and rebroadcasts them to `
     "rebroadcast-alarms": {
       "steps": [
         {
-          "type": "input:mqtt:primary-broker",
+          "type": "trigger:mqtt:primary-broker",
           "topic": "alarms/+"
         },
         {
@@ -53,7 +53,7 @@ This recipe listens to the MQTT topic `weather/temp`, then rebroadcasts messages
     "rebroadcast-temp": {
       "steps": [
         {
-          "type": "input:mqtt:primary-broker",
+          "type": "trigger:mqtt:primary-broker",
           "topic": "weather/temp"
         },
         {

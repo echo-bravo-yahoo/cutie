@@ -1,13 +1,13 @@
-import Input, { InputConfig } from "../util/Input.js";
+import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
-export interface OnceConfig extends InputConfig {
+export interface OnceConfig extends TriggerConfig {
   delay?: number;
   message: Message;
 }
 
-export default class Once extends Input {
+export default class Once extends Trigger {
   declare config: OnceConfig;
 
   constructor(config: OnceConfig, task: Task) {
@@ -43,7 +43,7 @@ export default class Once extends Input {
 
 /*
 {
-  "type": "input:once",
+  "type": "trigger:once",
   "name": "setupStuff",
   "disabled": false,
   "delay": 10000 // in ms

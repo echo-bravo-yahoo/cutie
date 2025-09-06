@@ -1,7 +1,7 @@
 import { TimerBasedCronScheduler as scheduler } from "cron-schedule/schedulers/timer-based.js";
 import { parseCronExpression } from "cron-schedule";
 
-import Input, { InputConfig } from "../util/Input.js";
+import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
@@ -9,12 +9,12 @@ interface ITimerHandle {
   timeoutId?: ReturnType<typeof setTimeout>;
 }
 
-export interface CronConfig extends InputConfig {
+export interface CronConfig extends TriggerConfig {
   expression: string;
   message: Message;
 }
 
-export default class Cron extends Input {
+export default class Cron extends Trigger {
   declare config: CronConfig;
   // @ts-expect-error cronHandle is instantiated by enable()
   cronHandle: ITimerHandle;

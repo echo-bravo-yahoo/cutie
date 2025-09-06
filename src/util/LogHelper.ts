@@ -1,6 +1,6 @@
 import loggerFactory, { Logger, LoggerOptions } from "pino";
 
-import Logs, { Verbosity } from "../inputs/logs.js";
+import Logs, { Verbosity } from "../triggers/logs.js";
 
 export interface SerializedLogLine {
   log: string;

@@ -1,11 +1,11 @@
 import { getConnection } from "../util/connections.js";
 import MqttTopics from "mqtt-topics";
-import Input, { InputConfig } from "../util/Input.js";
+import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import MQTTConnection from "../connections/mqtt.js";
 import Step from "../util/Step.js";
 
-export interface MQTTConfig extends InputConfig {
+export interface MQTTConfig extends TriggerConfig {
   connectionName: string;
   topic: string;
   topics?: Array<string>;
@@ -19,7 +19,7 @@ export function isMQTT(step: Step): step is MQTT {
   return step && hasTopicOrTopics;
 }
 
-export default class MQTT extends Input {
+export default class MQTT extends Trigger {
   declare config: MQTTConfig;
   // @ts-expect-error mqtt is instantiated by enable()
   mqtt: MQTTConnection;
@@ -59,7 +59,7 @@ export default class MQTT extends Input {
     this.enabled = false;
   }
 
-  // TODO: dupe of inputs/mqtt.js:::matchesTopic
+  // TODO: dupe of triggers/mqtt.js:::matchesTopic
   matchesTopic(messageTopic: string) {
     if (this.config.topic) {
       return MqttTopics.match(this.config.topic, messageTopic);
@@ -76,7 +76,5 @@ export default class MQTT extends Input {
   "type": "mqtt",
   "disabled": false,
   "topics": [],
-  "transformations": [],
-  "destinations": []
 }
 */

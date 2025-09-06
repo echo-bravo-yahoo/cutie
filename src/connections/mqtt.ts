@@ -4,7 +4,7 @@ import MqttTopics from "mqtt-topics";
 import { Connection, ConnectionConfig } from "../util/Connection.js";
 import { getConnectionsByType } from "../util/connections.js";
 import { globals } from "../index.js";
-import MQTT, { isMQTT } from "../inputs/mqtt.js";
+import MQTT, { isMQTT } from "../triggers/mqtt.js";
 import { ProviderConfig } from "../util/type-helpers.js";
 import { ConfigFile } from "../util/configs.js";
 

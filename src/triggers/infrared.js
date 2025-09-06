@@ -1,8 +1,8 @@
-import Input from "../util/Input.js";
+import Trigger from "../util/Trigger.js";
 
 let pigpio, Gpio;
 
-export class Infrared extends Input {
+export class Infrared extends Trigger {
   constructor(config, task) {
     super(config, task);
 

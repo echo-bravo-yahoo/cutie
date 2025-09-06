@@ -47,9 +47,8 @@ export default abstract class Step extends TypedConfigurable {
     return result;
   }
 
-  // TODO: implement some callback behavior here
-  async endMessage(message: Message, _traceId?: string) {
-    return message;
+  async endMessage(message: Message, traceId?: string) {
+    return this.task.endMessage(message, traceId);
   }
 
   async handleMessage(message: Message, traceId?: string): Promise<Message> {
