@@ -1,6 +1,6 @@
 import { Configurable } from "./Configurable.js";
 import { Connection } from "./Connection.js";
-import Input from "./Input.js";
+import Trigger from "./Trigger.js";
 import Output from "./Output.js";
 import Step from "./Step.js";
 import Task, { TaskConfig } from "./Task.js";
@@ -15,17 +15,17 @@ export function isStep(configurable: Configurable): configurable is Step {
   return (
     !isConnection(configurable) &&
     !isTask(configurable) &&
-    (isInput(configurable) ||
+    (isTrigger(configurable) ||
       isOutput(configurable) ||
       isTransform(configurable))
   );
 }
 
-export function isInput(configurable: Configurable): configurable is Input {
+export function isTrigger(configurable: Configurable): configurable is Trigger {
   return !!(
     configurable &&
     (configurable as unknown as TypedConfigurable).type &&
-    (configurable as unknown as TypedConfigurable).type.startsWith("input:")
+    (configurable as unknown as TypedConfigurable).type.startsWith("trigger:")
   );
 }
 

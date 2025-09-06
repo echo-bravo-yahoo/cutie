@@ -1,4 +1,4 @@
-import Input from "../util/Input.js";
+import Trigger from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { StepConfig } from "../util/Step.js";
 import { globals } from "../index.js";
@@ -9,7 +9,7 @@ export interface LogsConfig extends StepConfig {
 
 export type Verbosity = "fatal" | "error" | "info" | "debug" | "warn" | "trace";
 
-export default class Logs extends Input {
+export default class Logs extends Trigger {
   declare config: LogsConfig;
 
   constructor(config: LogsConfig, task: Task) {

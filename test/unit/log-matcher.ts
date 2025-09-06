@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import Logs from "../../src/inputs/logs.js";
+import Logs from "../../src/triggers/logs.js";
 import Task from "../../src/util/Task.js";
 
 import { test } from "node:test";
@@ -8,7 +8,7 @@ import { test } from "node:test";
 test("log matching", { concurrency: true }, (testContext) => {
   for (const { title, topic, filters, expected } of logTestCases) {
     testContext.test(title, () => {
-      const logHelper = new Logs({ type: "input:logs", filters }, {} as Task);
+      const logHelper = new Logs({ type: "trigger:logs", filters }, {} as Task);
       expect(logHelper.shouldEmit(topic, "debug")).to.equal(expected);
     });
   }

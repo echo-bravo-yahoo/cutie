@@ -1,16 +1,21 @@
 import { normalize } from "node:path";
 
+import { v7 as uuidV7 } from "uuid";
+
 import { globals, srcDir } from "../index.js";
 import { Configurable, Config } from "./Configurable.js";
 import Step, { StepConfig } from "./Step.js";
 import { Message } from "./type-helpers.js";
+import Trigger, { TriggerConfig } from "./Trigger.js";
 
 export interface TaskConfig extends Config {
+  trigger?: TriggerConfig;
   steps: Array<StepConfig>;
 }
 
 export default class Task extends Configurable {
   declare config: TaskConfig;
+  declare trigger?: Trigger;
   steps: Array<Step>;
 
   constructor(config: TaskConfig, name: string) {
@@ -41,6 +46,21 @@ export default class Task extends Configurable {
     const topic = "core.registration.steps";
     let previousStep;
 
+    if (taskConfig.trigger) {
+      this.trigger = (await this.importStep(
+        taskConfig.trigger,
+        taskConfig,
+      )) as unknown as Trigger;
+      this.trigger.task = this;
+      this.trigger.register();
+      globals.logger.emit(
+        Configurable.formatLogLine("Registered trigger.", { topic }),
+        "info",
+        topic,
+        taskConfig.trigger,
+      );
+    }
+
     for (const step of taskConfig.steps) {
       const currentStep = await this.importStep(step, taskConfig);
       currentStep.task = this;
@@ -61,13 +81,25 @@ export default class Task extends Configurable {
       previousStep = currentStep;
     }
 
+    if (this.trigger?.shouldEnable()) await this.trigger.enable();
+
     for (const step of this.steps) {
       if (step.shouldEnable()) await step.enable();
     }
   }
 
-  // primarily used for testing to cause input-less tasks to still emit events
-  async handleMessage(message: Message, traceId?: string) {
-    return this.steps[0].handleMessage(message, traceId);
+  // primarily used for testing to cause trigger-less tasks to still emit events
+  async startMessage(message: Message, traceId?: string) {
+    if (traceId === undefined) traceId = uuidV7();
+    if (this.steps[0]) {
+      return this.steps[0].handleMessage(message, traceId);
+    } else {
+      return this.endMessage(message, traceId);
+    }
+  }
+
+  // TODO: implement some callback behavior here
+  async endMessage(message: Message, _traceId?: string) {
+    return message;
   }
 }

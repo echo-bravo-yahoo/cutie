@@ -37,10 +37,10 @@ There are not very many parts to a `cutie` installation, but they look like this
 - A linux computer (optionally with some sensors attached)
   - With `cutie` installed (optionally installed as a sysctl service)
     - With a config file consisting of:
-      - Connection configs, which define what data stores `cutie` can reach and what information it needs to reach them. To actually use a Connection, you'll need a Connection config and an Input or Output config - the Connection config contains the settings required to reach the data store at all, and the Input/Output configs contain the settings for that particular task.
-      - Tasks, a description of one 'input, transform, output' pipeline. This usually represents some discrete sensor or task and contains Input, Transform, and Output configs.
-        - Input configs, which define what remote data sources and local sensors `cutie` should watch for changes in.
-        - Transform configs, which define how `cutie` should transform Messages after an Input but before an Output.
+      - Connection configs, which define what data stores `cutie` can reach and what information it needs to reach them. To actually use a Connection, you'll need a Connection config and an Trigger or Output config - the Connection config contains the settings required to reach the data store at all, and the Trigger/Output configs contain the settings for that particular task.
+      - Tasks, a description of one 'trigger, transform, output' pipeline. This usually represents some discrete sensor or task and contains Trigger, Transform, and Output configs.
+        - Trigger configs, which define what remote data sources and local sensors `cutie` should watch for changes in.
+        - Transform configs, which define how `cutie` should transform Messages after an Trigger but before an Output.
         - Output configs, which define destinations for cutie to send data to. These can be intermediate or final destinations.
 
 ### Common issues

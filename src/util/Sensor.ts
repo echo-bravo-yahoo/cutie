@@ -2,16 +2,16 @@ import get from "lodash/get.js";
 import map from "lodash/map.js";
 import { v7 as uuidV7 } from "uuid";
 
-import Input, { InputConfig } from "./Input.js";
+import Trigger, { TriggerConfig } from "./Trigger.js";
 import Task from "./Task.js";
 
 export type Aggregation = "average" | "latest" | "sum";
 
-export interface SensorConfig extends InputConfig {
+export interface SensorConfig extends TriggerConfig {
   sampling: { aggregation: Aggregation };
 }
 
-export default abstract class Sensor extends Input {
+export default abstract class Sensor extends Trigger {
   reportInterval?: NodeJS.Timeout;
   sampleInterval?: NodeJS.Timeout;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
