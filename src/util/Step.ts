@@ -22,9 +22,8 @@ export default abstract class Step extends TypedConfigurable {
     super(config, implementation);
 
     this.task = task;
-    const index =
-      task && task.steps && task.steps.findIndex((step) => step === this);
-    this.logPrefix = `core.runtime.tasks.${task.name}.steps.${index}`;
+    const index = task.config.steps.findIndex((step) => step === this.config);
+    this.logPrefix = `${this.task.logPrefix}.steps.${index}`;
   }
 
   // always includes the context of task, module/config, and globals

@@ -26,6 +26,8 @@ export default class Task extends Configurable {
     // it's dropped by the time we get to here in tests
     this.config = config;
     this.steps = [];
+
+    this.logPrefix = `core.runtime.tasks.${name}`;
   }
 
   async register() {
@@ -33,13 +35,13 @@ export default class Task extends Configurable {
     this.enabled = true;
   }
 
-  async importStep(step: StepConfig, task: TaskConfig) {
+  async importStep(step: StepConfig) {
     const [type, subType] = step.type.split(":");
     const Factory = (
       await import(normalize(`${srcDir}/${type}s/${subType}.js`))
     ).default;
 
-    return new Factory(step, task);
+    return new Factory(step, this);
   }
 
   async registerSteps(taskConfig: TaskConfig) {
@@ -49,7 +51,6 @@ export default class Task extends Configurable {
     if (taskConfig.trigger) {
       this.trigger = (await this.importStep(
         taskConfig.trigger,
-        taskConfig,
       )) as unknown as Trigger;
       this.trigger.task = this;
       this.trigger.register();
@@ -62,7 +63,7 @@ export default class Task extends Configurable {
     }
 
     for (const step of taskConfig.steps) {
-      const currentStep = await this.importStep(step, taskConfig);
+      const currentStep = await this.importStep(step);
       currentStep.task = this;
 
       await currentStep.register();
