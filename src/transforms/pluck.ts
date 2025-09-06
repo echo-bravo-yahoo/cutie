@@ -1,12 +1,12 @@
 import get from "lodash/get.js";
 import set from "lodash/set.js";
 
-import Transformation, {
+import Transform, {
   Context,
   isMultiConfig,
   MultiConfig,
   SingleConfig,
-} from "../util/Transformation.js";
+} from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
@@ -22,7 +22,7 @@ interface MultiPathPluckConfig extends MultiConfig {
 
 export type PluckConfig = SinglePathPluckConfig | MultiPathPluckConfig;
 
-export default class Pluck extends Transformation {
+export default class Pluck extends Transform {
   declare config: PluckConfig;
 
   constructor(config: PluckConfig, task: Task) {
@@ -63,14 +63,14 @@ export default class Pluck extends Transformation {
 /*
 single path form:
 {
-  "type": "transformation:pluck",
+  "type": "transform:pluck",
   "path": "",
   "destination": ""
 }
 
 multi-path form:
 {
-  "type": "transformation:pluck",
+  "type": "transform:pluck",
   "paths": {
     "a.b.c": {
       "destination": ""

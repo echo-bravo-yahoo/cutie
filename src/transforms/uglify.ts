@@ -1,7 +1,7 @@
-import Transformation, {
+import Transform, {
   Context,
   WholeMessageConfig,
-} from "../util/Transformation.js";
+} from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
@@ -9,7 +9,7 @@ export interface UglifyConfig extends WholeMessageConfig {
   parseInput?: boolean;
 }
 
-export default class Uglify extends Transformation {
+export default class Uglify extends Transform {
   declare config: UglifyConfig;
 
   constructor(config: UglifyConfig, task: Task) {
@@ -42,7 +42,7 @@ export default class Uglify extends Transformation {
 /*
 full object form:
 {
-  "type": "transformation:uglify",
+  "type": "transform:uglify",
   "parseInput": false
 }
 */

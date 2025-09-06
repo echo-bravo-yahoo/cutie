@@ -2,9 +2,9 @@
 
 ## What is this?
 
-`cutie` is an application to make it easier to develop and glue together IoT & home automation applications. It primarily consists of three parts: a data transformation & routing layer (intended primarily as an MQTT listener/repeater), a software sensor platform for linux computers, and a provisioning script that installs `cutie` on a raspberry pi. It aims to be configuration-first, with code extensions to support use cases the configuration cannot. I wrote [a little bit about the motivation behind it here](https://blog.echobravoyahoo.net/the-problem-with-home-automation-software/).
+`cutie` is an application to make it easier to develop and glue together IoT & home automation applications. It primarily consists of three parts: a data transform & routing layer (intended primarily as an MQTT listener/repeater), a software sensor platform for linux computers, and a provisioning script that installs `cutie` on a raspberry pi. It aims to be configuration-first, with code extensions to support use cases the configuration cannot. I wrote [a little bit about the motivation behind it here](https://blog.echobravoyahoo.net/the-problem-with-home-automation-software/).
 
-### `cutie` as a data transformation & routing layer
+### `cutie` as a data transform & routing layer
 
 `cutie` can listen to sensors or MQTT topics and transform the data or rebroadcast it to other MQTT topics or other data stores. This should enable users to integrate MQTT services that were not intended to be used together. Take a look at `./cookbook.md` for examples of how this functionality can be used.
 
@@ -38,9 +38,9 @@ There are not very many parts to a `cutie` installation, but they look like this
   - With `cutie` installed (optionally installed as a sysctl service)
     - With a config file consisting of:
       - Connection configs, which define what data stores `cutie` can reach and what information it needs to reach them. To actually use a Connection, you'll need a Connection config and an Input or Output config - the Connection config contains the settings required to reach the data store at all, and the Input/Output configs contain the settings for that particular task.
-      - Tasks, a description of one 'input, transform, output' pipeline. This usually represents some discrete sensor or task and contains Input, Transformation, and Output configs.
+      - Tasks, a description of one 'input, transform, output' pipeline. This usually represents some discrete sensor or task and contains Input, Transform, and Output configs.
         - Input configs, which define what remote data sources and local sensors `cutie` should watch for changes in.
-        - Transformation configs, which define how `cutie` should transform Messages after an Input but before an Output.
+        - Transform configs, which define how `cutie` should transform Messages after an Input but before an Output.
         - Output configs, which define destinations for cutie to send data to. These can be intermediate or final destinations.
 
 ### Common issues

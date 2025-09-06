@@ -1,7 +1,7 @@
-import Transformation, {
+import Transform, {
   Context,
   WholeMessageConfig,
-} from "../util/Transformation.js";
+} from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
@@ -10,7 +10,7 @@ export interface PrettifyConfig extends WholeMessageConfig {
   parseInput?: boolean;
 }
 
-export default class Prettify extends Transformation {
+export default class Prettify extends Transform {
   declare config: PrettifyConfig;
 
   constructor(config: PrettifyConfig, task: Task) {
@@ -44,7 +44,7 @@ export default class Prettify extends Transformation {
 /*
 full object form:
 {
-  "type": "transformation:prettify",
+  "type": "transform:prettify",
   "spaces": 4,
   "parseInput": false
 }

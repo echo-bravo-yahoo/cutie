@@ -2,12 +2,12 @@ import get from "lodash/get.js";
 import set from "lodash/set.js";
 import unset from "lodash/unset.js";
 
-import Transformation, {
+import Transform, {
   Context,
   isMultiConfig,
   MultiConfig,
   SingleConfig,
-} from "../util/Transformation.js";
+} from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
@@ -25,7 +25,7 @@ export type RearrangeConfig =
   | SinglePathRearrangeConfig
   | MultiPathRearrangeConfig;
 
-export default class Rearrange extends Transformation {
+export default class Rearrange extends Transform {
   constructor(config: RearrangeConfig, task: Task) {
     super(config, task, {});
   }
@@ -68,14 +68,14 @@ export default class Rearrange extends Transformation {
 
 single path form:
 {
-  "type": "transformation:rearrange",
+  "type": "transform:rearrange",
   "path": "a.b.c",
   "to": "a.d"
 }
 
 multi-path form:
 {
-  "type": "transformation:rearrange",
+  "type": "transform:rearrange",
   "paths": {
     "a.b.c": {
       "to": "a.d"

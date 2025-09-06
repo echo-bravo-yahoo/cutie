@@ -23,7 +23,7 @@
           "reportingInterval": 10000
         },
         {
-          "type": "transformation:aggregate",
+          "type": "transform:aggregate",
           "paths": {
             "temp": { "aggregation": "average" },
             "humidity": { "aggregation": "average" },
@@ -31,7 +31,7 @@
           }
         },
         {
-          "type": "transformation:offset",
+          "type": "transform:offset",
           "paths": {
             "temp": { "offset": -5 },
             "humidity": { "offset": 1 },
@@ -39,13 +39,13 @@
           }
         },
         {
-          "type": "transformation:convert",
+          "type": "transform:convert",
           "paths": {
             "temp": { "convert": "celsius_to_fahrenheit" }
           }
         },
         {
-          "type": "transformation:round",
+          "type": "transform:round",
           "paths": {
             "temp": { "precision": 2 },
             "humidity": { "precision": 2 },
@@ -97,7 +97,7 @@
           "topic": "development/multi-sample-fake-thermometer"
         },
         {
-          "type": "transformation:aggregate",
+          "type": "transform:aggregate",
           "basePath": "number",
           "path": "number",
           "aggregation": "average"
@@ -118,7 +118,7 @@
           "topic": "development/aggregated-fake-thermometer"
         },
         {
-          "type": "transformation:round",
+          "type": "transform:round",
           "path": "number",
           "precision": 2
         },

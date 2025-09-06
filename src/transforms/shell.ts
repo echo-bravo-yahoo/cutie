@@ -3,10 +3,10 @@ import { join, normalize } from "node:path";
 import { readFileSync } from "node:fs";
 
 import { srcDir } from "../index.js";
-import Transformation, {
+import Transform, {
   Context,
   WholeMessageConfig,
-} from "../util/Transformation.js";
+} from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
@@ -16,14 +16,14 @@ export interface ShellConfig extends WholeMessageConfig {
   outputType: string;
 }
 
-export default class Shell extends Transformation {
+export default class Shell extends Transform {
   declare config: ShellConfig;
 
   constructor(config: ShellConfig, task: Task) {
     super(config, task, {});
   }
 
-  // TODO: functionally a copy of generateCode in src/transformations/javascript.js
+  // TODO: functionally a copy of generateCode in src/transforms/javascript.js
   generateCommand(message: Message) {
     if (this.config.codePath) {
       const codePath = normalize(join(srcDir, "..", this.config.codePath));
@@ -72,7 +72,7 @@ export default class Shell extends Transformation {
 /*
 full object form:
 {
-  "type": "transformation:shell",
+  "type": "transform:shell",
   "command": "node -e console.log(\"\")",
   "outputType": "string"|"number"|"object"
 }

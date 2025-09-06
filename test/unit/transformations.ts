@@ -8,18 +8,18 @@ const { expect } = chai;
 import Task from "../../src/util/Task.js";
 import { setGlobals } from "../../src/index.js";
 
-import { OffsetConfig } from "../../src/transformations/offset.js";
-import { RoundConfig } from "../../src/transformations/round.js";
-import { PluckConfig } from "../../src/transformations/pluck.js";
-import { ShellConfig } from "../../src/transformations/shell.js";
-import { ConvertConfig } from "../../src/transformations/convert.js";
-import { RearrangeConfig } from "../../src/transformations/rearrange.js";
-import { JavascriptConfig } from "../../src/transformations/javascript.js";
-import { PrettifyConfig } from "../../src/transformations/prettify.js";
-import { UglifyConfig } from "../../src/transformations/uglify.js";
-// import { AggregateConfig } from "../transformations/aggregate.js";
+import { OffsetConfig } from "../../src/transforms/offset.js";
+import { RoundConfig } from "../../src/transforms/round.js";
+import { PluckConfig } from "../../src/transforms/pluck.js";
+import { ShellConfig } from "../../src/transforms/shell.js";
+import { ConvertConfig } from "../../src/transforms/convert.js";
+import { RearrangeConfig } from "../../src/transforms/rearrange.js";
+import { JavascriptConfig } from "../../src/transforms/javascript.js";
+import { PrettifyConfig } from "../../src/transforms/prettify.js";
+import { UglifyConfig } from "../../src/transforms/uglify.js";
+// import { AggregateConfig } from "../transforms/aggregate.js";
 
-describe("transformations", function () {
+describe("transforms", function () {
   const fakeLogger = {
     emit: () => {},
     logger: {
@@ -39,7 +39,7 @@ describe("transformations", function () {
         const task = new Task(
           {
             steps: [
-              { type: "transformation:offset", offset: -5 } as OffsetConfig,
+              { type: "transform:offset", offset: -5 } as OffsetConfig,
             ],
           },
           "works on primitive readings",
@@ -56,7 +56,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:offset",
+                type: "transform:offset",
                 path: "temp",
                 offset: -5,
               } as OffsetConfig,
@@ -76,7 +76,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:offset",
+                type: "transform:offset",
                 paths: { temp: { offset: -5 }, humidity: { offset: 10 } },
               } as OffsetConfig,
             ],
@@ -97,7 +97,7 @@ describe("transformations", function () {
         const task = new Task(
           {
             steps: [
-              { type: "transformation:offset", offset: -5 } as OffsetConfig,
+              { type: "transform:offset", offset: -5 } as OffsetConfig,
             ],
           },
           "works on arrays of primitive readings",
@@ -114,7 +114,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:offset",
+                type: "transform:offset",
                 offset: -5,
                 basePath: "weather",
               } as OffsetConfig,
@@ -136,7 +136,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:offset",
+                type: "transform:offset",
                 path: "temp",
                 offset: -5,
               } as OffsetConfig,
@@ -168,7 +168,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:offset",
+                type: "transform:offset",
                 basePath: "weather",
                 path: "temp",
                 offset: -5,
@@ -205,7 +205,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:offset",
+                type: "transform:offset",
                 paths: { temp: { offset: -5 }, humidity: { offset: -10 } },
               } as OffsetConfig,
             ],
@@ -236,7 +236,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:offset",
+                type: "transform:offset",
                 basePath: "weather",
                 paths: { temp: { offset: -5 }, humidity: { offset: 1 } },
               } as OffsetConfig,
@@ -291,7 +291,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:round",
+                  type: "transform:round",
                   precision: 2,
                   direction: testCase.direction,
                 } as RoundConfig,
@@ -327,7 +327,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:round",
+                  type: "transform:round",
                   precision: 0,
                   direction: testCase.direction,
                 } as RoundConfig,
@@ -352,7 +352,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:aggregate",
+                type: "transform:aggregate",
                 aggregation: "average",
               } as any,
             ],
@@ -371,7 +371,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:aggregate",
+                type: "transform:aggregate",
                 aggregation: "average",
                 path: "temp",
               } as any,
@@ -396,7 +396,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:aggregate",
+                type: "transform:aggregate",
                 paths: {
                   temp: { aggregation: "average" },
                   humidity: { aggregation: "latest" },
@@ -431,7 +431,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:pluck",
+                type: "transform:pluck",
                 path: "weather.temp",
               } as PluckConfig,
             ],
@@ -451,7 +451,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:pluck",
+                type: "transform:pluck",
                 path: "environment.sound",
                 destination: "noise",
               } as PluckConfig,
@@ -473,7 +473,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:pluck",
+                type: "transform:pluck",
                 paths: {
                   "environment.sound": {
                     destination: "noise",
@@ -509,7 +509,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:rearrange",
+                type: "transform:rearrange",
                 path: "weather.temp",
                 to: "heat",
               } as RearrangeConfig,
@@ -538,7 +538,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:convert",
+                  type: "transform:convert",
                   from: "celsius",
                   to: "fahrenheit",
                 } as ConvertConfig,
@@ -561,7 +561,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:convert",
+                  type: "transform:convert",
                   from: "fahrenheit",
                   to: "celsius",
                 } as ConvertConfig,
@@ -583,7 +583,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:convert",
+                  type: "transform:convert",
                   from: "nonsense",
                   to: "celsius",
                 } as unknown as ConvertConfig,
@@ -602,7 +602,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:convert",
+                  type: "transform:convert",
                   from: "fahrenheit",
                   to: "nonsense",
                 } as unknown as ConvertConfig,
@@ -621,7 +621,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:convert",
+                  type: "transform:convert",
                   from: "nonsense",
                   to: "double-nonsense",
                 } as unknown as ConvertConfig,
@@ -646,7 +646,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:shell",
+                  type: "transform:shell",
                   codePath: "./test/unit/fixtures/echo.sh",
                   outputType: "object",
                 } as ShellConfig,
@@ -667,7 +667,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:shell",
+                  type: "transform:shell",
                   codePath: "./test/unit/fixtures/echo.sh",
                   outputType: "string",
                 } as ShellConfig,
@@ -686,7 +686,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:shell",
+                  type: "transform:shell",
                   codePath: "./test/unit/fixtures/echo.sh",
                   outputType: "number",
                 } as ShellConfig,
@@ -707,7 +707,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:shell",
+                  type: "transform:shell",
                   command: "echo '${message}'",
                   outputType: "object",
                 } as ShellConfig,
@@ -728,7 +728,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:shell",
+                  type: "transform:shell",
                   command: "echo 'hello, ${message}'",
                   outputType: "string",
                 } as ShellConfig,
@@ -747,7 +747,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:shell",
+                  type: "transform:shell",
                   command: "echo $((1+${message}))",
                   outputType: "number",
                 } as ShellConfig,
@@ -770,7 +770,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:javascript",
+                  type: "transform:javascript",
                   command: "10 + message",
                 } as JavascriptConfig,
               ],
@@ -790,7 +790,7 @@ describe("transformations", function () {
             {
               steps: [
                 {
-                  type: "transformation:javascript",
+                  type: "transform:javascript",
                   codePath: "./test/unit/fixtures/addOne.js",
                 } as JavascriptConfig,
               ],
@@ -811,7 +811,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:prettify",
+                type: "transform:prettify",
               } as PrettifyConfig,
             ],
           },
@@ -834,7 +834,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:prettify",
+                type: "transform:prettify",
                 parseInput: true,
               } as PrettifyConfig,
             ],
@@ -856,7 +856,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:prettify",
+                type: "transform:prettify",
               } as PrettifyConfig,
             ],
           },
@@ -875,7 +875,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:prettify",
+                type: "transform:prettify",
               } as PrettifyConfig,
             ],
           },
@@ -894,7 +894,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:prettify",
+                type: "transform:prettify",
                 spaces: 2,
               } as PrettifyConfig,
             ],
@@ -920,7 +920,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:uglify",
+                type: "transform:uglify",
               } as UglifyConfig,
             ],
           },
@@ -941,7 +941,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:uglify",
+                type: "transform:uglify",
                 parseInput: true,
               } as UglifyConfig,
             ],
@@ -961,7 +961,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:uglify",
+                type: "transform:uglify",
               } as UglifyConfig,
             ],
           },
@@ -980,7 +980,7 @@ describe("transformations", function () {
           {
             steps: [
               {
-                type: "transformation:uglify",
+                type: "transform:uglify",
               } as UglifyConfig,
             ],
           },
