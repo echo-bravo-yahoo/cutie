@@ -1,14 +1,14 @@
 import { expect } from "chai";
 
 import Logs from "../../src/triggers/logs.js";
-import Task from "../../src/util/Task.js";
 
 import { test } from "node:test";
+import { mockTask } from "../helpers.js";
 
 test("log matching", { concurrency: true }, (testContext) => {
   for (const { title, topic, filters, expected } of logTestCases) {
     testContext.test(title, () => {
-      const logHelper = new Logs({ type: "trigger:logs", filters }, {} as Task);
+      const logHelper = new Logs({ type: "trigger:logs", filters }, mockTask);
       expect(logHelper.shouldEmit(topic, "debug")).to.equal(expected);
     });
   }

@@ -4,11 +4,11 @@ import { expect } from "chai";
 
 import MQTT, { MQTTConfig } from "../../src/outputs/mqtt.js";
 import { setGlobals } from "../../src/index.js";
-import Task from "../../src/util/Task.js";
+import { mockGlobals, mockTask } from "../helpers.js";
 
 describe("string interpolation", function () {
   before(() => {
-    setGlobals({ name: "island", deeply: { nested: "metadata" } });
+    setGlobals(mockGlobals);
   });
 
   it("works for nested module data", async function () {
@@ -16,7 +16,7 @@ describe("string interpolation", function () {
       {
         device: { location: { shortName: "livingRoom" } },
       } as unknown as MQTTConfig,
-      {} as Task,
+      mockTask,
     );
 
     const interpolated = module.interpolateConfigString(
@@ -26,7 +26,7 @@ describe("string interpolation", function () {
   });
 
   it("works for nested global data", async function () {
-    const module = new MQTT({} as MQTTConfig, {} as Task);
+    const module = new MQTT({} as MQTTConfig, mockTask);
 
     const interpolated = module.interpolateConfigString(
       "devices/${globals.deeply.nested}",
