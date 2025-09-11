@@ -1,0 +1,18 @@
+# we'll get to this later
+connections: []
+
+# tasks are the things this cutie node will do
+tasks:
+  # the only task in this config is named "clock"
+  clock:
+    # a trigger is something that causes the task to run
+    trigger:
+      # this trigger starts a message every second
+      type: "trigger:interval"
+      interval: 1000
+      # a message is handled by every step in a task
+      message: "Tick..."
+
+    # these steps process the message from the trigger, in order
+    steps:
+      - type: "output:console"

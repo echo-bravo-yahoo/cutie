@@ -1,0 +1,54 @@
+# connections are configurations telling cutie how
+# to reach things it'll talk to frequently like
+# MQTT brokers, databases, etc.
+#
+# each connection has its own triggers or output steps;
+# for example, the mqtt connection has "trigger:mqtt"
+# and "output:mqtt".
+connections:
+  # like triggers and steps, each connection has a type
+  - type: "connection:mqtt"
+    # you'll refer to this connection by name. because
+    # connections have names, you can have multiple
+    # connections of the same type, e.g., to build
+    # an MQTT-to-MQTT bridge.
+    name: "personal"
+
+    # these fields are specific to mqtt connections;
+    # other connections will have other configurable
+    # fields.
+    username: "admin"
+    password: "admin"
+    endpoint: "http://127.0.0.1:1883"
+
+tasks:
+  local-clock:
+    trigger:
+      type: "trigger:interval"
+      interval: 1000
+      message: "Remote tick..."
+
+    steps:
+      # this output step sends our clock's message to MQTT
+      - type: "output:mqtt"
+        # notice that this matches the name we gave
+        # our connection
+        connectionName: "personal"
+        # this field is specific to mqtt output steps,
+        # and tells this output step which topics to
+        # broadcast to
+        topics:
+          - "testing/network-clock"
+
+  network-clock:
+    # this trigger listens to the channel we're
+    # broadcasting to
+    trigger:
+      type: "trigger:mqtt"
+      connectionName: "personal"
+      topics:
+        - "testing/network-clock"
+
+    # and logs it
+    steps:
+      - type: "output:console"
