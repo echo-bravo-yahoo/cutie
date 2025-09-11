@@ -8,7 +8,7 @@ tasks:
     # a trigger is something that causes the task to run
     trigger:
       # this trigger starts a message every second
-      type: "trigger:interval"
+      type: "trigger:repeat"
       interval: 1000
       # a message is handled by every step in a task
       message: "Tick..."

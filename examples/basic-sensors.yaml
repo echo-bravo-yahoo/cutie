@@ -36,7 +36,7 @@ tasks:
     trigger:
       # start with an interval trigger; this is analagous
       # to the samplingInterval in the combined config
-      type: "trigger:interval"
+      type: "trigger:repeat"
       interval: 1000
 
     steps:

@@ -24,7 +24,7 @@ connections:
 tasks:
   local-clock:
     trigger:
-      type: "trigger:interval"
+      type: "trigger:repeat"
       interval: 1000
       message: "Remote tick..."
 
