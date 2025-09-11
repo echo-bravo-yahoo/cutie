@@ -5,7 +5,7 @@ import { v7 as uuidV7 } from "uuid";
 import { globals, srcDir } from "../index.js";
 import { Configurable, Config } from "./Configurable.js";
 import Step, { StepConfig } from "./Step.js";
-import { Message } from "./type-helpers.js";
+import { isTrigger, Message } from "./type-helpers.js";
 import Trigger, { TriggerConfig } from "./Trigger.js";
 
 export interface TaskConfig extends Config {
@@ -64,6 +64,8 @@ export default class Task extends Configurable {
 
     for (const step of taskConfig.steps) {
       const currentStep = await this.importStep(step);
+      if (isTrigger(currentStep))
+        throw new Error(`Triggers cannot be specified as a step.`);
       currentStep.task = this;
 
       await currentStep.register();
