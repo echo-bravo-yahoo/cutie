@@ -23,7 +23,7 @@
     "build:docker": "sudo docker build . -t cutie -f ./Dockerfile",
     "build:docker:wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
     "sync": "lsyncd config.lua",
-    "start": "npx tsx ./src/cli-entrypoint.ts --config ./config/cutie.conf.json",
+    "start": "npx tsx ./src/cli-entrypoint.ts",
     "start:prod": "./built/cli-entrypoint.js --config ./config/cutie.conf.json",
     "lint": "npx eslint",
     "prettify": "prettier -w .",
