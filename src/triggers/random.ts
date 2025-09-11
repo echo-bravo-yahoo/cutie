@@ -41,21 +41,13 @@ export default class Random extends Sensor {
   }
 
   collateSamples() {
-    return {
-      metadata: {},
-      number: this.samples,
-    };
+    return this.samples;
   }
 
   async sample() {
     if (this.config.disabled) return;
 
-    const datapoint = {
-      metadata: {
-        timestamp: new Date(),
-      },
-      number: this.generateNextNumber(),
-    };
+    const datapoint = this.generateNextNumber();
 
     this.debug(
       "Sampled new data point.",
@@ -63,7 +55,7 @@ export default class Random extends Sensor {
       { datapoint },
     );
     this.samples.push(datapoint);
-    this.lastNumber = datapoint.number;
+    this.lastNumber = datapoint;
   }
 
   async enable() {
