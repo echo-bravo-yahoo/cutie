@@ -91,19 +91,19 @@ export default class MQTTConnection extends Connection {
     let triggers = 0;
 
     for (let i = 0; i < globals.tasks.length; i++) {
-      const firstStep = globals.tasks[i].steps[0];
-      if (!isMQTT(firstStep)) continue;
-      const desiredConnection = firstStep.config.connectionName;
+      const trigger = globals.tasks[i].trigger;
+      if (!trigger || !isMQTT(trigger)) continue;
+      const desiredConnection = trigger.config.connectionName;
 
       if (mqttConnectionNames.includes(desiredConnection)) {
         if (
-          isMQTT(firstStep) &&
+          isMQTT(trigger) &&
           MQTTConnection.matchesTopic(
             topic,
-            firstStep.config.topic || firstStep.config.topics || "",
+            trigger.config.topic || trigger.config.topics || "",
           )
         ) {
-          (globals.tasks[i].steps[0] as unknown as MQTT).startMessage(message);
+          (globals.tasks[i].steps[0] as unknown as MQTT).handleMessage(message);
           triggers++;
         }
       }

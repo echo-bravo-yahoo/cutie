@@ -25,7 +25,7 @@ export function isTrigger(configurable: Configurable): configurable is Trigger {
   return !!(
     configurable &&
     (configurable as unknown as TypedConfigurable).type &&
-    (configurable as unknown as TypedConfigurable).type.startsWith("trigger:")
+    (configurable as unknown as TypedConfigurable).type.startsWith("trigger")
   );
 }
 
@@ -33,7 +33,7 @@ export function isOutput(configurable: Configurable): configurable is Output {
   return !!(
     configurable &&
     (configurable as unknown as Output).type &&
-    (configurable as unknown as Output).type.startsWith("output:")
+    (configurable as unknown as Output).type.startsWith("output")
   );
 }
 

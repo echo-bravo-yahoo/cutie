@@ -16,9 +16,7 @@ export default class Interval extends Trigger {
     super(config, task);
   }
 
-  register() {
-    return this.enable();
-  }
+  async register() {}
 
   async enable() {
     this.interval = setInterval(
