@@ -17,6 +17,8 @@ export default class Task extends Configurable {
   declare config: TaskConfig;
   declare trigger?: Trigger;
   steps: Array<Step>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  stash?: Record<string, any>;
 
   constructor(config: TaskConfig, name: string) {
     super(config, name);
