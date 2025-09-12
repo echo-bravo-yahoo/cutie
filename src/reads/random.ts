@@ -58,14 +58,12 @@ export default class Random extends Read {
 
 /*
 {
-  "name": "fake-thermometer",
-  "type": "random",
+  "type": "read:random",
   "disabled": false,
   "start": 22,
   "minStep": .05,
   "maxStep": .5,
   "max": 30,
   "min": 20,
-  }
 }
 */
