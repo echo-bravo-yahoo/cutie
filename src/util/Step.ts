@@ -37,7 +37,9 @@ export default abstract class Step extends TypedConfigurable {
       str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));
 
     const result = inject(template, {
-      task: this.task,
+      task: { ...this.task, stash: undefined },
+      // we present stash like it's _not_ stored on the task
+      stash: this.task.stash,
       module: this.config,
       globals: { ...globals, logger: undefined },
       ...additionalContext,
