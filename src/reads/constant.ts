@@ -1,0 +1,39 @@
+import Read, { ReadConfig } from "../util/Read.js";
+import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
+
+export interface ConstantConfig extends ReadConfig {
+  value: Message;
+}
+
+export default class Constant extends Read {
+  declare config: ConstantConfig;
+
+  constructor(config: ConstantConfig, task: Task) {
+    super(config, task, {});
+  }
+
+  async read(message: Message, _traceId: string) {
+    if (typeof this.config.value === "string")
+      return this.interpolateConfigString(this.config.value, { message });
+
+    return message;
+  }
+
+  async enable() {
+    this.info("Enabled random number module.", { topic: this.logPrefix });
+    this.enabled = true;
+  }
+
+  async disable() {
+    this.info("Disabled random number module.", { topic: this.logPrefix });
+    this.enabled = false;
+  }
+}
+
+/*
+{
+  "type": "read:constant",
+  "value": any,
+}
+*/
