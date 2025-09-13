@@ -7,7 +7,7 @@ __pycache__/
 github
 github.pub
 
-provisioner/authorized_keys/**
+provisioner/cache/**
 
 **/node_modules/
 
