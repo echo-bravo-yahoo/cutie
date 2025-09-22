@@ -67,4 +67,5 @@ export function isTransform(
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Message = number | string | Record<string, any> | undefined;
