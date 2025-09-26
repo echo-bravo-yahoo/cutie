@@ -41,6 +41,7 @@ export default abstract class Step extends TypedConfigurable {
       // we present stash like it's _not_ stored on the task
       stash: this.task.stash,
       module: this.config,
+      env: process.env,
       globals: { ...globals, logger: undefined },
       ...additionalContext,
     });
