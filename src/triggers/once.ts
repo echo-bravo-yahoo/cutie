@@ -1,10 +1,9 @@
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
-import { Message } from "../util/type-helpers.js";
 
 export interface OnceConfig extends TriggerConfig {
   delay?: number;
-  message: Message;
+  message?: string;
 }
 
 export default class Once extends Trigger {
@@ -26,7 +25,7 @@ export default class Once extends Trigger {
       this.info(`Running step once after a delay of ${this.config.delay} ms.`, {
         topic: this.logPrefix,
       });
-      this.startMessage(this.config.message);
+      this.startMessage(this.interpolateConfigString(this.config.message));
     }, this.config.delay);
   }
 
@@ -47,5 +46,6 @@ export default class Once extends Trigger {
   "name": "setupStuff",
   "disabled": false,
   "delay": 10000 // in ms
+  "message": string,
 }
 */
