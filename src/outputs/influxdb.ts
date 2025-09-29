@@ -10,7 +10,8 @@ import { Message } from "../util/type-helpers.js";
 
 export interface InfluxDBConfig extends OutputConfig {
   measurement: string;
-  labels: Array<string>;
+  labels: Record<string, string>;
+  connectionName: string;
 }
 
 export function isInfluxDBMessage(
@@ -37,7 +38,9 @@ export default class InfluxDB extends Output {
   }
 
   async enable() {
-    this.influxdb = getConnection(this.name) as unknown as InfluxDBConnection;
+    this.influxdb = getConnection(
+      this.config.connectionName,
+    ) as unknown as InfluxDBConnection;
     this.enabled = true;
   }
 
@@ -94,9 +97,17 @@ export default class InfluxDB extends Output {
 }
 
 /*
+config format:
 {
   "type": "output:mqtt:personal-mqtt",
   "disabled": false,
+  "measurement": string,
   "topic": "data/weather/${state.location}"
+}
+
+message format:
+{
+  labels?: Record<string, string>,
+  [key: value] where the value already has any type indicator baked-in (e.g., i)
 }
 */
