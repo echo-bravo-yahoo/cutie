@@ -25,7 +25,9 @@ export default class Once extends Trigger {
       this.info(`Running step once after a delay of ${this.config.delay} ms.`, {
         topic: this.logPrefix,
       });
-      this.startMessage(this.interpolateConfigString(this.config.message));
+      this.startMessage(
+        this.interpolateConfigString(this.config.message || ""),
+      );
     }, this.config.delay);
   }
 
