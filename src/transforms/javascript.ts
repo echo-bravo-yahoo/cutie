@@ -59,9 +59,10 @@ export default class Javascript extends Transform {
 }
 
 /*
-whole message form:
 {
   "type": "transform:javascript",
-  "codePath": ""
+  "codePath": "",
+  "command": ""
+  "outputType": "object" | "string" | "number";
 }
 */
