@@ -1,12 +1,12 @@
-import { execSync } from "node:child_process";
+import {
+  execSync,
+  ExecSyncOptionsWithStringEncoding,
+} from "node:child_process";
 import { join, normalize } from "node:path";
 import { readFileSync } from "node:fs";
 
 import { srcDir } from "../index.js";
-import Transform, {
-  Context,
-  WholeMessageConfig,
-} from "../util/Transform.js";
+import Transform, { Context, WholeMessageConfig } from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
@@ -14,6 +14,7 @@ export interface ShellConfig extends WholeMessageConfig {
   codePath: string;
   command: string;
   outputType: string;
+  shellPath?: string;
 }
 
 export default class Shell extends Transform {
@@ -50,10 +51,14 @@ export default class Shell extends Transform {
 
   transform(message: Message) {
     const command = this.generateCommand(message);
+    const args: Partial<Parameters<typeof execSync>[1]> = {
+      encoding: "utf8",
+    };
+    if (this.config.shellPath) args.shell = this.config.shellPath;
 
-    const result = execSync(command, { encoding: "utf8" });
+    const result = execSync(command, args);
     if (this.config.outputType === "object") {
-      return JSON.parse(result);
+      return JSON.parse(result as unknown as string);
     } else if (this.config.outputType === "string") {
       return String(result.slice(0, -1));
     } else if (this.config.outputType === "number") {
