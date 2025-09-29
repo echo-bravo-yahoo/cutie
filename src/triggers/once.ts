@@ -22,7 +22,11 @@ export default class Once extends Trigger {
 
   delayedStartMessage() {
     setTimeout(() => {
-      this.info(`Running step once after a delay of ${this.config.delay} ms.`, {
+      const message =
+        this.config.delay !== undefined
+          ? `Running step once after a delay of ${this.config.delay} ms.`
+          : "Running step once, immediately.";
+      this.info(message, {
         topic: this.logPrefix,
       });
       this.startMessage(
