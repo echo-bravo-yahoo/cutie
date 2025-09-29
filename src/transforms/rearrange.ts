@@ -6,7 +6,9 @@ import Transform, {
   Context,
   isMultiConfig,
   MultiConfig,
+  isSingleConfig,
   SingleConfig,
+  TransformConfig,
 } from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
@@ -25,6 +27,14 @@ export type RearrangeConfig =
   | SinglePathRearrangeConfig
   | MultiPathRearrangeConfig;
 
+function isSinglePathRearrangeConfig(
+  config: TransformConfig,
+): config is SinglePathRearrangeConfig {
+  return (
+    isSingleConfig(config) && typeof (config as unknown as any).to === "string"
+  );
+}
+
 export default class Rearrange extends Transform {
   constructor(config: RearrangeConfig, task: Task) {
     super(config, task, {});
@@ -42,12 +52,20 @@ export default class Rearrange extends Transform {
     );
     const newValue = this.transformSingle(oldValue, config, context);
 
-    if (!context.message.out && typeof context.message.in === "object")
+    if (!context.message.out && typeof context.message.in === "object") {
       context.message.out = { ...context.message.in };
+    }
+
+    // this is for cases where we want to take a primitive and move it into an object
+    if (isSinglePathRearrangeConfig(this.config) && this.config.to !== ".") {
+      context.message.out = {};
+    }
+
     if (config.to) {
       // delete the value at the old path before we add it at the new path
       unset(context.message.out, context.current);
     }
+
     if (typeof context.message.out !== "object")
       throw new Error(
         `Context.message.out should be an object, but instead is ${context.message.out} (${typeof context.message.out}).`,
