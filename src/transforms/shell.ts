@@ -1,7 +1,4 @@
-import {
-  execSync,
-  ExecSyncOptionsWithStringEncoding,
-} from "node:child_process";
+import { execSync } from "node:child_process";
 import { join, normalize } from "node:path";
 import { readFileSync } from "node:fs";
 

@@ -23,4 +23,6 @@ export async function registerTasks(tasks: Array<TaskConfig>) {
       task,
     );
   }
+
+  return globals.tasks;
 }

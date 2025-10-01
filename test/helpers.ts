@@ -26,11 +26,12 @@ export function taskDone(
   };
 
   return new Promise<void>((resolve, reject) => {
-    setTimeout(() => reject(), options.timeout);
+    const timeout = setTimeout(() => reject(), options.timeout);
     const interval = setInterval(() => {
       if (task.messagesHandled >= options.waitFor) {
-        resolve();
+        clearTimeout(timeout);
         clearInterval(interval);
+        resolve();
       }
     }, 1);
   });

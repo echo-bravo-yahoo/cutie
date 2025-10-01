@@ -14,9 +14,9 @@
     "cookbook.md"
   ],
   "scripts": {
-    "test": "npx tsx --test './test/**/*.ts'",
-    "test:watch": "npx tsx watch --test './test/**/*.ts'",
-    "test:coverage": "npx c8 --src './src' --all --reporter text --reporter html tsx --test './test/**/*.ts'",
+    "test": "npx tsx --experimental-test-module-mocks --test './test/**/*.ts'",
+    "test:watch": "npx tsx watch --experimental-test-module-mocks --test './test/**/*.ts'",
+    "test:coverage": "npx c8 --src './src' --all --reporter text --reporter html tsx --experimental-test-module-mocks --test './test/**/*.ts'",
     "build": "tsc && chmod +x ./built/cli-entrypoint.js",
     "build:watch": "tsc --watch",
     "build:clean": "rm -rf built/*",

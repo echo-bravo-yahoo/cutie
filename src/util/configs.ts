@@ -1,3 +1,7 @@
+import { normalize } from "node:path";
+
+import { read } from "node-yaml";
+
 import { globals } from "../index.js";
 import { ConnectionConfig } from "./Connection.js";
 import { getConnection, registerConnections } from "./connections.js";
@@ -8,6 +12,10 @@ export interface ConfigFile {
   configProvider: ProviderConfig;
   connections: Array<ConnectionConfig>;
   tasks?: Array<TaskConfig>;
+}
+
+export async function fetchLocalConfig(path: string) {
+  return read(normalize(path));
 }
 
 export async function fetchRemoteConfig(config: ConfigFile) {

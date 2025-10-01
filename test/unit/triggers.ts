@@ -1,4 +1,4 @@
-import { describe, it, before, after, MockFunctionContext } from "node:test";
+import { describe, it, before, after } from "node:test";
 
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -9,7 +9,7 @@ import Task from "../../src/util/Task.js";
 import { setGlobals } from "../../src/index.js";
 
 import { OnceConfig } from "../../src/triggers/once.js";
-import { taskDone, taskResolved } from "../helpers.js";
+import { taskDone } from "../helpers.js";
 
 describe("triggers", function () {
   const fakeLogger = {
@@ -39,7 +39,7 @@ describe("triggers", function () {
         (console.log as unknown as it.Mock<any>).mock.restore();
       });
 
-      it("interpolates the provided message", async function (t) {
+      it("interpolates the provided message", async function (context) {
         const task = new Task(
           {
             steps: [{ type: "output:console" }],
@@ -50,7 +50,7 @@ describe("triggers", function () {
           },
           "interpolates the provided message",
         );
-        console.log = t.mock.fn(console.log, () => {}, { times: 1 });
+        console.log = context.mock.fn(console.log, () => {}, { times: 1 });
 
         await task.register();
         await taskDone(task);
