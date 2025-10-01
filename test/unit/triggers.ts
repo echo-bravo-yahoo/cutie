@@ -1,4 +1,4 @@
-import { describe, it, before } from "node:test";
+import { describe, it, before, after, MockFunctionContext } from "node:test";
 
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -9,6 +9,7 @@ import Task from "../../src/util/Task.js";
 import { setGlobals } from "../../src/index.js";
 
 import { OnceConfig } from "../../src/triggers/once.js";
+import { taskDone, taskResolved } from "../helpers.js";
 
 describe("triggers", function () {
   const fakeLogger = {
@@ -26,7 +27,19 @@ describe("triggers", function () {
 
   describe("specific triggers", function () {
     describe("once", function () {
-      it("interpolates the provided message", async function () {
+      let nameEnvVariable: string | undefined;
+
+      before(() => {
+        nameEnvVariable = process.env.name;
+        process.env.name = "world";
+      });
+
+      after(() => {
+        process.env.name = nameEnvVariable;
+        (console.log as unknown as it.Mock<any>).mock.restore();
+      });
+
+      it("interpolates the provided message", async function (t) {
         const task = new Task(
           {
             steps: [{ type: "output:console" }],
@@ -37,11 +50,14 @@ describe("triggers", function () {
           },
           "interpolates the provided message",
         );
-        task.trigger?.startMessage(undefined, undefined);
+        console.log = t.mock.fn(console.log, () => {}, { times: 1 });
 
-        // a primitive reading is one not wrapped in an object
-        // const transformed = await task.startMessage(5);
-        // expect(transformed).to.deep.equal("hello world");
+        await task.register();
+        await taskDone(task);
+
+        expect(
+          (console.log as unknown as it.Mock<any>).mock.calls[0].arguments[0],
+        ).to.equal("hello world");
       });
     });
   });

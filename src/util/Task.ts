@@ -19,6 +19,7 @@ export default class Task extends Configurable {
   steps: Array<Step>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   stash?: Record<string, any>;
+  messagesHandled: number;
 
   constructor(config: TaskConfig, name: string) {
     super(config, name);
@@ -30,6 +31,7 @@ export default class Task extends Configurable {
     this.steps = [];
 
     this.logPrefix = `core.runtime.tasks.${name}`;
+    this.messagesHandled = 0;
   }
 
   async register() {
@@ -105,6 +107,7 @@ export default class Task extends Configurable {
 
   // TODO: implement some callback behavior here
   async endMessage(message: Message, _traceId?: string) {
+    this.messagesHandled++;
     return message;
   }
 }
