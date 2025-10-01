@@ -13,8 +13,9 @@ import { CLIArgs } from "./cli-entrypoint.js";
 import Task from "./util/Task.js";
 import { Connection } from "./util/Connection.js";
 import LogHelper from "./util/LogHelper.js";
-import { fetchRemoteConfig } from "./util/configs.js";
+import { fetchLocalConfig, fetchRemoteConfig } from "./util/configs.js";
 import { EventEmitter } from "node:events";
+import { setupProcess } from "./process.js";
 
 export interface Globals {
   tasks: Array<Task>;
@@ -33,11 +34,12 @@ export function setGlobals(newValue: Globals) {
 }
 
 export async function start(args: CLIArgs) {
-  const configPromise = read(normalize(args.config));
-  const packageJsonPromise = read(normalize(`${__dirname}/../package.json`));
+  setupProcess(process);
 
-  await Promise.all([configPromise, packageJsonPromise]);
-  const packageJson = await packageJsonPromise;
+  const [localConfig, packageJson] = await Promise.all([
+    fetchLocalConfig(args.config),
+    read(normalize(`${__dirname}/../package.json`)),
+  ]);
 
   globals = {
     tasks: [],
@@ -47,10 +49,13 @@ export async function start(args: CLIArgs) {
     eventBus: new EventEmitter(),
   };
 
-  let config = await configPromise;
   // TODO: write backup of config to file for later
-  if (config.configProvider) config = await fetchRemoteConfig(config);
+  const config = localConfig.configProvider
+    ? await fetchRemoteConfig(localConfig)
+    : localConfig;
 
   await registerConnections(config.connections);
   await registerTasks(config.tasks);
+
+  return globals;
 }
