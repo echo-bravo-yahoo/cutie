@@ -524,6 +524,46 @@ describe("transforms", function () {
         });
       });
 
+      it("works when wrapping a primitive into an object", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:rearrange",
+                path: ".",
+                to: "heat",
+              } as RearrangeConfig,
+            ],
+          },
+          "works when wrapping a primitive into an object",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage(8);
+        expect(transformed).to.deep.equal({
+          heat: 8,
+        });
+      });
+
+      it("works when unwrapping an object into a primitive", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:rearrange",
+                path: "heat",
+                to: ".",
+              } as RearrangeConfig,
+            ],
+          },
+          "works when unwrapping an object into a primitive",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({ heat: 9 });
+        expect(transformed).to.deep.equal(9);
+      });
+
       it.skip("works on composite readings", async function () {});
     });
 
