@@ -57,8 +57,17 @@ export default class Rearrange extends Transform {
     }
 
     // this is for cases where we want to take a primitive and move it into an object
-    if (isSinglePathRearrangeConfig(this.config) && this.config.to !== ".") {
+    if (
+      typeof context.message.out !== "object" &&
+      isSinglePathRearrangeConfig(this.config) &&
+      this.config.to !== "."
+    ) {
       context.message.out = {};
+    }
+
+    if (isSinglePathRearrangeConfig(this.config) && this.config.to === ".") {
+      context.message.out = newValue;
+      return;
     }
 
     if (config.to) {
