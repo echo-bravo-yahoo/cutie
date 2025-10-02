@@ -10,7 +10,7 @@ import { Message } from "../util/type-helpers.js";
 
 export interface InfluxDBConfig extends OutputConfig {
   measurement: string;
-  labels: Record<string, string>;
+  tags: Record<string, string>;
   connectionName: string;
 }
 
@@ -19,13 +19,13 @@ export function isInfluxDBMessage(
 ): message is InfluxDBMessage {
   return (
     typeof message === "object" &&
-    typeof (message as unknown as InfluxDBMessage).data === "string"
+    typeof (message as unknown as InfluxDBMessage).fields === "object"
   );
 }
 
 interface InfluxDBMessage {
-  data: string;
-  labels?: Array<string>;
+  fields: Record<string, Message>;
+  tags?: Array<string>;
 }
 
 export default class InfluxDB extends Output {
@@ -46,7 +46,6 @@ export default class InfluxDB extends Output {
 
   objectToLine(object: Record<string, Message>) {
     const result = [];
-    delete object.labels;
     for (const [key, value] of Object.entries(object)) {
       result.push(`${key}=${value}`);
     }
@@ -70,23 +69,24 @@ export default class InfluxDB extends Output {
   // object to turn into a message _or_ a raw string already in message format
   async send(message: Message) {
     if (typeof message === "string") {
+      // TO-DO: validation
       await this.sendLine(message);
       return message;
-    } else if (typeof message === "object") {
+    } else if (isInfluxDBMessage(message)) {
       const measurementName = this.config.measurement;
-      let labelsString = "";
+      let tagsString = "";
 
       // TO-DO: do interpolation here
-      if (message.labels || this.config.labels)
-        labelsString = this.objectToLine({
-          ...this.config.labels,
-          ...message.labels,
+      if (message.tags || this.config.tags)
+        tagsString = this.objectToLine({
+          ...this.config.tags,
+          ...message.tags,
         });
 
-      if (labelsString) labelsString = `,${labelsString}`;
-      const data = this.objectToLine(message);
+      if (tagsString) tagsString = `,${tagsString}`;
+      const data = this.objectToLine(message.fields);
 
-      const line = `${measurementName}${labelsString || ""} ${data} ${new Date().valueOf()}`;
+      const line = `${measurementName}${tagsString || ""} ${data} ${new Date().valueOf()}`;
       await this.sendLine(line);
 
       return message;
@@ -99,15 +99,16 @@ export default class InfluxDB extends Output {
 /*
 config format:
 {
-  "type": "output:mqtt:personal-mqtt",
+  "type": "output:influxdb",
   "disabled": false,
   "measurement": string,
-  "topic": "data/weather/${state.location}"
+  "tags": Record<string, string>,
+  "connectionName": string,
 }
 
 message format:
 {
-  labels?: Record<string, string>,
-  [key: value] where the value already has any type indicator baked-in (e.g., i)
+  tags?: Record<string, string>,
+  fields: Record<string, string>, where the value already has any type indicator baked-in (e.g., i)
 }
 */
