@@ -1,71 +1,47 @@
-import set from "lodash/set.js";
-import merge from "lodash/merge.js";
+import isArray from "lodash/isArray.js";
+import mergeWith from "lodash/mergeWith.js";
 
-import Transform, {
-  Context,
-  MultiConfig,
-  SingleConfig,
-} from "../util/Transform.js";
+import Transform, { Context, WholeMessageConfig } from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
-export interface MergeArgs {
-  to: string;
+export interface MergeConfig extends WholeMessageConfig {
+  // arrayStrategy: ...
+  sources: Array<string | Record<string, any>>;
 }
-
-interface SinglePathMergeConfig extends MergeArgs, SingleConfig {}
-
-interface MultiPathMergeConfig extends MultiConfig {
-  paths: Record<string, MergeArgs>;
-}
-
-export type MergeConfig = SinglePathMergeConfig | MultiPathMergeConfig;
 
 export default class Merge extends Transform {
+  declare config: MergeConfig;
+
   constructor(config: MergeConfig, task: Task) {
     super(config, task, {});
   }
 
-  transformSingle(
-    value: Message,
-    config: SinglePathMergeConfig,
-    context: Context,
-  ) {
-    if (typeof value !== "object")
-      throw new Error(
-        `Context.message.out should be an object, but instead is ${context.message.out} (${typeof context.message.out}).`,
-      );
+  transform(message: Message, _traceId: string) {
+    if (typeof message !== "object") return message;
+    return mergeWith(
+      message,
+      ...this.config.sources.map((source) => {
+        if (typeof source === "object") {
+          return source;
+        } else {
+          return this.interpolatePath(source);
+        }
+      }),
+      (objValue: any, srcValue: any) =>
+        isArray(objValue) ? srcValue : undefined,
+    );
+  }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let result: any = { ...context.message };
-    const merged = merge(value, config);
-    if (config.to === "") {
-      result = merged;
-      context.current = "";
-    } else {
-      if (!context.pathChosen) throw new Error(`???`);
-      set(result, context.pathChosen, merged);
-    }
-    return result.out;
+  // never-called / no-op for class composition reasons
+  transformSingle(value: number, _config: MergeConfig, _context: Context) {
+    return value;
   }
 }
 
 /*
-
-single path form:
 {
   "type": "transform:merge",
-  "path": "a.b.c",
-  "to": "a.d"
+  "sources": Array<string>, // gets interpolated
 }
-
-multi-path form:
-{
-  "type": "transform:merge",
-  "paths": {
-    "a.b.c": {
-      "to": "a.d"
-    }
-  }
-}
-*/
+ */
