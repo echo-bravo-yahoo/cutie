@@ -29,9 +29,14 @@ export default class Once extends Trigger {
       this.info(message, {
         topic: this.logPrefix,
       });
-      this.startMessage(
-        this.interpolateConfigString(this.config.message || ""),
-      );
+      // TODO: also interpolate strings on objects
+      if (typeof this.config.message === "string") {
+        this.startMessage(
+          this.interpolateConfigString(this.config.message || ""),
+        );
+      } else {
+        this.startMessage(this.config.message);
+      }
     }, this.config.delay);
   }
 

@@ -57,10 +57,8 @@ multi-path form:
   "type": "transform:convert",
   "paths": {
     "a.b.c": {
-      "convert": {
-        "from": celsius,
-        "to": fahrenheit
-      }
+      "from": celsius,
+      "to": fahrenheit
     }
   }
 }

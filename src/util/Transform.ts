@@ -18,10 +18,7 @@ import { ConfigurableImplementation } from "./Configurable.js";
 //         get(message, path) is of type number, and we'll do it repeatedly
 // a basePath points to an array to iterate through
 // a path pulls a value from one of the iterables in the basePath
-export type TransformConfig =
-  | SingleConfig
-  | MultiConfig
-  | WholeMessageConfig;
+export type TransformConfig = SingleConfig | MultiConfig | WholeMessageConfig;
 
 interface BaseTransformConfig extends StepConfig {
   type: string;
@@ -45,9 +42,7 @@ export function isSingleConfig(
   return typeof (config as SingleConfig).path === "string" ? true : false;
 }
 
-export function isMultiConfig(
-  config: TransformConfig,
-): config is MultiConfig {
+export function isMultiConfig(config: TransformConfig): config is MultiConfig {
   return typeof (config as MultiConfig).paths === "object" ? true : false;
 }
 
@@ -64,6 +59,7 @@ export interface Context {
 export default abstract class Transform extends Step {
   declare config: TransformConfig;
   preservePaths: boolean;
+  // TO-DO: value's type here is probably string|number|undefined
   abstract transformSingle(
     value: Message,
     config: Message,
@@ -161,7 +157,7 @@ export default abstract class Transform extends Step {
     }
 
     this.debug(
-      "Transforming message.",
+      "Transformed message.",
       { topic: this.logPrefix, traceId },
       {
         context: {

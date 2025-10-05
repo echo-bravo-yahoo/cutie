@@ -10,10 +10,9 @@ import { setGlobals } from "../../src/index.js";
 
 import { OffsetConfig } from "../../src/transforms/offset.js";
 import { RoundConfig } from "../../src/transforms/round.js";
-import { PluckConfig } from "../../src/transforms/pluck.js";
 import { ShellConfig } from "../../src/transforms/shell.js";
 import { ConvertConfig } from "../../src/transforms/convert.js";
-import { RearrangeConfig } from "../../src/transforms/rearrange.js";
+import { MungeConfig } from "../../src/transforms/munge.js";
 import { JavascriptConfig } from "../../src/transforms/javascript.js";
 import { PrettifyConfig } from "../../src/transforms/prettify.js";
 import { UglifyConfig } from "../../src/transforms/uglify.js";
@@ -35,6 +34,7 @@ describe("transforms", function () {
 
   describe("specific transformers", function () {
     describe("offset", function () {
+      // TO-DO: find out why the first test in this file (regardless of which) takes ~50 ms)
       it("works on primitive readings", async function () {
         const task = new Task(
           {
@@ -415,156 +415,169 @@ describe("transforms", function () {
       });
     });
 
-    describe("pluck", function () {
-      it.skip("works on primitive readings", async function () {
-        // pluck doesn't _do anything_ for primitive readings
-        // should it error?
-        // until i've made a decision, leaving a skipped test here
-      });
-
-      it("works on simple readings", async function () {
+    describe("munge", function () {
+      it("works for all operations", async function () {
         const task = new Task(
           {
             steps: [
               {
-                type: "transform:pluck",
-                path: "weather.temp",
-              } as PluckConfig,
-            ],
-          },
-          "works on simple readings",
-        );
-        await task.register();
-
-        const transformed = await task.startMessage({
-          weather: { temp: 5, humidity: 23 },
-        });
-        expect(transformed).to.deep.equal({ weather: { temp: 5 } });
-      });
-
-      it("works on composite readings", async function () {
-        const task = new Task(
-          {
-            steps: [
-              {
-                type: "transform:pluck",
-                path: "environment.sound",
-                destination: "noise",
-              } as PluckConfig,
-            ],
-          },
-          "works on composite readings",
-        );
-        await task.register();
-
-        const transformed = await task.startMessage({
-          weather: { temp: 5, humidity: 15 },
-          environment: { sound: 75 },
-        });
-        expect(transformed).to.deep.equal({ noise: 75 });
-      });
-
-      it("works with multiple paths", async function () {
-        const task = new Task(
-          {
-            steps: [
-              {
-                type: "transform:pluck",
+                type: "transform:munge",
                 paths: {
-                  "environment.sound": {
-                    destination: "noise",
-                  },
                   "weather.temp": {
-                    destination: "temp",
+                    op: "rename",
+                    to: "heat",
+                  },
+                  "weather.humidity": {
+                    op: "retain",
+                  },
+                  "weather.windSpeed": {
+                    op: "remove",
+                  },
+                  "weather.windDirection": {
+                    op: "duplicate",
+                    to: "dir",
                   },
                 },
-              } as PluckConfig,
+              } as MungeConfig,
             ],
           },
-          "works with multiple paths",
+          "works for all operations",
         );
         await task.register();
 
         const transformed = await task.startMessage({
-          weather: { temp: 5, humidity: 15 },
-          environment: { sound: 75 },
-        });
-        expect(transformed).to.deep.equal({ temp: 5, noise: 75 });
-      });
-    });
-
-    describe("rearrange", function () {
-      it.skip("works on primitive readings", async function () {
-        // rearrange doesn't _do anything_ for primitive readings
-        // should it error?
-        // until i've made a decision, leaving a skipped test here
-      });
-
-      it("works on simple readings", async function () {
-        const task = new Task(
-          {
-            steps: [
-              {
-                type: "transform:rearrange",
-                path: "weather.temp",
-                to: "heat",
-              } as RearrangeConfig,
-            ],
-          },
-          "works on simple readings",
-        );
-        await task.register();
-
-        const transformed = await task.startMessage({
-          weather: { temp: 5, humidity: 23 },
+          weather: { temp: 5, humidity: 23, windSpeed: 4, windDirection: "SE" },
         });
         expect(transformed).to.deep.equal({
           heat: 5,
-          weather: { humidity: 23 },
+          weather: { humidity: 23, windDirection: "SE" },
+          dir: "SE",
         });
       });
 
-      it("works when wrapping a primitive into an object", async function () {
+      it("works for unwrapping an object to a primitive", async function () {
         const task = new Task(
           {
             steps: [
               {
-                type: "transform:rearrange",
-                path: ".",
-                to: "heat",
-              } as RearrangeConfig,
+                type: "transform:munge",
+                paths: {
+                  temp: {
+                    op: "rename",
+                    to: ".",
+                  },
+                },
+              } as MungeConfig,
             ],
           },
-          "works when wrapping a primitive into an object",
+          "works for unwrapping an object to a primitive",
         );
         await task.register();
 
-        const transformed = await task.startMessage(8);
+        const transformed = await task.startMessage({
+          temp: 5,
+        });
+        expect(transformed).to.deep.equal(5);
+      });
+
+      it("works for wrapping a primitive into an object", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:munge",
+                paths: {
+                  ".": {
+                    op: "rename",
+                    to: "temp",
+                  },
+                },
+              } as MungeConfig,
+            ],
+          },
+          "works for wrapping a primitive into an object",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage(5);
+        expect(transformed).to.deep.equal({ temp: 5 });
+      });
+
+      it("works for removing all unspecified keys", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:munge",
+                paths: {
+                  saturday: {
+                    op: "retain",
+                  },
+                  sunday: {
+                    op: "retain",
+                  },
+                  "*": {
+                    op: "remove",
+                  },
+                },
+              } as MungeConfig,
+            ],
+          },
+          "works for removing all unspecified keys",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({
+          monday: 15,
+          tuesday: 12,
+          wednesday: 14,
+          thursday: 14,
+          friday: 8,
+          saturday: 2,
+          sunday: 8,
+        });
+        expect(transformed).to.deep.equal({ saturday: 2, sunday: 8 });
+      });
+
+      it("works for retaining all unspecified keys", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:munge",
+                paths: {
+                  monday: {
+                    op: "remove",
+                  },
+                  "*": {
+                    op: "retain",
+                  },
+                },
+              } as MungeConfig,
+            ],
+          },
+          "works for retaining all unspecified keys",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({
+          monday: 15,
+          tuesday: 12,
+          wednesday: 14,
+          thursday: 14,
+          friday: 8,
+          saturday: 2,
+          sunday: 8,
+        });
         expect(transformed).to.deep.equal({
-          heat: 8,
+          tuesday: 12,
+          wednesday: 14,
+          thursday: 14,
+          friday: 8,
+          saturday: 2,
+          sunday: 8,
         });
       });
-
-      it("works when unwrapping an object into a primitive", async function () {
-        const task = new Task(
-          {
-            steps: [
-              {
-                type: "transform:rearrange",
-                path: "heat",
-                to: ".",
-              } as RearrangeConfig,
-            ],
-          },
-          "works when unwrapping an object into a primitive",
-        );
-        await task.register();
-
-        const transformed = await task.startMessage({ heat: 9 });
-        expect(transformed).to.deep.equal(9);
-      });
-
-      it.skip("works on composite readings", async function () {});
     });
 
     describe("convert", function () {
