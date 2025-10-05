@@ -26,6 +26,19 @@ export default abstract class Step extends TypedConfigurable {
     this.logPrefix = `${this.task.logPrefix}.steps.${index}`;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  generateContext(additionalContext: Record<string, any> = {}) {
+    return {
+      task: { ...this.task, stash: undefined },
+      // we present stash like it's _not_ stored on the task
+      stash: this.task.stash,
+      module: this.config,
+      env: process.env,
+      globals: { ...globals, logger: undefined },
+      ...additionalContext,
+    };
+  }
+
   // always includes the context of task, module/config, and globals
   interpolateConfigString(
     template: string,
@@ -36,15 +49,18 @@ export default abstract class Step extends TypedConfigurable {
     const inject = (str: string, obj: Record<string, any>) =>
       str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));
 
-    const result = inject(template, {
-      task: { ...this.task, stash: undefined },
-      // we present stash like it's _not_ stored on the task
-      stash: this.task.stash,
-      module: this.config,
-      env: process.env,
-      globals: { ...globals, logger: undefined },
-      ...additionalContext,
-    });
+    const result = inject(template, this.generateContext(additionalContext));
+
+    return result;
+  }
+
+  interpolatePath(path: Message, additionalContext?: Record<string, any>) {
+    if (typeof path !== "string" || !path.startsWith("$$")) return path;
+    const result = get(
+      this.generateContext(additionalContext),
+      path.slice(2),
+      undefined,
+    );
 
     return result;
   }

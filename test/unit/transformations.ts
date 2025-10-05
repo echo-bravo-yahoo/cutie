@@ -12,6 +12,7 @@ import { OffsetConfig } from "../../src/transforms/offset.js";
 import { RoundConfig } from "../../src/transforms/round.js";
 import { ShellConfig } from "../../src/transforms/shell.js";
 import { ConvertConfig } from "../../src/transforms/convert.js";
+import { MergeConfig } from "../../src/transforms/merge.js";
 import { MungeConfig } from "../../src/transforms/munge.js";
 import { JavascriptConfig } from "../../src/transforms/javascript.js";
 import { PrettifyConfig } from "../../src/transforms/prettify.js";
@@ -33,6 +34,108 @@ describe("transforms", function () {
   });
 
   describe("specific transformers", function () {
+    describe("merge", function () {
+      it("can merge a literal object", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:merge",
+                sources: [{ node: "livingRoom" }],
+              } as MergeConfig,
+            ],
+          },
+          "can merge a literal object",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({ temp: 7 });
+        expect(transformed).to.deep.equal({ temp: 7, node: "livingRoom" });
+      });
+
+      it("can merge an object derived by interpolation", async function () {
+        const task = new Task(
+          {
+            data: {
+              node: "bedRoom",
+            },
+            steps: [
+              {
+                type: "transform:merge",
+                sources: ["$$task.config.data"],
+              } as MergeConfig,
+            ],
+          },
+          "can merge a literal object",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({ temp: 7 });
+        expect(transformed).to.deep.equal({ temp: 7, node: "bedRoom" });
+      });
+
+      it("can merge a variety of things at once", async function () {
+        const task = new Task(
+          {
+            data: {
+              // both sources have a metadata field that gets merged together
+              metadata: {
+                node: "bedRoom",
+              },
+            },
+            steps: [
+              {
+                type: "transform:merge",
+                sources: [
+                  "$$task.config.data",
+                  { metadata: { priority: "high" } },
+                ],
+              } as MergeConfig,
+            ],
+          },
+          "can merge a variety of things at once",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({ temp: 7 });
+        expect(transformed).to.deep.equal({
+          temp: 7,
+          metadata: {
+            node: "bedRoom",
+            priority: "high",
+          },
+        });
+      });
+
+      it("merges objects and arrays by last-write-wins", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:merge",
+                sources: [
+                  { priority: "low" },
+                  { priority: "high" },
+                  { data: [1, 2, 3] },
+                  { data: [4, 5, 6] },
+                  { data: [7] },
+                ],
+              } as MergeConfig,
+            ],
+          },
+          "merges objects and arrays by last-write-wins",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({ temp: 7 });
+        expect(transformed).to.deep.equal({
+          temp: 7,
+          priority: "high",
+          data: [7],
+        });
+      });
+    });
+
     describe("offset", function () {
       // TO-DO: find out why the first test in this file (regardless of which) takes ~50 ms)
       it("works on primitive readings", async function () {
