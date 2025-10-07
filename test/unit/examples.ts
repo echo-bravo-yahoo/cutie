@@ -34,6 +34,7 @@ describe("examples run correctly, including", function () {
 
   it("interpolation.yaml", async function (context) {
     let fileChangedCallback: Parameters<typeof watch>[1];
+    console.log = context.mock.fn(console.log, () => {});
     const mockWatch = context.mock.fn(
       (_path, _options, callback) => (fileChangedCallback = callback),
     );
