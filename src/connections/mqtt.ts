@@ -22,11 +22,58 @@ export interface MQTTProviderConfig extends ProviderConfig {
 
 export default class MQTTConnection extends Connection {
   declare config: MQTTConnectionConfig;
-  // @ts-expect-error connection is instantiated by register()
+  // @ts-expect-error this will be instantiated by enabling (before it's accessed)
   connection: mqtt.MqttClient;
 
   constructor(config: MQTTConnectionConfig) {
     super(config);
+  }
+
+  async uploadConfig(topic: string, config: ConfigFile) {
+    this.connection = await mqtt.connectAsync(
+      this.config.endpoint,
+      this.config,
+    );
+
+    await this.connection.publishAsync(topic, JSON.stringify(config, null, 4), {
+      retain: true,
+    });
+  }
+
+  async fetchAllConfigs(): Promise<Record<string, ConfigFile>> {
+    const configs: Record<string, ConfigFile> = {};
+    this.connection.subscribe(`cutie/config/+`);
+
+    this.connection.on("message", (topic, message) => {
+      const nodeName = topic.split("/").pop();
+      if (nodeName) configs[nodeName] = JSON.parse(message.toString());
+    });
+
+    return new Promise((resolve) =>
+      setTimeout(async () => {
+        resolve(configs);
+      }, 100),
+    );
+  }
+
+  async uploadSingleConfig(nodeName: string, config: ConfigFile) {
+    return this.connection.publishAsync(
+      `cutie/config/${nodeName}`,
+      JSON.stringify(config),
+      { retain: true },
+    );
+  }
+
+  async fetchSingleConfig(nodeName: string): Promise<ConfigFile> {
+    this.connection.subscribe(`cutie/config/${nodeName}`);
+
+    return new Promise((resolve) => {
+      this.connection.on("message", (topic, message) => {
+        if (topic === `cutie/config/${nodeName}`) {
+          resolve(JSON.parse(message.toString()));
+        }
+      });
+    });
   }
 
   // TODO: update config if remote config _changes_
@@ -63,6 +110,10 @@ export default class MQTTConnection extends Connection {
         }
       });
     });
+  }
+
+  async disable(): Promise<void> {
+    return this.connection.endAsync();
   }
 
   async register() {

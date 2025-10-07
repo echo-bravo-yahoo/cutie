@@ -9,16 +9,28 @@ import { TaskConfig } from "./Task.js";
 import { ProviderConfig } from "./type-helpers.js";
 
 export interface ConfigFile {
-  configProvider: ProviderConfig;
+  configProvider?: ProviderConfig;
   connections: Array<ConnectionConfig>;
   tasks?: Array<TaskConfig>;
 }
 
-export async function fetchLocalConfig(path: string) {
+export interface RemoteConfigFile extends ConfigFile {
+  configProvider: ProviderConfig;
+}
+
+export async function fetchConfig(path: string): Promise<ConfigFile> {
+  const localConfig = await fetchLocalConfig(path);
+  // TODO: write backup of config to file for later
+  return localConfig.configProvider
+    ? await fetchRemoteConfig(localConfig as RemoteConfigFile)
+    : localConfig;
+}
+
+async function fetchLocalConfig(path: string): Promise<ConfigFile> {
   return read(normalize(path));
 }
 
-export async function fetchRemoteConfig(config: ConfigFile) {
+async function fetchRemoteConfig(config: RemoteConfigFile) {
   const providerConfig = config.configProvider;
   await registerConnections(config.connections);
   const connection = getConnection(config.configProvider.connectionName);
