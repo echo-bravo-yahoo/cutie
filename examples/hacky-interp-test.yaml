@@ -1,0 +1,11 @@
+connections: []
+
+tasks:
+  cli:
+    trigger:
+      # we can listen for changes to the file system
+      type: "trigger:once"
+      message: "hello ${env.name}"
+
+    steps:
+      - type: "output:console"
