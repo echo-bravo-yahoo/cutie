@@ -1,0 +1,33 @@
+name: Publish
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yaml
+
+  tag-and-publish:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+      - name: Version bump
+        run: |
+          version=$(npm version prepatch --no-git-tag-version)
+          git config --global user.email "$(git log -1 --pretty=format:'%ae')"
+          git config --global user.name "$(git log -1 --pretty=format:'%an')"
+          git commit -a --amend --no-edit
+          git push --force
+          git tag ${version:1}
+          git push --tags
+      - run: npm ci
+      - run: npm run build
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}

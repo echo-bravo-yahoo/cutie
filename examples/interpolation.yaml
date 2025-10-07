@@ -1,0 +1,45 @@
+connections: []
+
+tasks:
+  fs-mover:
+    trigger:
+      # we can listen for changes to the file system
+      type: "trigger:file-change"
+      path: "./examples"
+
+    steps:
+      # a "stash" is a place we can put information
+      # it's specific to this one invocation of the trigger
+      # think of it like, a stash holds metadata, while the
+      # message holds contents.
+      - type: "output:stash"
+        # we store in the stash the filename under the key
+        # filename. later, we'll retrieve it by that key.
+        key: "filename"
+        # this is an interpolated value - it's looked up
+        # from the message. if the message was:
+        # { "filename": "my-very-cool-file.yaml" }
+        # then "${message.filename}" will be
+        # "my-very-cool-filename"
+        value: "${message.filename}"
+      # lets read the file that the trigger fired for
+      - type: "read:file"
+        # we look up the path from the stash
+        path: "./examples/${stash.filename}"
+      # now, let's write the file to somewhere else
+      - type: "output:file"
+        # we can build a path using the filename we stashed!
+        # we couldn't have looked it up from the message
+        # anymore because steps with a "read:" type overwrite
+        # the message, so the previous "read:file" step
+        # replaced our message that contained the filename
+        # with the _actual contents_ of the file
+        path: "./config/${stash.filename}"
+        append: false
+      # now that we've written the file, let's log a
+      # confirmation to the console
+      # we'll start by overwriting the message (which was
+      # the file contents) with the message we want to log
+      - type: "read:constant"
+        value: "Copied file from ./examples/${stash.filename} to ./config/${stash.filename}."
+      - type: "output:console"

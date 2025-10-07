@@ -1,0 +1,28 @@
+connections:
+  - type: "connection:mqtt"
+    name: "personal"
+
+    username: "admin"
+    password: "admin"
+    endpoint: "http://127.0.0.1:1883"
+
+# instead of storing the configuration in a file on the node,
+# we can store it in a connection and fetch it when the node
+# starts up. this makes it significantly easier to change
+# config centrally!
+configProvider:
+  # we provide the name of the connection above; these
+  # credentials are used to fetch the config at runtime.
+  # the newly-fetched config will be used entirely in place
+  # of this config, so if you intend for the runtime config
+  # to connect to the "personal" connection, it will also
+  # need the username, password, and endpoint for the
+  # connection.
+  connectionName: "personal"
+
+  # the settings after this are specific to the type of the
+  # connection - for an MQTT connection, we provide the topic
+  # we can fetch our config from. this topic could have a
+  # retained message, or another cutie node could be listening
+  # to it and serve the correct file!
+  topic: "cutie/config/remote-config-demo-node"

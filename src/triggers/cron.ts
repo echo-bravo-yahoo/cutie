@@ -1,0 +1,52 @@
+import { TimerBasedCronScheduler as scheduler } from "cron-schedule/schedulers/timer-based.js";
+import { parseCronExpression } from "cron-schedule";
+
+import Trigger, { TriggerConfig } from "../util/Trigger.js";
+import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
+
+interface ITimerHandle {
+  timeoutId?: ReturnType<typeof setTimeout>;
+}
+
+export interface CronConfig extends TriggerConfig {
+  expression: string;
+  message: Message;
+}
+
+export default class Cron extends Trigger {
+  declare config: CronConfig;
+  // @ts-expect-error cronHandle is instantiated by enable()
+  cronHandle: ITimerHandle;
+
+  constructor(config: CronConfig, task: Task) {
+    super(config, task);
+  }
+
+  errorHandler() {}
+
+  async enable() {
+    this.cronHandle = scheduler.setTimeout(
+      parseCronExpression(this.config.expression),
+      this.startMessage.bind(this, this.config.message),
+      { errorHandler: this.errorHandler },
+    );
+    this.info("Enabled cron task.", { topic: this.logPrefix });
+    this.enabled = true;
+  }
+
+  async disable() {
+    scheduler.clearTimeoutOrInterval(this.cronHandle);
+    this.info("Disabled cron task.", { topic: this.logPrefix });
+    this.enabled = false;
+  }
+}
+
+/*
+{
+  "type": "cron",
+  "disabled": false,
+  "message": { ... },
+  "expression": "* * * * *" // in cron format
+}
+*/

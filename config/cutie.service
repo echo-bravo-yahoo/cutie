@@ -1,0 +1,12 @@
+[Unit]
+Description=a cute little MQTT service
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/workspace/cutie
+ExecStart=/home/pi/.nvm/nvm-exec npm run start:prod
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
