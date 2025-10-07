@@ -12,7 +12,11 @@ export abstract class Connection extends TypedConfigurable {
   abstract fetchConfig(
     provider: ProviderConfig,
     connection: ConnectionConfig,
-  ): Promise<ConfigFile>;
+  ): Promise<ConfigFile> | void;
+  abstract fetchAllConfigs(
+    provider: ProviderConfig,
+    connection: ConnectionConfig,
+  ): Promise<Record<string, ConfigFile>> | void;
 
   constructor(config: ConnectionConfig) {
     super(config);
