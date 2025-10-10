@@ -13,7 +13,7 @@ import { CLIArgs } from "./cli-entrypoint.js";
 import Task from "./util/Task.js";
 import { Connection } from "./util/Connection.js";
 import LogHelper from "./util/LogHelper.js";
-import { fetchLocalConfig, fetchRemoteConfig } from "./util/configs.js";
+import { fetchConfig } from "./util/configs.js";
 import { EventEmitter } from "node:events";
 import { setupProcess } from "./process.js";
 
@@ -33,13 +33,8 @@ export function setGlobals(newValue: Globals) {
   globals = newValue;
 }
 
-export async function start(args: CLIArgs) {
-  setupProcess(process);
-
-  const [localConfig, packageJson] = await Promise.all([
-    fetchLocalConfig(args.config),
-    read(normalize(`${__dirname}/../package.json`)),
-  ]);
+export function initializeGlobals() {
+  const packageJson = read(normalize(`${__dirname}/../package.json`));
 
   globals = {
     tasks: [],
@@ -48,11 +43,14 @@ export async function start(args: CLIArgs) {
     logger: new LogHelper(),
     eventBus: new EventEmitter(),
   };
+}
 
-  // TODO: write backup of config to file for later
-  const config = localConfig.configProvider
-    ? await fetchRemoteConfig(localConfig)
-    : localConfig;
+export async function start(args: CLIArgs) {
+  setupProcess(process);
+
+  const config = await fetchConfig(args.config);
+
+  initializeGlobals();
 
   await registerConnections(config.connections);
   await registerTasks(config.tasks);
