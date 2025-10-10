@@ -96,4 +96,3 @@ export default async function upload(args: UploadArgs) {
   // TO-DO: figure out why node doesn't exit cleanly
   // from this command...
   process.exit(0);
-}

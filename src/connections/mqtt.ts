@@ -28,6 +28,17 @@ export default class MQTTConnection extends Connection {
     super(config);
   }
 
+  async uploadConfig(topic: string, config: ConfigFile) {
+    this.connection = await mqtt.connectAsync(
+      this.config.endpoint,
+      this.config,
+    );
+
+    await this.connection.publishAsync(topic, JSON.stringify(config, null, 4), {
+      retain: true,
+    });
+  }
+
   async fetchAllConfigs(): Promise<Record<string, ConfigFile>> {
     const configs: Record<string, ConfigFile> = {};
     this.connection.subscribe(`cutie/config/+`);
