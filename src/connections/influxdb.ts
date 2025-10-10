@@ -18,7 +18,7 @@ export default class InfluxDBConnection extends Connection {
     super(config);
   }
 
-  fetchAllConfigs(_provider: ProviderConfig): void {
+  fetchAllConfigs() {
     throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
   }
 

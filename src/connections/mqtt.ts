@@ -7,6 +7,7 @@ import { globals } from "../index.js";
 import MQTT, { isMQTT } from "../triggers/mqtt.js";
 import { ProviderConfig } from "../util/type-helpers.js";
 import { ConfigFile } from "../util/configs.js";
+import { Config } from "../util/Configurable.js";
 
 export interface MQTTConnectionConfig
   extends ConnectionConfig,
@@ -29,19 +30,20 @@ export default class MQTTConnection extends Connection {
     super(config);
   }
 
-  async fetchAllConfigs(
-    // TO-DO: do we need provider?
-    _provider: MQTTProviderConfig,
-    connection: ConnectionConfig,
-  ): Promise<Record<string, ConfigFile>> {
-    const typedConnection = connection as unknown as MQTTConnectionConfig;
-    // TO-DO: see about not creating if it already exists...
+  async fetchAllConfigs(): Promise<Record<string, ConfigFile>> {
+    const configs: Record<string, ConfigFile> = {};
     this.connection = await mqtt.connectAsync(
-      typedConnection.endpoint,
-      typedConnection,
+      this.config.endpoint,
+      this.config,
     );
-    this.connection.subscribe(_provider.topic);
-    return {};
+    this.connection.subscribe(`cutie/config/+`);
+
+    this.connection.on("message", (topic, message) => {
+      const nodeName = topic.split("/").pop();
+      if (nodeName) configs[nodeName] = JSON.parse(message.toString());
+    });
+    await this.connection.endAsync();
+    return configs;
   }
 
   // TODO: update config if remote config _changes_

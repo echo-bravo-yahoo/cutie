@@ -14,11 +14,19 @@ export interface ConfigFile {
   tasks?: Array<TaskConfig>;
 }
 
-export async function fetchLocalConfig(path: string) {
+export async function fetchConfig(path: string) {
+  const localConfig = await fetchLocalConfig(path);
+  // TODO: write backup of config to file for later
+  return localConfig.configProvider
+    ? await fetchRemoteConfig(localConfig)
+    : localConfig;
+}
+
+async function fetchLocalConfig(path: string) {
   return read(normalize(path));
 }
 
-export async function fetchRemoteConfig(config: ConfigFile) {
+async function fetchRemoteConfig(config: ConfigFile) {
   const providerConfig = config.configProvider;
   await registerConnections(config.connections);
   const connection = getConnection(config.configProvider.connectionName);

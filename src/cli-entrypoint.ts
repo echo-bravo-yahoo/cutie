@@ -4,7 +4,7 @@ import { start } from "./index.js";
 import parser, { Arguments } from "yargs-parser";
 import initializeConfig from "./cli/init.js";
 import upload from "./cli/upload.js";
-import download from "./cli/download.js";
+import download, { DownloadArgs } from "./cli/download.js";
 
 export interface CLIArgs extends Arguments {
   config: string;
@@ -24,7 +24,7 @@ if (subcommand === "init") {
 } else if (subcommand === "upload") {
   upload(argv);
 } else if (subcommand === "download") {
-  download(argv);
+  download(argv as unknown as CLIArgs & DownloadArgs);
 } else if (subcommand === "start") {
   start(argv);
 } else {
