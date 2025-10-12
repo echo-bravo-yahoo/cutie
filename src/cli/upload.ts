@@ -1,3 +1,3 @@
-import { CLIArgs } from "../cli-entrypoint.js";
+import parser from "yargs-parser";
 
-export default async function upload(_settings: CLIArgs) {}
+export default async function upload(_parserDefaults: parser.Options) {}

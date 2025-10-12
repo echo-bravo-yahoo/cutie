@@ -1,16 +1,29 @@
 import { readdir } from "node:fs/promises";
 import { basename, normalize } from "node:path";
 
+import parser from "yargs-parser";
+
 import { globals, srcDir } from "../index.js";
 
 import { Connection, ConnectionConfig } from "./Connection.js";
 import { Configurable } from "./Configurable.js";
+import { ParserDefaults } from "./cli.js";
 
 function determineRuntimeExtension() {
   const extension = process.argv
     .find((string) => string.endsWith(".ts") || string.endsWith(".js"))
     ?.slice(-3);
   return extension;
+}
+
+export function mergeParserArgs(
+  defaults: ParserDefaults,
+  overrides: parser.Options,
+) {
+  const results = defaults;
+  if (overrides.string)
+    defaults.string = [...defaults.string, ...overrides.string];
+  return results;
 }
 
 export async function registerConnections(

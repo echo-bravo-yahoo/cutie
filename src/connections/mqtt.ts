@@ -7,7 +7,6 @@ import { globals } from "../index.js";
 import MQTT, { isMQTT } from "../triggers/mqtt.js";
 import { ProviderConfig } from "../util/type-helpers.js";
 import { ConfigFile } from "../util/configs.js";
-import { Config } from "../util/Configurable.js";
 
 export interface MQTTConnectionConfig
   extends ConnectionConfig,
@@ -42,8 +41,28 @@ export default class MQTTConnection extends Connection {
       const nodeName = topic.split("/").pop();
       if (nodeName) configs[nodeName] = JSON.parse(message.toString());
     });
-    await this.connection.endAsync();
-    return configs;
+
+    return new Promise((resolve) =>
+      setTimeout(async () => {
+        resolve(configs);
+      }, 100),
+    );
+  }
+
+  async fetchSingleConfig(nodeName: string): Promise<ConfigFile> {
+    this.connection = await mqtt.connectAsync(
+      this.config.endpoint,
+      this.config,
+    );
+    this.connection.subscribe(`cutie/config/${nodeName}`);
+
+    return new Promise((resolve) => {
+      this.connection.on("message", (topic, message) => {
+        if (topic === `cutie/config/${nodeName}`) {
+          resolve(JSON.parse(message.toString()));
+        }
+      });
+    });
   }
 
   // TODO: update config if remote config _changes_
@@ -80,6 +99,10 @@ export default class MQTTConnection extends Connection {
         }
       });
     });
+  }
+
+  async disable(): Promise<void> {
+    return this.connection.endAsync();
   }
 
   async register() {
