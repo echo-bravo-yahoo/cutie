@@ -54,6 +54,7 @@ export default abstract class Step extends TypedConfigurable {
     return result;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interpolatePath(path: Message, additionalContext?: Record<string, any>) {
     if (typeof path !== "string" || !path.startsWith("$$")) return path;
     const result = get(

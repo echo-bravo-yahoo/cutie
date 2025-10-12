@@ -1,3 +1,4 @@
+import { ConfigFile } from "../util/configs.js";
 import { Connection, ConnectionConfig } from "../util/Connection.js";
 import { ProviderConfig } from "../util/type-helpers.js";
 
@@ -16,6 +17,10 @@ export default class InfluxDBConnection extends Connection {
 
   constructor(config: InfluxDBConnectionConfig) {
     super(config);
+  }
+
+  fetchSingleConfig(_nodeName: string): Promise<ConfigFile> {
+    throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
   }
 
   fetchAllConfigs() {

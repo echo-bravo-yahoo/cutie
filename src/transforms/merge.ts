@@ -7,7 +7,7 @@ import { Message } from "../util/type-helpers.js";
 
 export interface MergeConfig extends WholeMessageConfig {
   // arrayStrategy: ...
-  sources: Array<string | Record<string, any>>;
+  sources: Array<string | Record<string, Message>>;
 }
 
 export default class Merge extends Transform {
@@ -28,6 +28,7 @@ export default class Merge extends Transform {
           return this.interpolatePath(source);
         }
       }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (objValue: any, srcValue: any) =>
         isArray(objValue) ? srcValue : undefined,
     );

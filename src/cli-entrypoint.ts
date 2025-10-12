@@ -1,32 +1,25 @@
 #!/usr/bin/env node
 
+import parser from "yargs-parser";
+
 import { start } from "./index.js";
-import parser, { Arguments } from "yargs-parser";
 import initializeConfig from "./cli/init.js";
 import upload from "./cli/upload.js";
-import download, { DownloadArgs } from "./cli/download.js";
+import download from "./cli/download.js";
+import { parserDefaults } from "./util/cli.js";
 
-export interface CLIArgs extends Arguments {
-  config: string;
-}
-
-const argv = parser(process.argv.slice(2) || "", {
-  string: ["config"],
-  default: {
-    config: `${process.cwd()}/cutie.conf.json`,
-  },
-}) as CLIArgs;
+const argv = parser(process.argv.slice(2) || "", parserDefaults);
 
 const subcommand = argv._.length ? argv._[0] : undefined;
 
 if (subcommand === "init") {
-  initializeConfig(argv);
+  initializeConfig(parserDefaults);
 } else if (subcommand === "upload") {
-  upload(argv);
+  upload(parserDefaults);
 } else if (subcommand === "download") {
-  download(argv as unknown as CLIArgs & DownloadArgs);
+  download(parserDefaults);
 } else if (subcommand === "start") {
-  start(argv);
+  start();
 } else {
   throw new Error(
     `Unknown subcommand ${subcommand}! Valid subcommands are "start", "init", "upload", or "download".`,

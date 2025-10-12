@@ -1,21 +1,21 @@
 import { normalize } from "node:path";
-
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const srcDir = __dirname;
 
 import { read } from "node-yaml";
+import parser from "yargs-parser";
 
 import { registerConnections } from "./util/connections.js";
 import { registerTasks } from "./util/tasks.js";
-import { CLIArgs } from "./cli-entrypoint.js";
 import Task from "./util/Task.js";
 import { Connection } from "./util/Connection.js";
 import LogHelper from "./util/LogHelper.js";
 import { fetchConfig } from "./util/configs.js";
 import { EventEmitter } from "node:events";
 import { setupProcess } from "./process.js";
+import { CLIArgs, parserDefaults } from "./util/cli.js";
 
 export interface Globals {
   tasks: Array<Task>;
@@ -45,15 +45,21 @@ export function initializeGlobals() {
   };
 }
 
-export async function start(args: CLIArgs) {
-  setupProcess(process);
-
+export async function start(maybeArgs?: CLIArgs) {
+  const args = maybeArgs
+    ? maybeArgs
+    : (parser(
+        process.argv.slice(2) || "",
+        parserDefaults,
+      ) as unknown as CLIArgs);
   const config = await fetchConfig(args.config);
+
+  setupProcess(process);
 
   initializeGlobals();
 
-  await registerConnections(config.connections);
   await registerTasks(config.tasks);
+  await registerConnections(config.connections);
 
   return globals;
 }

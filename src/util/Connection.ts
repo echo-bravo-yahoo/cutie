@@ -13,7 +13,8 @@ export abstract class Connection extends TypedConfigurable {
     provider: ProviderConfig,
     connection: ConnectionConfig,
   ): Promise<ConfigFile> | void;
-  abstract fetchAllConfigs(): Promise<Record<string, ConfigFile>>;
+  abstract fetchSingleConfig(nodeName: string): Promise<ConfigFile> | void;
+  abstract fetchAllConfigs(): Promise<Record<string, ConfigFile>> | void;
 
   constructor(config: ConnectionConfig) {
     super(config);
