@@ -43,7 +43,7 @@ async function downloadAll(args: DownloadArgs, connection: Connection) {
 
 export default async function download(parserDefaults: ParserDefaults) {
   const downloadParserArgs = {
-    string: ["path", "node"],
+    string: ["path", "node", "connectionName"],
   };
 
   const args = parser(

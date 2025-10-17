@@ -49,6 +49,18 @@ export default class MQTTConnection extends Connection {
     );
   }
 
+  async uploadSingleConfig(nodeName: string, config: ConfigFile) {
+    this.connection = await mqtt.connectAsync(
+      this.config.endpoint,
+      this.config,
+    );
+    return this.connection.publishAsync(
+      `cutie/config/${nodeName}`,
+      JSON.stringify(config),
+      { retain: true },
+    );
+  }
+
   async fetchSingleConfig(nodeName: string): Promise<ConfigFile> {
     this.connection = await mqtt.connectAsync(
       this.config.endpoint,

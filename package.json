@@ -1,7 +1,7 @@
 {
   "name": "@echobravoyahoo/cutie",
   "type": "module",
-  "version": "3.0.1-1",
+  "version": "3.0.1-2",
   "description": "a general-purpose cli & library for automating mqtt interactions.",
   "main": "src/index.js",
   "bin": {
