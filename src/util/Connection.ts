@@ -15,6 +15,11 @@ export abstract class Connection extends TypedConfigurable {
   ): Promise<ConfigFile> | void;
   abstract fetchSingleConfig(nodeName: string): Promise<ConfigFile> | void;
   abstract fetchAllConfigs(): Promise<Record<string, ConfigFile>> | void;
+  abstract uploadSingleConfig(
+    nodeName: string,
+    config: ConfigFile,
+  ): Promise<any>;
+  abstract uploadAllConfigs(configs: Record<string, ConfigFile>): Promise<any>;
 
   constructor(config: ConnectionConfig) {
     super(config);
