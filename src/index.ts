@@ -58,7 +58,7 @@ export async function start(maybeArgs?: CLIArgs) {
 
   initializeGlobals();
 
-  await registerTasks(config.tasks);
+  await registerTasks(config.tasks ?? []);
   await registerConnections(config.connections);
 
   return globals;

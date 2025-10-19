@@ -22,7 +22,7 @@ export async function fetchConfig(path: string) {
     : localConfig;
 }
 
-async function fetchLocalConfig(path: string) {
+async function fetchLocalConfig(path: string): Promise<ConfigFile> {
   return read(normalize(path));
 }
 

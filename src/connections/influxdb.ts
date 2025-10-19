@@ -27,7 +27,13 @@ export default class InfluxDBConnection extends Connection {
     throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
   }
 
+  // @ts-expect-error should throw on call
   fetchConfig(_provider: ProviderConfig): void {
+    throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
+  }
+
+  // @ts-expect-error should throw on call
+  uploadSingleConfig(_nodeName: string, _config: ConfigFile) {
     throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
   }
 
