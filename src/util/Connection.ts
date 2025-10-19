@@ -12,14 +12,14 @@ export abstract class Connection extends TypedConfigurable {
   abstract fetchConfig(
     provider: ProviderConfig,
     connection: ConnectionConfig,
-  ): Promise<ConfigFile> | void;
+  ): Promise<ConfigFile>;
   abstract fetchSingleConfig(nodeName: string): Promise<ConfigFile> | void;
   abstract fetchAllConfigs(): Promise<Record<string, ConfigFile>> | void;
   abstract uploadSingleConfig(
     nodeName: string,
     config: ConfigFile,
-  ): Promise<any>;
-  abstract uploadAllConfigs(configs: Record<string, ConfigFile>): Promise<any>;
+  ) //eslint-disable-next-line @typescript-eslint/no-explicit-any
+  : Promise<any>;
 
   constructor(config: ConnectionConfig) {
     super(config);

@@ -1,5 +1,5 @@
-import { readFile } from "node:fs/promises";
-import { normalize } from "node:path";
+import { readFile, readdir } from "node:fs/promises";
+import { extname, join, normalize, parse } from "node:path";
 
 import parser from "yargs-parser";
 
@@ -13,6 +13,7 @@ import {
   mergeParserArgs,
   registerConnections,
 } from "../util/connections.js";
+import { Dirent } from "node:fs";
 
 export interface UploadArgs extends CLIArgs {
   connectionName: string;
@@ -26,7 +27,47 @@ async function uploadSingle(args: UploadArgs, connection: Connection) {
   return connection.uploadSingleConfig(args.node, JSON.parse(config));
 }
 
-async function uploadAll(args: UploadArgs, connection: Connection) {}
+function isDirEntConfigLike(dirEnt: Dirent) {
+  return (
+    dirEnt.isFile() && ["json", "yaml", "yml"].includes(extname(dirEnt.name))
+  );
+}
+
+function pathToNode(filePath: string) {
+  return parse(filePath).name;
+}
+
+async function uploadFromDirEnt(
+  dirPath: string,
+  dirEnt: Dirent,
+  connection: Connection,
+) {
+  return readFile(join(dirPath, dirEnt.name), {
+    encoding: "utf8",
+  })
+    .then((string) => JSON.parse(string))
+    .then((configFile) =>
+      connection.uploadSingleConfig(pathToNode(dirEnt.name), configFile),
+    );
+}
+
+async function uploadAll(args: UploadArgs, connection: Connection) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const promises: Array<Promise<any>> = [];
+
+  (
+    await readdir(args.path, {
+      withFileTypes: true,
+      recursive: true,
+    })
+  )
+    .filter(isDirEntConfigLike)
+    .forEach((file) =>
+      promises.push(uploadFromDirEnt(args.path, file, connection)),
+    );
+
+  return Promise.all(promises);
+}
 
 export default async function upload(_parserDefaults: parser.Options) {
   const downloadParserArgs = {
@@ -40,7 +81,7 @@ export default async function upload(_parserDefaults: parser.Options) {
 
   const config = await fetchConfig(args.config);
   initializeGlobals();
-  await registerTasks(config.tasks);
+  await registerTasks(config.tasks ?? []);
   await registerConnections(config.connections);
   const connection = getConnection(args.connectionName);
 

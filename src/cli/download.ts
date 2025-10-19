@@ -53,7 +53,7 @@ export default async function download(parserDefaults: ParserDefaults) {
 
   const config = await fetchConfig(args.config);
   initializeGlobals();
-  await registerTasks(config.tasks);
+  await registerTasks(config.tasks ?? []);
   await registerConnections(config.connections);
   const connection = getConnection(args.connectionName);
 
