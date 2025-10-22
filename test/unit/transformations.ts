@@ -707,7 +707,7 @@ describe("transforms", function () {
         it.skip("works on composite readings", async function () {});
       });
 
-      describe("fahrenheit to celsius ", () => {
+      describe("fahrenheit to celsius", () => {
         it("works on primitive readings", async function () {
           const task = new Task(
             {
