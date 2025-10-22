@@ -1,5 +1,5 @@
 import { readdir } from "node:fs/promises";
-import { basename, normalize } from "node:path";
+import { normalize, parse } from "node:path";
 
 import parser from "yargs-parser";
 
@@ -8,13 +8,6 @@ import { globals, srcDir } from "../index.js";
 import { Connection, ConnectionConfig } from "./Connection.js";
 import { Configurable } from "./Configurable.js";
 import { ParserDefaults } from "./cli.js";
-
-function determineRuntimeExtension() {
-  const extension = process.argv
-    .find((string) => string.endsWith(".ts") || string.endsWith(".js"))
-    ?.slice(-3);
-  return extension;
-}
 
 export function mergeParserArgs(
   defaults: ParserDefaults,
@@ -32,7 +25,7 @@ export async function registerConnections(
   const topic = "core.registration.connections";
   const connectionNames = (
     await readdir(normalize(`${srcDir}/connections`))
-  ).map((name) => basename(name, determineRuntimeExtension()));
+  ).map((name) => parse(name).name);
 
   // TODO: add redaction back in...
   // const localLogger = globals.logger.logger.child(
@@ -47,7 +40,7 @@ export async function registerConnections(
     "info",
     topic,
   );
-  const promises = [];
+  const promises: Array<Promise<void>> = [];
 
   for (const connectionConfig of connectionConfigs) {
     const connectionTypeInfo = Configurable.parseType(connectionConfig.type);
@@ -87,7 +80,9 @@ export function getConnection(connectionName: string) {
   );
 
   if (connection === undefined)
-    throw new Error(`Could not find connection "${connectionName}".`);
+    throw new Error(
+      `Could not find connection "${connectionName}" in list ${JSON.stringify(globals.connections.map((connection) => connection.name))}.`,
+    );
 
   return connection;
 }

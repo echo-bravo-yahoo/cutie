@@ -4,20 +4,19 @@ import parser from "yargs-parser";
 
 import { start } from "./index.js";
 import initializeConfig from "./cli/init.js";
-import upload from "./cli/upload.js";
-import download from "./cli/download.js";
+import upload, { parseUploadArgs } from "./cli/upload.js";
+import download, { parseDownloadArgs } from "./cli/download.js";
 import { parserDefaults } from "./util/cli.js";
 
 const argv = parser(process.argv.slice(2) || "", parserDefaults);
-
 const subcommand = argv._.length ? argv._[0] : undefined;
 
 if (subcommand === "init") {
-  initializeConfig(parserDefaults);
+  initializeConfig();
 } else if (subcommand === "upload") {
-  upload(parserDefaults);
+  upload(parseUploadArgs());
 } else if (subcommand === "download") {
-  download(parserDefaults);
+  download(parseDownloadArgs());
 } else if (subcommand === "start") {
   start();
 } else {

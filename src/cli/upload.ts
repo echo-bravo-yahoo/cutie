@@ -15,7 +15,7 @@ import {
 } from "../util/connections.js";
 import { Dirent } from "node:fs";
 
-export interface UploadArgs extends CLIArgs {
+export interface UploadArgs extends Omit<CLIArgs, "_"> {
   connectionName: string;
   path: string;
   node: string;
@@ -69,16 +69,18 @@ async function uploadAll(args: UploadArgs, connection: Connection) {
   return Promise.all(promises);
 }
 
-export default async function upload(_parserDefaults: parser.Options) {
-  const downloadParserArgs = {
+export function parseUploadArgs() {
+  const uploadParserArgs = {
     string: ["path", "node", "connectionName"],
   };
 
-  const args = parser(
+  return parser(
     process.argv.slice(2) || "",
-    mergeParserArgs(parserDefaults, downloadParserArgs),
-  ) as UploadArgs;
+    mergeParserArgs(parserDefaults, uploadParserArgs),
+  ) as unknown as UploadArgs;
+}
 
+export default async function upload(args: UploadArgs) {
   const config = await fetchConfig(args.config);
   initializeGlobals();
   await registerTasks(config.tasks ?? []);

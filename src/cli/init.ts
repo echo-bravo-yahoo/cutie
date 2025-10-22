@@ -1,12 +1,8 @@
 import { copyFile } from "node:fs/promises";
 
-import parser from "yargs-parser";
-
 import { srcDir } from "../index.js";
 
-export default async function initializeConfig(
-  _parserDefaults: parser.Options,
-) {
+export default async function initializeConfig() {
   const destPath = `${process.cwd()}/cutie.conf.json`;
   const srcPath = `${srcDir}/../config/cutie.conf.json`;
   console.log(`Creating default config file at ${destPath}.`);
