@@ -22,7 +22,6 @@ export interface MQTTProviderConfig extends ProviderConfig {
 
 export default class MQTTConnection extends Connection {
   declare config: MQTTConnectionConfig;
-  // @ts-expect-error connection is instantiated by register()
   connection: mqtt.MqttClient;
 
   constructor(config: MQTTConnectionConfig) {
@@ -31,10 +30,6 @@ export default class MQTTConnection extends Connection {
 
   async fetchAllConfigs(): Promise<Record<string, ConfigFile>> {
     const configs: Record<string, ConfigFile> = {};
-    this.connection = await mqtt.connectAsync(
-      this.config.endpoint,
-      this.config,
-    );
     this.connection.subscribe(`cutie/config/+`);
 
     this.connection.on("message", (topic, message) => {
@@ -50,10 +45,6 @@ export default class MQTTConnection extends Connection {
   }
 
   async uploadSingleConfig(nodeName: string, config: ConfigFile) {
-    this.connection = await mqtt.connectAsync(
-      this.config.endpoint,
-      this.config,
-    );
     return this.connection.publishAsync(
       `cutie/config/${nodeName}`,
       JSON.stringify(config),
@@ -62,10 +53,6 @@ export default class MQTTConnection extends Connection {
   }
 
   async fetchSingleConfig(nodeName: string): Promise<ConfigFile> {
-    this.connection = await mqtt.connectAsync(
-      this.config.endpoint,
-      this.config,
-    );
     this.connection.subscribe(`cutie/config/${nodeName}`);
 
     return new Promise((resolve) => {
@@ -114,7 +101,12 @@ export default class MQTTConnection extends Connection {
   }
 
   async disable(): Promise<void> {
-    return this.connection.endAsync();
+    globals.connections = [];
+    return new Promise((resolve) => {
+      this.connection.end(true, {}, () => console.log("res", resolve()));
+      // @ts-expect-error connection is instantiated by register()
+      delete this.connection;
+    });
   }
 
   async register() {

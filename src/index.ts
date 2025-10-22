@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const srcDir = __dirname;
 
-import { read } from "node-yaml";
+import { readSync } from "node-yaml";
 import parser from "yargs-parser";
 
 import { registerConnections } from "./util/connections.js";
@@ -34,7 +34,7 @@ export function setGlobals(newValue: Globals) {
 }
 
 export function initializeGlobals() {
-  const packageJson = read(normalize(`${__dirname}/../package.json`));
+  const packageJson = readSync(normalize(`${__dirname}/../package.json`));
 
   globals = {
     tasks: [],
@@ -46,6 +46,9 @@ export function initializeGlobals() {
 }
 
 export async function start(maybeArgs?: CLIArgs) {
+  setupProcess(process);
+  initializeGlobals();
+
   const args = maybeArgs
     ? maybeArgs
     : (parser(
@@ -53,10 +56,6 @@ export async function start(maybeArgs?: CLIArgs) {
         parserDefaults,
       ) as unknown as CLIArgs);
   const config = await fetchConfig(args.config);
-
-  setupProcess(process);
-
-  initializeGlobals();
 
   await registerTasks(config.tasks ?? []);
   await registerConnections(config.connections);
