@@ -22,6 +22,7 @@ export interface MQTTProviderConfig extends ProviderConfig {
 
 export default class MQTTConnection extends Connection {
   declare config: MQTTConnectionConfig;
+  // @ts-expect-error this will be instantiated by enabling (before it's accessed)
   connection: mqtt.MqttClient;
 
   constructor(config: MQTTConnectionConfig) {

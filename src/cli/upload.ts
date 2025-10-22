@@ -92,7 +92,4 @@ export default async function upload(args: UploadArgs) {
   } else {
     await uploadAll(args, connection);
   }
-
-  // TO-DO: figure out why node doesn't exit cleanly
-  // from this command...
-  process.exit(0);
+}
