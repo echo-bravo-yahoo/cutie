@@ -26,12 +26,17 @@ describe("the CLI's", function () {
     setGlobals({ logger: fakeLogger });
   });
 
-  describe("download command", function () {
-    const remoteConfig = { connections: [], tasks: {} };
+  describe("download command", async function () {
+    const remoteConfig = { connections: [], tasks: [] };
+    const remoteConfig2 = {
+      connections: [{ type: "connection:mqtt", name: "test" }],
+      tasks: [],
+    };
 
     let mockFetchConfig: Mock<typeof fetchConfig>,
       mockWriteFile: Mock<typeof writeFile>,
       mockFetchSingleConfig: Mock<Connection["fetchSingleConfig"]>,
+      mockFetchAllConfigs: Mock<Connection["fetchAllConfigs"]>,
       download: (args: DownloadArgs) => Promise<any>;
 
     before(async () => {
@@ -46,9 +51,11 @@ describe("the CLI's", function () {
         };
       });
       mockWriteFile = mock.fn(async function () {});
-      mockFetchSingleConfig = mock.fn(async function () {
-        return remoteConfig;
-      });
+      mockFetchSingleConfig = mock.fn(async () => remoteConfig);
+      mockFetchAllConfigs = mock.fn(async () => ({
+        bob: remoteConfig,
+        chicken: remoteConfig2,
+      }));
       mock.module("../../src/util/configs.js", {
         namedExports: { fetchConfig: mockFetchConfig },
       });
@@ -62,6 +69,11 @@ describe("the CLI's", function () {
         "fetchSingleConfig",
         mockFetchSingleConfig,
       );
+      mock.method(
+        MQTTConnection.prototype,
+        "fetchAllConfigs",
+        mockFetchAllConfigs,
+      );
       download = (await import("../../src/cli/download.js")).default;
     });
 
@@ -69,6 +81,7 @@ describe("the CLI's", function () {
       mockFetchConfig.mock.resetCalls();
       mockWriteFile.mock.resetCalls();
       mockFetchSingleConfig.mock.resetCalls();
+      mockFetchAllConfigs.mock.resetCalls();
     });
 
     it('can download one file from the default MQTT location, "cutie/config/$node" to the default path "."', async function () {
@@ -101,17 +114,33 @@ describe("the CLI's", function () {
       ]);
     });
 
-    it.skip('can download multiple files from the default MQTT location, "cutie/config/$node" to the default path "."', async function () {
+    it('can download multiple files from the default MQTT location, "cutie/config/$node" to the default path "."', async function () {
       await download({
         connectionName: "test",
       });
+      expect(mockWriteFile.mock.calls[0].arguments).to.deep.equal([
+        "bob.conf.json",
+        JSON.stringify(remoteConfig, null, 4),
+      ]);
+      expect(mockWriteFile.mock.calls[1].arguments).to.deep.equal([
+        "chicken.conf.json",
+        JSON.stringify(remoteConfig2, null, 4),
+      ]);
     });
 
-    it.skip('can download multiple files from the default MQTT location, "cutie/config/$node" to a non-default path', async function () {
+    it('can download multiple files from the default MQTT location, "cutie/config/$node" to a non-default path', async function () {
       await download({
         connectionName: "test",
         path: "./somewhere/else",
       });
+      expect(mockWriteFile.mock.calls[0].arguments).to.deep.equal([
+        "somewhere/else/bob.conf.json",
+        JSON.stringify(remoteConfig, null, 4),
+      ]);
+      expect(mockWriteFile.mock.calls[1].arguments).to.deep.equal([
+        "somewhere/else/chicken.conf.json",
+        JSON.stringify(remoteConfig2, null, 4),
+      ]);
     });
 
     it.skip('can download one file from a non-default MQTT location to the default path "."', async function () {

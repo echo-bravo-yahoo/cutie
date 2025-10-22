@@ -113,12 +113,7 @@ export default class MQTTConnection extends Connection {
   }
 
   async disable(): Promise<void> {
-    globals.connections = [];
-    return new Promise((resolve) => {
-      this.connection.end(true, {}, () => console.log("res", resolve()));
-      // @ts-expect-error connection is instantiated by register()
-      delete this.connection;
-    });
+    return this.connection.endAsync();
   }
 
   async register() {
