@@ -57,8 +57,10 @@ export async function start(maybeArgs?: CLIArgs) {
       ) as unknown as CLIArgs);
   const config = await fetchConfig(args.config);
 
-  await registerTasks(config.tasks ?? []);
+  // tasks start immediately and may need connections to exist
+  // so we have to register connections first
   await registerConnections(config.connections);
+  await registerTasks(config.tasks ?? []);
 
   return globals;
 }
