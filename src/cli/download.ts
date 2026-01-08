@@ -70,8 +70,8 @@ export function parseDownloadArgs() {
 export default async function download(args: DownloadArgs) {
   initializeGlobals();
   const config = await fetchConfig(args.config);
-  await registerTasks(config.tasks ?? []);
   await registerConnections(config.connections);
+  await registerTasks(config.tasks ?? []);
   const connection = getConnection(args.connectionName);
 
   if (args.node) {
