@@ -81,8 +81,8 @@ export function parseUploadArgs() {
 }
 
 export default async function upload(args: UploadArgs) {
-  const config = await fetchConfig(args.config);
   initializeGlobals();
+  const config = await fetchConfig(args.config);
   await registerTasks(config.tasks ?? []);
   await registerConnections(config.connections);
   const connection = getConnection(args.connectionName);
