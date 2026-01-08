@@ -24,6 +24,7 @@ interface DownloadSingleArgs extends DownloadArgs {
   node: string;
 }
 
+// usage: `npm run build; ./built/cli-entrypoint.js download --config ./config/cutie-downloader.conf.json --connectionName personal-mqtt --path ./config-management`
 async function downloadSingle(
   args: DownloadSingleArgs,
   connection: Connection,
@@ -45,7 +46,14 @@ async function downloadAll(args: DownloadArgs, connection: Connection) {
   }
   await Promise.all(promises);
 
-  console.log(`Done downloading ${Object.keys(configs).length} configs.`);
+  console.log(
+    `Done downloading ${Object.keys(configs).length} configs. Cleaning up.`,
+  );
+  return Promise.all(
+    globals.connections.map((connection) => {
+      return connection.disable();
+    }),
+  ).then(() => (globals.connections = []));
 }
 
 export function parseDownloadArgs() {
