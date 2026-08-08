@@ -11,6 +11,8 @@ provisioner/cache/**
 
 **/node_modules/
 
+config-management/
+
 built/
 coverage/
 
