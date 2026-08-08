@@ -1,21 +1,28 @@
 import { globals } from "../index.js";
-import { Globals } from "./generic-loggable.js";
-import Task, { TaskConfig } from "./generic-task.js";
+import { Configurable } from "./Configurable.js";
+import Task, { TaskConfig } from "./Task.js";
+
+const topic = "core.registration.tasks";
 
 export async function registerTasks(tasks: Array<TaskConfig>) {
-  const localLogger = (globals as Globals).logger.child(
-    {},
-    {
-      msgPrefix: "[core.registration.tasks] ",
-    },
+  globals.logger.emit(
+    Configurable.formatLogLine("Registering tasks.", { topic }),
+    "info",
+    topic,
   );
-  localLogger.info("Registering tasks...");
 
-  for (const task of Object.values(tasks)) {
-    const taskObject = new Task(task);
+  for (const [name, task] of Object.entries(tasks)) {
+    const taskObject = new Task(task, name);
     await taskObject.register();
-    (globals as Globals).tasks.push(taskObject);
+    globals.tasks.push(taskObject);
 
-    localLogger.info({ context: task }, "Registered task.");
+    globals.logger.emit(
+      Configurable.formatLogLine("Registered task.", { topic }),
+      "info",
+      topic,
+      task,
+    );
   }
+
+  return globals.tasks;
 }

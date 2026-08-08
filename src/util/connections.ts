@@ -1,31 +1,49 @@
 import { readdir } from "node:fs/promises";
-import { basename, normalize } from "node:path";
+import { normalize, parse } from "node:path";
+
+import parser from "yargs-parser";
 
 import { globals, srcDir } from "../index.js";
 
-import Step from "./generic-step.js";
-import { ConnectionConfig } from "./generic-connection.js";
-import { Globals } from "./generic-loggable.js";
+import { Connection, ConnectionConfig } from "./Connection.js";
+import { Configurable } from "./Configurable.js";
+import { ParserDefaults } from "./cli.js";
+
+export function mergeParserArgs(
+  defaults: ParserDefaults,
+  overrides: parser.Options,
+) {
+  const results = defaults;
+  if (overrides.string)
+    defaults.string = [...defaults.string, ...overrides.string];
+  return results;
+}
 
 export async function registerConnections(
   connectionConfigs: Array<ConnectionConfig>,
 ) {
+  const topic = "core.registration.connections";
   const connectionNames = (
     await readdir(normalize(`${srcDir}/connections`))
-  ).map((name) => basename(name, ".js"));
+  ).map((name) => parse(name).name);
 
-  const localLogger = (globals as Globals).logger.child(
-    {},
-    {
-      msgPrefix: "[core.registration.connections] ",
-      redact: ["context.password", "context.username", "context.token"],
-    },
+  // TODO: add redaction back in...
+  // const localLogger = globals.logger.logger.child(
+  //   {},
+  //   {
+  //     msgPrefix: "[core.registration.connections] ",
+  //     redact: ["context.password", "context.username", "context.token"],
+  //   }
+  // );
+  globals.logger.emit(
+    Configurable.formatLogLine("Registering connections...", { topic }),
+    "info",
+    topic,
   );
-  localLogger.info("Registering connections...");
-  const promises = [];
+  const promises: Array<Promise<void>> = [];
 
   for (const connectionConfig of connectionConfigs) {
-    const connectionTypeInfo = Step.parseType(connectionConfig.type);
+    const connectionTypeInfo = Configurable.parseType(connectionConfig.type);
     if (connectionNames.includes(connectionTypeInfo.subType)) {
       const Connection = (
         await import(
@@ -37,24 +55,42 @@ export async function registerConnections(
 
       const newConnection = new Connection(connectionConfig);
 
-      (globals as Globals).connections.push(newConnection);
+      globals.connections.push(newConnection);
       promises.push(newConnection.register());
-      localLogger.info("Registered connection.");
+      globals.logger.emit(
+        Configurable.formatLogLine("Registered connection.", { topic }),
+        "info",
+        topic,
+        connectionConfig,
+      );
     }
   }
 
   await Promise.all(promises);
-  localLogger.info("Connection registration completed.");
-}
-
-export function getConnection(connectionKey: string) {
-  return (globals as Globals).connections.find(
-    (connection) => connection.name === connectionKey,
+  globals.logger.emit(
+    Configurable.formatLogLine("Connection registration completed.", { topic }),
+    "info",
+    topic,
   );
 }
 
-export function getConnectionsByType(connectionType: string) {
-  return (globals as Globals).connections.filter(
+export function getConnection(connectionName: string) {
+  const connection = globals.connections.find(
+    (connection) => connection.name === connectionName,
+  );
+
+  if (connection === undefined)
+    throw new Error(
+      `Could not find connection "${connectionName}" in list ${JSON.stringify(globals.connections.map((connection) => connection.name))}.`,
+    );
+
+  return connection;
+}
+
+export function getConnectionsByType(
+  connectionType: string,
+): Array<Connection> {
+  return globals.connections.filter(
     (connection) => connection.config.type.split(":")[1] === connectionType,
   );
 }

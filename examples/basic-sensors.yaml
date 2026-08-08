@@ -1,0 +1,26 @@
+connections: []
+
+tasks:
+  thermometer:
+    trigger:
+      # start with a repeat trigger that fires every second
+      type: "trigger:repeat"
+      interval: 1000
+
+    steps:
+      # to use a sensor, read from it with a read step
+      # the bme280 is a combined sensor/pressure/humidity sensor
+      - type: "read:bme280"
+        # we can declare a sensor as "virtual" - instead of reading
+        # from the real sensor, cutie will fake values that drift
+        # slightly over time. this is useful for environments that
+        # don't have access to the sensor hardware - like a
+        # development computer!
+        virtual: true
+      # this step accumulates 5 sensor readings before
+      # it forwards the message on to the next step
+      - type: "transform:accumulate"
+        count: 5
+      # for now, we'll write this to console, but we could have
+      # further transformed it or sent it to a Connection
+      - type: "output:console"

@@ -1,9 +1,8 @@
-import Output, { OutputConfig } from "../util/generic-output.js";
-import Task from "../util/generic-task.js";
+import Output, { OutputConfig } from "../util/Output.js";
+import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 
-export interface ConsoleConfig extends OutputConfig {
-  spaces?: number;
-}
+export interface ConsoleConfig extends OutputConfig {}
 
 export default class Console extends Output {
   declare config: ConsoleConfig;
@@ -12,23 +11,17 @@ export default class Console extends Output {
     super(config, task);
   }
 
-  async register() {}
+  async send(message: Message) {
+    if (typeof message !== "string") message = JSON.stringify(message);
 
-  async enable() {}
-
-  async disable() {}
-
-  async send(message: any) {
-    console.log(
-      `CONSOLE OUTPUT: ${JSON.stringify(message, null, this.config.spaces || 0)}`,
-    );
+    console.log(message);
+    return message;
   }
 }
 
 /*
 {
   "type": "output:console",
-  "disabled": false,
-  "spaces": number
+  "disabled": false
 }
 */

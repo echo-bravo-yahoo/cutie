@@ -8,7 +8,9 @@
     "noImplicitThis": true,
     "esModuleInterop": true,
     "module": "nodenext",
-    "moduleResolution": "nodenext"
+    "moduleResolution": "nodenext",
+    "incremental": true,
+    "strict": true
   },
   "include": ["./src/**/*"]
 }

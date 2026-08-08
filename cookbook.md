@@ -2,7 +2,7 @@
 
 This file contains increasingly complex examples (recipes) of how to configure `cutie` for some example use cases.
 
-### MQTT transformations
+### MQTT transforms
 
 #### Rebroadcast messages on a given MQTT topic
 
@@ -22,7 +22,7 @@ This recipe listens to all MQTT topics under `alarms` and rebroadcasts them to `
     "rebroadcast-alarms": {
       "steps": [
         {
-          "type": "input:mqtt:primary-broker",
+          "type": "trigger:mqtt:primary-broker",
           "topic": "alarms/+"
         },
         {
@@ -37,7 +37,7 @@ This recipe listens to all MQTT topics under `alarms` and rebroadcasts them to `
 
 #### Transform and rebroadcast messages
 
-This recipe listens to the MQTT topic `weather/temp`, then rebroadcasts messages raw to `temp/outside/raw`, then rebroadcasts them in fahrenheit, rounded, to `temp/outside`. This example demonstrates the ability to do partial transformations inbetween outputs.
+This recipe listens to the MQTT topic `weather/temp`, then rebroadcasts messages raw to `temp/outside/raw`, then rebroadcasts them in fahrenheit, rounded, to `temp/outside`. This example demonstrates the ability to do partial transforms inbetween outputs.
 
 ```javascript
 {
@@ -53,7 +53,7 @@ This recipe listens to the MQTT topic `weather/temp`, then rebroadcasts messages
     "rebroadcast-temp": {
       "steps": [
         {
-          "type": "input:mqtt:primary-broker",
+          "type": "trigger:mqtt:primary-broker",
           "topic": "weather/temp"
         },
         {
@@ -61,11 +61,11 @@ This recipe listens to the MQTT topic `weather/temp`, then rebroadcasts messages
           "topic": "temp/outside/raw"
         },
         {
-          "type": "transformation:convert",
+          "type": "transform:convert",
           "convert": "celsius_to_fahrenheit"
         },
         {
-          "type": "transformation:round",
+          "type": "transform:round",
           "precision": 2
         {
           "type": "output:mqtt:primary-broker",

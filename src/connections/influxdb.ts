@@ -1,5 +1,6 @@
-import { Connection, ConnectionConfig } from "../util/generic-connection.js";
-import Task from "../util/generic-task.js";
+import { ConfigFile } from "../util/configs.js";
+import { Connection, ConnectionConfig } from "../util/Connection.js";
+import { ProviderConfig } from "../util/type-helpers.js";
 
 export interface InfluxDBConnectionConfig extends ConnectionConfig {
   measurement: string;
@@ -14,14 +15,26 @@ export interface InfluxDBConnectionConfig extends ConnectionConfig {
 export default class InfluxDBConnection extends Connection {
   declare config: InfluxDBConnectionConfig;
 
-  constructor(config: InfluxDBConnectionConfig, task: Task) {
-    super(config, task);
+  constructor(config: InfluxDBConnectionConfig) {
+    super(config);
   }
 
-  async register() {
-    if (!this.config.disabled) {
-      return this.enable();
-    }
+  fetchSingleConfig(_nodeName: string): Promise<ConfigFile> {
+    throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
+  }
+
+  fetchAllConfigs() {
+    throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
+  }
+
+  // @ts-expect-error should throw on call
+  fetchConfig(_provider: ProviderConfig): void {
+    throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
+  }
+
+  // @ts-expect-error should throw on call
+  uploadSingleConfig(_nodeName: string, _config: ConfigFile) {
+    throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
   }
 
   async enable() {}

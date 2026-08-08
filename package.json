@@ -1,24 +1,37 @@
 {
-  "name": "cutie",
+  "name": "@echobravoyahoo/cutie",
   "type": "module",
-  "version": "2.1.0",
+  "version": "4.0.0-alpha.1",
   "description": "a general-purpose cli & library for automating mqtt interactions.",
   "main": "src/index.js",
   "bin": {
-    "cutie": "src/cli-entrypoint.js"
+    "cutie": "built/cli-entrypoint.js"
   },
+  "files": [
+    "built/",
+    "config/cutie.conf.json",
+    "config/cutie.service",
+    "config/cutie.journald.conf",
+    "cookbook.md"
+  ],
   "scripts": {
-    "test": "TS_NODE_PROJECT='./tsconfig.test.json' mocha --loader=ts-node/esm",
-    "test:ci": "npm run test",
-    "build": "sudo docker build . -t cutie -f ./Dockerfile",
-    "build-wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
+    "test": "npx tsx --experimental-test-module-mocks --test './test/**/*.ts'",
+    "test:watch": "npx tsx watch --experimental-test-module-mocks --test './test/**/*.ts'",
+    "test:coverage": "npx c8 --src './src' --all --reporter text --reporter html tsx --experimental-test-module-mocks --test './test/**/*.ts'",
+    "build": "tsc && chmod +x ./built/cli-entrypoint.js",
+    "build:watch": "tsc --watch",
+    "build:clean": "rm -rf built/*",
+    "build:docker": "sudo docker build . -t cutie -f ./Dockerfile",
+    "build:docker:wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
     "sync": "lsyncd config.lua",
-    "start": "./src/cli-entrypoint.js",
+    "start": "npx tsx ./src/cli-entrypoint.ts start",
+    "start:prod": "./built/cli-entrypoint.js start --config ./config/cutie.conf.json",
+    "lint": "npx eslint",
     "prettify": "prettier -w .",
-    "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo systemctl enable cutie",
-    "update-service": "npm run add-service && sudo systemctl restart cutie"
+    "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo cp ./config/cutie.journald.conf /etc/systemd/journald@cutie.conf && sudo systemctl daemon-reload && sudo systemctl enable cutie",
+    "update-service": "npm run add-service && sudo systemctl restart cutie && sudo systemctl restart systemd-journald@cutie.service"
   },
-  "engines": "~17.9.0 - ^24",
+  "engines": "^22 - ^24",
   "author": "ashton eby",
   "license": "ISC",
   "dependencies": {
@@ -30,22 +43,31 @@
     "mqtt-topics": "^1.0.2",
     "node-ble": "^1.13.0",
     "node-yaml": "^4.0.1",
+    "picomatch": "^4.0.3",
     "pigpio": "^3.3.1",
     "pino": "^9.7.0",
     "pino-pretty": "^9.4.1",
     "serialport": "^10.4.0",
     "thermalprinter": "^0.3.10",
+    "uuid": "^11.1.0",
     "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.31.0",
     "@types/chai": "^5.2.2",
+    "@types/chai-as-promised": "^8.0.2",
     "@types/lodash": "^4.17.19",
-    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.0.14",
     "@types/yargs-parser": "^21.0.3",
+    "c8": "^10.1.3",
     "chai": "^5.2.0",
-    "mocha": "^11.4.0",
-    "prettier": "^3.6.0",
-    "ts-node": "^10.9.2"
+    "chai-as-promised": "^8.0.2",
+    "eslint": "^9.31.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "3.6.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.37.0"
   },
   "overrides": {
     "node-gyp": "^11.0.0",
