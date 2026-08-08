@@ -3,6 +3,10 @@
   "type": "module",
   "version": "4.0.0-alpha.1",
   "description": "a general-purpose cli & library for automating mqtt interactions.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/echo-bravo-yahoo/cutie.git"
+  },
   "main": "src/index.js",
   "bin": {
     "cutie": "built/cli-entrypoint.js"
@@ -30,6 +34,9 @@
     "prettify": "prettier -w .",
     "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo cp ./config/cutie.journald.conf /etc/systemd/journald@cutie.conf && sudo systemctl daemon-reload && sudo systemctl enable cutie",
     "update-service": "npm run add-service && sudo systemctl restart cutie && sudo systemctl restart systemd-journald@cutie.service"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": "^22 - ^24",
   "author": "ashton eby",
