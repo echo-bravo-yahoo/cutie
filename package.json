@@ -11,6 +11,7 @@
     "built/",
     "config/cutie.conf.json",
     "config/cutie.service",
+    "config/cutie.journald.conf",
     "cookbook.md"
   ],
   "scripts": {
@@ -27,8 +28,8 @@
     "start:prod": "./built/cli-entrypoint.js start --config ./config/cutie.conf.json",
     "lint": "npx eslint",
     "prettify": "prettier -w .",
-    "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo systemctl enable cutie",
-    "update-service": "npm run add-service && sudo systemctl restart cutie"
+    "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo cp ./config/cutie.journald.conf /etc/systemd/journald@cutie.conf && sudo systemctl daemon-reload && sudo systemctl enable cutie",
+    "update-service": "npm run add-service && sudo systemctl restart cutie && sudo systemctl restart systemd-journald@cutie.service"
   },
   "engines": "^22 - ^24",
   "author": "ashton eby",

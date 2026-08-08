@@ -92,10 +92,10 @@ The `random` sensor runs without any hardware; use it to test changes to the run
 #### Logging
 
 - Pretty logs for only one tag (in this case, "shadow"): `npm run start -- --config ./config/config-real.json | jq 'select(.tags | index( "shadow" ))'`
+- The systemd service logs to a dedicated journal namespace (`LogNamespace=cutie` in `./config/cutie.service`), capped at 50M total / 10M per file by `./config/cutie.journald.conf`, so a runaway log can't fill up the SD card. A plain `journalctl -u cutie` won't show anything for the deployed service -- add `--namespace=cutie`, as below.
 
 #### Deploying to a raspi for development
 
-Problems with rsync: no watch daemon
-`rsync --recursive --exclude "**/node_modules/*" --exclude "**/.git/*" --exclude "**/config.json"  --exclude "**.png" --exclude "**.zip" --exclude "**.md" --exclude "**/package-lock.json" ~/workspace/cutie/ vaxholm:/home/pi/cutie --verbose`
+Problems with rsync: no watch daemon `rsync --recursive --exclude "**/node_modules/*" --exclude "**/.git/*" --exclude "**/config.json"  --exclude "**.png" --exclude "**.zip" --exclude "**.md" --exclude "**/package-lock.json" ~/workspace/cutie/ vaxholm:/home/pi/cutie --verbose`
 
-`git stash; git pull; git stash pop; sudo systemctl restart cutie; sudo journalctl -u cutie --follow`
+`git stash; git pull; git stash pop; sudo systemctl restart cutie; sudo journalctl -u cutie --namespace=cutie --follow`

@@ -7,6 +7,7 @@ WorkingDirectory=/home/pi/workspace/cutie
 ExecStart=/home/pi/.nvm/nvm-exec npm run start:prod
 Restart=always
 RestartSec=2
+LogNamespace=cutie
 
 [Install]
 WantedBy=multi-user.target
