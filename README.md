@@ -99,3 +99,16 @@ The `random` sensor runs without any hardware; use it to test changes to the run
 Problems with rsync: no watch daemon `rsync --recursive --exclude "**/node_modules/*" --exclude "**/.git/*" --exclude "**/config.json"  --exclude "**.png" --exclude "**.zip" --exclude "**.md" --exclude "**/package-lock.json" ~/workspace/cutie/ <node>:/home/pi/cutie --verbose`
 
 `git stash; git pull; git stash pop; sudo systemctl restart cutie; sudo journalctl -u cutie --namespace=cutie --follow`
+
+#### Releasing
+
+Releases are cut from `main` only, and only by pushing a version tag:
+
+```bash
+git checkout main
+git pull
+npm version <patch|minor|major|prerelease> # bumps package.json, commits, and tags locally
+git push origin main --follow-tags
+```
+
+The `Publish` GitHub Actions workflow picks up the pushed tag, runs the test suite, publishes to npm via OIDC trusted publishing (no token involved), and creates a matching GitHub release. The npm dist-tag is derived from the version string -- a plain version (e.g. `4.0.1`) publishes as `latest`, while a prerelease version (e.g. `4.0.1-alpha.0`) publishes under its prerelease identifier (e.g. `alpha`) so it never overwrites `latest`.
