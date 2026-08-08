@@ -1,0 +1,61 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yaml
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      dist-tag: ${{ steps.dist-tag.outputs.dist-tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+      - name: Ensure npm >= 11.5.1 (required for OIDC trusted publishing)
+        run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run build
+      - name: Compute dist-tag from package.json version
+        id: dist-tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *-* ]]; then
+            DIST_TAG="${VERSION#*-}"
+            DIST_TAG="${DIST_TAG%%.*}"
+          else
+            DIST_TAG="latest"
+          fi
+          echo "dist-tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+      - run: npm publish --tag "${{ steps.dist-tag.outputs.dist-tag }}"
+
+  release:
+    runs-on: ubuntu-latest
+    needs: publish
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIST_TAG: ${{ needs.publish.outputs.dist-tag }}
+        run: |
+          PRERELEASE_FLAG=()
+          if [[ "$DIST_TAG" != "latest" ]]; then
+            PRERELEASE_FLAG=(--prerelease)
+          fi
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "${{ github.repository }}" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            "${PRERELEASE_FLAG[@]}"
