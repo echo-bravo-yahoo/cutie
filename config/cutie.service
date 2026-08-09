@@ -3,8 +3,17 @@ Description=a cute little MQTT service
 
 [Service]
 User=pi
+# WorkingDirectory varies per host on the real fleet (<node>/<node>:
+# /home/pi/cutie, stockholm: /home/pi/workspace/cutie) -- this file is a
+# reference/bootstrap template. cutie-deploy.sh does not sync it to live
+# hosts; each host's live unit is hand-maintained.
 WorkingDirectory=/home/pi/workspace/cutie
-ExecStart=/home/pi/.nvm/nvm-exec npm run start:prod
+# Node/npm install location and layout differs per host too (manually
+# installed tarball, apt-style /usr/bin, or fnm) -- this PATH cascade covers
+# all three conventions seen so far, letting one ExecStart line work
+# everywhere instead of hardcoding a single host's path.
+Environment=PATH=/home/pi/.local/share/fnm/aliases/cutie/bin:/usr/bin:/usr/local/node/bin:/bin
+ExecStart=/usr/bin/env npm run start:prod
 Restart=always
 RestartSec=2
 LogNamespace=cutie
