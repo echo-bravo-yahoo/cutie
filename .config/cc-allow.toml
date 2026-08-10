@@ -1,0 +1,8 @@
+version = "2.0"
+
+# cutie's own `npm start` entrypoint (package.json "start": `npx tsx
+# ./src/cli-entrypoint.ts start`). Pinned to this exact file so the rule
+# can't widen into "run any file via tsx" - see the bash.allow.npx.tsx
+# comment in ~/.config/cc-allow.toml for why that's excluded globally.
+[[bash.allow.npx.tsx]]
+args.any = ["re:(^\\./)?src/cli-entrypoint\\.ts$"]
