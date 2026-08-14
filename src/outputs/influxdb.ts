@@ -91,7 +91,9 @@ export default class InfluxDB extends Output {
 
       return message;
     } else {
-      throw new Error(`Invalid InfluxDB message format.`);
+      throw new Error(
+        `Invalid InfluxDB message format for message: ${JSON.stringify(message)}.`,
+      );
     }
   }
 }
