@@ -22,7 +22,7 @@ export default class Stash extends Output {
 
   async send(message: Message) {
     this.info(
-      `Emitting event with key "${this.config.key}".`,
+      `Stashing value under key "${this.config.key}".`,
       {
         topic: this.logPrefix,
       },
@@ -31,10 +31,15 @@ export default class Stash extends Output {
       },
     );
     this.ensureStash();
+    // Only strings are interpolated; anything else is stashed as-is.
+    const value =
+      typeof this.config.value === "string"
+        ? this.interpolateConfigString(this.config.value, { message })
+        : this.config.value;
     // @ts-expect-error ensureStash() makes sure this defined
     this.task.stash[
       this.interpolateConfigString(this.config.key, { message })
-    ] = this.interpolateConfigString(this.config.value, { message });
+    ] = value;
 
     return message;
   }

@@ -77,18 +77,18 @@ export default class BME680 extends Read {
   }
 
   async enable() {
-    // if (!this.config.virtual) {
-    const Bme680 = (await import("bme680-sensor")).default.Bme680;
-    this.sensor = new Bme680(1, Number(this.config.i2cAddress) || 0x77);
-    await this.sensor.initialize();
-    // }
+    if (!this.config.virtual) {
+      const Bme680 = (await import("bme680-sensor")).default.Bme680;
+      this.sensor = new Bme680(1, Number(this.config.i2cAddress) || 0x77);
+      await this.sensor.initialize();
+    }
 
     this.info("Enabled bme680.", { topic: this.logPrefix });
     this.enabled = true;
   }
 
   async disable() {
-    // TODO: do I need to turn off the sensor / close the connection?
+    if (this.sensor?.close) await this.sensor.close();
     this.info("Disabled bme680.", { topic: this.logPrefix });
     this.enabled = false;
   }
@@ -96,8 +96,9 @@ export default class BME680 extends Read {
 
 /*
 {
-  "type": "bme280",
+  "type": "read:bme680",
   "disabled": false,
+  "virtual": false,
   "i2cAddress": 0x77
 }
 */

@@ -28,13 +28,14 @@ export default class MQTT extends Output {
   }
 
   async send(message: Message) {
-    this.config.topics.forEach((topic) => {
-      const interpolatedTopic = this.interpolateConfigString(topic, {
-        message,
-      });
-
-      this.mqtt?.sendRaw(interpolatedTopic, JSON.stringify(message));
-    });
+    await Promise.all(
+      this.config.topics.map((topic) =>
+        this.mqtt?.sendRaw(
+          this.interpolateConfigString(topic, { message }),
+          JSON.stringify(message),
+        ),
+      ),
+    );
 
     return message;
   }
@@ -42,8 +43,9 @@ export default class MQTT extends Output {
 
 /*
 {
-  "type": "output:mqtt:personal-mqtt",
+  "type": "output:mqtt",
   "disabled": false,
-  "topic": "data/weather/${state.location}"
+  "connectionName": "personal-mqtt",
+  "topics": ["data/weather/${stash.location}"]
 }
 */

@@ -43,3 +43,18 @@ export default class File extends Output {
     return message;
   }
 }
+
+/*
+{
+  "type": "output:file",
+  "disabled": false,
+  "path": "./path/to/file", // gets interpolated
+  "append": true,           // false overwrites the file on every message
+  "insertNewlines": true    // prefixes each message with a newline
+}
+
+Set "append" and "insertNewlines" explicitly. The declared defaults above them
+in addDefaultsToConfig are not applied today -- Output never forwards the
+implementation argument that would run them -- so an omitted "append" reads as
+false and overwrites the file.
+*/

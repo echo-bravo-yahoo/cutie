@@ -21,12 +21,12 @@ export default class Constant extends Read {
   }
 
   async enable() {
-    this.info("Enabled random number module.", { topic: this.logPrefix });
+    this.info("Enabled constant read.", { topic: this.logPrefix });
     this.enabled = true;
   }
 
   async disable() {
-    this.info("Disabled random number module.", { topic: this.logPrefix });
+    this.info("Disabled constant read.", { topic: this.logPrefix });
     this.enabled = false;
   }
 }

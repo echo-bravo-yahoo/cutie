@@ -91,8 +91,9 @@ export default class BME280 extends Read {
 
 /*
 {
-  "type": "bme280",
+  "type": "read:bme280",
   "disabled": false,
+  "virtual": false,
   "i2cAddress": 0x76
 }
 */

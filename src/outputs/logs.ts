@@ -26,7 +26,7 @@ export default class Logs extends Output {
 
 /*
 {
-  "type": "output:console",
+  "type": "output:logs",
   "disabled": false,
 }
 */

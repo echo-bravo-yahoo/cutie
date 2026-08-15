@@ -24,12 +24,12 @@ export default class File extends Read {
   }
 
   async enable() {
-    this.info("Enabled random number module.", { topic: this.logPrefix });
+    this.info("Enabled file read.", { topic: this.logPrefix });
     this.enabled = true;
   }
 
   async disable() {
-    this.info("Disabled random number module.", { topic: this.logPrefix });
+    this.info("Disabled file read.", { topic: this.logPrefix });
     this.enabled = false;
   }
 }
