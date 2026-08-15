@@ -13,7 +13,7 @@ export default class File extends Read {
   declare config: FileConfig;
 
   constructor(config: FileConfig, task: Task) {
-    super(config, task, {});
+    super(config, task);
   }
 
   async read(message: Message, _traceId: string) {

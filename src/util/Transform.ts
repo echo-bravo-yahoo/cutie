@@ -2,10 +2,9 @@ import isArray from "lodash/isArray.js";
 import get from "lodash/get.js";
 import set from "lodash/set.js";
 
-import Step, { StepConfig } from "./Step.js";
+import Step, { HALT, StepConfig } from "./Step.js";
 import Task from "./Task.js";
 import { Message } from "./type-helpers.js";
-import { ConfigurableImplementation } from "./Configurable.js";
 
 // some notes on terminology:
 // a primitive reading is one where the reading is a primitive/literal
@@ -66,17 +65,17 @@ export default abstract class Transform extends Step {
     context: Context,
   ): Message;
 
-  constructor(
-    config: TransformConfig,
-    task: Task,
-    implementation: ConfigurableImplementation,
-  ) {
-    super(config, task, implementation);
+  constructor(config: TransformConfig, task: Task) {
+    super(config, task);
 
     this.preservePaths = true;
   }
 
-  async doHandleMessage(message: Message, traceId: string) {
+  // widened past `transform`'s own return so a subclass may halt the chain
+  async doHandleMessage(
+    message: Message,
+    traceId: string,
+  ): Promise<Message | typeof HALT> {
     return this.transform(message, traceId);
   }
 

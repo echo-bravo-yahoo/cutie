@@ -14,7 +14,7 @@ export default class Merge extends Transform {
   declare config: MergeConfig;
 
   constructor(config: MergeConfig, task: Task) {
-    super(config, task, {});
+    super(config, task);
   }
 
   transform(message: Message, _traceId: string) {

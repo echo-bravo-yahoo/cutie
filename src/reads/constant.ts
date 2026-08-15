@@ -10,14 +10,11 @@ export default class Constant extends Read {
   declare config: ConstantConfig;
 
   constructor(config: ConstantConfig, task: Task) {
-    super(config, task, {});
+    super(config, task);
   }
 
   async read(message: Message, _traceId: string) {
-    if (typeof this.config.value === "string")
-      return this.interpolateConfigString(this.config.value, { message });
-
-    return message;
+    return this.interpolateDeep(this.config.value, { message });
   }
 
   async enable() {

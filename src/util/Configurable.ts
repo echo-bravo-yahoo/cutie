@@ -1,6 +1,5 @@
 import { globals } from "../index.js";
-import { isStep, isTask } from "./type-helpers.js";
-import get from "lodash/get.js";
+import { isStep, Kind } from "./type-helpers.js";
 
 export interface Config {
   disabled?: boolean;
@@ -9,10 +8,6 @@ export interface Config {
 export interface LogLineOptions {
   topic: string;
   traceId?: string;
-}
-
-export interface ConfigurableImplementation {
-  addDefaultsToConfig?(config: Config): Config;
 }
 
 export class Configurable {
@@ -26,12 +21,10 @@ export class Configurable {
   config: Config;
   enabled: boolean;
   name: string;
+  // "unknown" until a subclass parses a `kind:subKind` type string.
+  kind: Kind | "unknown" = "unknown";
 
-  constructor(
-    config: Config,
-    name: string,
-    implementation?: ConfigurableImplementation,
-  ) {
+  constructor(config: Config, name: string) {
     this.debug = (msg, opts, obj) => {
       globals.logger.emit(
         Configurable.formatLogLine(msg, opts),
@@ -59,13 +52,18 @@ export class Configurable {
       );
     };
 
-    // TODO: fix
+    // subclasses that log under a topic override this
     this.logPrefix = "";
-    if (implementation && implementation.addDefaultsToConfig)
-      config = implementation.addDefaultsToConfig(config);
-    this.config = config;
+    this.config = this.addDefaultsToConfig(config);
     this.name = name;
     this.enabled = false;
+  }
+
+  // Overridden by modules that declare defaults; the base is the identity.
+  // Called from the constructor, so an override may read only its argument --
+  // no subclass field is initialized yet.
+  addDefaultsToConfig(config: Config): Config {
+    return config;
   }
 
   async register() {}
@@ -89,40 +87,12 @@ export class Configurable {
   static parseType(type: string) {
     const parts = type.split(":");
     return {
-      type: parts[0],
-      subType: parts[1],
+      kind: parts[0] as Kind,
+      subKind: parts[1],
     };
   }
 
   static formatLogLine(message: string, context: LogLineOptions) {
     return `${context.topic ? `[${context.topic}] ` : ""}${message}${context.traceId ? ` (${context.traceId})` : ""}`;
-  }
-
-  // always includes the context of task, module/config, and globals
-  interpolateConfigString(
-    template: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    additionalContext?: Record<string, any>,
-  ) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const inject = (str: string, obj: Record<string, any>) =>
-      str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const context: any = {
-      module: this.config,
-      globals: { ...globals, logger: undefined },
-      ...additionalContext,
-    };
-
-    if (isStep(this)) {
-      context.task = this.task;
-    } else if (isTask(this)) {
-      context.task = this;
-    }
-
-    const result = inject(template, context);
-
-    return result;
   }
 }

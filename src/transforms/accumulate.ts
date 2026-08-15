@@ -4,6 +4,7 @@ import Transform, {
   WholeMessageConfig,
 } from "../util/Transform.js";
 import Task from "../util/Task.js";
+import { HALT } from "../util/Step.js";
 import { Message } from "../util/type-helpers.js";
 
 export interface AccumulateConfig extends WholeMessageConfig {
@@ -15,19 +16,18 @@ export default class Accumulate extends Transform {
   declare messages: Array<Message>;
 
   constructor(config: AccumulateConfig, task: Task) {
-    super(config as unknown as TransformConfig, task, {});
+    super(config as unknown as TransformConfig, task);
     this.messages = [];
   }
 
-  transform(message: Message) {
-    return new Promise((resolve) => {
-      this.messages.push(message);
-      if (this.messages.length >= this.config.count) {
-        const result = this.messages;
-        this.messages = [];
-        resolve(result);
-      }
-    });
+  async doHandleMessage(message: Message): Promise<Message | typeof HALT> {
+    this.messages.push(message);
+    if (this.messages.length < this.config.count) return HALT;
+
+    const batch = this.messages;
+    this.messages = [];
+
+    return batch;
   }
 
   // no-op for class composition reasons

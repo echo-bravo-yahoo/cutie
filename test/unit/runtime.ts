@@ -14,6 +14,15 @@ import { registerConnections } from "../../src/util/connections.js";
 import { redact } from "../../src/util/redact.js";
 import { CronConfig } from "../../src/triggers/cron.js";
 import { EventConfig } from "../../src/triggers/event.js";
+import {
+  isConnection,
+  isOutput,
+  isRead,
+  isTransform,
+  isTrigger,
+  KINDS,
+} from "../../src/util/type-helpers.js";
+import { Configurable } from "../../src/util/Configurable.js";
 import { taskDone } from "../helpers.js";
 
 // A connection with a stubbed-out client, so subscribe/unsubscribe
@@ -57,6 +66,109 @@ describe("the runtime", function () {
       tasks: [],
       eventBus: new EventEmitter(),
     } as any);
+  });
+
+  describe("kind predicates", function () {
+    async function stepOfKind(type: string) {
+      const task = new Task({ steps: [{ type }] }, `predicate ${type}`);
+      return task.importStep({ type });
+    }
+
+    const predicates = {
+      trigger: isTrigger,
+      read: isRead,
+      transform: isTransform,
+      output: isOutput,
+      connection: isConnection,
+    };
+
+    const representative: Record<string, string> = {
+      trigger: "trigger:once",
+      read: "read:constant",
+      transform: "transform:prettify",
+      output: "output:console",
+      connection: "connection:influxdb",
+    };
+
+    for (const kind of KINDS) {
+      it(`identifies ${kind} and rejects the other kinds`, async function () {
+        const instance =
+          kind === "connection"
+            ? new MQTTConnection({
+                type: "connection:mqtt",
+                name: "predicate",
+                endpoint: "mqtt://127.0.0.1:1883",
+              } as any)
+            : ((await stepOfKind(representative[kind])) as Configurable);
+
+        for (const other of KINDS) {
+          expect(
+            predicates[other](instance),
+            `is${other} on a ${kind}`,
+          ).to.equal(other === kind);
+        }
+      });
+    }
+  });
+
+  describe("a disabled task", function () {
+    it("leaves every kind of step disabled", async function () {
+      const task = new Task(
+        {
+          disabled: true,
+          trigger: { type: "trigger:once", message: "hi" },
+          steps: [
+            { type: "read:constant", value: "a value" } as any,
+            { type: "transform:prettify" } as any,
+            { type: "output:console" } as any,
+          ],
+        },
+        "a disabled task",
+      );
+
+      await task.register();
+
+      expect(task.trigger!.enabled, "trigger").to.equal(false);
+      for (const step of task.steps) {
+        expect(step.enabled, step.config.type).to.equal(false);
+      }
+    });
+  });
+
+  describe("declared config defaults", function () {
+    async function configOf(type: string, extra: object = {}) {
+      const task = new Task(
+        { steps: [{ type, ...extra } as any] },
+        `defaults ${type}`,
+      );
+      const step = await task.importStep({ type, ...extra } as any);
+
+      return step.config;
+    }
+
+    it("applies output:file's append and insertNewlines", async function () {
+      const config = await configOf("output:file", { path: "/tmp/x" });
+
+      expect(config.append).to.equal(true);
+      expect(config.insertNewlines).to.equal(true);
+    });
+
+    it("applies transform:uglify's parseInput", async function () {
+      expect((await configOf("transform:uglify")).parseInput).to.equal(false);
+    });
+
+    it("applies trigger:once's delay", async function () {
+      expect((await configOf("trigger:once")).delay).to.equal(0);
+    });
+
+    it("still lets an explicit value win over a default", async function () {
+      const config = await configOf("output:file", {
+        path: "/tmp/x",
+        append: false,
+      });
+
+      expect(config.append).to.equal(false);
+    });
   });
 
   describe("trigger:cron", function () {

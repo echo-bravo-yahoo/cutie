@@ -20,7 +20,7 @@ export type ConvertConfig = SinglePathConvertConfig | MultiPathConvertConfig;
 
 export default class Convert extends Transform {
   constructor(config: ConvertConfig, task: Task) {
-    super(config, task, {});
+    super(config, task);
   }
 
   transformSingle(

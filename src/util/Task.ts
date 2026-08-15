@@ -28,10 +28,6 @@ export default class Task extends Configurable {
   constructor(config: TaskConfig, name: string) {
     super(config, name);
 
-    // TODO: why in the WORLD is this necessary?
-    // TypedConfigurable already sets this but for some reason,
-    // it's dropped by the time we get to here in tests
-    this.config = config;
     this.steps = [];
 
     this.logPrefix = `core.runtime.tasks.${name}`;
@@ -61,7 +57,7 @@ export default class Task extends Configurable {
         taskConfig.trigger,
       )) as unknown as Trigger;
       this.trigger.task = this;
-      this.trigger.register();
+      await this.trigger.register();
       globals.logger.emit(
         Configurable.formatLogLine("Registered trigger.", { topic }),
         "info",

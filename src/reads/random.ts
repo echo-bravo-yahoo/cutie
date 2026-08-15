@@ -12,7 +12,7 @@ export default class Random extends Read {
   reader: DrunkReader;
 
   constructor(config: RandomConfig, task: Task) {
-    super(config, task, {});
+    super(config, task);
 
     this.reader = new DrunkReader(config);
     this.name = "random";

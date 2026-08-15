@@ -1,3 +1,5 @@
+import get from "lodash/get.js";
+
 import Read, { ReadConfig } from "../util/Read.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
@@ -10,14 +12,15 @@ export default class Stash extends Read {
   declare config: StashConfig;
 
   constructor(config: StashConfig, task: Task) {
-    super(config, task, {});
+    super(config, task);
   }
 
   async read(message: Message, _traceId: string) {
-    if (typeof this.config.key === "string")
-      return this.interpolateConfigString(this.config.key, { message });
+    const key = this.interpolateConfigString(String(this.config.key), {
+      message,
+    });
 
-    return message;
+    return get(this.task.stash, key);
   }
 
   async enable() {

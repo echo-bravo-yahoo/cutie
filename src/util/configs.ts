@@ -84,7 +84,7 @@ async function fetchRemoteConfig(config: RemoteConfigFile) {
   await registerConnections(config.connections);
   const connection = getConnection(config.configProvider.connectionName);
   globals.logger.info(
-    `Fetching remote config from "${connection.name}" provider (type: ${connection.subType}).`,
+    `Fetching remote config from "${connection.name}" provider (type: ${connection.subKind}).`,
   );
   const newConfigFile = await connection.fetchConfig(
     providerConfig,

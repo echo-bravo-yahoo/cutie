@@ -20,7 +20,7 @@ export type RoundConfig = SinglePathRoundConfig | MultiPathRoundConfig;
 
 export default class Round extends Transform {
   constructor(config: RoundConfig, task: Task) {
-    super(config, task, {});
+    super(config, task);
   }
 
   transformSingle(

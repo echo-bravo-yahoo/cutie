@@ -30,5 +30,7 @@ export abstract class Connection extends TypedConfigurable {
 
   constructor(config: ConnectionConfig) {
     super(config);
+
+    this.logPrefix = `core.runtime.connections.${config.name}`;
   }
 }

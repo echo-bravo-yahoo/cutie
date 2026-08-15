@@ -14,10 +14,10 @@ export default class Prettify extends Transform {
   declare config: PrettifyConfig;
 
   constructor(config: PrettifyConfig, task: Task) {
-    super(config, task, { addDefaultsToConfig: Prettify.addDefaultsToConfig });
+    super(config, task);
   }
 
-  static addDefaultsToConfig(config: PrettifyConfig): PrettifyConfig {
+  addDefaultsToConfig(config: PrettifyConfig): PrettifyConfig {
     return {
       spaces: 4,
       parseInput: false,

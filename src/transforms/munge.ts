@@ -37,7 +37,7 @@ export default class Munge extends Transform {
   declare untouched: Set<string>;
 
   constructor(config: MungeConfig, task: Task) {
-    super(config, task, {});
+    super(config, task);
 
     this.untouched = new Set();
   }

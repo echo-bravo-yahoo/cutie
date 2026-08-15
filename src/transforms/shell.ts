@@ -15,7 +15,7 @@ export default class Shell extends Transform {
   declare config: ShellConfig;
 
   constructor(config: ShellConfig, task: Task) {
-    super(config, task, {});
+    super(config, task);
   }
 
   transform(message: Message) {

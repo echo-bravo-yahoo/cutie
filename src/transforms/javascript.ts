@@ -18,7 +18,7 @@ export default class Javascript extends Transform {
   declare config: JavascriptConfig;
 
   constructor(config: JavascriptConfig, task: Task) {
-    super(config as unknown as TransformConfig, task, {});
+    super(config as unknown as TransformConfig, task);
   }
 
   transform(message: Message) {

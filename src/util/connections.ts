@@ -37,11 +37,11 @@ export async function registerConnections(
 
   for (const connectionConfig of connectionConfigs) {
     const connectionTypeInfo = Configurable.parseType(connectionConfig.type);
-    if (connectionNames.includes(connectionTypeInfo.subType)) {
+    if (connectionNames.includes(connectionTypeInfo.subKind)) {
       const Connection = (
         await import(
           normalize(
-            `${srcDir}/${connectionTypeInfo.type}s/${connectionTypeInfo.subType}.js`,
+            `${srcDir}/${connectionTypeInfo.kind}s/${connectionTypeInfo.subKind}.js`,
           )
         )
       ).default;

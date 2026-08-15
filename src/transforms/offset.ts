@@ -19,7 +19,7 @@ export type OffsetConfig = SinglePathOffsetConfig | MultiPathOffsetConfig;
 
 export default class Offset extends Transform {
   constructor(config: OffsetConfig, task: Task) {
-    super(config, task, {});
+    super(config, task);
   }
 
   transformSingle(

@@ -7,9 +7,12 @@ import { globals, srcDir } from "../index.js";
 import Task from "./Task.js";
 import { TypedConfig, TypedConfigurable } from "./TypedConfigurable.js";
 import { Message } from "./type-helpers.js";
-import { ConfigurableImplementation } from "./Configurable.js";
 
 export interface StepConfig extends TypedConfig {}
+
+// Returned by a step that swallows a message rather than passing it on, so the
+// chain stops without leaving the caller's promise unsettled.
+export const HALT = Symbol("halt");
 
 export interface CodeConfig {
   codePath?: string;
@@ -22,12 +25,8 @@ export default abstract class Step extends TypedConfigurable {
   next?: Step;
   declare logPrefix: string;
 
-  constructor(
-    config: StepConfig,
-    task: Task,
-    implementation?: ConfigurableImplementation,
-  ) {
-    super(config, implementation);
+  constructor(config: StepConfig, task: Task) {
+    super(config);
 
     this.task = task;
     const index = task.config.steps.findIndex((step) => step === this.config);
@@ -123,7 +122,11 @@ export default abstract class Step extends TypedConfigurable {
   }
 
   async handleMessage(message: Message, traceId?: string): Promise<Message> {
-    message = await this.doHandleMessage(message, traceId);
+    const handled = await this.doHandleMessage(message, traceId);
+
+    // transform:accumulate halts every message that does not complete a batch
+    if (handled === HALT) return undefined;
+    message = handled;
 
     if (this.next) {
       return this.next.handleMessage(message, traceId);
@@ -132,7 +135,10 @@ export default abstract class Step extends TypedConfigurable {
     }
   }
 
-  async doHandleMessage(message: Message, _traceId?: string): Promise<Message> {
+  async doHandleMessage(
+    message: Message,
+    _traceId?: string,
+  ): Promise<Message | typeof HALT> {
     return message;
   }
 }

@@ -35,7 +35,10 @@ tasks:
         # replaced our message that contained the filename
         # with the _actual contents_ of the file
         path: "./config/${stash.filename}"
+        # this is a copy, not a log, so overwrite the destination and do
+        # not prefix the contents with a newline
         append: false
+        insertNewlines: false
       # now that we've written the file, let's log a
       # confirmation to the console
       # we'll start by overwriting the message (which was

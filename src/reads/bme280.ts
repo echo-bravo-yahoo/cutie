@@ -28,7 +28,7 @@ export default class BME280 extends Read {
   virtualPressure: DrunkReader;
 
   constructor(config: BME280Config, task: Task) {
-    super(config, task, {});
+    super(config, task);
 
     this.virtualTemp = new DrunkTemp();
     this.virtualHumidity = new DrunkHumidity();
