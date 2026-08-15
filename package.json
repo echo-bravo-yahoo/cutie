@@ -7,7 +7,8 @@
     "type": "git",
     "url": "git+https://github.com/echo-bravo-yahoo/cutie.git"
   },
-  "main": "src/index.js",
+  "main": "built/index.js",
+  "types": "built/index.d.ts",
   "bin": {
     "cutie": "built/cli-entrypoint.js"
   },
@@ -16,7 +17,8 @@
     "config/cutie.conf.json",
     "config/cutie.service",
     "config/cutie.journald.conf",
-    "cookbook.md"
+    "cookbook.md",
+    "sensors.md"
   ],
   "scripts": {
     "test": "npx tsx --experimental-test-module-mocks --test './test/**/*.ts'",
@@ -27,7 +29,6 @@
     "build:clean": "rm -rf built/*",
     "build:docker": "sudo docker build . -t cutie -f ./Dockerfile",
     "build:docker:wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
-    "sync": "lsyncd config.lua",
     "start": "npx tsx ./src/cli-entrypoint.ts start",
     "start:prod": "./built/cli-entrypoint.js start --config ./config/cutie.conf.json",
     "lint": "npx eslint",
@@ -38,7 +39,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "engines": "^22 - ^24",
+  "engines": {
+    "node": ">=22 <25"
+  },
   "author": "ashton eby",
   "license": "ISC",
   "dependencies": {
@@ -50,7 +53,6 @@
     "mqtt-topics": "^1.0.2",
     "node-ble": "^1.13.0",
     "node-yaml": "^4.0.1",
-    "picomatch": "^4.0.3",
     "pigpio": "^3.3.1",
     "pino": "^9.7.0",
     "pino-pretty": "^9.4.1",

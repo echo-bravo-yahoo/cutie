@@ -1,28 +1,21 @@
-# alpine does not work with the AWS SDK
-FROM node:17
+FROM node:22-slim
+
+# i2c-bus and pigpio are native modules, so node-gyp needs a toolchain and
+# python; the slim base image ships neither.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
 
 # dependencies first for docker cache reasons:
 # https://docs.docker.com/get-started/docker-concepts/building-images/using-the-build-cache/
 
 WORKDIR /usr/local/cutie
 COPY ./package.json ./package-lock.json .
-RUN npm install
+RUN npm ci
 
-WORKDIR /usr/local/bitbang
-COPY ./src/util/bitbang/package.json ./src/util/bitbang/package-lock.json .
-RUN npm install
-
-WORKDIR /usr/local/cutie
 COPY . .
+RUN npm run build
 
-WORKDIR /usr/local/bitbang
-COPY ./src/util/bitbang .
-
-WORKDIR /usr/local/cutie
-EXPOSE 8080
-
-# CMD tail -f /dev/null
-
-# runs package.json's main script
-WORKDIR /usr/local/cutie
-CMD ["node", "/usr/local/cutie/node_modules/.bin/nodemon"]
+# Defaults to the shipped starter config, matching npm run start:prod. Mount
+# your own over it, or override the command, to run a real config.
+CMD ["node", "built/cli-entrypoint.js", "start", "--config", "./config/cutie.conf.json"]

@@ -2,7 +2,9 @@
   "compilerOptions": {
     "outDir": "./built",
     "allowJs": true,
-    "target": "es5",
+    "target": "es2023",
+    "lib": ["es2023"],
+    "declaration": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "noImplicitThis": true,

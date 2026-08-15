@@ -8,7 +8,11 @@ const universalIgnores = [
   "built/**",
   "src/util/bitbang/**",
   "provisioner/**",
-  "test/util/fixtures/**",
+  "test/unit/fixtures/**",
+  // Temporary: hides the four unported v3 modules (src/outputs/nec.js,
+  // switchbots.js, thermal-printer.js, src/triggers/infrared.js), which do not
+  // even resolve their imports. Drop this entry once they are ported to the v4
+  // Step API.
   "**/*.js",
 ];
 
