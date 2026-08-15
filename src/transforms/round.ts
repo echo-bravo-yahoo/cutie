@@ -28,18 +28,17 @@ export default class Round extends Transform {
     config: SinglePathRoundConfig,
     _context: Context,
   ) {
-    const integer = Math.floor(value);
-    const fractional = value - integer;
     const precision = config.precision || 0;
-    const intermediate = fractional * Math.pow(10, precision);
+    // Scale via exponent notation so 21.005 -> 2100.5 rather than 2100.4999...
+    const scaled = Number(`${value}e${precision}`);
     let result;
 
     if (!config.direction || config.direction === "round") {
-      result = integer + Math.round(intermediate) / Math.pow(10, precision);
+      result = Number(`${Math.round(scaled)}e-${precision}`);
     } else if (config.direction === "up") {
-      result = integer + Math.ceil(intermediate) / Math.pow(10, precision);
+      result = Number(`${Math.ceil(scaled)}e-${precision}`);
     } else if (config.direction === "down") {
-      result = integer + Math.floor(intermediate) / Math.pow(10, precision);
+      result = Number(`${Math.floor(scaled)}e-${precision}`);
     } else {
       throw new Error(
         `Unrecognized direction "${config.direction}" for transform "round"; should be one of "up", "down", "round".`,

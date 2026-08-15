@@ -6,7 +6,7 @@ import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
 export interface MergeConfig extends WholeMessageConfig {
-  // arrayStrategy: ...
+  arrayStrategy?: "replace" | "concat";
   sources: Array<string | Record<string, Message>>;
 }
 
@@ -30,7 +30,11 @@ export default class Merge extends Transform {
       }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (objValue: any, srcValue: any) =>
-        isArray(objValue) ? srcValue : undefined,
+        isArray(objValue)
+          ? this.config.arrayStrategy === "concat"
+            ? objValue.concat(srcValue)
+            : srcValue
+          : undefined,
     );
   }
 
@@ -44,5 +48,6 @@ export default class Merge extends Transform {
 {
   "type": "transform:merge",
   "sources": Array<string>, // gets interpolated
+  "arrayStrategy": "replace" | "concat" // defaults to "replace"
 }
  */

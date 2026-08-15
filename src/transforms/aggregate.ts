@@ -179,14 +179,14 @@ single path form:
 {
   "type": "transform:aggregate",
   "path": "a.b.c",
-  "aggregation": "latest|average|median|pX"
+  "aggregation": "latest|average|sum|median|pX"
 }
 
 multi-path form:
 {
   "type": "transform:aggregate",
   "paths": {
-    "a.b.c": { "aggregation": "latest|average|median|pX" }
+    "a.b.c": { "aggregation": "latest|average|sum|median|pX" }
   }
 }
 */

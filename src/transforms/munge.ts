@@ -133,16 +133,18 @@ export default class Munge extends Transform {
 
 single path form:
 {
-  "type": "transform:rearrange",
+  "type": "transform:munge",
   "path": "a.b.c",
-  "to": "a.d"
+  "op": "duplicate" | "rename" | "remove" | "retain",
+  "to": "a.d" // required for "duplicate" and "rename"
 }
 
 multi-path form:
 {
-  "type": "transform:rearrange",
+  "type": "transform:munge",
   "paths": {
     "a.b.c": {
+      "op": "rename",
       "to": "a.d"
     }
   }
