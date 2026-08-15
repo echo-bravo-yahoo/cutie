@@ -1,13 +1,13 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import { extname, join, normalize, parse } from "node:path";
 
 import parser from "yargs-parser";
+import { read as readConfigFile } from "node-yaml";
 
 import { Connection } from "../util/Connection.js";
 import { CLIArgs, parserDefaults } from "../util/cli.js";
 import { fetchConfig } from "../util/configs.js";
-import { initializeGlobals } from "../index.js";
-import { registerTasks } from "../util/tasks.js";
+import { globals, initializeGlobals } from "../index.js";
 import {
   getConnection,
   mergeParserArgs,
@@ -19,17 +19,19 @@ export interface UploadArgs extends Omit<CLIArgs, "_"> {
   connectionName: string;
   path: string;
   node: string;
+  topic?: string;
 }
 
 async function uploadSingle(args: UploadArgs, connection: Connection) {
-  const filePath = normalize(args.path);
-  const config = (await readFile(filePath)).toString();
-  return connection.uploadSingleConfig(args.node, JSON.parse(config));
+  // node-yaml's reader parses JSON too -- YAML 1.2 is a JSON superset -- so
+  // one reader covers every extension isDirEntConfigLike accepts.
+  const config = await readConfigFile(normalize(args.path));
+  return connection.uploadSingleConfig(args.node, config, args.topic);
 }
 
 function isDirEntConfigLike(dirEnt: Dirent) {
   return (
-    dirEnt.isFile() && ["json", "yaml", "yml"].includes(extname(dirEnt.name))
+    dirEnt.isFile() && [".json", ".yaml", ".yml"].includes(extname(dirEnt.name))
   );
 }
 
@@ -38,17 +40,18 @@ function pathToNode(filePath: string) {
 }
 
 async function uploadFromDirEnt(
-  dirPath: string,
   dirEnt: Dirent,
   connection: Connection,
+  topic?: string,
 ) {
-  return readFile(join(dirPath, dirEnt.name), {
-    encoding: "utf8",
-  })
-    .then((string) => JSON.parse(string))
-    .then((configFile) =>
-      connection.uploadSingleConfig(pathToNode(dirEnt.name), configFile),
-    );
+  // With readdir({recursive: true}), dirEnt.name is a bare basename and the
+  // directory it came from is on dirEnt.parentPath.
+  const configFile = await readConfigFile(join(dirEnt.parentPath, dirEnt.name));
+  return connection.uploadSingleConfig(
+    pathToNode(dirEnt.name),
+    configFile,
+    topic,
+  );
 }
 
 async function uploadAll(args: UploadArgs, connection: Connection) {
@@ -63,7 +66,7 @@ async function uploadAll(args: UploadArgs, connection: Connection) {
   )
     .filter(isDirEntConfigLike)
     .forEach((file) =>
-      promises.push(uploadFromDirEnt(args.path, file, connection)),
+      promises.push(uploadFromDirEnt(file, connection, args.topic)),
     );
 
   return Promise.all(promises);
@@ -71,7 +74,7 @@ async function uploadAll(args: UploadArgs, connection: Connection) {
 
 export function parseUploadArgs() {
   const uploadParserArgs = {
-    string: ["path", "node", "connectionName"],
+    string: ["path", "node", "connectionName", "topic"],
   };
 
   return parser(
@@ -83,8 +86,9 @@ export function parseUploadArgs() {
 export default async function upload(args: UploadArgs) {
   initializeGlobals();
   const config = await fetchConfig(args.config);
+  // Deliberately no registerTasks here: uploading config should not start
+  // live triggers.
   await registerConnections(config.connections);
-  await registerTasks(config.tasks ?? []);
   const connection = getConnection(args.connectionName);
 
   if (args.node) {
@@ -92,4 +96,8 @@ export default async function upload(args: UploadArgs) {
   } else {
     await uploadAll(args, connection);
   }
+
+  return Promise.all(
+    globals.connections.map((connection) => connection.disable()),
+  );
 }

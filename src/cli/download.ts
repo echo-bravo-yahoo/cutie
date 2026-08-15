@@ -10,7 +10,6 @@ import {
   mergeParserArgs,
   registerConnections,
 } from "../util/connections.js";
-import { registerTasks } from "../util/tasks.js";
 import { Connection } from "../util/Connection.js";
 import { CLIArgs, parserDefaults } from "../util/cli.js";
 
@@ -18,6 +17,7 @@ export interface DownloadArgs extends Omit<CLIArgs, "_"> {
   connectionName: string;
   path?: string;
   node?: string;
+  topic?: string;
 }
 
 interface DownloadSingleArgs extends DownloadArgs {
@@ -32,13 +32,20 @@ async function downloadSingle(
   const filePath = `${normalize(`${args.path ?? "."}/${args.node}`)}.conf.json`;
   await writeFile(
     filePath,
-    JSON.stringify(await connection.fetchSingleConfig(args.node), null, 4),
+    JSON.stringify(
+      await connection.fetchSingleConfig(args.node, args.topic),
+      null,
+      4,
+    ),
   );
 }
 
 async function downloadAll(args: DownloadArgs, connection: Connection) {
-  const configs = await connection.fetchAllConfigs();
-  if (!configs) throw new Error("!");
+  const configs = await connection.fetchAllConfigs(args.topic);
+  if (!configs)
+    throw new Error(
+      `Connection "${connection.name}" returned no configs to download.`,
+    );
   const promises = [];
   for (const [name, config] of Object.entries(configs)) {
     const filePath = `${normalize(`${args.path ?? "."}/${name}`)}.conf.json`;
@@ -58,7 +65,7 @@ async function downloadAll(args: DownloadArgs, connection: Connection) {
 
 export function parseDownloadArgs() {
   const downloadParserArgs = {
-    string: ["path", "node", "connectionName"],
+    string: ["path", "node", "connectionName", "topic"],
   };
 
   return parser(
@@ -70,8 +77,9 @@ export function parseDownloadArgs() {
 export default async function download(args: DownloadArgs) {
   initializeGlobals();
   const config = await fetchConfig(args.config);
+  // Deliberately no registerTasks here: downloading config should not start
+  // live triggers.
   await registerConnections(config.connections);
-  await registerTasks(config.tasks ?? []);
   const connection = getConnection(args.connectionName);
 
   if (args.node) {
