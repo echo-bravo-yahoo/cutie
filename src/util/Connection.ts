@@ -13,11 +13,19 @@ export abstract class Connection extends TypedConfigurable {
     provider: ProviderConfig,
     connection: ConnectionConfig,
   ): Promise<ConfigFile>;
-  abstract fetchSingleConfig(nodeName: string): Promise<ConfigFile> | void;
-  abstract fetchAllConfigs(): Promise<Record<string, ConfigFile>> | void;
+  // `topic` overrides the connection's default config location; see
+  // MQTTConnection for how a "+" segment stands in for the node name.
+  abstract fetchSingleConfig(
+    nodeName: string,
+    topic?: string,
+  ): Promise<ConfigFile> | void;
+  abstract fetchAllConfigs(
+    topic?: string,
+  ): Promise<Record<string, ConfigFile>> | void;
   abstract uploadSingleConfig(
     nodeName: string,
-    config: ConfigFile, //eslint-disable-next-line @typescript-eslint/no-explicit-any
+    config: ConfigFile,
+    topic?: string, //eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any>;
 
   constructor(config: ConnectionConfig) {

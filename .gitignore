@@ -16,6 +16,9 @@ config-management/
 built/
 coverage/
 
+# written by the remote-config cache; may contain credentials
+*.cache.json
+
 config/*
 !config/cutie.conf.json
 !config/cutie.service

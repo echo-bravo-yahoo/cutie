@@ -1,5 +1,4 @@
 import { getConnection } from "../util/connections.js";
-import MqttTopics from "mqtt-topics";
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import MQTTConnection from "../connections/mqtt.js";
@@ -48,8 +47,6 @@ export default class MQTT extends Trigger {
   }
 
   async disable() {
-    // BUG: double subscriptions, single unsubscribe will break
-    // the other subscriber
     await this.mqtt.unsubscribe(this.config.topic || this.config.topics || []);
 
     this.info(
@@ -58,23 +55,13 @@ export default class MQTT extends Trigger {
     );
     this.enabled = false;
   }
-
-  // TODO: dupe of triggers/mqtt.js:::matchesTopic
-  matchesTopic(messageTopic: string) {
-    if (this.config.topic) {
-      return MqttTopics.match(this.config.topic, messageTopic);
-    }
-
-    return (this.config.topics || []).some((topic) =>
-      MqttTopics.match(topic, messageTopic),
-    );
-  }
 }
 
 /*
 {
-  "type": "mqtt",
+  "type": "trigger:mqtt",
   "disabled": false,
-  "topics": [],
+  "connectionName": "personal-mqtt",
+  "topics": ["alarms/+"]
 }
 */

@@ -4,9 +4,21 @@ import MqttTopics from "mqtt-topics";
 import { Connection, ConnectionConfig } from "../util/Connection.js";
 import { getConnectionsByType } from "../util/connections.js";
 import { globals } from "../index.js";
-import MQTT, { isMQTT } from "../triggers/mqtt.js";
+import { isMQTT } from "../triggers/mqtt.js";
 import { ProviderConfig } from "../util/type-helpers.js";
 import { ConfigFile } from "../util/configs.js";
+import { redact } from "../util/redact.js";
+
+export const DEFAULT_CONFIG_TOPIC = "cutie/config/+";
+const DEFAULT_COLLECT_MS = 100;
+const DEFAULT_FETCH_TIMEOUT_MS = 10000;
+
+// A config topic doubles as a subscribe filter and a publish target, so a "+"
+// segment stands in for the node name. One --topic value therefore works for
+// every subcommand: "a/b/+" subscribes as-is and publishes to "a/b/<node>".
+function topicForNode(topic: string, nodeName: string) {
+  return topic.includes("+") ? topic.replace("+", nodeName) : topic;
+}
 
 export interface MQTTConnectionConfig
   extends ConnectionConfig,
@@ -25,6 +37,10 @@ export default class MQTTConnection extends Connection {
   // @ts-expect-error this will be instantiated by enabling (before it's accessed)
   connection: mqtt.MqttClient;
 
+  // One MQTT connection is shared by every trigger on it, so a topic may have
+  // several subscribers. Only unsubscribe when the last one goes away.
+  subscriberCounts: Map<string, number> = new Map();
+
   constructor(config: MQTTConnectionConfig) {
     super(config);
   }
@@ -40,40 +56,71 @@ export default class MQTTConnection extends Connection {
     });
   }
 
-  async fetchAllConfigs(): Promise<Record<string, ConfigFile>> {
+  async fetchAllConfigs(
+    topic: string = DEFAULT_CONFIG_TOPIC,
+    waitMs: number = DEFAULT_COLLECT_MS,
+  ): Promise<Record<string, ConfigFile>> {
     const configs: Record<string, ConfigFile> = {};
-    this.connection.subscribe(`cutie/config/+`);
-
-    this.connection.on("message", (topic, message) => {
-      const nodeName = topic.split("/").pop();
+    const handler = (messageTopic: string, message: Buffer) => {
+      const nodeName = messageTopic.split("/").pop();
       if (nodeName) configs[nodeName] = JSON.parse(message.toString());
-    });
+    };
+
+    this.connection.on("message", handler);
+    await this.connection.subscribeAsync(topic);
 
     return new Promise((resolve) =>
-      setTimeout(async () => {
+      setTimeout(() => {
+        this.connection.removeListener("message", handler);
         resolve(configs);
-      }, 100),
+      }, waitMs),
     );
   }
 
-  async uploadSingleConfig(nodeName: string, config: ConfigFile) {
+  async uploadSingleConfig(
+    nodeName: string,
+    config: ConfigFile,
+    topic: string = DEFAULT_CONFIG_TOPIC,
+  ) {
     return this.connection.publishAsync(
-      `cutie/config/${nodeName}`,
+      topicForNode(topic, nodeName),
       JSON.stringify(config),
       { retain: true },
     );
   }
 
-  async fetchSingleConfig(nodeName: string): Promise<ConfigFile> {
-    this.connection.subscribe(`cutie/config/${nodeName}`);
+  async fetchSingleConfig(
+    nodeName: string,
+    topic: string = DEFAULT_CONFIG_TOPIC,
+    timeoutMs: number = DEFAULT_FETCH_TIMEOUT_MS,
+  ): Promise<ConfigFile> {
+    const nodeTopic = topicForNode(topic, nodeName);
+    await this.connection.subscribeAsync(nodeTopic);
 
-    return new Promise((resolve) => {
-      this.connection.on("message", (topic, message) => {
-        if (topic === `cutie/config/${nodeName}`) {
-          resolve(JSON.parse(message.toString()));
-        }
+    let handler: (topic: string, message: Buffer) => void = () => {};
+    let timer: NodeJS.Timeout | undefined;
+
+    try {
+      return await new Promise<ConfigFile>((resolve, reject) => {
+        handler = (messageTopic: string, message: Buffer) => {
+          if (messageTopic === nodeTopic) resolve(JSON.parse(message.toString()));
+        };
+        this.connection.on("message", handler);
+
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                `Timed out after ${timeoutMs}ms waiting for a retained config message on MQTT topic "${nodeTopic}".`,
+              ),
+            ),
+          timeoutMs,
+        );
       });
-    });
+    } finally {
+      if (timer) clearTimeout(timer);
+      this.connection.removeListener("message", handler);
+    }
   }
 
   // TODO: update config if remote config _changes_
@@ -98,10 +145,11 @@ export default class MQTTConnection extends Connection {
           const config = JSON.parse(
             message.toString(),
           ) as unknown as ConfigFile;
+          const clientId = this.connection.options.clientId;
           await this.connection.endAsync();
           globals.logger.info(
-            `Fetched remote config from MQTT topic ${provider.topic} using client ${this.connection.options.clientId}. Cleaning up.`,
-            { topic: this.logPrefix, config },
+            `Fetched remote config from MQTT topic ${provider.topic} using client ${clientId}. Cleaning up.`,
+            { topic: this.logPrefix, config: redact(config) },
           );
           // @ts-expect-error connection is instantiated by register()
           this.connection = undefined;
@@ -122,9 +170,11 @@ export default class MQTTConnection extends Connection {
     delete mqttConfig.type;
     delete mqttConfig.enabled;
     delete mqttConfig.endpoint;
+    delete mqttConfig.disabled;
 
-    this.connection = mqtt.connect(this.config.endpoint, mqttConfig);
-
+    // subscribe() gates on this.enabled, so the client has to have finished
+    // connecting before enabled flips -- otherwise an early subscribe races it.
+    this.connection = await mqtt.connectAsync(this.config.endpoint, mqttConfig);
     this.connection.on("message", this.handleMessage.bind(this));
     this.enabled = true;
   }
@@ -132,7 +182,7 @@ export default class MQTTConnection extends Connection {
   handleMessage(topic: string, message: Buffer, _packet: mqtt.IPublishPacket) {
     message = JSON.parse(message.toString());
     this.debug(
-      `Received new message on topic "${topic}".}`,
+      `Received new message on topic "${topic}".`,
       { topic: this.logPrefix },
       { message },
     );
@@ -144,17 +194,21 @@ export default class MQTTConnection extends Connection {
     for (let i = 0; i < globals.tasks.length; i++) {
       const trigger = globals.tasks[i].trigger;
       if (!trigger || !isMQTT(trigger)) continue;
+      // The topic stays subscribed while any other trigger still wants it, so
+      // a disabled trigger has to be skipped here rather than at the broker.
+      if (!trigger.enabled) continue;
       const desiredConnection = trigger.config.connectionName;
 
       if (mqttConnectionNames.includes(desiredConnection)) {
         if (
-          isMQTT(trigger) &&
           MQTTConnection.matchesTopic(
             topic,
             trigger.config.topic || trigger.config.topics || "",
           )
         ) {
-          (globals.tasks[i].steps[0] as unknown as MQTT).handleMessage(message);
+          // Going through the trigger rather than steps[0] is what generates
+          // the message's trace ID and tolerates a task with no steps.
+          trigger.startMessage(message);
           triggers++;
         }
       }
@@ -168,13 +222,28 @@ export default class MQTTConnection extends Connection {
   async subscribe(
     topics: Parameters<typeof this.connection.subscribeAsync>[0],
   ) {
-    if (this.enabled) return this.connection.subscribeAsync(topics);
+    if (!this.enabled) return;
+    const list = Array.isArray(topics) ? topics : [topics as string];
+    const fresh = list.filter((topic) => {
+      const count = this.subscriberCounts.get(topic) ?? 0;
+      this.subscriberCounts.set(topic, count + 1);
+      return count === 0;
+    });
+
+    if (fresh.length) return this.connection.subscribeAsync(fresh);
   }
 
   async unsubscribe(
     topics: Parameters<typeof this.connection.unsubscribeAsync>[0],
   ) {
-    return this.connection.unsubscribeAsync(topics);
+    const list = Array.isArray(topics) ? topics : [topics as string];
+    const done = list.filter((topic) => {
+      const count = (this.subscriberCounts.get(topic) ?? 1) - 1;
+      this.subscriberCounts.set(topic, Math.max(0, count));
+      return count <= 0;
+    });
+
+    if (done.length) return this.connection.unsubscribeAsync(done);
   }
 
   sendRaw(
@@ -203,27 +272,21 @@ export default class MQTTConnection extends Connection {
     topicToMatch: string,
     possibleMatches: Array<string> | string,
   ) {
-    if (typeof possibleMatches === "string")
-      return MqttTopics.match(topicToMatch, possibleMatches);
+    // MqttTopics.match takes (filter, topic) in that order.
+    const filters =
+      typeof possibleMatches === "string" ? [possibleMatches] : possibleMatches;
 
-    return possibleMatches.some((topic) =>
-      MqttTopics.match(topic, topicToMatch),
-    );
+    return filters.some((filter) => MqttTopics.match(filter, topicToMatch));
   }
 }
 
 /*
 {
-  "name": "mqtt",
-  "type": "mqtt",
-  "enabled": true,
+  "name": "personal-mqtt",
+  "type": "connection:mqtt",
+  "disabled": false,
   "username": "",
   "password": "",
   "endpoint": "mqtt://127.0.0.1:1883"
-}
-
-{
-  "name": "mqtt",
-  "topic": "data/weather/${state.location || 'unknown'}"
 }
 */
