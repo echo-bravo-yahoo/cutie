@@ -58,16 +58,19 @@ export default class BME680 extends Read {
   async read(_message: Message, traceId: string) {
     if (!this.enabled) return;
     if (this.config.virtual) return this.virtualRead();
-    const sensorData = await this.sensor.read();
+    // bme680-sensor exposes getSensorData(), not read(), and returns its whole
+    // state object - readings sit under .data, alongside calibration data and
+    // gas heater settings.
+    const { data } = await this.sensor.getSensorData();
 
     const datapoint: Sample = {
       metadata: {
         timestamp: new Date(),
       },
-      temp: sensorData.temperature,
-      humidity: sensorData.humidity,
-      pressure: sensorData.pressure,
-      gas: sensorData.gas_resistance,
+      temp: data.temperature,
+      humidity: data.humidity,
+      pressure: data.pressure,
+      gas: data.gas_resistance,
     };
 
     this.debug(`Sampled new data point, ${JSON.stringify(datapoint, null, 2)}`, {

@@ -251,12 +251,16 @@ describe("modules", function () {
     it("reports the sensor's gas resistance as gas", async function () {
       const sensor = await bme680("reads a real sample");
       sensor.config.virtual = false;
+      // bme680-sensor exposes getSensorData(), not read(), and returns its
+      // whole state object with the readings under .data.
       sensor.sensor = {
-        read: async () => ({
-          temperature: 21.5,
-          humidity: 40,
-          pressure: 1013,
-          gas_resistance: 12345,
+        getSensorData: async () => ({
+          data: {
+            temperature: 21.5,
+            humidity: 40,
+            pressure: 1013,
+            gas_resistance: 12345,
+          },
         }),
       };
 
@@ -277,7 +281,7 @@ describe("modules", function () {
       expect(linesMatching("Sampled new data point")).to.have.lengthOf(0);
 
       sensor.config.virtual = false;
-      sensor.sensor = { read: async () => ({}) };
+      sensor.sensor = { getSensorData: async () => ({ data: {} }) };
       await sensor.read("ignored", "a-real-trace");
 
       const [sampled] = linesMatching("Sampled new data point");

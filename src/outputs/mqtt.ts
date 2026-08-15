@@ -7,7 +7,8 @@ import { toTraceparent } from "../util/trace.js";
 import { Message } from "../util/type-helpers.js";
 
 export interface MQTTConfig extends OutputConfig {
-  topics: Array<string>;
+  topics?: Array<string>;
+  topic?: string;
   connectionName: string;
   propagateTrace?: boolean;
 }
@@ -29,6 +30,18 @@ export default class MQTT extends Output {
   async disable() {
     this.mqtt = undefined;
     this.enabled = false;
+  }
+
+  // Singular `topic` and plural `topics` are both accepted, matching what
+  // trigger:mqtt already tolerates. Before this the output took only `topics`
+  // and threw `Cannot read properties of undefined (reading 'forEach')` on the
+  // singular form - including on the form its own example below documented.
+  get topics(): Array<string> {
+    if (this.config.topics?.length) return this.config.topics;
+    if (this.config.topic) return [this.config.topic];
+    throw new Error(
+      `output:mqtt at ${this.logPrefix} needs a "topic" or a non-empty "topics".`,
+    );
   }
 
   // User properties are an MQTT v5 feature, and mqtt.js speaks v4 unless the
@@ -58,7 +71,7 @@ export default class MQTT extends Output {
     const options = this.publishOptions(traceId);
 
     await Promise.all(
-      this.config.topics.map((topic) =>
+      this.topics.map((topic) =>
         this.mqtt?.sendRaw(
           this.interpolateConfigString(topic, { message }),
           JSON.stringify(message),
@@ -81,4 +94,6 @@ export default class MQTT extends Output {
   // "protocolVersion": 5 on the connection; the payload is untouched
   "propagateTrace": false
 }
+
+`"topic": "data/weather/bedroom"` is accepted as a single-topic shorthand.
 */
