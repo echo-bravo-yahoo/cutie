@@ -1,8 +1,7 @@
-import { readdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
 import get from "lodash/get.js";
 
 import Output, { OutputConfig } from "../util/Output.js";
+import { readGpioBase } from "../util/gpio.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
@@ -28,9 +27,6 @@ const DEFAULT_MIN_REFRESH_MS = 180_000;
 const WIDTH = 212;
 const HEIGHT = 104;
 
-const GPIO_ROOT = "/sys/class/gpio";
-const BCM_CHIP_LABEL = "pinctrl-bcm2835";
-
 export interface InkyPhatConfig extends OutputConfig {
   // "bar" fills a horizontal bar in proportion to where the value sits between
   // min and max. "pixels" takes the message as a row-major array of palette
@@ -49,44 +45,6 @@ export interface InkyPhatConfig extends OutputConfig {
   // dropped rather than queued: the panel shows a current reading, so a stale
   // one waiting its turn has no value. Set 0 to refresh on every message.
   minRefreshMs?: number;
-}
-
-// Read the sysfs line number that BCM GPIO 0 maps to.
-//
-// Before kernel 6.6 the sysfs GPIO numbers happened to equal the BCM numbers,
-// so libraries hardcoded them. They no longer match: on current kernels the
-// BCM2835 controller's lines start at 512, so BCM 17 becomes sysfs 529 and
-// exporting 17 fails outright. Reading the base rather than assuming an offset
-// keeps this correct across kernel versions and on boards whose base differs.
-export async function readGpioBase(): Promise<number> {
-  try {
-    const entries = await readdir(GPIO_ROOT);
-    const chips = entries.filter((entry) => entry.startsWith("gpiochip"));
-
-    for (const chip of chips) {
-      const label = (
-        await readFile(join(GPIO_ROOT, chip, "label"), "utf8")
-      ).trim();
-      if (label !== BCM_CHIP_LABEL) continue;
-      const base = Number(
-        (await readFile(join(GPIO_ROOT, chip, "base"), "utf8")).trim(),
-      );
-      if (Number.isFinite(base)) return base;
-    }
-
-    // No labelled BCM controller. Fall back to the single chip if there is
-    // exactly one, since that is unambiguous.
-    if (chips.length === 1) {
-      const base = Number(
-        (await readFile(join(GPIO_ROOT, chips[0], "base"), "utf8")).trim(),
-      );
-      if (Number.isFinite(base)) return base;
-    }
-  } catch {
-    // sysfs GPIO absent entirely; the legacy numbering is the best guess.
-  }
-
-  return 0;
 }
 
 function clamp(value: number, min: number, max: number) {
