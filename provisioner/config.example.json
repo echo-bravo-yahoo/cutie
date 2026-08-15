@@ -1,16 +1,27 @@
 {
-  "arch": "armv6l",
   "hostname": "my-cutie-pi",
-  "imageUrl": "https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-11-19/2024-11-19-raspios-bookworm-armhf-lite.img.xz",
-  "nodeVersion": "22.11.0",
-  "password": "change-me",
+  "board": "pi-zero-w",
   "wifi": {
-    "ssid": "",
-    "password": ""
+    "ssid": "your-wifi-ssid",
+    "country": "US"
   },
-  "files": {},
+  "locale": {
+    "keymap": "us",
+    "locale": "en_US.UTF-8",
+    "timezone": "America/Los_Angeles"
+  },
+  "sshPubKey": "/home/you/.ssh/id_ed25519.pub",
+  "authorizedKeys": "./authorized_keys",
   "cutie": {
     "srcPath": "..",
     "destPath": "/home/pi/workspace/cutie"
+  },
+  "_cutieConfig": "per-host cutie config to ship, relative to provisioner/. Omit to use the repo template, whose MQTT credentials are placeholders.",
+  "cutieConfig": "./cutie.conf.my-cutie-pi.json",
+  "_files": "extra files to place in the image: source file -> destination DIRECTORY",
+  "files": {},
+  "secrets": {
+    "piPassword": "op://Vault/cutie-pi-user/password",
+    "wifiPsk": "op://Vault/cutie-wifi/password"
   }
 }

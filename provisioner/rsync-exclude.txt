@@ -1,1 +1,17 @@
 provisioner/cache/
+provisioner/config.json
+provisioner/authorized_keys
+echobravoyahoo/
+coverage/
+
+# The image gets working-tree files, not repository history. Copying .git costs
+# tens of megabytes, and when the image is built from a git worktree .git is a
+# pointer file to the main checkout, which lands on the Pi as a broken repo.
+# A freshly imaged Pi therefore has no git checkout: update it with
+# `pi.sh deploy`, or `git clone` on the device if history is wanted there.
+.git/
+
+# Never ship node_modules to a Pi. Native modules are compiled for the machine
+# that built them, so a copy from an arm64 host lands unloadable aarch64 .node
+# binaries on an armv6l board. Every Pi runs its own npm install.
+node_modules/

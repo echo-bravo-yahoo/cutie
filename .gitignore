@@ -10,6 +10,8 @@ github.pub
 provisioner/cache/**
 # holds a wifi password; copy from config.example.json
 provisioner/config.json
+provisioner/authorized_keys
+provisioner/cutie.conf.*.json
 
 **/node_modules/
 

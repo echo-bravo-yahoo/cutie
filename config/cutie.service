@@ -8,9 +8,12 @@ User=pi
 # to maintain each host's unit by hand rather than syncing this one.
 WorkingDirectory=/home/pi/workspace/cutie
 # Node's install location varies (distro package, manually unpacked tarball,
-# or a version manager). This cascade covers the common layouts so one
-# ExecStart line works across them; add your own prefix if node lives
-# elsewhere.
+# or a version manager). systemd carries no shell profile, so an nvm shim or a
+# bare `npm` resolves differently here than in an interactive session. This
+# cascade covers the common layouts so one ExecStart line works across them;
+# add your own prefix if node lives elsewhere. On a host built by
+# provisioner/configure-host.sh, /usr/bin/npm is symlinked to the installed
+# Node and the first entry finds it.
 Environment=PATH=/usr/bin:/usr/local/node/bin:/bin
 ExecStart=/usr/bin/env npm run start:prod
 Restart=always
