@@ -17,7 +17,6 @@ import { MungeConfig } from "../../src/transforms/munge.js";
 import { JavascriptConfig } from "../../src/transforms/javascript.js";
 import { PrettifyConfig } from "../../src/transforms/prettify.js";
 import { UglifyConfig } from "../../src/transforms/uglify.js";
-// import { AggregateConfig } from "../transforms/aggregate.js";
 
 describe("transforms", function () {
   const fakeLogger = {
@@ -133,6 +132,62 @@ describe("transforms", function () {
           priority: "high",
           data: [7],
         });
+      });
+
+      it('replaces arrays when arrayStrategy is "replace"', async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:merge",
+                arrayStrategy: "replace",
+                sources: [{ data: [4, 5] }],
+              } as MergeConfig,
+            ],
+          },
+          "replaces arrays",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({ data: [1, 2, 3] });
+        expect(transformed).to.deep.equal({ data: [4, 5] });
+      });
+
+      it('concatenates arrays when arrayStrategy is "concat"', async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:merge",
+                arrayStrategy: "concat",
+                sources: [{ data: [4, 5] }],
+              } as MergeConfig,
+            ],
+          },
+          "concatenates arrays",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({ data: [1, 2, 3] });
+        expect(transformed).to.deep.equal({ data: [1, 2, 3, 4, 5] });
+      });
+
+      it("replaces arrays when arrayStrategy is omitted", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:merge",
+                sources: [{ data: [4, 5] }],
+              } as MergeConfig,
+            ],
+          },
+          "replaces arrays by default",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({ data: [1, 2, 3] });
+        expect(transformed).to.deep.equal({ data: [4, 5] });
       });
     });
 
@@ -372,8 +427,7 @@ describe("transforms", function () {
         const testCases = [
           { direction: "round", input: 21.0, output: 21.0 },
           { direction: "round", input: 21.001, output: 21.0 },
-          // TODO: use better rounding algorithm that doesn't fail on this test case...
-          // { direction: "round", input: 21.005, output: 21.01 },
+          { direction: "round", input: 21.005, output: 21.01 },
           { direction: "round", input: 21.009, output: 21.01 },
           { direction: "up", input: 21.0, output: 21.0 },
           { direction: "up", input: 21.001, output: 21.01 },
@@ -440,9 +494,97 @@ describe("transforms", function () {
           expect(transformed).to.equal(testCase.output);
         }
       });
-      it.skip("works on primitive readings", async function () {});
-      it.skip("works on simple readings", async function () {});
-      it.skip("works on composite readings", async function () {});
+      it("works for negative values in all directions", async function () {
+        // the old split-integer algorithm floored the integer part, which made
+        // "up" and "down" inconsistent below zero
+        const testCases = [
+          { direction: "round", input: -21.005, output: -21.0 },
+          { direction: "round", input: -21.009, output: -21.01 },
+          { direction: "up", input: -21.001, output: -21.0 },
+          { direction: "up", input: -21.009, output: -21.0 },
+          { direction: "down", input: -21.001, output: -21.01 },
+          { direction: "down", input: -21.009, output: -21.01 },
+        ];
+
+        for (const testCase of testCases) {
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transform:round",
+                  precision: 2,
+                  direction: testCase.direction,
+                } as RoundConfig,
+              ],
+            },
+            "works for negative values in all directions",
+          );
+          await task.register();
+
+          const transformed = await task.startMessage(testCase.input);
+          expect(transformed, `${testCase.direction} of ${testCase.input}`).to.equal(
+            testCase.output,
+          );
+        }
+      });
+
+      it("works on primitive readings", async function () {
+        const task = new Task(
+          {
+            steps: [
+              { type: "transform:round", precision: 2 } as RoundConfig,
+            ],
+          },
+          "works on primitive readings",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage(21.005);
+        expect(transformed).to.equal(21.01);
+      });
+
+      it("works on simple readings", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:round",
+                path: "temp",
+                precision: 2,
+              } as RoundConfig,
+            ],
+          },
+          "works on simple readings",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({ temp: 21.005 });
+        expect(transformed).to.deep.equal({ temp: 21.01 });
+      });
+
+      it("works on composite readings", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:round",
+                paths: {
+                  temp: { precision: 2 },
+                  humidity: { precision: 1, direction: "down" },
+                },
+              } as RoundConfig,
+            ],
+          },
+          "works on composite readings",
+        );
+        await task.register();
+
+        const transformed = await task.startMessage({
+          temp: 21.005,
+          humidity: 48.99,
+        });
+        expect(transformed).to.deep.equal({ temp: 21.01, humidity: 48.9 });
+      });
     });
 
     describe("aggregate", function () {
@@ -703,8 +845,50 @@ describe("transforms", function () {
           const transformed = await task.startMessage(21.1);
           expect(transformed).to.deep.equal(69.98);
         });
-        it.skip("works on simple readings", async function () {});
-        it.skip("works on composite readings", async function () {});
+
+        it("works on simple readings", async function () {
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transform:convert",
+                  path: "temp",
+                  from: "celsius",
+                  to: "fahrenheit",
+                } as ConvertConfig,
+              ],
+            },
+            "works on simple readings",
+          );
+          await task.register();
+
+          const transformed = await task.startMessage({ temp: 21.1 });
+          expect(transformed).to.deep.equal({ temp: 69.98 });
+        });
+
+        it("works on composite readings", async function () {
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transform:convert",
+                  paths: {
+                    inside: { from: "celsius", to: "fahrenheit" },
+                    outside: { from: "celsius", to: "fahrenheit" },
+                  },
+                } as ConvertConfig,
+              ],
+            },
+            "works on composite readings",
+          );
+          await task.register();
+
+          const transformed = await task.startMessage({
+            inside: 21.1,
+            outside: 0,
+          });
+          expect(transformed).to.deep.equal({ inside: 69.98, outside: 32 });
+        });
       });
 
       describe("fahrenheit to celsius", () => {
@@ -726,8 +910,50 @@ describe("transforms", function () {
           const transformed = await task.startMessage(69.98);
           expect(transformed).to.deep.equal(21.1);
         });
-        it.skip("works on simple readings", async function () {});
-        it.skip("works on composite readings", async function () {});
+
+        it("works on simple readings", async function () {
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transform:convert",
+                  path: "temp",
+                  from: "fahrenheit",
+                  to: "celsius",
+                } as ConvertConfig,
+              ],
+            },
+            "works on simple readings",
+          );
+          await task.register();
+
+          const transformed = await task.startMessage({ temp: 69.98 });
+          expect(transformed).to.deep.equal({ temp: 21.1 });
+        });
+
+        it("works on composite readings", async function () {
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transform:convert",
+                  paths: {
+                    inside: { from: "fahrenheit", to: "celsius" },
+                    outside: { from: "fahrenheit", to: "celsius" },
+                  },
+                } as ConvertConfig,
+              ],
+            },
+            "works on composite readings",
+          );
+          await task.register();
+
+          const transformed = await task.startMessage({
+            inside: 69.98,
+            outside: 32,
+          });
+          expect(transformed).to.deep.equal({ inside: 21.1, outside: 0 });
+        });
       });
       describe("fails", function () {
         it("when provided an incorrect 'to' or 'from'", async function () {
