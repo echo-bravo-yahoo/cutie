@@ -90,6 +90,12 @@ async function fetchRemoteConfig(config: RemoteConfigFile) {
     providerConfig,
     connection.config,
   );
+  // the bootstrap connections have done their job; close them before dropping
+  // the references, or their sockets stay open for the life of the process
+  await Promise.allSettled(
+    globals.connections.map((connection) => connection.disable()),
+  );
   globals.connections = [];
+
   return newConfigFile;
 }

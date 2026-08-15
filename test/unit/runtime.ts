@@ -37,6 +37,7 @@ function stubbedConnection() {
   const unsubscribed: Array<Array<string>> = [];
 
   connection.connection = {
+    options: { clientId: "stub_client" },
     subscribeAsync: async (topics: Array<string>) => subscribed.push(topics),
     unsubscribeAsync: async (topics: Array<string>) =>
       unsubscribed.push(topics),
@@ -205,6 +206,121 @@ describe("the runtime", function () {
     });
   });
 
+  describe("read:constant", function () {
+    async function readConstant(value: unknown, message: unknown = "incoming") {
+      const task = new Task(
+        {
+          steps: [
+            { type: "read:constant", value } as any,
+            { type: "output:stash", key: "read", value: "${message}" } as any,
+          ],
+        },
+        "reads a constant",
+      );
+      await task.register();
+
+      return task.steps[0].handleMessage(message as any, "trace");
+    }
+
+    it("returns a number rather than passing the message through", async function () {
+      expect(await readConstant(42)).to.equal(42);
+    });
+
+    it("returns an object rather than passing the message through", async function () {
+      expect(await readConstant({ a: 1 })).to.deep.equal({ a: 1 });
+    });
+
+    it("still interpolates a string value", async function () {
+      expect(await readConstant("saw ${message}", "a thing")).to.equal(
+        "saw a thing",
+      );
+    });
+
+    it("interpolates strings nested inside an object value", async function () {
+      expect(
+        await readConstant({ seen: "${message}" }, "a thing"),
+      ).to.deep.equal({ seen: "a thing" });
+    });
+  });
+
+  describe("read:stash", function () {
+    it("returns the stashed value, not the key", async function () {
+      const task = new Task(
+        {
+          steps: [
+            { type: "output:stash", key: "fname", value: "notes.txt" } as any,
+            { type: "read:stash", key: "fname" } as any,
+          ],
+        },
+        "reads from the stash",
+      );
+      await task.register();
+
+      expect(await task.startMessage("anything")).to.equal("notes.txt");
+    });
+
+    it("resolves undefined for a key that was never stashed", async function () {
+      const task = new Task(
+        { steps: [{ type: "read:stash", key: "missing" } as any] },
+        "reads a missing stash key",
+      );
+      await task.register();
+
+      expect(await task.startMessage("anything")).to.equal(undefined);
+    });
+  });
+
+  describe("transform:accumulate", function () {
+    it("settles every message chain, not just the one completing a batch", async function () {
+      const task = new Task(
+        {
+          steps: [
+            { type: "transform:accumulate", count: 5 } as any,
+            { type: "output:stash", key: "batch", value: "${message}" } as any,
+          ],
+        },
+        "accumulates five",
+      );
+      await task.register();
+
+      const chains = [1, 2, 3, 4, 5].map((n) => task.startMessage(n));
+      const settled = await Promise.all(chains);
+
+      // the first four are halted, the fifth carries the whole batch
+      expect(settled.slice(0, 4)).to.deep.equal([
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      ]);
+      expect(settled[4]).to.deep.equal([1, 2, 3, 4, 5]);
+    });
+  });
+
+  describe("output:logs", function () {
+    async function logWith(verbosity: unknown) {
+      const task = new Task(
+        { steps: [{ type: "output:logs" } as any] },
+        "logs a line",
+      );
+      await task.register();
+
+      return task.startMessage({ log: "a line", verbosity } as any);
+    }
+
+    it("survives a missing verbosity", async function () {
+      await logWith(undefined);
+    });
+
+    it("survives a misspelled verbosity", async function () {
+      await logWith("infoo");
+    });
+
+    it("accepts a known verbosity", async function () {
+      await logWith("warn");
+    });
+  });
+
   describe("trigger:cron", function () {
     it("fires more than once", async function () {
       const task = new Task(
@@ -301,6 +417,61 @@ describe("the runtime", function () {
         ["a/one", "a/two"],
         ["a/three"],
       ]);
+    });
+  });
+
+  describe("a non-JSON MQTT payload", function () {
+    // Sets up one enabled mqtt trigger against a stubbed connection, so
+    // handleMessage can be driven directly with an arbitrary payload.
+    async function deliver(payload: string) {
+      const { connection } = stubbedConnection();
+      connection.name = "stub";
+      globals.connections.push(connection);
+
+      const task = new Task(
+        {
+          trigger: {
+            type: "trigger:mqtt",
+            connectionName: "stub",
+            topic: "some/topic",
+          } as any,
+          steps: [],
+        },
+        "receives an mqtt message",
+      );
+      await task.register();
+      globals.tasks.push(task);
+
+      // endMessage sees the message exactly as the connection decoded it,
+      // which output:stash would stringify
+      const received: Array<unknown> = [];
+      task.endMessage = async (message: any) => {
+        received.push(message);
+        return message;
+      };
+
+      try {
+        connection.handleMessage("some/topic", Buffer.from(payload), {} as any);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(received).to.have.lengthOf(1);
+        return received[0];
+      } finally {
+        globals.tasks.length = 0;
+        globals.connections.length = 0;
+      }
+    }
+
+    it("passes unparseable text through instead of throwing", async function () {
+      expect(await deliver("not json at all")).to.equal("not json at all");
+    });
+
+    it("still parses a JSON payload", async function () {
+      expect(await deliver(JSON.stringify({ a: 1 }))).to.deep.equal({ a: 1 });
+    });
+
+    it("passes a bare number through as JSON", async function () {
+      expect(await deliver("42")).to.equal(42);
     });
   });
 

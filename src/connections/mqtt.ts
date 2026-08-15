@@ -5,7 +5,7 @@ import { Connection, ConnectionConfig } from "../util/Connection.js";
 import { getConnectionsByType } from "../util/connections.js";
 import { globals } from "../index.js";
 import { isMQTT } from "../triggers/mqtt.js";
-import { ProviderConfig } from "../util/type-helpers.js";
+import { Message, ProviderConfig } from "../util/type-helpers.js";
 import { ConfigFile } from "../util/configs.js";
 import { redact } from "../util/redact.js";
 
@@ -43,17 +43,6 @@ export default class MQTTConnection extends Connection {
 
   constructor(config: MQTTConnectionConfig) {
     super(config);
-  }
-
-  async uploadConfig(topic: string, config: ConfigFile) {
-    this.connection = await mqtt.connectAsync(
-      this.config.endpoint,
-      this.config,
-    );
-
-    await this.connection.publishAsync(topic, JSON.stringify(config, null, 4), {
-      retain: true,
-    });
   }
 
   async fetchAllConfigs(
@@ -127,13 +116,10 @@ export default class MQTTConnection extends Connection {
   // TODO: update _local_ config if _local_ config changes
   async fetchConfig(
     provider: MQTTProviderConfig,
-    connection: ConnectionConfig,
+    _connection: ConnectionConfig,
   ): Promise<ConfigFile> {
-    const typedConnection = connection as unknown as MQTTConnectionConfig;
-    this.connection = await mqtt.connectAsync(
-      typedConnection.endpoint,
-      typedConnection,
-    );
+    // register() already opened a client; opening a second one here used to
+    // overwrite it, leaking the first socket for the life of the process
     console.log(
       `Fetching remote config from MQTT topic ${provider.topic} using client ${this.connection.options.clientId}.`,
     );
@@ -153,7 +139,7 @@ export default class MQTTConnection extends Connection {
           );
           // @ts-expect-error connection is instantiated by register()
           this.connection = undefined;
-          globals.connections = [];
+          this.enabled = false;
           resolve(config);
         }
       });
@@ -161,7 +147,14 @@ export default class MQTTConnection extends Connection {
   }
 
   async disable(): Promise<void> {
-    return this.connection.endAsync();
+    // fetchConfig ends and clears the client itself, so this has to tolerate
+    // being called on a connection that is already closed
+    if (!this.connection) return;
+
+    await this.connection.endAsync();
+    // @ts-expect-error connection is instantiated by register()
+    this.connection = undefined;
+    this.enabled = false;
   }
 
   async register() {
@@ -179,8 +172,18 @@ export default class MQTTConnection extends Connection {
     this.enabled = true;
   }
 
-  handleMessage(topic: string, message: Buffer, _packet: mqtt.IPublishPacket) {
-    message = JSON.parse(message.toString());
+  handleMessage(topic: string, raw: Buffer, _packet: mqtt.IPublishPacket) {
+    const text = raw.toString();
+    let message: Message;
+
+    try {
+      message = JSON.parse(text);
+    } catch {
+      // not every publisher sends JSON, and an unparseable retained message
+      // used to take the whole process down through the uncaughtException path
+      message = text;
+    }
+
     this.debug(
       `Received new message on topic "${topic}".`,
       { topic: this.logPrefix },
@@ -251,21 +254,6 @@ export default class MQTTConnection extends Connection {
     message: Parameters<typeof this.connection.publish>[1],
   ) {
     return this.connection.publish(topic, message);
-  }
-
-  send(
-    topic: Parameters<typeof this.connection.publish>[0],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    event: any,
-    labels: Array<string>,
-  ) {
-    return this.connection.publish(
-      topic,
-      JSON.stringify({
-        ...event,
-        metadata: labels,
-      }),
-    );
   }
 
   static matchesTopic(
