@@ -36,7 +36,7 @@ export default class Repeat extends Trigger {
 
 /*
 {
-  "type": "repeat",
+  "type": "trigger:repeat",
   "disabled": false,
   "message": { ... },
   "interval": 10000 // in ms

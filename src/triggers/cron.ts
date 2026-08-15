@@ -5,10 +5,6 @@ import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
-interface ITimerHandle {
-  timeoutId?: ReturnType<typeof setTimeout>;
-}
-
 export interface CronConfig extends TriggerConfig {
   expression: string;
   message: Message;
@@ -16,20 +12,24 @@ export interface CronConfig extends TriggerConfig {
 
 export default class Cron extends Trigger {
   declare config: CronConfig;
+  // cron-schedule's ITimerHandle is not importable -- its exports map only
+  // exposes "." and the two scheduler entry points -- so derive it here.
   // @ts-expect-error cronHandle is instantiated by enable()
-  cronHandle: ITimerHandle;
+  cronHandle: ReturnType<typeof scheduler.setInterval>;
 
   constructor(config: CronConfig, task: Task) {
     super(config, task);
   }
 
-  errorHandler() {}
+  errorHandler(error: unknown) {
+    this.error(`Cron task failed: ${error}`, { topic: this.logPrefix });
+  }
 
   async enable() {
-    this.cronHandle = scheduler.setTimeout(
+    this.cronHandle = scheduler.setInterval(
       parseCronExpression(this.config.expression),
       this.startMessage.bind(this, this.config.message),
-      { errorHandler: this.errorHandler },
+      { errorHandler: this.errorHandler.bind(this) },
     );
     this.info("Enabled cron task.", { topic: this.logPrefix });
     this.enabled = true;
@@ -44,7 +44,7 @@ export default class Cron extends Trigger {
 
 /*
 {
-  "type": "cron",
+  "type": "trigger:cron",
   "disabled": false,
   "message": { ... },
   "expression": "* * * * *" // in cron format

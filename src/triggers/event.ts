@@ -11,11 +11,15 @@ export interface EventConfig extends TriggerConfig {
 export default class Event extends Trigger {
   declare config: EventConfig;
   declare bus: EventEmitter;
+  // removeListener matches by reference, so enable() and disable() have to
+  // hand the bus the same bound function.
+  boundHandleEvent: (message: Message) => void;
 
   constructor(config: EventConfig, task: Task) {
     super(config, task);
 
     this.bus = globals.eventBus;
+    this.boundHandleEvent = this.handleEvent.bind(this);
   }
 
   handleEvent(message: Message) {
@@ -32,7 +36,7 @@ export default class Event extends Trigger {
   }
 
   async enable() {
-    this.bus.on(this.config.key, this.handleEvent.bind(this));
+    this.bus.on(this.config.key, this.boundHandleEvent);
     this.info(`Listening for events with key "${this.config.key}".`, {
       topic: this.logPrefix,
     });
@@ -40,7 +44,7 @@ export default class Event extends Trigger {
   }
 
   async disable() {
-    this.bus.removeListener(this.config.key, this.handleEvent);
+    this.bus.removeListener(this.config.key, this.boundHandleEvent);
     this.info(`No longer listening for events with key "${this.config.key}".`, {
       topic: this.logPrefix,
     });

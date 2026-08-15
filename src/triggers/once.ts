@@ -1,9 +1,10 @@
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 
 export interface OnceConfig extends TriggerConfig {
   delay?: number;
-  message?: string;
+  message?: Message;
 }
 
 export default class Once extends Trigger {
@@ -29,14 +30,7 @@ export default class Once extends Trigger {
       this.info(message, {
         topic: this.logPrefix,
       });
-      // TODO: also interpolate strings on objects
-      if (typeof this.config.message === "string") {
-        this.startMessage(
-          this.interpolateConfigString(this.config.message || ""),
-        );
-      } else {
-        this.startMessage(this.config.message);
-      }
+      this.startMessage(this.interpolateDeep(this.config.message));
     }, this.config.delay);
   }
 
@@ -56,7 +50,7 @@ export default class Once extends Trigger {
   "type": "trigger:once",
   "name": "setupStuff",
   "disabled": false,
-  "delay": 10000 // in ms
-  "message": string,
+  "delay": 10000, // in ms
+  "message": any // strings anywhere inside get interpolated
 }
 */

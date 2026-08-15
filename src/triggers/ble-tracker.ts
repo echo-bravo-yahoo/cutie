@@ -19,7 +19,6 @@ export default class BLETracker extends Sensor {
   declare config: BLETrackerConfig;
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
   declare samples: Record<string, Array<any>>;
-  interval?: NodeJS.Timeout;
 
   constructor(config: BLETrackerConfig, task: Task) {
     super(config, task);
@@ -30,7 +29,13 @@ export default class BLETracker extends Sensor {
   }
 
   collateSamples() {
-    return undefined;
+    const result: Record<string, unknown> = {};
+    for (const device of this.config.devices) {
+      const key = device.alias || device.macAddress;
+      if (this.samples[key]?.length) result[key] = this.aggregateOne(key);
+    }
+
+    return result;
   }
 
   aggregateOne(deviceKey: string) {
@@ -97,43 +102,9 @@ export default class BLETracker extends Sensor {
     await Promise.all(promises);
   }
 
-  // async publishOne(deviceKey: string) {
-  //   const payload = this.aggregateOne(deviceKey);
-
-  //   // real clumsy hack: this is copied from util/generic-sensor until i get sampling one/many
-  //   // working well
-  //   for (let toFind of this.config.destinations) {
-  //     const found = getConnection(toFind.name);
-
-  //     if (found) {
-  //       this.info(
-  //         { role: "blob", blob: payload },
-  //         `Publishing new ${this.config.name} data to ${toFind.measurement}: ${JSON.stringify(payload)}`
-  //       );
-  //       found.send(
-  //         toFind.measurement,
-  //         { ...payload, metadata: undefined, aggregationMetadata: undefined },
-  //         payload.metadata,
-  //         payload.aggregationMetadata
-  //       );
-  //     }
-  //   }
-  // }
-
-  async publishReading() {
-    // const firstDeviceSamples = Object.values(this.samples)[0];
-    // if (
-    //   get(this.config, "sampling") === undefined ||
-    //   !firstDeviceSamples ||
-    //   firstDeviceSamples.length === 0
-    // ) {
-    //   await this.sample();
-    // }
-    // for (let deviceSpec of this.config.devices) {
-    //   const deviceKey = deviceSpec.alias || deviceSpec.macAddress;
-    //   this.publishOne(deviceKey);
-    // }
-  }
+  // Sensor.publishReading is correct for this sensor now that collateSamples
+  // returns a per-device aggregate. The v3 override existed only to reach
+  // config.destinations, which v4 replaced with the task's step chain.
 
   async discoverAdvertisements() {
     if (!adapter) {
@@ -166,13 +137,15 @@ export default class BLETracker extends Sensor {
   async enable() {
     await this.discoverAdvertisements();
 
+    this.setupSampler();
     this.setupPublisher();
     this.info("Enabled BLE tracker.", { topic: this.logPrefix });
     this.enabled = true;
   }
 
   async disable() {
-    clearInterval(this.interval);
+    clearInterval(this.reportInterval);
+    clearInterval(this.sampleInterval);
     for (const device of Object.values(deviceMap)) {
       await device.disconnect();
     }
@@ -186,14 +159,10 @@ export default class BLETracker extends Sensor {
 /*
 {
   "name": "",
-  "type": "ble-tracker",
+  "type": "trigger:ble-tracker",
   "disabled": false,
   "devices": [{ "alias": "", "macAddress": "00:00:00:00:00:00" }],
-  "sampling": {
-    "interval": "",
-  },
-  "reporting": {
-    "interval": ""
-  }
+  "samplingInterval": 10000, // in ms
+  "reportingInterval": 60000 // in ms
 }
 */

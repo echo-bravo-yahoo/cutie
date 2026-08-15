@@ -76,7 +76,7 @@ export default class Random extends Sensor {
 /*
 {
   "name": "fake-thermometer",
-  "type": "random",
+  "type": "trigger:random",
   "disabled": false,
   "start": 22,
   "minStep": .05,
