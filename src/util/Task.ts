@@ -11,6 +11,10 @@ import Trigger, { TriggerConfig } from "./Trigger.js";
 export interface TaskConfig extends Config {
   trigger?: TriggerConfig;
   steps: Array<StepConfig>;
+  // Arbitrary task-scoped values, reachable from any step's interpolation
+  // context as ${task.config.data...}.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data?: Record<string, any>;
 }
 
 export default class Task extends Configurable {

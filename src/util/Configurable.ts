@@ -125,24 +125,4 @@ export class Configurable {
 
     return result;
   }
-
-  static buildLoggerArgs(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    obj: string | Record<string, any>,
-    msgOrError?: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): [Record<string, any>, message: string | undefined] {
-    if (typeof obj === "string") {
-      msgOrError = obj;
-      obj = {};
-    }
-
-    return [
-      {
-        ...obj,
-        tags: [...(obj.tags || [])],
-      },
-      msgOrError,
-    ];
-  }
 }

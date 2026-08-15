@@ -1,12 +1,20 @@
+import { readFileSync } from "node:fs";
+import { join, normalize } from "node:path";
+
 import get from "lodash/get.js";
 
-import { globals } from "../index.js";
+import { globals, srcDir } from "../index.js";
 import Task from "./Task.js";
 import { TypedConfig, TypedConfigurable } from "./TypedConfigurable.js";
 import { Message } from "./type-helpers.js";
 import { ConfigurableImplementation } from "./Configurable.js";
 
 export interface StepConfig extends TypedConfig {}
+
+export interface CodeConfig {
+  codePath?: string;
+  command?: string;
+}
 
 export default abstract class Step extends TypedConfigurable {
   declare config: StepConfig;
@@ -52,6 +60,50 @@ export default abstract class Step extends TypedConfigurable {
     const result = inject(template, this.generateContext(additionalContext));
 
     return result;
+  }
+
+  // Interpolates every string reachable from a config-supplied value, not just
+  // a top-level one, so a message can be an object with interpolated fields.
+  interpolateDeep(
+    value: Message,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    additionalContext?: Record<string, any>,
+  ): Message {
+    if (typeof value === "string")
+      return this.interpolateConfigString(value, additionalContext);
+    if (Array.isArray(value))
+      return value.map((item) => this.interpolateDeep(item, additionalContext));
+    if (value === null || typeof value !== "object") return value;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: Record<string, any> = {};
+    for (const [key, nested] of Object.entries(value)) {
+      result[key] = this.interpolateDeep(nested, additionalContext);
+    }
+
+    return result;
+  }
+
+  // transform:shell and transform:javascript build their code identically:
+  // read codePath when set, otherwise interpolate command. Either way the
+  // message is stringified first unless it already is a string, because
+  // interpolation splices values into a string.
+  generateCode(config: CodeConfig, message: Message) {
+    const context = {
+      message: typeof message === "string" ? message : JSON.stringify(message),
+    };
+
+    if (config.codePath) {
+      const codePath = normalize(join(srcDir, "..", config.codePath));
+      const code = readFileSync(codePath, { encoding: "utf8" });
+      return this.interpolateConfigString(code, context);
+    } else if (config.command) {
+      return this.interpolateConfigString(config.command, context);
+    }
+
+    throw new Error(
+      `Configuration should either specify a codePath or a command.`,
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
