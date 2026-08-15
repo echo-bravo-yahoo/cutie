@@ -8,6 +8,7 @@ import { globals, srcDir } from "../index.js";
 import { Connection, ConnectionConfig } from "./Connection.js";
 import { Configurable } from "./Configurable.js";
 import { ParserDefaults } from "./cli.js";
+import { redact } from "./redact.js";
 
 export function mergeParserArgs(
   defaults: ParserDefaults,
@@ -27,14 +28,6 @@ export async function registerConnections(
     await readdir(normalize(`${srcDir}/connections`))
   ).map((name) => parse(name).name);
 
-  // TODO: add redaction back in...
-  // const localLogger = globals.logger.logger.child(
-  //   {},
-  //   {
-  //     msgPrefix: "[core.registration.connections] ",
-  //     redact: ["context.password", "context.username", "context.token"],
-  //   }
-  // );
   globals.logger.emit(
     Configurable.formatLogLine("Registering connections...", { topic }),
     "info",
@@ -61,7 +54,7 @@ export async function registerConnections(
         Configurable.formatLogLine("Registered connection.", { topic }),
         "info",
         topic,
-        connectionConfig,
+        redact(connectionConfig),
       );
     }
   }
