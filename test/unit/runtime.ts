@@ -48,6 +48,7 @@ function stubbedConnection() {
 
 describe("the runtime", function () {
   const fakeLogger = {
+    logListeners: [] as Array<unknown>,
     emit: () => {},
     info: () => {},
     warn: () => {},
@@ -132,6 +133,39 @@ describe("the runtime", function () {
       for (const step of task.steps) {
         expect(step.enabled, step.config.type).to.equal(false);
       }
+    });
+  });
+
+  describe("trigger:logs", function () {
+    it("does not listen while its task is disabled", async function () {
+      const task = new Task(
+        {
+          disabled: true,
+          trigger: { type: "trigger:logs", filters: ["*"] } as any,
+          steps: [{ type: "output:stash", key: "line", value: "x" } as any],
+        },
+        "a disabled logs task",
+      );
+
+      await task.register();
+
+      expect(globals.logger.logListeners).to.not.include(task.trigger);
+    });
+
+    it("listens once enabled and stops again when disabled", async function () {
+      const task = new Task(
+        {
+          trigger: { type: "trigger:logs", filters: ["*"] } as any,
+          steps: [{ type: "output:stash", key: "line", value: "x" } as any],
+        },
+        "an enabled logs task",
+      );
+
+      await task.register();
+      expect(globals.logger.logListeners).to.include(task.trigger);
+
+      await task.trigger!.disable();
+      expect(globals.logger.logListeners).to.not.include(task.trigger);
     });
   });
 

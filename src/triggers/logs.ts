@@ -5,9 +5,19 @@ import { globals } from "../index.js";
 
 export interface LogsConfig extends StepConfig {
   filters: Array<string>;
+  minVerbosity?: Verbosity;
 }
 
 export type Verbosity = "fatal" | "error" | "info" | "debug" | "warn" | "trace";
+
+const VERBOSITY_RANK: Record<Verbosity, number> = {
+  trace: 0,
+  debug: 1,
+  info: 2,
+  warn: 3,
+  error: 4,
+  fatal: 5,
+};
 
 export default class Logs extends Trigger {
   declare config: LogsConfig;
@@ -16,12 +26,28 @@ export default class Logs extends Trigger {
     super(config, task);
   }
 
-  async register() {
-    globals.logger.logListeners.push(this);
-    return super.register();
+  addDefaultsToConfig(config: LogsConfig): LogsConfig {
+    return {
+      // emit every level unless the config narrows it
+      minVerbosity: "trace",
+      ...config,
+    };
   }
 
-  static matches(topic: string, _verbosity: string, filter: string): boolean {
+  // Listening starts at enable rather than register, so a logs trigger in a
+  // disabled task receives nothing.
+  async enable() {
+    globals.logger.logListeners.push(this);
+    this.enabled = true;
+  }
+
+  async disable() {
+    const index = globals.logger.logListeners.indexOf(this);
+    if (index !== -1) globals.logger.logListeners.splice(index, 1);
+    this.enabled = false;
+  }
+
+  static matches(topic: string, filter: string): boolean {
     if (filter === "") return false;
     if (filter[0] === "!") filter = filter.slice(1);
 
@@ -65,17 +91,25 @@ export default class Logs extends Trigger {
   }
 
   shouldEmit(topic: string, verbosity: Verbosity): boolean {
-    return Logs.shouldEmit(topic, verbosity, this.config.filters);
+    return Logs.shouldEmit(
+      topic,
+      verbosity,
+      this.config.filters,
+      this.config.minVerbosity,
+    );
   }
 
   static shouldEmit(
     topic: string,
     verbosity: Verbosity,
     filters: Array<string>,
+    minVerbosity: Verbosity = "trace",
   ): boolean {
+    if (VERBOSITY_RANK[verbosity] < VERBOSITY_RANK[minVerbosity]) return false;
+
     const lastMatch = [...filters]
       .reverse()
-      .find((filter) => this.matches(topic, verbosity, filter));
+      .find((filter) => this.matches(topic, filter));
     if (lastMatch !== undefined) return this.filterToBoolean(lastMatch);
     return false;
   }

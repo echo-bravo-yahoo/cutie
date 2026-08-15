@@ -16,8 +16,6 @@ export default class FileChange extends Trigger {
     super(config, task);
   }
 
-  errorHandler() {}
-
   async enable() {
     this.watcher = watch(
       this.config.path,

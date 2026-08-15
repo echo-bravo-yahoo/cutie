@@ -26,28 +26,65 @@ const ALL_VERBOSITIES: Array<Verbosity> = [
   "trace",
 ];
 
-// Logs.matches ignores the verbosity argument it is handed, so a filter
-// currently decides purely on topic. These cases pin that CURRENT behavior
-// across every level; when verbosity filtering is implemented they are the
-// tests that should change.
-test("log matching is verbosity-independent today", { concurrency: true }, (testContext) => {
-  for (const verbosity of ALL_VERBOSITIES) {
-    testContext.test(`a matching topic emits at "${verbosity}"`, () => {
-      const logHelper = new Logs(
-        { type: "trigger:logs", filters: ["a.b.c.d"] },
-        mockTask,
-      );
-      expect(logHelper.shouldEmit("a.b.c.d", verbosity)).to.equal(true);
-    });
+// A config that omits minVerbosity emits at every level, so adding verbosity
+// filtering did not change what an existing config sees.
+test(
+  "log matching without a minVerbosity",
+  { concurrency: true },
+  (testContext) => {
+    for (const verbosity of ALL_VERBOSITIES) {
+      testContext.test(`a matching topic emits at "${verbosity}"`, () => {
+        const logHelper = new Logs(
+          { type: "trigger:logs", filters: ["a.b.c.d"] },
+          mockTask,
+        );
+        expect(logHelper.shouldEmit("a.b.c.d", verbosity)).to.equal(true);
+      });
 
-    testContext.test(`a non-matching topic is silent at "${verbosity}"`, () => {
-      const logHelper = new Logs(
-        { type: "trigger:logs", filters: ["z"] },
-        mockTask,
+      testContext.test(
+        `a non-matching topic is silent at "${verbosity}"`,
+        () => {
+          const logHelper = new Logs(
+            { type: "trigger:logs", filters: ["z"] },
+            mockTask,
+          );
+          expect(logHelper.shouldEmit("a.b.c.d", verbosity)).to.equal(false);
+        },
       );
-      expect(logHelper.shouldEmit("a.b.c.d", verbosity)).to.equal(false);
+    }
+  },
+);
+
+test("log matching with a minVerbosity", { concurrency: true }, (testContext) => {
+  // ranked trace < debug < info < warn < error < fatal
+  const atOrAbove: Array<Verbosity> = ["warn", "error", "fatal"];
+  const below: Array<Verbosity> = ["trace", "debug", "info"];
+
+  const logHelper = () =>
+    new Logs(
+      { type: "trigger:logs", filters: ["*"], minVerbosity: "warn" },
+      mockTask,
+    );
+
+  for (const verbosity of atOrAbove) {
+    testContext.test(`emits at "${verbosity}"`, () => {
+      expect(logHelper().shouldEmit("a.b.c.d", verbosity)).to.equal(true);
     });
   }
+
+  for (const verbosity of below) {
+    testContext.test(`is silent at "${verbosity}"`, () => {
+      expect(logHelper().shouldEmit("a.b.c.d", verbosity)).to.equal(false);
+    });
+  }
+
+  testContext.test("still requires the topic filter to match", () => {
+    const narrow = new Logs(
+      { type: "trigger:logs", filters: ["z"], minVerbosity: "trace" },
+      mockTask,
+    );
+    expect(narrow.shouldEmit("a.b.c.d", "fatal")).to.equal(false);
+  });
 });
 
 const logTestCases: Array<{
