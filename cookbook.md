@@ -2,32 +2,39 @@
 
 This file contains increasingly complex examples (recipes) of how to configure `cutie` for some example use cases.
 
+Each recipe is a complete config file. Save one as `cutie.conf.json` and run `cutie` to try it. Config files can be JSON or YAML; the examples in `./examples` are the YAML equivalents.
+
+A note on the shape these share: a connection is declared once, given a `name`, and referred to by that name from each step's `connectionName`. The step that starts a task goes in `trigger`, not in `steps` -- `cutie` rejects a trigger listed as a step.
+
 ### MQTT transforms
 
 #### Rebroadcast messages on a given MQTT topic
 
 This recipe listens to all MQTT topics under `alarms` and rebroadcasts them to `notify`.
 
-```javascript
+```json
 {
   "connections": [
     {
-      "type": "connection:mqtt:primary-broker",
+      "type": "connection:mqtt",
+      "name": "primary-broker",
       "username": "mqtt_user",
       "password": "mqtt_password",
-      "endpoint": "http://127.0.0.1:8087"
+      "endpoint": "mqtt://127.0.0.1:1883"
     }
   ],
   "tasks": {
     "rebroadcast-alarms": {
+      "trigger": {
+        "type": "trigger:mqtt",
+        "connectionName": "primary-broker",
+        "topic": "alarms/+"
+      },
       "steps": [
         {
-          "type": "trigger:mqtt:primary-broker",
-          "topic": "alarms/+"
-        },
-        {
-          "type": "output:mqtt:primary-broker",
-          "topic": "notify"
+          "type": "output:mqtt",
+          "connectionName": "primary-broker",
+          "topics": ["notify"]
         }
       ]
     }
@@ -39,37 +46,43 @@ This recipe listens to all MQTT topics under `alarms` and rebroadcasts them to `
 
 This recipe listens to the MQTT topic `weather/temp`, then rebroadcasts messages raw to `temp/outside/raw`, then rebroadcasts them in fahrenheit, rounded, to `temp/outside`. This example demonstrates the ability to do partial transforms inbetween outputs.
 
-```javascript
+```json
 {
   "connections": [
     {
-      "type": "connection:mqtt:primary-broker",
+      "type": "connection:mqtt",
+      "name": "primary-broker",
       "username": "mqtt_user",
       "password": "mqtt_password",
-      "endpoint": "http://127.0.0.1:8087"
+      "endpoint": "mqtt://127.0.0.1:1883"
     }
   ],
   "tasks": {
     "rebroadcast-temp": {
+      "trigger": {
+        "type": "trigger:mqtt",
+        "connectionName": "primary-broker",
+        "topic": "weather/temp"
+      },
       "steps": [
         {
-          "type": "trigger:mqtt:primary-broker",
-          "topic": "weather/temp"
-        },
-        {
-          "type": "output:mqtt:primary-broker",
-          "topic": "temp/outside/raw"
+          "type": "output:mqtt",
+          "connectionName": "primary-broker",
+          "topics": ["temp/outside/raw"]
         },
         {
           "type": "transform:convert",
-          "convert": "celsius_to_fahrenheit"
+          "from": "celsius",
+          "to": "fahrenheit"
         },
         {
           "type": "transform:round",
           "precision": 2
+        },
         {
-          "type": "output:mqtt:primary-broker",
-          "topic": "temp/outside"
+          "type": "output:mqtt",
+          "connectionName": "primary-broker",
+          "topics": ["temp/outside"]
         }
       ]
     }

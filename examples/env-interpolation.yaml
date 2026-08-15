@@ -1,0 +1,15 @@
+# run me with:  name=world cutie start --config ./examples/env-interpolation.yaml
+connections: []
+
+tasks:
+  greet:
+    trigger:
+      # trigger:once fires a single message and then stops
+      type: "trigger:once"
+      # ${env.X} reads process environment variables. the other things
+      # reachable this way are ${stash.X}, ${message}, ${module.X} (this
+      # step's own config), and ${task.X}.
+      message: "hello ${env.name}"
+
+    steps:
+      - type: "output:console"

@@ -4,7 +4,7 @@ connections:
 
     username: "admin"
     password: "admin"
-    endpoint: "http://127.0.0.1:1883"
+    endpoint: "mqtt://127.0.0.1:1883"
 
 # instead of storing the configuration in a file on the node,
 # we can store it in a connection and fetch it when the node

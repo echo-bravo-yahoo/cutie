@@ -10,7 +10,7 @@
 
 ### `cutie` as a sensor platform
 
-`cutie` can be used as a sensor platform for a limited number of sensors (BME280 and BME680 temperature sensors, BLE presence tracking). It's primarily intended for deployment to small, linux-based computers (e.g., raspberry pi). Take a look at `./sensors.md` for an overview of currently supported sensors and how you can configure them.
+`cutie` can be used as a sensor platform for a limited number of sensors (the BME280 and BME680, which read temperature, humidity, and barometric pressure -- plus gas resistance on the 680 -- and BLE presence tracking). It's primarily intended for deployment to small, linux-based computers (e.g., raspberry pi). Take a look at `./sensors.md` for an overview of currently supported sensors and how you can configure them.
 
 ### `cutie` as a raspberry pi provisioner
 
@@ -30,12 +30,44 @@ cutie init # this creates a default/blank config file in your current directory
 cutie # this runs cutie using the config file in the current directory
 ```
 
+### Managing config for a fleet
+
+Once more than one machine runs `cutie`, editing each machine's config file over SSH stops scaling. `cutie` can instead keep config files on a connection -- today, as retained MQTT messages -- so a node fetches its own config at startup and you edit them all from one place. See `./examples/remote-config.yaml` for the node side.
+
+Two subcommands manage those stored configs:
+
+```bash
+# publish every config file in a directory, one per file, recursively
+cutie upload --config ./cutie.conf.json --connectionName my-broker --path ./fleet-configs
+
+# publish just one, naming the node it belongs to
+cutie upload --config ./cutie.conf.json --connectionName my-broker --path ./fleet-configs/<node>.yaml --node <node>
+
+# fetch every stored config into a directory
+cutie download --config ./cutie.conf.json --connectionName my-broker --path ./fleet-configs
+
+# fetch just one
+cutie download --config ./cutie.conf.json --connectionName my-broker --node <node> --path ./fleet-configs
+```
+
+| Flag | Meaning |
+| --- | --- |
+| `--config` | the local config file naming the connection to use (not the config being uploaded) |
+| `--connectionName` | which connection in that file to talk to |
+| `--path` | directory to read from or write to; a single file when combined with `--node` on upload |
+| `--node` | operate on one node instead of all of them |
+| `--topic` | override where configs are stored; defaults to `cutie/config/+` |
+
+Uploaded files can be JSON, YAML, or YML, and the node name is taken from the filename. Downloaded files are always written as `<node>.conf.json`.
+
+`--topic` is a single value that works for every combination of these flags, because a `+` segment stands in for the node name. `--topic 'fleet/config/+'` subscribes to `fleet/config/+` when downloading everything, and publishes to `fleet/config/<node>` when uploading that node.
+
 ### Mental model for using `cutie`
 
 There are not very many parts to a `cutie` installation, but they look like this:
 
 - A linux computer (optionally with some sensors attached)
-  - With `cutie` installed (optionally installed as a sysctl service)
+  - With `cutie` installed (optionally installed as a systemd service)
     - With a config file consisting of:
       - Connection configs, which define what data stores `cutie` can reach and what information it needs to reach them. To actually use a Connection, you'll need a Connection config and an Trigger or Output config - the Connection config contains the settings required to reach the data store at all, and the Trigger/Output configs contain the settings for that particular task.
       - Tasks, a description of one 'trigger, transform, output' pipeline. This usually represents some discrete sensor or task and contains Trigger, Transform, and Output configs.
@@ -81,9 +113,9 @@ npm link # optional, installs the CLI to your path as `cutie`
 cutie
 ```
 
-This starts `cutie` up using the config file present in `./config/config.json`. You'll need to customize it to fit your use-case. You can also pass a flag to the CLI to specify the location of a different config file, e.g., `cutie --config ~/my-config-file.json`. Config files can be JSON or YAML, with any extension.
+This starts `cutie` up using the config file present at `./cutie.conf.json` -- the default is always `cutie.conf.json` in the current working directory. You'll need to customize it to fit your use-case. You can also pass a flag to the CLI to specify the location of a different config file, e.g., `cutie --config ~/my-config-file.json`. Config files can be JSON or YAML, with any extension.
 
-Once you have it configured to your liking, you can install it to systemctl so it's run on startup and restarted on crash. First, modify `./config/cutie.service` to confirm that the `WorkingDirectory` and `user` fields are correct, then run `npm add-service`.
+Once you have it configured to your liking, you can install it to systemctl so it's run on startup and restarted on crash. First, modify `./config/cutie.service` to confirm that the `WorkingDirectory` and `User` fields are correct, then run `npm run add-service`.
 
 #### Sensors
 
@@ -91,7 +123,8 @@ The `random` sensor runs without any hardware; use it to test changes to the run
 
 #### Logging
 
-- Pretty logs for only one tag (in this case, "shadow"): `npm run start -- --config ./config/config-real.json | jq 'select(.tags | index( "shadow" ))'`
+- Logs are written as colorized text by `pino-pretty`, not as JSON, so they are meant to be read rather than piped through `jq`.
+- To filter logs by subsystem, use a `trigger:logs` task instead. It receives every internal log line and matches the line's topic against its `filters`, where `*` is a wildcard and a leading `!` negates. The last matching filter wins, so `["*", "!core.registration.*"]` means "everything except registration".
 - The systemd service logs to a dedicated journal namespace (`LogNamespace=cutie` in `./config/cutie.service`), capped at 50M total / 10M per file by `./config/cutie.journald.conf`, so a runaway log can't fill up the SD card. A plain `journalctl -u cutie` won't show anything for the deployed service -- add `--namespace=cutie`, as below.
 
 #### Deploying to a raspi for development

@@ -5,8 +5,8 @@ Description=a cute little MQTT service
 User=pi
 # WorkingDirectory varies per host on the real fleet (<node>/<node>:
 # /home/pi/cutie, stockholm: /home/pi/workspace/cutie) -- this file is a
-# reference/bootstrap template. cutie-deploy.sh does not sync it to live
-# hosts; each host's live unit is hand-maintained.
+# reference/bootstrap template. Nothing syncs it to live hosts; each host's
+# live unit is hand-maintained.
 WorkingDirectory=/home/pi/workspace/cutie
 # Node/npm install location and layout differs per host too (manually
 # installed tarball, apt-style /usr/bin, or fnm) -- this PATH cascade covers

@@ -1,34 +1,72 @@
 connections: []
 
 tasks:
-  thermometer:
+  reshape-a-reading:
+    # tasks can carry arbitrary values under "data". every step can reach
+    # them by interpolation, which is how we tag the reading below.
+    data:
+      node: "bedroom"
+
     trigger:
-      # start with a repeat trigger that fires every second
-      type: "trigger:repeat"
-      interval: 1000
+      # trigger:once fires a single message and stops, which makes it a good
+      # way to demonstrate a transform chain. strings anywhere inside the
+      # message get interpolated, including nested ones.
+      type: "trigger:once"
+      message:
+        sensorId: "bme280-1"
+        readings:
+          degreesC: 21.4712
+          relativeHumidity: 48.9
+        debug:
+          rawRegister: "0x7f"
 
     steps:
-      # to use a sensor, read from it with a read step
-      # the bme280 is a combined sensor/pressure/humidity sensor
-      - type: "read:bme280"
-        # we can declare a sensor as "virtual" - instead of reading
-        # from the real sensor, cutie will fake values that drift
-        # slightly over time. this is useful for environments that
-        # don't have access to the sensor hardware - like a
-        # development computer!
-        virtual: true
-      # this step accumulates 5 sensor readings before
-      # it forwards the message on to the next step
-      - type: "transform:accumulate"
-        count: 5
-      # for now, we'll write this to console, but we could have
-      # further transformed it or sent it to a Connection
-      - type: "output:console"
-# accumulate: X messages => [messages...]
-# aggregate: { key: [messages...] } => { key: scalar } does this support "."?
-# convert: scalar => scalar in another format
-# offset: scalar => scalar +/- a value should this also exist as add?
+      # transform:merge folds additional objects into the message. sources can
+      # be literal objects, or "$$"-prefixed paths looked up from the
+      # interpolation context - here, the task's own data block.
+      - type: "transform:merge"
+        sources:
+          - "$$task.config.data"
+          - collectedBy: "cutie"
 
-# merge: { fromKey } = > { toKey }
-# pluck: { fromKey => { toKey }
-# rearrange: { fromKey } => { toKey  }
+      # transform:munge moves, copies, and drops keys. each path names an
+      # operation:
+      #   rename    - move the value to "to", removing the original
+      #   duplicate - copy the value to "to", keeping the original
+      #   remove    - drop the value
+      #   retain    - keep the value as-is
+      # the "*" path applies to every key not named above it, so this config
+      # is a whitelist: anything not mentioned is dropped.
+      - type: "transform:munge"
+        paths:
+          readings.degreesC:
+            op: "rename"
+            to: "temperature"
+          readings.relativeHumidity:
+            op: "rename"
+            to: "humidity"
+          sensorId:
+            op: "duplicate"
+            to: "meta.sensor"
+          # renaming the two values out of "readings" empties it but leaves
+          # the key behind, so drop the husk explicitly
+          readings:
+            op: "remove"
+          debug:
+            op: "remove"
+          "*":
+            op: "retain"
+
+      # now that the numbers live at the top level, round them
+      - type: "transform:round"
+        paths:
+          temperature:
+            precision: 2
+          humidity:
+            precision: 1
+
+      # transform:prettify turns the object back into indented JSON text
+      - type: "transform:prettify"
+        spaces: 2
+
+      - type: "output:console"

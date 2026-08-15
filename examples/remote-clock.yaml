@@ -19,7 +19,7 @@ connections:
     # fields.
     username: "admin"
     password: "admin"
-    endpoint: "http://127.0.0.1:1883"
+    endpoint: "mqtt://127.0.0.1:1883"
 
 tasks:
   local-clock:
