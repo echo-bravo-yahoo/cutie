@@ -1,7 +1,3 @@
-import { promisify } from "node:util";
-import child_process from "node:child_process";
-const exec = promisify(child_process.exec);
-
 import { getConnection } from "../util/connections.js";
 import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
@@ -25,8 +21,24 @@ export function isInfluxDBMessage(
 
 interface InfluxDBMessage {
   fields: Record<string, Message>;
-  tags?: Array<string>;
+  tags?: Record<string, string>;
 }
+
+// Line protocol: commas, spaces and equals signs are separators and must be
+// escaped inside measurement names, tag keys/values and field keys.
+function escapeLine(value: string) {
+  return value.replace(/([,= ])/g, "\\$1");
+}
+
+const PRECISION_DIVISORS: Record<string, number> = {
+  s: 1000,
+  ms: 1,
+};
+
+const PRECISION_MULTIPLIERS: Record<string, number> = {
+  us: 1000,
+  ns: 1000000,
+};
 
 export default class InfluxDB extends Output {
   declare config: InfluxDBConfig;
@@ -47,23 +59,52 @@ export default class InfluxDB extends Output {
   objectToLine(object: Record<string, Message>) {
     const result = [];
     for (const [key, value] of Object.entries(object)) {
-      result.push(`${key}=${value}`);
+      result.push(`${escapeLine(key)}=${escapeLine(String(value))}`);
     }
 
     return result.join(",");
   }
 
+  // The server is told which precision the timestamp is in, so it has to be
+  // written in that precision rather than always in milliseconds.
+  timestamp() {
+    const precision = this.influxdb.config.precision ?? "ms";
+    const milliseconds = Date.now();
+
+    if (PRECISION_DIVISORS[precision])
+      return Math.floor(milliseconds / PRECISION_DIVISORS[precision]);
+    if (PRECISION_MULTIPLIERS[precision])
+      return milliseconds * PRECISION_MULTIPLIERS[precision];
+
+    throw new Error(
+      `Unsupported InfluxDB precision "${precision}"; should be one of "ns", "us", "ms", "s".`,
+    );
+  }
+
   async sendLine(line: string) {
     const { url, organization, bucket, precision, token } =
       this.influxdb.config;
-    const command = `curl --request POST \
---header "Authorization: Token ${token}" \
---header "Content-Type: text/plain; charset=utf-8" \
---header "Accept: application/json" \
---data-binary "${line}" \
-"${url}?org=${organization}&bucket=${bucket}&precision=${precision}"`;
-    // console.log(`Running command: ${command}`);
-    return exec(command);
+    const endpoint = new URL(url);
+    endpoint.searchParams.set("org", organization);
+    endpoint.searchParams.set("bucket", bucket);
+    endpoint.searchParams.set("precision", precision);
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${token}`,
+        "Content-Type": "text/plain; charset=utf-8",
+        Accept: "application/json",
+      },
+      body: line,
+    });
+
+    if (!response.ok)
+      throw new Error(
+        `InfluxDB write failed (${response.status}): ${await response.text()}`,
+      );
+
+    return response;
   }
 
   // object to turn into a message _or_ a raw string already in message format
@@ -86,7 +127,7 @@ export default class InfluxDB extends Output {
       if (tagsString) tagsString = `,${tagsString}`;
       const data = this.objectToLine(message.fields);
 
-      const line = `${measurementName}${tagsString || ""} ${data} ${new Date().valueOf()}`;
+      const line = `${escapeLine(measurementName)}${tagsString || ""} ${data} ${this.timestamp()}`;
       await this.sendLine(line);
 
       return message;

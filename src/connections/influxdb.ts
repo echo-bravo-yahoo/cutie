@@ -3,13 +3,11 @@ import { Connection, ConnectionConfig } from "../util/Connection.js";
 import { ProviderConfig } from "../util/type-helpers.js";
 
 export interface InfluxDBConnectionConfig extends ConnectionConfig {
-  measurement: string;
-  labels: Array<string>;
   url: string;
   organization: string;
   bucket: string;
   token: string;
-  precision: number;
+  precision: "ns" | "us" | "ms" | "s";
 }
 
 export default class InfluxDBConnection extends Connection {
@@ -37,5 +35,20 @@ export default class InfluxDBConnection extends Connection {
     throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
   }
 
-  async enable() {}
+  async enable() {
+    // No socket to open -- the output posts over HTTP per message.
+    this.enabled = true;
+  }
 }
+
+/*
+{
+  "type": "connection:influxdb",
+  "name": "personal-influxdb",
+  "url": "http://127.0.0.1:8086/api/v2/write",
+  "organization": "home",
+  "bucket": "sensors",
+  "token": "",
+  "precision": "ns" | "us" | "ms" | "s"
+}
+*/
