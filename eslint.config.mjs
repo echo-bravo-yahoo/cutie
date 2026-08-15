@@ -8,7 +8,12 @@ const universalIgnores = [
   "**/worktrees/**",
   "built/**",
   "provisioner/**",
+  "src/util/bitbang/**",
   "test/unit/fixtures/**",
+  // Scratch and investigation artifacts. Gitignored globally, so linting them
+  // only breaks `npm run lint` for whoever happens to have files there.
+  "echobravoyahoo/**",
+  "**/*.js",
 ];
 
 export default tseslint.config(
@@ -52,6 +57,17 @@ export default tseslint.config(
     files: ["test/**"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  {
+    // The provisioner is plain Node ESM run from the CLI, not part of the
+    // TypeScript build, so it needs Node's globals declared explicitly.
+    files: ["provisioner/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+      },
     },
   },
   eslintConfigPrettier,

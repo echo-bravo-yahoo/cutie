@@ -10,15 +10,22 @@
 
 ### `cutie` as a sensor platform
 
-`cutie` can be used as a sensor platform for a limited number of sensors (the BME280 and BME680, which read temperature, humidity, and barometric pressure -- plus gas resistance on the 680 -- and BLE presence tracking). It's primarily intended for deployment to small, linux-based computers (e.g., raspberry pi). Take a look at `./sensors.md` for an overview of currently supported sensors and how you can configure them.
+`cutie` can be used as a sensor platform for a limited number of sensors (the BME280 and BME680, which read temperature, humidity, and barometric pressure -- plus gas resistance on the 680 -- and BLE presence tracking). It's primarily intended for deployment to small, linux-based computers (e.g., raspberry pi). Take a look at `./sensors.md` for an overview of currently supported sensors and how you can configure them. Every step module also carries an example config in a comment at the bottom of its own file, so `src/triggers/`, `src/reads/`, and `src/outputs/` are the current list of what is supported.
 
 ### `cutie` as a raspberry pi provisioner
 
-This functionality is also not really implemented yet, but you can take a look at the work in progress in the `./provisioner` directory.
+The `./provisioner` directory holds two halves of the same host definition:
+
+- `provision.mjs` builds an SD card image with [sdm](https://github.com/gitbls/sdm) and optionally burns it. It owns the **identity** configuration only -- user password, wifi, locale, SSH keys, and the services a headless Trixie host needs disabled. Getting any of these wrong strands an unreachable Pi, so they are applied at image time and never re-applied to a running host.
+- `configure-host.sh` holds the **convergent** configuration -- bus enablement, swap, packages, Node, and the `cutie` service. It is idempotent, so it is safe to re-apply at any time. `provision.mjs` hands it to sdm via `--cscript`, and `pi.sh converge` pipes the same script to a booted Pi over SSH.
+
+That split means routine reconfiguration is a few seconds over SSH rather than a reburn, and a routine convergence run cannot break SSH reachability.
 
 ## Platform requirements
 
-Right now, `cutie` should run on any nodeJS environment between 22.x.x - 24.x.x. My personal installation uses nodeJS 22 on 1st gen raspberry pi 0Ws. It should run in most linux environments, but individual sensors may fail to build or require OS utilities not present for some distributions. On ARMv6, it has to be built with python 3.10.8 or earlier.
+`cutie` needs nodeJS 22.x.x. It should run in most linux environments, but individual sensors may fail to build or require OS utilities not present for some distributions.
+
+The upper bound is a hardware constraint rather than a preference. Node 22 (EOL 2027-04-30) is the last major with any 32-bit ARM build at all: neither the official dist nor unofficial-builds produces an `armv6l` or `armv7l` tarball for Node 24 or 26, and `BUILDING.md` downgraded armv7 to _Experimental_ as of Node 24. ARMv6 is 32-bit-only silicon, so a Pi Zero W can never move to arm64 and is pinned to Node 22 permanently. Newer boards (Pi Zero 2 W and up) take the arm64 image, where Node is a Tier 1 platform and this ceiling does not apply.
 
 ## Installation & use
 
@@ -96,13 +103,30 @@ npm ERR! gyp ERR! configure error
 npm ERR! gyp ERR! stack Error: `gyp` failed with exit code: 1
 ```
 
-Ensure you're installing with python < 3.11, e.g., `PYTHON="$(which python3.10)" npm install # or other older python that's on your PATH`. To install python 3.10 on ubuntu systems:
+This is an old node-gyp meeting a newer python. node-gyp 10 and later handle python 3.12; `package.json` pins `"node-gyp": "^11.0.0"` in `overrides` so every native dependency uses a version that does. If the error still appears, a dependency is pulling its own older node-gyp -- check `npm ls node-gyp`.
 
-```bash
-sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt update
-sudo apt install python3.10 python3.10-venv python3.10-dev
+There is no upper bound on the python version to worry about. On ARMv6 with python 3.11.2, native modules compile cleanly.
+
+#### `ERR_DLOPEN_FAILED ... wrong ELF class: ELFCLASS64`
+
+A native module was compiled for a different architecture than the one loading it -- typically the result of copying `node_modules` onto a Pi from a 64-bit machine. Native modules are never portable across architectures or across Node ABI versions.
+
+Delete `node_modules` on the Pi and run `provisioner/pi.sh <host> install`, which does a clean `npm ci --omit=dev` on the device. Four dependencies compile from source (`i2c-bus`, `pigpio`, `usocket`, `deasync`), and `i2c-bus` alone takes about three minutes on a Pi Zero W.
+
+A freshly imaged card should not need this: `configure-host.sh` builds dependencies during the image build, inside sdm's emulated container, so the card boots ready. node-gyp reads the architecture from the running Node binary rather than from `uname`, so the emulated build still produces ARMv6 objects.
+
+#### `npm ci` on an ARMv6 Pi fails with `SIGILL` in esbuild's postinstall
+
 ```
+> esbuild@0.25.6 postinstall
+> node install.js
+Error: Command failed: node_modules/esbuild/bin/esbuild --version
+  signal: 'SIGILL'
+```
+
+Use `--omit=dev`. esbuild's `linux-arm` prebuild is compiled for ARMv7, so the binary hits an illegal instruction on the ARMv6 Pi Zero W before it can print its version. It arrives via `tsx`, which is a devDependency.
+
+A Pi never needs the dev tooling: `npm run start:prod` executes `./built/cli-entrypoint.js` directly under node, with no TypeScript in the loop. Omitting dev dependencies is both the fix and considerably faster.
 
 ### FAQ
 
@@ -119,7 +143,7 @@ These are primarily notes to myself for the time being.
 ```bash
 git clone git@github.com:echo-bravo-yahoo/cutie.git
 cd cutie
-npm install --python=python3.10 # won't build with newer python versions on ARMv6
+npm install
 npm link # optional, installs the CLI to your path as `cutie`
 cutie
 ```
@@ -149,9 +173,45 @@ Every message gets a uuid v7 trace ID when it starts, and every log line that me
 
 #### Deploying to a raspi for development
 
-Problems with rsync: no watch daemon `rsync --recursive --exclude "**/node_modules/*" --exclude "**/.git/*" --exclude "**/config.json"  --exclude "**.png" --exclude "**.zip" --exclude "**.md" --exclude "**/package-lock.json" ~/workspace/cutie/ kitchen-pi:/home/pi/cutie --verbose`
+`./provisioner/pi.sh <host> <verb>` drives a Pi over SSH from a development machine. An ARMv6 board is too constrained to develop on directly, so work happens on a workstation and reaches the Pi through this script.
 
-`git stash; git pull; git stash pop; sudo systemctl restart cutie; sudo journalctl -u cutie --namespace=cutie --follow`
+| Verb | What it does |
+| --- | --- |
+| `probe` | Report kernel, Node, buses, service state, and detected I2C addresses |
+| `deploy` | Build locally, rsync `built/` to the Pi, keep the previous build, restart |
+| `install` | Clean on-device `npm ci --omit=dev`, run detached so an SSH drop can't kill it. Rarely needed: images build their own dependencies, and `converge` installs them when the lockfile changes |
+| `rollback` | Swap the retained previous build back in and restart |
+| `restart` | Restart the service |
+| `status` | `systemctl status` for the service |
+| `logs` | Follow the service journal (`--namespace=cutie`) |
+| `converge` | Pipe `configure-host.sh` to the Pi and apply it |
+
+`deploy` never copies `node_modules`. Native modules are compiled per architecture and per Node ABI, so a copy from a development machine lands unloadable binaries on the Pi -- run `npm ci` on the device instead.
+
+Because `cutie.service` sets `Restart=always`, a broken deploy becomes a crash loop, which is what `rollback` exists for.
+
+#### Building an SD card image
+
+Install sdm and repair the ARM binfmt registration on the build host once, then:
+
+```bash
+cp provisioner/config.example.json provisioner/config.json   # edit hostname, board, wifi, op:// refs
+cc-cred run CUTIE_PI_PASSWORD=op://<vault>/<item>/password \
+            CUTIE_WIFI_PSK=op://<vault>/<item>/password \
+            -- node provisioner/provision.mjs
+```
+
+That customizes and shrinks an image without touching any device. `--dry-run` prints the sdm invocation with the secrets masked, which is the quickest way to review the plugin list. Burning is a separate, explicitly confirmed step:
+
+```bash
+node provisioner/provision.mjs --skip-customize --burn /dev/sdX
+```
+
+It refuses to run without retyping the device path, or without `CUTIE_BURN_CONFIRM=/dev/sdX` when there is no terminal.
+
+`board` in `provisioner/config.json` selects both the base image and the Node build. `pi-zero-w` takes the 32-bit armhf image; `pi-zero-2-w` and later take arm64. An arm64 card will not boot a Pi Zero W.
+
+On WSL2, expose the card reader with `usbipd bind --busid <id>` followed by `usbipd attach --wsl --busid <id>` from an elevated PowerShell. The bind persists across reboots; the attach does not.
 
 #### Releasing
 
