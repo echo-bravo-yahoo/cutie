@@ -15,7 +15,14 @@ export interface UnicornHatMiniConfig extends OutputConfig {
   // "gauge" fills columns left to right in proportion to where the value sits
   // between min and max. "all" floods the panel with one interpolated colour.
   // "pixels" takes the message itself as a row-major array of [r, g, b].
-  mode?: "gauge" | "all" | "pixels";
+  // "checkerboard" ignores the message and draws a fixed test pattern.
+  mode?: "gauge" | "all" | "pixels" | "checkerboard";
+  // Checkerboard only: the lit colour, and the size of each square in pixels.
+  // A size of 1 alternates every LED, which is what makes the pattern a usable
+  // check on pixel addressing - any transposition or stride error turns it into
+  // stripes or a scatter rather than an even grid.
+  color?: RGB;
+  squareSize?: number;
   // lodash path to the number to display; the whole message when omitted.
   path?: string;
   min?: number;
@@ -111,8 +118,18 @@ class UnicornPanel {
     }
   }
 
+  // The lookup table is column-major: entries for one column are contiguous, so
+  // the stride is ROWS rather than COLS. Two checks confirm it against the
+  // alternative - under this reading each row's buffer offsets step evenly,
+  // and the boundary between the two chips' address ranges falls between two
+  // columns (nine on the first, eight on the second) rather than partway
+  // through a row, which is the only split a physical panel could be wired to.
+  //
+  // The package's own setPixel names its parameters (row, col) but strides by
+  // ROWS, so those names describe (x, y). Transposing here instead keeps
+  // (row, col) meaning what it says everywhere else in this file.
   setPixel(row: number, col: number, [r, g, b]: RGB) {
-    const index = row * COLS + col;
+    const index = col * ROWS + row;
     if (index < 0 || index >= ROWS * COLS) return;
     const [ir, ig, ib] = this.lut[index];
     this.buffer[ir] = r;
@@ -228,12 +245,27 @@ export default class UnicornHatMini extends Output {
     }
   }
 
+  drawCheckerboard(panel: UnicornPanel) {
+    const size = Math.max(1, Math.floor(this.config.squareSize ?? 1));
+    const on = this.config.color ?? this.high;
+
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const lit = (Math.floor(row / size) + Math.floor(col / size)) % 2 === 0;
+        panel.setPixel(row, col, lit ? on : this.off);
+      }
+    }
+  }
+
   async send(message: Message) {
     // Narrowed to a local so the draw helpers need no non-null assertions.
     const panel = this.panel;
     if (!this.enabled || !panel) return message;
 
     switch (this.config.mode ?? "gauge") {
+      case "checkerboard":
+        this.drawCheckerboard(panel);
+        break;
       case "gauge":
         this.drawGauge(panel, this.numberFrom(message));
         break;
@@ -289,8 +321,14 @@ export default class UnicornHatMini extends Output {
   "brightness": 0.2
 }
 
-Needs root. The unicorn-hat-mini driver initializes node-rpio with
-`gpiomem: false`, which maps /dev/mem rather than /dev/gpiomem, and that is
-root-only regardless of the gpio group. cutie.service runs as User=pi, so this
-output does nothing useful until that is addressed deliberately.
+Runs unprivileged. Every transfer goes through spidev, which the kernel already
+exposes to the spi group, so no /dev/mem mapping and no root are involved.
+
+To check a panel's wiring rather than display a reading:
+
+{
+  "type": "output:unicorn-hat-mini",
+  "mode": "checkerboard",
+  "brightness": 0.3
+}
 */
