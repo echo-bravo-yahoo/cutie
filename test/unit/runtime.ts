@@ -414,9 +414,21 @@ describe("the runtime", function () {
     });
 
     it("does not match an unrelated filter", function () {
-      expect(MQTTConnection.matchesTopic("development/thing", "prod/+")).to.equal(
-        false,
-      );
+      expect(
+        MQTTConnection.matchesTopic("development/thing", "prod/+"),
+      ).to.equal(false);
+    });
+  });
+
+  describe("MQTTConnection.sendRaw", function () {
+    it("does not throw when the client never connected", function () {
+      const connection = new MQTTConnection({
+        type: "connection:mqtt",
+        name: "stub",
+        endpoint: "mqtt://127.0.0.1:1883",
+      } as any);
+
+      expect(() => connection.sendRaw("some/topic", "hello")).to.not.throw();
     });
   });
 
@@ -441,10 +453,7 @@ describe("the runtime", function () {
       await connection.subscribe(["a/one", "a/two"]);
       await connection.subscribe(["a/two", "a/three"]);
 
-      expect(subscribed).to.deep.equal([
-        ["a/one", "a/two"],
-        ["a/three"],
-      ]);
+      expect(subscribed).to.deep.equal([["a/one", "a/two"], ["a/three"]]);
     });
   });
 

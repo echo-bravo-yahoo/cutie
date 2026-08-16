@@ -93,7 +93,8 @@ export default class MQTTConnection extends Connection {
     try {
       return await new Promise<ConfigFile>((resolve, reject) => {
         handler = (messageTopic: string, message: Buffer) => {
-          if (messageTopic === nodeTopic) resolve(JSON.parse(message.toString()));
+          if (messageTopic === nodeTopic)
+            resolve(JSON.parse(message.toString()));
         };
         this.connection.on("message", handler);
 
@@ -264,6 +265,16 @@ export default class MQTTConnection extends Connection {
     message: Parameters<typeof this.connection.publish>[1],
     options?: mqtt.IClientPublishOptions,
   ) {
+    // register() may have failed to connect and torn the client down, so
+    // this has to tolerate being called with no client rather than throwing
+    // on every message a task tries to send while disconnected.
+    if (!this.connection) {
+      this.debug(
+        `Dropped a publish to "${topic}"; connection "${this.name}" never connected.`,
+        { topic: this.logPrefix },
+      );
+      return;
+    }
     return this.connection.publish(topic, message, options);
   }
 
