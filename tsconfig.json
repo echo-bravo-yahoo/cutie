@@ -4,6 +4,7 @@
     "allowJs": true,
     "target": "es2023",
     "lib": ["es2023"],
+    "types": ["node"],
     "declaration": true,
     "noImplicitAny": true,
     "strictNullChecks": true,

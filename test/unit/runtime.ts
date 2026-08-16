@@ -23,6 +23,12 @@ import {
   KINDS,
 } from "../../src/util/type-helpers.js";
 import { Configurable } from "../../src/util/Configurable.js";
+import NEC from "../../src/outputs/nec.js";
+import Switchbots from "../../src/outputs/switchbots.js";
+import {
+  necToBits,
+  necToWave,
+} from "../../src/util/bitbang/adapters/nec.js";
 import { taskDone } from "../helpers.js";
 
 // A connection with a stubbed-out client, so subscribe/unsubscribe
@@ -472,6 +478,103 @@ describe("the runtime", function () {
 
     it("passes a bare number through as JSON", async function () {
       expect(await deliver("42")).to.equal(42);
+    });
+  });
+
+  // The four ported v3 modules drive physical hardware, so only their pure
+  // parts are checked here; the rest needs a Pi.
+  describe("output:nec", function () {
+    it("reads a hex string with or without an 0x prefix", function () {
+      expect(NEC.toNumber("0x7c")).to.equal(0x7c);
+      expect(NEC.toNumber("7c")).to.equal(0x7c);
+    });
+
+    it("passes a number through", function () {
+      expect(NEC.toNumber(124)).to.equal(124);
+    });
+
+    it("leaves an absent value absent", function () {
+      expect(NEC.toNumber(undefined)).to.equal(undefined);
+    });
+
+    it("rejects a string that is not hexadecimal", function () {
+      expect(() => NEC.toNumber("zz")).to.throw(/hexadecimal/);
+    });
+
+    it("resolves a saved command by id", async function () {
+      const task = new Task({ steps: [] }, "nec saved command");
+      const nec = new NEC(
+        {
+          type: "output:nec",
+          virtual: true,
+          savedCommands: {
+            volumeDown: { address: "0x7c", command: "0x66" },
+          },
+        } as any,
+        task,
+      );
+
+      expect(nec.resolveCommand({ id: "volumeDown" })).to.deep.equal({
+        address: 0x7c,
+        command: 0x66,
+        extendedAddress: undefined,
+        extendedCommand: undefined,
+      });
+    });
+
+    it("reports an unknown saved command by name", async function () {
+      const task = new Task({ steps: [] }, "nec unknown command");
+      const nec = new NEC(
+        { type: "output:nec", virtual: true, savedCommands: {} } as any,
+        task,
+      );
+
+      expect(() => nec.resolveCommand({ id: "nope" })).to.throw(/"nope"/);
+    });
+
+    it("defaults the LED pin", async function () {
+      const task = new Task({ steps: [] }, "nec default pin");
+      const nec = new NEC({ type: "output:nec" } as any, task);
+
+      expect(nec.config.ledPin).to.equal(23);
+    });
+  });
+
+  describe("output:switchbots", function () {
+    it("lowers the arm to turn a normally-mounted bot on", function () {
+      expect(Switchbots.toHandMotion(true, false)).to.equal("handDown");
+      expect(Switchbots.toHandMotion(false, false)).to.equal("handUp");
+    });
+
+    it("inverts the motion for a reverse-mounted bot", function () {
+      expect(Switchbots.toHandMotion(true, true)).to.equal("handUp");
+      expect(Switchbots.toHandMotion(false, true)).to.equal("handDown");
+    });
+  });
+
+  describe("bitbang NEC encoding", function () {
+    it("emits four bytes of payload", function () {
+      expect(necToBits({ address: 0x7c, command: 0x66 })).to.have.lengthOf(32);
+    });
+
+    it("frames a wave with a header and a trailer", function () {
+      const wave = necToWave({ address: 0x7c, command: 0x66 }, 23);
+
+      // every pulse drives exactly the configured pin
+      expect(
+        wave.every((pulse) => pulse.gpioOn === 23 || pulse.gpioOff === 23),
+      ).to.equal(true);
+      // the 4500us header gap is a single low pulse, unlike the carrier
+      expect(
+        wave.some((pulse) => pulse.usDelay === 4500 && pulse.gpioOn === 0),
+      ).to.equal(true);
+    });
+
+    it("honors a non-default LED pin", function () {
+      const wave = necToWave({ address: 0x7c, command: 0x66 }, 17);
+
+      expect(wave.some((pulse) => pulse.gpioOn === 23)).to.equal(false);
+      expect(wave.some((pulse) => pulse.gpioOn === 17)).to.equal(true);
     });
   });
 

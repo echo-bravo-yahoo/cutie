@@ -5,6 +5,7 @@ import DrunkReader, {
 } from "../util/DrunkReader.js";
 import Read, { ReadConfig } from "../util/Read.js";
 import Task from "../util/Task.js";
+import { importOptional } from "../util/optional-dependency.js";
 
 export interface BME680Config extends ReadConfig {
   i2cAddress: number;
@@ -78,7 +79,12 @@ export default class BME680 extends Read {
 
   async enable() {
     if (!this.config.virtual) {
-      const Bme680 = (await import("bme680-sensor")).default.Bme680;
+      const Bme680 = (
+        await importOptional<{
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          default: { Bme680: new (bus: number, address: number) => any };
+        }>("bme680-sensor", "read:bme680")
+      ).default.Bme680;
       this.sensor = new Bme680(1, Number(this.config.i2cAddress) || 0x77);
       await this.sensor.initialize();
     }

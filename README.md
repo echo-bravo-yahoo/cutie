@@ -75,6 +75,17 @@ There are not very many parts to a `cutie` installation, but they look like this
         - Transform configs, which define how `cutie` should transform Messages after an Trigger but before an Output.
         - Output configs, which define destinations for cutie to send data to. These can be intermediate or final destinations.
 
+### Hardware dependencies are optional
+
+Every package that talks to hardware -- `bme280`, `bme680-sensor`, `node-ble`, `node-switchbot`, `pigpio`, `serialport`, and `thermalprinter` -- is an `optionalDependency`. All but `thermalprinter` are native builds needing python and a C++ toolchain, so on a machine without one, `npm install` skips them and succeeds rather than failing outright.
+
+Nothing is lost until a config asks for that hardware. Each module loads its package when the step is enabled, so a node running only MQTT and transform steps never touches them. A config that does ask for absent hardware fails at startup naming the package:
+
+```
+read:bme280 needs the optional "bme280" package, which is not installed or
+failed to build. Install build tools and re-run npm install.
+```
+
 ### Common issues
 
 #### `npm install` fails because of node-gyp failure

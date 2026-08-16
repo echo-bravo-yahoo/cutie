@@ -45,21 +45,24 @@
   "author": "ashton eby",
   "license": "ISC",
   "dependencies": {
-    "bme280": "^2.1.1",
-    "bme680-sensor": "^1.1.0",
     "cron-schedule": "^5.0.4",
     "lodash": "^4.17.21",
     "mqtt": "^5.11.0",
     "mqtt-topics": "^1.0.2",
-    "node-ble": "^1.13.0",
     "node-yaml": "^4.0.1",
-    "pigpio": "^3.3.1",
     "pino": "^9.7.0",
     "pino-pretty": "^9.4.1",
-    "serialport": "^10.4.0",
-    "thermalprinter": "^0.3.10",
     "uuid": "^11.1.0",
     "yargs-parser": "^21.1.1"
+  },
+  "optionalDependencies": {
+    "bme280": "^2.1.1",
+    "bme680-sensor": "^1.1.0",
+    "node-ble": "^1.13.0",
+    "node-switchbot": "^4.0.3",
+    "pigpio": "^3.3.1",
+    "serialport": "^10.4.0",
+    "thermalprinter": "^0.3.10"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",

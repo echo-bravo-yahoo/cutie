@@ -1,6 +1,8 @@
 import Sensor, { SensorConfig } from "../util/Sensor.js";
 import Task from "../util/Task.js";
-import NodeBle from "node-ble";
+import { importOptional } from "../util/optional-dependency.js";
+// type-only, so no require for this optional dependency survives compilation
+import type NodeBle from "node-ble";
 
 let ble: ReturnType<typeof NodeBle.createBluetooth>;
 let adapter: NodeBle.Adapter;
@@ -108,7 +110,12 @@ export default class BLETracker extends Sensor {
 
   async discoverAdvertisements() {
     if (!adapter) {
-      const nodeBLE = (await import("node-ble")).default;
+      const nodeBLE = (
+        await importOptional<{ default: typeof NodeBle }>(
+          "node-ble",
+          "trigger:ble-tracker",
+        )
+      ).default;
       ble = nodeBLE.createBluetooth();
       adapter = await ble.bluetooth.defaultAdapter();
     }

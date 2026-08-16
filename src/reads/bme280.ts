@@ -5,6 +5,7 @@ import DrunkReader, {
 } from "../util/DrunkReader.js";
 import Read, { ReadConfig } from "../util/Read.js";
 import Task from "../util/Task.js";
+import { importOptional } from "../util/optional-dependency.js";
 
 export interface BME280Config extends ReadConfig {
   i2cAddress: number;
@@ -72,7 +73,9 @@ export default class BME280 extends Read {
 
   async enable() {
     if (!this.config.virtual) {
-      const bme280Sensor = await import("bme280");
+      const bme280Sensor = await importOptional<{
+        open(options: { i2cAddress: number }): Promise<unknown>;
+      }>("bme280", "read:bme280");
       this.sensor = await bme280Sensor.open({
         i2cAddress: Number(this.config.i2cAddress) || 0x76,
       });
