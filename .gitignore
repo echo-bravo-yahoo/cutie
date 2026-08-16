@@ -8,6 +8,8 @@ github
 github.pub
 
 provisioner/cache/**
+# holds a wifi password; copy from config.example.json
+provisioner/config.json
 
 **/node_modules/
 

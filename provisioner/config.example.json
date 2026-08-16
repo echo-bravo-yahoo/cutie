@@ -1,0 +1,16 @@
+{
+  "arch": "armv6l",
+  "hostname": "my-cutie-pi",
+  "imageUrl": "https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-11-19/2024-11-19-raspios-bookworm-armhf-lite.img.xz",
+  "nodeVersion": "22.11.0",
+  "password": "change-me",
+  "wifi": {
+    "ssid": "",
+    "password": ""
+  },
+  "files": {},
+  "cutie": {
+    "srcPath": "..",
+    "destPath": "/home/pi/workspace/cutie"
+  }
+}

@@ -4,8 +4,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
+// copy config.example.json to config.json and fill it in; it holds a wifi
+// password, so it is gitignored
 const config = require(resolve(__dirname, "./config.json"));
-const cutieConfig = require(resolve(__dirname, "..", "./config/config.json"));
+const CUTIE_CONFIG_PATH = resolve(__dirname, "..", "./config/cutie.conf.json");
+const cutieConfig = require(CUTIE_CONFIG_PATH);
 
 import { accessSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
@@ -21,13 +24,26 @@ function removeExtension(path) {
   return path;
 }
 
-// write custom cutieConfig
-cutieConfig.configProvider.topic = `cutie/config/${hostname}`;
+// Name the node, and point it at its own remote-config topic if the base
+// config is already set up to fetch one. A configProvider with no
+// connectionName names a connection that does not exist, which fails at
+// startup -- so a base config without one is left fetching nothing and
+// running its local tasks instead.
+// This rewrites the checked-in config in place, because config.cutie.srcPath
+// is what gets rsynced onto the image; expect a dirty working tree after a
+// provisioning run.
 cutieConfig.name = hostname;
-await writeFile(
-  resolve(__dirname, "../config/config.json"),
-  JSON.stringify(cutieConfig, null, 2),
-);
+
+if (cutieConfig.configProvider?.connectionName) {
+  cutieConfig.configProvider.topic = `cutie/config/${hostname}`;
+} else {
+  console.log(
+    `${CUTIE_CONFIG_PATH} declares no configProvider.connectionName, so this image will run its local tasks rather than fetching a remote config. Add a connection and a configProvider to it first if that is not what you want.`,
+  );
+}
+
+console.log(`Writing node name into ${CUTIE_CONFIG_PATH}.`);
+await writeFile(CUTIE_CONFIG_PATH, `${JSON.stringify(cutieConfig, null, 2)}\n`);
 
 try {
   accessSync(
@@ -94,7 +110,9 @@ for (const [src, dest] of Object.entries(config.files))
 
 customize += `--plugin apps:"name=dev|apps=git,i2c-tools,pigpio" `;
 
-// TODO: this isn't working!
+// TODO: the resulting image has not been observed to actually get a 4096 MB
+// swap file. Needs checking on a booted Pi -- `swapon --show` there says
+// whether this line does anything, and it should be dropped if it does not.
 customize += `--plugin system:"name=swap|swap=4096" `;
 
 // customize += `--plugin raspiconfig:"overclock=`
@@ -138,6 +156,6 @@ console.log("Running sdm burn.");
 let burn = `sudo sdm --burn ${device} `;
 burn += `--hostname ${hostname} `;
 burn += `--expand-root `;
-burn += `./provisioner/cache/${customImgPath}`;
+burn += resolve(__dirname, "./cache", customImgPath);
 
 console.log(burn, "\n");
