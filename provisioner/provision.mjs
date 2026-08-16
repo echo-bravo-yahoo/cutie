@@ -26,6 +26,7 @@ import { resolve, dirname, basename } from "path";
 import { fileURLToPath } from "url";
 import { execSync, spawn } from "child_process";
 import parser from "yargs-parser";
+import { readSync } from "node-yaml";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -113,7 +114,7 @@ function loadConfig() {
 function stageCutieConfig(hostname, config) {
   const source = config.cutieConfig
     ? resolve(__dirname, config.cutieConfig)
-    : resolve(__dirname, "../config/cutie.conf.json");
+    : resolve(__dirname, "../config/cutie.conf.yaml");
 
   if (!exists(source)) {
     fail(`cutieConfig ${source} not found.`);
@@ -126,7 +127,11 @@ function stageCutieConfig(hostname, config) {
     );
   }
 
-  const template = require(source);
+  // cutie's config loader accepts YAML or JSON regardless of extension, and
+  // the repo template has comments -- require()'s built-in JSON loader can't
+  // parse those, so this uses the same reader cutie itself loads configs
+  // with.
+  const template = readSync(source);
   const staged = { ...template, name: hostname };
 
   // configProvider makes the retained MQTT message the source of truth for this

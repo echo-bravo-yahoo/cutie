@@ -3,8 +3,8 @@ import { copyFile, constants } from "node:fs/promises";
 import { srcDir } from "../index.js";
 
 export default async function initializeConfig() {
-  const destPath = `${process.cwd()}/cutie.conf.json`;
-  const srcPath = `${srcDir}/../config/cutie.conf.json`;
+  const destPath = `${process.cwd()}/cutie.conf.yaml`;
+  const srcPath = `${srcDir}/../config/cutie.conf.yaml`;
 
   try {
     await copyFile(srcPath, destPath, constants.COPYFILE_EXCL);

@@ -37,6 +37,10 @@ cutie init # this creates a default/blank config file in your current directory
 cutie # this runs cutie using the config file in the current directory
 ```
 
+### The default config
+
+The config `cutie init` copies publishes a heartbeat and cutie's own logs to MQTT once a minute. Edit the `broker` connection's `endpoint`, `username`, and `password` in `cutie.conf.yaml` before relying on this -- left unedited, cutie logs one error at startup for the unreachable broker and then runs normally without publishing; restart cutie after fixing the connection to pick it back up.
+
 ### Managing config for a fleet
 
 Once more than one machine runs `cutie`, editing each machine's config file over SSH stops scaling. `cutie` can instead keep config files on a connection -- today, as retained MQTT messages -- so a node fetches its own config at startup and you edit them all from one place. See `./examples/remote-config.yaml` for the node side.
@@ -45,25 +49,25 @@ Two subcommands manage those stored configs:
 
 ```bash
 # publish every config file in a directory, one per file, recursively
-cutie upload --config ./cutie.conf.json --connectionName my-broker --path ./fleet-configs
+cutie upload --config ./cutie.conf.yaml --connectionName my-broker --path ./fleet-configs
 
 # publish just one, naming the node it belongs to
-cutie upload --config ./cutie.conf.json --connectionName my-broker --path ./fleet-configs/kitchen-pi.yaml --node kitchen-pi
+cutie upload --config ./cutie.conf.yaml --connectionName my-broker --path ./fleet-configs/kitchen-pi.yaml --node kitchen-pi
 
 # fetch every stored config into a directory
-cutie download --config ./cutie.conf.json --connectionName my-broker --path ./fleet-configs
+cutie download --config ./cutie.conf.yaml --connectionName my-broker --path ./fleet-configs
 
 # fetch just one
-cutie download --config ./cutie.conf.json --connectionName my-broker --node kitchen-pi --path ./fleet-configs
+cutie download --config ./cutie.conf.yaml --connectionName my-broker --node kitchen-pi --path ./fleet-configs
 ```
 
-| Flag | Meaning |
-| --- | --- |
-| `--config` | the local config file naming the connection to use (not the config being uploaded) |
-| `--connectionName` | which connection in that file to talk to |
-| `--path` | directory to read from or write to; a single file when combined with `--node` on upload |
-| `--node` | operate on one node instead of all of them |
-| `--topic` | override where configs are stored; defaults to `cutie/config/+` |
+| Flag               | Meaning                                                                                 |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `--config`         | the local config file naming the connection to use (not the config being uploaded)      |
+| `--connectionName` | which connection in that file to talk to                                                |
+| `--path`           | directory to read from or write to; a single file when combined with `--node` on upload |
+| `--node`           | operate on one node instead of all of them                                              |
+| `--topic`          | override where configs are stored; defaults to `cutie/config/+`                         |
 
 Uploaded files can be JSON, YAML, or YML, and the node name is taken from the filename. Downloaded files are always written as `<node>.conf.json`.
 
@@ -148,7 +152,7 @@ npm link # optional, installs the CLI to your path as `cutie`
 cutie
 ```
 
-This starts `cutie` up using the config file present at `./cutie.conf.json` -- the default is always `cutie.conf.json` in the current working directory. You'll need to customize it to fit your use-case. You can also pass a flag to the CLI to specify the location of a different config file, e.g., `cutie --config ~/my-config-file.json`. Config files can be JSON or YAML, with any extension.
+This starts `cutie` up using the config file present at `./cutie.conf.yaml` -- the default is always `cutie.conf.yaml` in the current working directory. You'll need to customize it to fit your use-case. You can also pass a flag to the CLI to specify the location of a different config file, e.g., `cutie --config ~/my-config-file.json`. Config files can be JSON or YAML, with any extension.
 
 Once you have it configured to your liking, you can install it to systemctl so it's run on startup and restarted on crash. First, modify `./config/cutie.service` to confirm that the `WorkingDirectory` and `User` fields are correct, then run `npm run add-service`.
 

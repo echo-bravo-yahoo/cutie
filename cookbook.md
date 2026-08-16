@@ -2,7 +2,7 @@
 
 This file contains increasingly complex examples (recipes) of how to configure `cutie` for some example use cases.
 
-Each recipe is a complete config file. Save one as `cutie.conf.json` and run `cutie` to try it. Config files can be JSON or YAML; the examples in `./examples` are the YAML equivalents.
+Each recipe is a complete config file. Save one as `cutie.conf.yaml` and run `cutie` to try it. Config files can be JSON or YAML; the examples in `./examples` are the YAML equivalents.
 
 A note on the shape these share: a connection is declared once, given a `name`, and referred to by that name from each step's `connectionName`. The step that starts a task goes in `trigger`, not in `steps` -- `cutie` rejects a trigger listed as a step.
 

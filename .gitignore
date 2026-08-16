@@ -24,6 +24,6 @@ coverage/
 *.cache.json
 
 config/*
-!config/cutie.conf.json
+!config/cutie.conf.yaml
 !config/cutie.service
 !config/cutie.journald.conf

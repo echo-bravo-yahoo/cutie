@@ -14,7 +14,7 @@
   },
   "files": [
     "built/",
-    "config/cutie.conf.json",
+    "config/cutie.conf.yaml",
     "config/cutie.service",
     "config/cutie.journald.conf",
     "cookbook.md",
@@ -30,7 +30,7 @@
     "build:docker": "sudo docker build . -t cutie -f ./Dockerfile",
     "build:docker:wsl": "sudo docker.exe build . -t cutie -f ./Dockerfile",
     "start": "npx tsx ./src/cli-entrypoint.ts start",
-    "start:prod": "./built/cli-entrypoint.js start --config ./config/cutie.conf.json",
+    "start:prod": "./built/cli-entrypoint.js start --config ./config/cutie.conf.yaml",
     "lint": "npx eslint",
     "typecheck": "tsc -p tsconfig.test.json",
     "prettify": "prettier -w .",

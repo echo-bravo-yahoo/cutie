@@ -9,6 +9,8 @@ import chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
+import { read } from "node-yaml";
+
 import { setGlobals } from "../../src/index.js";
 import type { fetchConfig } from "../../src/util/configs.js";
 import type { writeFile } from "fs";
@@ -112,9 +114,13 @@ describe("the CLI's", function () {
 
     // No broker in a unit test: stand in for the connect/disconnect lifecycle
     // that register() and disable() would otherwise perform for real.
-    mock.method(MQTTConnection.prototype, "register", async function (this: any) {
-      this.enabled = true;
-    });
+    mock.method(
+      MQTTConnection.prototype,
+      "register",
+      async function (this: any) {
+        this.enabled = true;
+      },
+    );
     mock.method(MQTTConnection.prototype, "disable", async function () {});
     mock.method(
       MQTTConnection.prototype,
@@ -150,7 +156,7 @@ describe("the CLI's", function () {
     it('can download one file from the default MQTT location, "cutie/config/$node" to the default path "."', async function () {
       await download({
         connectionName: "test",
-        config: "./cutie.conf.json",
+        config: "./cutie.conf.yaml",
         node: "bob",
       });
       expect(mockWriteFile.mock.calls[0].arguments).to.deep.equal([
@@ -325,7 +331,9 @@ describe("the CLI's", function () {
   });
 
   describe("init command", function () {
-    let originalCwd: string, tempDir: string, initializeConfig: () => Promise<void>;
+    let originalCwd: string,
+      tempDir: string,
+      initializeConfig: () => Promise<void>;
 
     before(async () => {
       originalCwd = process.cwd();
@@ -340,24 +348,24 @@ describe("the CLI's", function () {
       process.exitCode = 0;
     });
 
-    it("writes a config file that is valid JSON", async function () {
+    it("writes a config file cutie can load", async function () {
       await initializeConfig();
 
-      const written = await readFile(join(tempDir, "cutie.conf.json"), {
-        encoding: "utf8",
-      });
-      expect(() => JSON.parse(written)).to.not.throw();
+      // cutie.conf.yaml has comments -- node-yaml's reader is what actually
+      // loads it at runtime, so assert against that instead of JSON.parse.
+      const parsed = await read(join(tempDir, "cutie.conf.yaml"));
+      expect(parsed.connections).to.be.an("array");
       expect(process.exitCode).to.not.equal(1);
     });
 
     it("refuses to overwrite an existing config file", async function () {
-      const before = await readFile(join(tempDir, "cutie.conf.json"), {
+      const before = await readFile(join(tempDir, "cutie.conf.yaml"), {
         encoding: "utf8",
       });
 
       await initializeConfig();
 
-      const after = await readFile(join(tempDir, "cutie.conf.json"), {
+      const after = await readFile(join(tempDir, "cutie.conf.yaml"), {
         encoding: "utf8",
       });
       expect(after).to.equal(before);

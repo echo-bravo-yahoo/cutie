@@ -13,6 +13,6 @@ export type ParserDefaults = Pick<
 export const parserDefaults: ParserDefaults = {
   string: ["config"],
   default: {
-    config: `${process.cwd()}/cutie.conf.json`,
+    config: `${process.cwd()}/cutie.conf.yaml`,
   },
 };

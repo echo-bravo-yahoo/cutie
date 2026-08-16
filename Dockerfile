@@ -18,4 +18,4 @@ RUN npm run build
 
 # Defaults to the shipped starter config, matching npm run start:prod. Mount
 # your own over it, or override the command, to run a real config.
-CMD ["node", "built/cli-entrypoint.js", "start", "--config", "./config/cutie.conf.json"]
+CMD ["node", "built/cli-entrypoint.js", "start", "--config", "./config/cutie.conf.yaml"]

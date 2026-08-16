@@ -22,7 +22,7 @@ Commands:
   download    fetch config files from a connection
 
 Options:
-  --config <path>   config file to use (default: ./cutie.conf.json)
+  --config <path>   config file to use (default: ./cutie.conf.yaml)
   --help            show this message
   --version         show the installed version`;
 

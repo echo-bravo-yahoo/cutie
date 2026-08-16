@@ -5,7 +5,7 @@ import chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-import { start, srcDir } from "../../src/index.js";
+import { start, srcDir, globals } from "../../src/index.js";
 import { watch } from "fs";
 import { rm } from "fs/promises";
 import { normalize } from "path";
@@ -157,8 +157,51 @@ describe("examples run correctly, including", function () {
     expect(
       mockLogs.calls.every(
         (call) =>
-          call.arguments.length === 1 &&
-          call.arguments[0] === "Remote tick...",
+          call.arguments.length === 1 && call.arguments[0] === "Remote tick...",
+      ),
+    ).to.equal(true);
+  });
+
+  it("cutie.conf.yaml (the default config `cutie init` copies)", async function (context) {
+    console.log = context.mock.fn(console.log, () => {});
+    const mockLogs = (console.log as it.Mock<typeof console.log>)
+      .mock as MockFunctionContext<typeof console.log>;
+
+    context.mock.timers.enable({ apis: ["setInterval"] });
+
+    const observer = await broker.mqtt.connectAsync();
+    const received: Array<{ topic: string; payload: string }> = [];
+    observer.on("message", (topic: string, payload: Buffer) =>
+      received.push({ topic, payload: payload.toString() }),
+    );
+    await observer.subscribeAsync(["cutie/heartbeat", "cutie/logs"]);
+
+    await start({
+      _: [],
+      config: `./config/cutie.conf.yaml`,
+    });
+
+    // trigger:logs only starts listening once its own task finishes
+    // registering, so nothing from startup itself reaches it -- emit one
+    // deliberately to exercise both output steps.
+    globals.logger.emit("test log line", "info", "some.topic", {});
+
+    context.mock.timers.tick(60000);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(
+      received.some(
+        (m) => m.topic === "cutie/heartbeat" && m.payload === '"online"',
+      ),
+    ).to.equal(true);
+    expect(
+      received.some(
+        (m) => m.topic === "cutie/logs" && m.payload.includes("test log line"),
+      ),
+    ).to.equal(true);
+    expect(
+      mockLogs.calls.some((call) =>
+        String(call.arguments[0]).includes("test log line"),
       ),
     ).to.equal(true);
   });

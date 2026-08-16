@@ -1,0 +1,44 @@
+# `cutie init` copies this file to get new nodes started. it publishes a
+# heartbeat and cutie's own logs to MQTT -- edit the username, password, and
+# endpoint below to point at your own broker before running for real.
+#
+# see ./examples and ./cookbook.md for more patterns: sensors, transforms,
+# fetching this config from a connection instead of a local file, and more.
+connections:
+  - type: "connection:mqtt"
+    name: "broker"
+    username: ""
+    password: ""
+    endpoint: "mqtt://127.0.0.1:1883"
+
+tasks:
+  # publishes a message every minute, so anything subscribed to
+  # cutie/heartbeat knows this node is alive
+  heartbeat:
+    trigger:
+      type: "trigger:repeat"
+      interval: 60000
+      message: "online"
+
+    steps:
+      - type: "output:mqtt"
+        connectionName: "broker"
+        topics:
+          - "cutie/heartbeat"
+
+  # republishes cutie's own internal logs (info level and up) to the local
+  # console and to MQTT, so they're visible locally and can be collected
+  # centrally
+  logs:
+    trigger:
+      type: "trigger:logs"
+      filters:
+        - "*"
+      minVerbosity: "info"
+
+    steps:
+      - type: "output:console"
+      - type: "output:mqtt"
+        connectionName: "broker"
+        topics:
+          - "cutie/logs"
