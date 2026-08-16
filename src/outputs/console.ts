@@ -12,9 +12,13 @@ export default class Console extends Output {
   }
 
   async send(message: Message, _traceId: string) {
-    if (typeof message !== "string") message = JSON.stringify(message);
-
-    console.log(message);
+    // Serialise for printing only. Returning the serialised form would hand
+    // every later step a JSON string instead of the object, so any step keyed
+    // on a path would read undefined - and an output:mqtt further down would
+    // publish a double-encoded string rather than the reading.
+    console.log(
+      typeof message === "string" ? message : JSON.stringify(message),
+    );
     return message;
   }
 }

@@ -153,13 +153,19 @@ export default class InkyPhat extends Output {
     // patching onoff's module exports: its controller factory takes Gpio as an
     // option, and its top-level factory takes the controller factory.
     const { Gpio } = await import("onoff");
-    class OffsetGpio extends Gpio {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      constructor(pin: number, ...rest: Array<any>) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        super(pin + base, ...(rest as [any]));
-      }
-    }
+
+    // A factory rather than `class OffsetGpio extends Gpio`. This project
+    // compiles to ES5, where TypeScript downlevels a subclass into
+    // `_super.call(this, ...)` - and a real ES6 class constructor, which
+    // onoff's Gpio is, throws "cannot be invoked without 'new'" when called
+    // that way. Returning an object from a constructor overrides `this`, so
+    // inkyphat's `new Gpio(...)` still gets a genuine Gpio.
+    const OffsetGpio = function (pin: number, ...rest: Array<unknown>) {
+      return new (Gpio as unknown as new (...args: Array<unknown>) => object)(
+        pin + base,
+        ...rest,
+      );
+    } as unknown as typeof Gpio;
 
     const inkyphatFactory = (await import("inkyphat")).default;
     const controllerFactory = (
