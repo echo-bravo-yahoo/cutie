@@ -60,9 +60,10 @@ export default tseslint.config(
     },
   },
   {
-    // The provisioner is plain Node ESM run from the CLI, not part of the
-    // TypeScript build, so it needs Node's globals declared explicitly.
-    files: ["provisioner/**/*.mjs"],
+    // The provisioner and the example scripts are plain Node ESM run from the
+    // CLI, not part of the TypeScript build, so they need Node's globals
+    // declared explicitly.
+    files: ["provisioner/**/*.mjs", "examples/**/*.mjs"],
     languageOptions: {
       globals: {
         console: "readonly",
