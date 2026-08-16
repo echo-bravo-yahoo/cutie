@@ -3,16 +3,15 @@ Description=a cute little MQTT service
 
 [Service]
 User=pi
-# WorkingDirectory varies per host on the real fleet (<node>/<node>:
-# /home/pi/cutie, stockholm: /home/pi/workspace/cutie) -- this file is a
-# reference/bootstrap template. Nothing syncs it to live hosts; each host's
-# live unit is hand-maintained.
+# WorkingDirectory depends on where cutie is installed, which varies by host.
+# This file is a reference template: copy it, set the path below, and expect
+# to maintain each host's unit by hand rather than syncing this one.
 WorkingDirectory=/home/pi/workspace/cutie
-# Node/npm install location and layout differs per host too (manually
-# installed tarball, apt-style /usr/bin, or fnm) -- this PATH cascade covers
-# all three conventions seen so far, letting one ExecStart line work
-# everywhere instead of hardcoding a single host's path.
-Environment=PATH=/home/pi/.local/share/fnm/aliases/cutie/bin:/usr/bin:/usr/local/node/bin:/bin
+# Node's install location varies (distro package, manually unpacked tarball,
+# or a version manager). This cascade covers the common layouts so one
+# ExecStart line works across them; add your own prefix if node lives
+# elsewhere.
+Environment=PATH=/usr/bin:/usr/local/node/bin:/bin
 ExecStart=/usr/bin/env npm run start:prod
 Restart=always
 RestartSec=2

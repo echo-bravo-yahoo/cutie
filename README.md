@@ -41,13 +41,13 @@ Two subcommands manage those stored configs:
 cutie upload --config ./cutie.conf.json --connectionName my-broker --path ./fleet-configs
 
 # publish just one, naming the node it belongs to
-cutie upload --config ./cutie.conf.json --connectionName my-broker --path ./fleet-configs/<node>.yaml --node <node>
+cutie upload --config ./cutie.conf.json --connectionName my-broker --path ./fleet-configs/kitchen-pi.yaml --node kitchen-pi
 
 # fetch every stored config into a directory
 cutie download --config ./cutie.conf.json --connectionName my-broker --path ./fleet-configs
 
 # fetch just one
-cutie download --config ./cutie.conf.json --connectionName my-broker --node <node> --path ./fleet-configs
+cutie download --config ./cutie.conf.json --connectionName my-broker --node kitchen-pi --path ./fleet-configs
 ```
 
 | Flag | Meaning |
@@ -60,7 +60,7 @@ cutie download --config ./cutie.conf.json --connectionName my-broker --node <nod
 
 Uploaded files can be JSON, YAML, or YML, and the node name is taken from the filename. Downloaded files are always written as `<node>.conf.json`.
 
-`--topic` is a single value that works for every combination of these flags, because a `+` segment stands in for the node name. `--topic 'fleet/config/+'` subscribes to `fleet/config/+` when downloading everything, and publishes to `fleet/config/<node>` when uploading that node.
+`--topic` is a single value that works for every combination of these flags, because a `+` segment stands in for the node name. `--topic 'fleet/config/+'` subscribes to `fleet/config/+` when downloading everything, and publishes to `fleet/config/kitchen-pi` when uploading that node.
 
 ### Mental model for using `cutie`
 
@@ -140,7 +140,7 @@ The `random` sensor runs without any hardware; use it to test changes to the run
 
 #### Deploying to a raspi for development
 
-Problems with rsync: no watch daemon `rsync --recursive --exclude "**/node_modules/*" --exclude "**/.git/*" --exclude "**/config.json"  --exclude "**.png" --exclude "**.zip" --exclude "**.md" --exclude "**/package-lock.json" ~/workspace/cutie/ <node>:/home/pi/cutie --verbose`
+Problems with rsync: no watch daemon `rsync --recursive --exclude "**/node_modules/*" --exclude "**/.git/*" --exclude "**/config.json"  --exclude "**.png" --exclude "**.zip" --exclude "**.md" --exclude "**/package-lock.json" ~/workspace/cutie/ kitchen-pi:/home/pi/cutie --verbose`
 
 `git stash; git pull; git stash pop; sudo systemctl restart cutie; sudo journalctl -u cutie --namespace=cutie --follow`
 
