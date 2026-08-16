@@ -5,7 +5,7 @@
 - A **read** is a step. It sits in `steps` and replaces the message with a fresh reading each time something else triggers the task. Pair it with a trigger such as `trigger:repeat`.
 - A **sensor trigger** starts the task itself. It samples on its own schedule, aggregates the samples, and emits a reading. It goes in `trigger`.
 
-Every read supports `virtual: true`, which fakes plausible values that drift slowly over time instead of touching hardware. Use it to develop on a machine with no sensor attached.
+Every hardware-backed sensor supports `virtual: true`, which fakes plausible values that drift slowly over time instead of touching hardware. Use it to develop on a machine with no sensor attached.
 
 ## `read:bme280`
 
@@ -81,6 +81,7 @@ Presence tracking. It watches for BLE advertisements from named devices and repo
 | `devices` | -- | `[{ "alias": "phone", "macAddress": "..." }]` |
 | `samplingInterval` | `60000` | ms between samples |
 | `reportingInterval` | `60000` | ms between emitted messages |
+| `virtual` | `false` | fake RSSI instead of scanning for BLE advertisements |
 
 `alias` is optional and defaults to the MAC address; it is the key each device's reading appears under. Emits `{ "<alias>": { metadata: { timestamp }, rssi } }` per device seen since the last report. Devices that never advertise are omitted rather than reported as absent.
 
@@ -91,6 +92,7 @@ tasks:
       type: "trigger:ble-tracker"
       samplingInterval: 10000
       reportingInterval: 60000
+      virtual: true
       devices:
         - alias: "phone"
           macAddress: "00:00:00:00:00:00"

@@ -1,6 +1,7 @@
 import Sensor, { SensorConfig } from "../util/Sensor.js";
 import Task from "../util/Task.js";
 import { importOptional } from "../util/optional-dependency.js";
+import DrunkReader, { DrunkRSSI } from "../util/DrunkReader.js";
 // type-only, so no require for this optional dependency survives compilation
 import type NodeBle from "node-ble";
 
@@ -15,12 +16,14 @@ export interface BLEDevice {
 
 export interface BLETrackerConfig extends SensorConfig {
   devices: Array<BLEDevice>;
+  virtual?: boolean;
 }
 
 export default class BLETracker extends Sensor {
   declare config: BLETrackerConfig;
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
   declare samples: Record<string, Array<any>>;
+  virtualRssi: Record<string, DrunkReader> = {};
 
   constructor(config: BLETrackerConfig, task: Task) {
     super(config, task);
@@ -69,7 +72,10 @@ export default class BLETracker extends Sensor {
     const deviceKey = deviceSpec.alias || deviceSpec.macAddress;
     let rssi = -99;
 
-    if (deviceMap[deviceKey]) {
+    if (this.config.virtual) {
+      this.virtualRssi[deviceKey] ??= new DrunkRSSI();
+      rssi = Number(await this.virtualRssi[deviceKey].read());
+    } else if (deviceMap[deviceKey]) {
       try {
         rssi = Number(await deviceMap[deviceKey].getRSSI());
       } catch (_e) {}
@@ -109,6 +115,8 @@ export default class BLETracker extends Sensor {
   // config.destinations, which v4 replaced with the task's step chain.
 
   async discoverAdvertisements() {
+    if (this.config.virtual) return;
+
     if (!adapter) {
       const nodeBLE = (
         await importOptional<{ default: typeof NodeBle }>(
@@ -153,10 +161,13 @@ export default class BLETracker extends Sensor {
   async disable() {
     clearInterval(this.reportInterval);
     clearInterval(this.sampleInterval);
-    for (const device of Object.values(deviceMap)) {
-      await device.disconnect();
+
+    if (!this.config.virtual) {
+      for (const device of Object.values(deviceMap)) {
+        await device.disconnect();
+      }
+      ble.destroy();
     }
-    ble.destroy();
 
     this.info("Disabled BLE tracker.", { topic: this.logPrefix });
     this.enabled = false;
@@ -168,6 +179,7 @@ export default class BLETracker extends Sensor {
   "name": "",
   "type": "trigger:ble-tracker",
   "disabled": false,
+  "virtual": false,
   "devices": [{ "alias": "", "macAddress": "00:00:00:00:00:00" }],
   "samplingInterval": 10000, // in ms
   "reportingInterval": 60000 // in ms

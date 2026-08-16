@@ -89,3 +89,18 @@ export class DrunkGasResistance extends DrunkReader {
     });
   }
 }
+
+// RSSI walks in dBm: closer to 0 is a stronger signal, more negative is
+// weaker, roughly the range a real BLE advertisement reports at close to
+// long range.
+export class DrunkRSSI extends DrunkReader {
+  constructor() {
+    super({
+      min: -95,
+      max: -40,
+      minStep: 1,
+      maxStep: 4,
+      start: -65,
+    });
+  }
+}

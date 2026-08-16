@@ -33,6 +33,7 @@ export interface BotConfig {
 export interface SwitchbotsConfig extends OutputConfig {
   bots: Array<BotConfig>;
   discoveryTimeout?: number;
+  virtual?: boolean;
 }
 
 export type BotAction = "on" | "off" | "press";
@@ -86,8 +87,8 @@ export default class Switchbots extends Output {
       );
 
     const bot = this.getBot(request.id);
-    const device = this.devices[bot.id];
-    if (!device)
+    const device = this.config.virtual ? undefined : this.devices[bot.id];
+    if (!this.config.virtual && !device)
       throw new Error(
         `Switchbot ${this.botToNameString(bot)} was never discovered; is it in range?`,
       );
@@ -96,7 +97,7 @@ export default class Switchbots extends Output {
       this.info(`Pressing switchbot ${this.botToNameString(bot)}.`, {
         topic: this.logPrefix,
       });
-      await device.press();
+      if (device) await device.press();
 
       return message;
     }
@@ -109,7 +110,7 @@ export default class Switchbots extends Output {
       `Turning switchbot ${this.botToNameString(bot)} ${request.action} (${motion}).`,
       { topic: this.logPrefix },
     );
-    await device[motion]();
+    if (device) await device[motion]();
 
     return message;
   }
@@ -144,19 +145,20 @@ export default class Switchbots extends Output {
   }
 
   async enable() {
-    const { SwitchBot } = await importOptional<{ SwitchBot: SwitchbotClient }>(
-      "node-switchbot",
-      "output:switchbots",
-    );
-    this.switchbot = new SwitchBot({
-      scanTimeout: this.config.discoveryTimeout,
-    });
+    if (!this.config.virtual) {
+      const { SwitchBot } = await importOptional<{
+        SwitchBot: SwitchbotClient;
+      }>("node-switchbot", "output:switchbots");
+      this.switchbot = new SwitchBot({
+        scanTimeout: this.config.discoveryTimeout,
+      });
 
-    this.info(
-      `Enabling switchbots to control ${(this.config.bots || []).length} bots...`,
-      { topic: this.logPrefix },
-    );
-    await this.discover();
+      this.info(
+        `Enabling switchbots to control ${(this.config.bots || []).length} bots...`,
+        { topic: this.logPrefix },
+      );
+      await this.discover();
+    }
 
     this.enabled = true;
   }
@@ -174,6 +176,7 @@ export default class Switchbots extends Output {
 {
   "type": "output:switchbots",
   "disabled": false,
+  "virtual": false,
   "discoveryTimeout": 10000,
   "bots": [
     {

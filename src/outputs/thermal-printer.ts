@@ -17,6 +17,7 @@ export interface ThermalPrinterConfig extends OutputConfig {
   heatingInterval?: number;
   commandDelay?: number;
   chineseFirmware?: boolean;
+  virtual?: boolean;
 }
 
 // A markdown-ish line prefix and the printer calls that render it.
@@ -91,6 +92,14 @@ export default class ThermalPrinter extends Output {
   }
 
   async send(message: Message) {
+    const text = typeof message === "string" ? message : JSON.stringify(message);
+
+    if (this.config.virtual) {
+      this.info(`Would print (virtual):\n${text}`, { topic: this.logPrefix });
+
+      return message;
+    }
+
     if (!this.printer) {
       this.error("Cannot print; the thermal printer is not enabled.", {
         topic: this.logPrefix,
@@ -98,8 +107,6 @@ export default class ThermalPrinter extends Output {
 
       return message;
     }
-
-    const text = typeof message === "string" ? message : JSON.stringify(message);
 
     for (const line of text.split("\n")) {
       this.printer.reset();
@@ -115,39 +122,44 @@ export default class ThermalPrinter extends Output {
   }
 
   async enable() {
-    const { SerialPort } = await importOptional<{
-      SerialPort: new (options: object) => SerialPortInstance;
-    }>("serialport", "output:thermal-printer");
-    const { default: Printer } = await importOptional<{
-      default: new (port: SerialPortInstance, options: object) => PrinterInstance;
-    }>("thermalprinter", "output:thermal-printer");
+    if (!this.config.virtual) {
+      const { SerialPort } = await importOptional<{
+        SerialPort: new (options: object) => SerialPortInstance;
+      }>("serialport", "output:thermal-printer");
+      const { default: Printer } = await importOptional<{
+        default: new (
+          port: SerialPortInstance,
+          options: object,
+        ) => PrinterInstance;
+      }>("thermalprinter", "output:thermal-printer");
 
-    this.info("Enabling thermal printer...", { topic: this.logPrefix });
+      this.info("Enabling thermal printer...", { topic: this.logPrefix });
 
-    await new Promise<void>((resolve, reject) => {
-      this.serialPort = new SerialPort({
-        path: this.config.path,
-        baudRate: this.config.baudRate,
-      });
-
-      this.serialPort.on("error", (error: Error) =>
-        this.error(`Thermal printer serial error: ${error}.`, {
-          topic: this.logPrefix,
-        }),
-      );
-
-      this.serialPort.on("open", () => {
-        this.printer = new Printer(this.serialPort, {
-          heatingTime: this.config.heatingTime,
-          heatingInterval: this.config.heatingInterval,
-          commandDelay: this.config.commandDelay,
-          chineseFirmware: this.config.chineseFirmware,
+      await new Promise<void>((resolve, reject) => {
+        this.serialPort = new SerialPort({
+          path: this.config.path,
+          baudRate: this.config.baudRate,
         });
 
-        this.printer.on("ready", () => resolve());
-        this.printer.on("error", (error: Error) => reject(error));
+        this.serialPort.on("error", (error: Error) =>
+          this.error(`Thermal printer serial error: ${error}.`, {
+            topic: this.logPrefix,
+          }),
+        );
+
+        this.serialPort.on("open", () => {
+          this.printer = new Printer(this.serialPort, {
+            heatingTime: this.config.heatingTime,
+            heatingInterval: this.config.heatingInterval,
+            commandDelay: this.config.commandDelay,
+            chineseFirmware: this.config.chineseFirmware,
+          });
+
+          this.printer.on("ready", () => resolve());
+          this.printer.on("error", (error: Error) => reject(error));
+        });
       });
-    });
+    }
 
     this.info("Enabled thermal printer.", { topic: this.logPrefix });
     this.enabled = true;
@@ -168,6 +180,7 @@ export default class ThermalPrinter extends Output {
 {
   "type": "output:thermal-printer",
   "disabled": false,
+  "virtual": false,
   "path": "/dev/ttyS0",
   "baudRate": 19200,
   "heatingTime": 240,

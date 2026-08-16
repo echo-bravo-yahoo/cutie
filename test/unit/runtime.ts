@@ -25,6 +25,8 @@ import {
 import { Configurable } from "../../src/util/Configurable.js";
 import NEC from "../../src/outputs/nec.js";
 import Switchbots from "../../src/outputs/switchbots.js";
+import BLETracker from "../../src/triggers/ble-tracker.js";
+import ThermalPrinter from "../../src/outputs/thermal-printer.js";
 import InfluxDB from "../../src/outputs/influxdb.js";
 import InfluxDBConnection from "../../src/connections/influxdb.js";
 import {
@@ -483,8 +485,8 @@ describe("the runtime", function () {
     });
   });
 
-  // The four ported v3 modules drive physical hardware, so only their pure
-  // parts are checked here; the rest needs a Pi.
+  // The four ported v3 modules drive physical hardware; virtual mode is
+  // exercised here, and everything else needs a Pi.
   describe("output:nec", function () {
     it("reads a hex string with or without an 0x prefix", function () {
       expect(NEC.toNumber("0x7c")).to.equal(0x7c);
@@ -551,6 +553,57 @@ describe("the runtime", function () {
     it("inverts the motion for a reverse-mounted bot", function () {
       expect(Switchbots.toHandMotion(true, true)).to.equal("handUp");
       expect(Switchbots.toHandMotion(false, true)).to.equal("handDown");
+    });
+
+    it("skips the device call and returns the message when virtual", async function () {
+      const task = new Task({ steps: [] }, "virtual switchbot");
+      const bot = new Switchbots(
+        {
+          type: "output:switchbots",
+          virtual: true,
+          bots: [{ id: "abc123", name: "kitchen light" }],
+        } as any,
+        task,
+      );
+
+      const result = await bot.send({ id: "abc123", action: "on" } as any);
+      expect(result).to.deep.equal({ id: "abc123", action: "on" });
+    });
+  });
+
+  describe("trigger:ble-tracker", function () {
+    it("fakes RSSI within DrunkRSSI's bounds when virtual", async function () {
+      const task = new Task({ steps: [] }, "virtual ble tracker");
+      const tracker = new BLETracker(
+        {
+          type: "trigger:ble-tracker",
+          virtual: true,
+          devices: [{ alias: "phone", macAddress: "00:00:00:00:00:00" }],
+        } as any,
+        task,
+      );
+      tracker.enabled = true;
+
+      await tracker.sample();
+      const reading = tracker.collateSamples() as Record<
+        string,
+        { rssi: string }
+      >;
+
+      expect(Number(reading.phone.rssi)).to.be.within(-95, -40);
+    });
+  });
+
+  describe("output:thermal-printer", function () {
+    it("logs instead of printing and returns the message when virtual", async function () {
+      const task = new Task({ steps: [] }, "virtual thermal printer");
+      const printer = new ThermalPrinter(
+        { type: "output:thermal-printer", virtual: true } as any,
+        task,
+      );
+
+      const result = await printer.send("# heading\nbody line");
+      expect(result).to.equal("# heading\nbody line");
     });
   });
 
