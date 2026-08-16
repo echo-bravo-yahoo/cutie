@@ -11,7 +11,7 @@ export default class Console extends Output {
     super(config, task);
   }
 
-  async send(message: Message) {
+  async send(message: Message, _traceId: string) {
     if (typeof message !== "string") message = JSON.stringify(message);
 
     console.log(message);

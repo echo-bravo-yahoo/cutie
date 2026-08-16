@@ -1,10 +1,9 @@
 import { normalize } from "node:path";
 
-import { v7 as uuidV7 } from "uuid";
-
 import { globals, srcDir } from "../index.js";
 import { Configurable, Config } from "./Configurable.js";
 import Step, { StepConfig } from "./Step.js";
+import { newTraceId } from "./trace.js";
 import { isTrigger, Message } from "./type-helpers.js";
 import Trigger, { TriggerConfig } from "./Trigger.js";
 
@@ -96,17 +95,23 @@ export default class Task extends Configurable {
   }
 
   // primarily used for testing to cause trigger-less tasks to still emit events
-  async startMessage(message: Message, traceId?: string) {
-    if (traceId === undefined) traceId = uuidV7();
-    if (this.steps[0]) {
-      return this.steps[0].handleMessage(message, traceId);
-    } else {
-      return this.endMessage(message, traceId);
-    }
+  async startMessage(message: Message, traceId: string = newTraceId()) {
+    const startedAt = performance.now();
+    const result = await (this.steps[0]
+      ? this.steps[0].handleMessage(message, traceId)
+      : this.endMessage(message, traceId));
+
+    this.debug(
+      `Handled message in ${(performance.now() - startedAt).toFixed(1)}ms.`,
+      { topic: this.logPrefix, traceId },
+      { steps: this.steps.length },
+    );
+
+    return result;
   }
 
   // TODO: implement some callback behavior here
-  async endMessage(message: Message, _traceId?: string) {
+  async endMessage(message: Message, _traceId: string) {
     this.messagesHandled++;
     return message;
   }

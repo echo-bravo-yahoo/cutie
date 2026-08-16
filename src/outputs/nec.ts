@@ -85,12 +85,12 @@ export default class NEC extends Output {
     return NEC.parseCommand(body as RawNECCommand);
   }
 
-  async send(message: Message) {
+  async send(message: Message, traceId: string) {
     const necCommand = this.resolveCommand(message);
 
     this.info(
       `Transmitting NEC command with address 0x${necCommand.address.toString(16)} and command 0x${necCommand.command.toString(16)}.`,
-      { topic: this.logPrefix },
+      { topic: this.logPrefix, traceId },
       { command: necCommand },
     );
 

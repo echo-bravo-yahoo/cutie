@@ -79,7 +79,7 @@ export default class Switchbots extends Output {
     return on === !reverseOnOff ? "handDown" : "handUp";
   }
 
-  async send(message: Message) {
+  async send(message: Message, traceId: string) {
     const request = message as unknown as BotRequest | undefined;
     if (!request?.id || !request.action)
       throw new Error(
@@ -96,6 +96,7 @@ export default class Switchbots extends Output {
     if (request.action === "press") {
       this.info(`Pressing switchbot ${this.botToNameString(bot)}.`, {
         topic: this.logPrefix,
+        traceId,
       });
       if (device) await device.press();
 
@@ -108,7 +109,7 @@ export default class Switchbots extends Output {
     );
     this.info(
       `Turning switchbot ${this.botToNameString(bot)} ${request.action} (${motion}).`,
-      { topic: this.logPrefix },
+      { topic: this.logPrefix, traceId },
     );
     if (device) await device[motion]();
 

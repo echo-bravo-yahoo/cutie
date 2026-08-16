@@ -21,7 +21,7 @@ export default class Javascript extends Transform {
     super(config as unknown as TransformConfig, task);
   }
 
-  transform(message: Message) {
+  transform(message: Message, _traceId: string) {
     const code = this.generateCode(this.config, message);
     const context = vm.createContext({ message });
     const script = new vm.Script(code);

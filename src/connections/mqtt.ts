@@ -8,6 +8,7 @@ import { isMQTT } from "../triggers/mqtt.js";
 import { Message, ProviderConfig } from "../util/type-helpers.js";
 import { ConfigFile } from "../util/configs.js";
 import { redact } from "../util/redact.js";
+import { fromTraceparent, newTraceId } from "../util/trace.js";
 
 export const DEFAULT_CONFIG_TOPIC = "cutie/config/+";
 const DEFAULT_COLLECT_MS = 100;
@@ -172,7 +173,7 @@ export default class MQTTConnection extends Connection {
     this.enabled = true;
   }
 
-  handleMessage(topic: string, raw: Buffer, _packet: mqtt.IPublishPacket) {
+  handleMessage(topic: string, raw: Buffer, packet: mqtt.IPublishPacket) {
     const text = raw.toString();
     let message: Message;
 
@@ -184,9 +185,17 @@ export default class MQTTConnection extends Connection {
       message = text;
     }
 
+    // Every trigger this message matches shares one trace, because the line
+    // below is logged once and can only carry one ID; the fan-out shows up
+    // inside that trace. A publisher that sent a traceparent continues its own.
+    const header = packet?.properties?.userProperties?.traceparent;
+    const traceId =
+      fromTraceparent(Array.isArray(header) ? header[0] : (header ?? "")) ??
+      newTraceId();
+
     this.debug(
       `Received new message on topic "${topic}".`,
-      { topic: this.logPrefix },
+      { topic: this.logPrefix, traceId },
       { message },
     );
     const mqttConnectionNames = getConnectionsByType("mqtt").map(
@@ -209,9 +218,9 @@ export default class MQTTConnection extends Connection {
             trigger.config.topic || trigger.config.topics || "",
           )
         ) {
-          // Going through the trigger rather than steps[0] is what generates
-          // the message's trace ID and tolerates a task with no steps.
-          trigger.startMessage(message);
+          // Going through the trigger rather than steps[0] tolerates a task
+          // with no steps.
+          trigger.startMessage(message, traceId);
           triggers++;
         }
       }
@@ -219,6 +228,7 @@ export default class MQTTConnection extends Connection {
 
     this.debug(`Found ${triggers} matching triggers.`, {
       topic: this.logPrefix,
+      traceId,
     });
   }
 
@@ -252,8 +262,9 @@ export default class MQTTConnection extends Connection {
   sendRaw(
     topic: Parameters<typeof this.connection.publish>[0],
     message: Parameters<typeof this.connection.publish>[1],
+    options?: mqtt.IClientPublishOptions,
   ) {
-    return this.connection.publish(topic, message);
+    return this.connection.publish(topic, message, options);
   }
 
   static matchesTopic(

@@ -25,7 +25,7 @@ export default class Prettify extends Transform {
     };
   }
 
-  transform(message: Message) {
+  transform(message: Message, _traceId: string) {
     if (typeof message === "string" && this.config.parseInput) {
       return JSON.stringify(JSON.parse(message), null, this.config.spaces);
     } else if (typeof message === "object") {

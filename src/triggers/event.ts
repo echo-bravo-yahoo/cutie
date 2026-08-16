@@ -2,6 +2,7 @@ import { EventEmitter } from "stream";
 import { globals } from "../index.js";
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
+import { newTraceId } from "../util/trace.js";
 import { Message } from "../util/type-helpers.js";
 
 export interface EventConfig extends TriggerConfig {
@@ -13,7 +14,7 @@ export default class Event extends Trigger {
   declare bus: EventEmitter;
   // removeListener matches by reference, so enable() and disable() have to
   // hand the bus the same bound function.
-  boundHandleEvent: (message: Message) => void;
+  boundHandleEvent: (message: Message, traceId?: string) => void;
 
   constructor(config: EventConfig, task: Task) {
     super(config, task);
@@ -22,17 +23,22 @@ export default class Event extends Trigger {
     this.boundHandleEvent = this.handleEvent.bind(this);
   }
 
-  handleEvent(message: Message) {
+  // output:event supplies the trace it was handling; anything else emitting on
+  // the bus passes one argument, so the message starts a trace of its own.
+  handleEvent(message: Message, upstreamTraceId?: string) {
+    const traceId = upstreamTraceId ?? newTraceId();
+
     this.info(
       `Received event with key "${this.config.key}".`,
       {
         topic: this.logPrefix,
+        traceId,
       },
       {
         event: message,
       },
     );
-    this.startMessage(message);
+    this.startMessage(message, traceId);
   }
 
   async enable() {

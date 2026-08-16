@@ -20,11 +20,12 @@ export default class Stash extends Output {
     if (!this.task.stash) this.task.stash = {};
   }
 
-  async send(message: Message) {
+  async send(message: Message, traceId: string) {
     this.info(
       `Stashing value under key "${this.config.key}".`,
       {
         topic: this.logPrefix,
+        traceId,
       },
       {
         event: message,

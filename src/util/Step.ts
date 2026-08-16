@@ -29,8 +29,12 @@ export default abstract class Step extends TypedConfigurable {
     super(config);
 
     this.task = task;
+    // A trigger is not in the steps array, so it has no index to log under.
     const index = task.config.steps.findIndex((step) => step === this.config);
-    this.logPrefix = `${this.task.logPrefix}.steps.${index}`;
+    this.logPrefix =
+      index === -1
+        ? `${this.task.logPrefix}.trigger`
+        : `${this.task.logPrefix}.steps.${index}`;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -117,12 +121,18 @@ export default abstract class Step extends TypedConfigurable {
     return result;
   }
 
-  async endMessage(message: Message, traceId?: string) {
+  async endMessage(message: Message, traceId: string) {
     return this.task.endMessage(message, traceId);
   }
 
-  async handleMessage(message: Message, traceId?: string): Promise<Message> {
+  async handleMessage(message: Message, traceId: string): Promise<Message> {
+    const startedAt = performance.now();
     const handled = await this.doHandleMessage(message, traceId);
+    this.debug(
+      `Handled message in ${(performance.now() - startedAt).toFixed(1)}ms.`,
+      { topic: this.logPrefix, traceId },
+      { type: this.config.type },
+    );
 
     // transform:accumulate halts every message that does not complete a batch
     if (handled === HALT) return undefined;
@@ -137,7 +147,7 @@ export default abstract class Step extends TypedConfigurable {
 
   async doHandleMessage(
     message: Message,
-    _traceId?: string,
+    _traceId: string,
   ): Promise<Message | typeof HALT> {
     return message;
   }

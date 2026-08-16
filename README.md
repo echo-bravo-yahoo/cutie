@@ -139,6 +139,14 @@ The `random` sensor runs without any hardware; use it to test changes to the run
 - A connection that fails to register (e.g. an unreachable broker) always prints directly, in addition to being available to a `trigger:logs` task -- connections register before tasks, so no `trigger:logs` task can be listening yet when that failure happens.
 - The systemd service logs to a dedicated journal namespace (`LogNamespace=cutie` in `./config/cutie.service`), capped at 50M total / 10M per file by `./config/cutie.journald.conf`, so a runaway log can't fill up the SD card. A plain `journalctl -u cutie` won't show anything for the deployed service -- add `--namespace=cutie`, as below.
 
+##### Tracing
+
+Every message gets a uuid v7 trace ID when it starts, and every log line that message produces -- the trigger's, each step's, each step's duration, and the task's total -- ends with that ID in parentheses. Grep for one ID to see everything a single reading did.
+
+- A log line inherits the trace of the message that produced it, so a task driven by `trigger:logs` runs its own steps under the trace of the line it received rather than starting an unrelated one. That task's own log lines are never fed back into it, since a log bus that echoed them would loop forever.
+- Trace IDs only reach a sink when a `trigger:logs` task is configured. Module log lines go to the internal log bus, not to the console, so without such a task there is nothing to read them in.
+- A trace crosses the internal event bus (`output:event` to `trigger:event`) on its own. Crossing MQTT is opt-in: set `propagateTrace: true` on the `output:mqtt` step and `protocolVersion: 5` on its connection. The ID travels as a W3C `traceparent` MQTT user property, which only exists in MQTT v5 and which mqtt.js does not speak unless the connection asks for it; the payload is untouched, so other subscribers see no change. `examples/remote-clock.yaml` wires up both halves.
+
 #### Deploying to a raspi for development
 
 Problems with rsync: no watch daemon `rsync --recursive --exclude "**/node_modules/*" --exclude "**/.git/*" --exclude "**/config.json"  --exclude "**.png" --exclude "**.zip" --exclude "**.md" --exclude "**/package-lock.json" ~/workspace/cutie/ kitchen-pi:/home/pi/cutie --verbose`

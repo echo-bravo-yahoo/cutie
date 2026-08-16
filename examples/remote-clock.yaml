@@ -20,6 +20,11 @@ connections:
     username: "admin"
     password: "admin"
     endpoint: "mqtt://127.0.0.1:1883"
+    # trace IDs travel as an MQTT user property, which only
+    # exists in MQTT v5; this and the output step's
+    # propagateTrace are both required to carry a trace
+    # from one task to the other.
+    protocolVersion: 5
 
 tasks:
   local-clock:
@@ -39,6 +44,12 @@ tasks:
         # broadcast to
         topics:
           - "testing/network-clock"
+        # tags the publish with the trace this message is
+        # running under, so the network-clock task's log
+        # lines share an ID with this task's. the payload
+        # is unchanged, so other subscribers see nothing
+        # new. needs protocolVersion 5 on the connection.
+        propagateTrace: true
 
   network-clock:
     # this trigger listens to the channel we're

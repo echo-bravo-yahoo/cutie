@@ -91,11 +91,14 @@ export default class ThermalPrinter extends Output {
     }
   }
 
-  async send(message: Message) {
+  async send(message: Message, traceId: string) {
     const text = typeof message === "string" ? message : JSON.stringify(message);
 
     if (this.config.virtual) {
-      this.info(`Would print (virtual):\n${text}`, { topic: this.logPrefix });
+      this.info(`Would print (virtual):\n${text}`, {
+        topic: this.logPrefix,
+        traceId,
+      });
 
       return message;
     }
@@ -103,6 +106,7 @@ export default class ThermalPrinter extends Output {
     if (!this.printer) {
       this.error("Cannot print; the thermal printer is not enabled.", {
         topic: this.logPrefix,
+        traceId,
       });
 
       return message;
@@ -116,7 +120,7 @@ export default class ThermalPrinter extends Output {
     this.printer.printLine("\n\n\n");
 
     await new Promise<void>((resolve) => this.printer.print(() => resolve()));
-    this.info("Printed a message.", { topic: this.logPrefix });
+    this.info("Printed a message.", { topic: this.logPrefix, traceId });
 
     return message;
   }

@@ -1,9 +1,9 @@
 import get from "lodash/get.js";
 import map from "lodash/map.js";
-import { v7 as uuidV7 } from "uuid";
 
 import Trigger, { TriggerConfig } from "./Trigger.js";
 import Task from "./Task.js";
+import { newTraceId } from "./trace.js";
 
 export type Aggregation =
   | "average"
@@ -47,7 +47,7 @@ export default abstract class Sensor extends Trigger {
     }
 
     const payload = this.collateSamples();
-    const traceId = uuidV7();
+    const traceId = newTraceId();
 
     this.info(
       `Publishing new ${this.name} data.`,

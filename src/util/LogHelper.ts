@@ -7,6 +7,7 @@ export interface SerializedLogLine {
   object: object;
   verbosity: Verbosity;
   topic: string;
+  traceId?: string;
 }
 
 export default class LogHelper {
@@ -54,15 +55,31 @@ export default class LogHelper {
     this.logger.fatal(object || {}, message);
   }
 
-  emit(message: string, verbosity: Verbosity, topic: string, object?: object) {
+  emit(
+    message: string,
+    verbosity: Verbosity,
+    topic: string,
+    object?: object,
+    traceId?: string,
+  ) {
+    // A line logged by a log-driven task would come straight back through this
+    // bus and loop forever, so those tasks' lines are never dispatched. The
+    // task's own topic is the bare prefix; its steps' topics extend it.
+    if (
+      this.logListeners.some(
+        (listener) =>
+          topic === listener.task.logPrefix ||
+          topic.startsWith(`${listener.task.logPrefix}.`),
+      )
+    )
+      return;
+
     for (const listener of this.logListeners) {
       if (listener.shouldEmit(topic, verbosity))
-        listener.startMessage({
-          object,
-          log: message,
-          verbosity,
-          topic,
-        });
+        listener.startMessage(
+          { object, log: message, verbosity, topic, traceId },
+          traceId,
+        );
     }
   }
 }

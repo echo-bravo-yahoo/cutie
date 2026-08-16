@@ -28,7 +28,7 @@ export default class File extends Output {
     };
   }
 
-  async send(message: Message) {
+  async send(message: Message, _traceId: string) {
     if (typeof message !== "string") message = JSON.stringify(message);
     if (this.config.insertNewlines === true) message = `\n${message}`;
 

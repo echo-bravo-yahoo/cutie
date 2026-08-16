@@ -1,5 +1,6 @@
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
+import { newTraceId } from "../util/trace.js";
 import { Message } from "../util/type-helpers.js";
 
 export interface OnceConfig extends TriggerConfig {
@@ -23,14 +24,16 @@ export default class Once extends Trigger {
 
   delayedStartMessage() {
     setTimeout(() => {
+      const traceId = newTraceId();
       const message =
         this.config.delay !== undefined
           ? `Running step once after a delay of ${this.config.delay} ms.`
           : "Running step once, immediately.";
       this.info(message, {
         topic: this.logPrefix,
+        traceId,
       });
-      this.startMessage(this.interpolateDeep(this.config.message));
+      this.startMessage(this.interpolateDeep(this.config.message), traceId);
     }, this.config.delay);
   }
 

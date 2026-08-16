@@ -18,7 +18,7 @@ export default class Shell extends Transform {
     super(config, task);
   }
 
-  transform(message: Message) {
+  transform(message: Message, _traceId: string) {
     const command = this.generateCode(this.config, message);
     const args: Partial<Parameters<typeof execSync>[1]> = {
       encoding: "utf8",

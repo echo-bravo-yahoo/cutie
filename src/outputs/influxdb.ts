@@ -108,7 +108,7 @@ export default class InfluxDB extends Output {
   }
 
   // object to turn into a message _or_ a raw string already in message format
-  async send(message: Message) {
+  async send(message: Message, _traceId: string) {
     if (typeof message === "string") {
       // TO-DO: validation
       await this.sendLine(message);

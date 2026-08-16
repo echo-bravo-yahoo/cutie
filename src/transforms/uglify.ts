@@ -23,7 +23,7 @@ export default class Uglify extends Transform {
     };
   }
 
-  transform(message: Message) {
+  transform(message: Message, _traceId: string) {
     if (typeof message === "string" && this.config.parseInput) {
       return JSON.stringify(JSON.parse(message), null, 0);
     } else if (typeof message === "object") {

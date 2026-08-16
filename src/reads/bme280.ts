@@ -5,6 +5,7 @@ import DrunkReader, {
 } from "../util/DrunkReader.js";
 import Read, { ReadConfig } from "../util/Read.js";
 import Task from "../util/Task.js";
+import { Message } from "../util/type-helpers.js";
 import { importOptional } from "../util/optional-dependency.js";
 
 export interface BME280Config extends ReadConfig {
@@ -49,7 +50,7 @@ export default class BME280 extends Read {
     };
   }
 
-  async read() {
+  async read(_message: Message, traceId: string) {
     if (!this.enabled) return;
     if (this.config.virtual) return this.virtualRead();
     const sensorData = await this.sensor.read();
@@ -63,10 +64,10 @@ export default class BME280 extends Read {
       pressure: sensorData.pressure,
     };
 
-    this.debug(
-      `Sampled new data point, ${JSON.stringify(datapoint, null, 2)}`,
-      { topic: this.logPrefix },
-    );
+    this.debug(`Sampled new data point, ${JSON.stringify(datapoint, null, 2)}`, {
+      topic: this.logPrefix,
+      traceId,
+    });
 
     return datapoint;
   }

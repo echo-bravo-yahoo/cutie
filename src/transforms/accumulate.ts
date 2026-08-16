@@ -20,7 +20,10 @@ export default class Accumulate extends Transform {
     this.messages = [];
   }
 
-  async doHandleMessage(message: Message): Promise<Message | typeof HALT> {
+  async doHandleMessage(
+    message: Message,
+    _traceId: string,
+  ): Promise<Message | typeof HALT> {
     this.messages.push(message);
     if (this.messages.length < this.config.count) return HALT;
 

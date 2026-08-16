@@ -2,8 +2,8 @@ import { EventEmitter } from "node:events";
 
 import MqttTopics from "mqtt-topics";
 
-import { Globals } from "../src";
-import Task from "../src/util/Task";
+import { Globals } from "../src/index.js";
+import Task from "../src/util/Task.js";
 
 export const mockTask = {
   config: { steps: [] },
@@ -23,19 +23,22 @@ export function createMqttMock(retained: Record<string, string> = {}) {
   const clients: Array<any> = [];
 
   class FakeMqttClient extends EventEmitter {
-    options: { clientId: string };
+    options: { clientId: string; protocolVersion?: number };
     subscriptions = new Set<string>();
     ended = false;
 
-    constructor(index: number) {
+    constructor(index: number, options: any = {}) {
       super();
-      this.options = { clientId: `mock_client_${index}` };
+      this.options = { clientId: `mock_client_${index}`, ...options };
     }
 
-    deliver(topic: string, payload: string) {
+    deliver(topic: string, payload: string, properties?: any) {
       for (const filter of this.subscriptions) {
         if (MqttTopics.match(filter, topic)) {
-          this.emit("message", topic, Buffer.from(payload), { topic });
+          this.emit("message", topic, Buffer.from(payload), {
+            topic,
+            properties,
+          });
           return;
         }
       }
@@ -70,8 +73,10 @@ export function createMqttMock(retained: Record<string, string> = {}) {
     async publishAsync(topic: string, message: any, options?: any) {
       const payload = message.toString();
       if (options?.retain) retainedMessages.set(topic, payload);
+      // v5 publish properties -- user properties among them -- reach the
+      // subscriber on the packet, which is how a trace crosses the broker
       for (const client of clients)
-        if (!client.ended) client.deliver(topic, payload);
+        if (!client.ended) client.deliver(topic, payload, options?.properties);
     }
 
     async endAsync() {
@@ -80,8 +85,10 @@ export function createMqttMock(retained: Record<string, string> = {}) {
     }
   }
 
-  async function connectAsync() {
-    const client = new FakeMqttClient(clients.length);
+  // The connection's options are read back by the modules -- output:mqtt gates
+  // trace propagation on protocolVersion -- so they have to survive connecting.
+  async function connectAsync(_endpoint?: string, options?: any) {
+    const client = new FakeMqttClient(clients.length, options);
     clients.push(client);
     return client;
   }
@@ -91,8 +98,8 @@ export function createMqttMock(retained: Record<string, string> = {}) {
     clients,
     mqtt: {
       connectAsync,
-      connect: () => {
-        const client = new FakeMqttClient(clients.length);
+      connect: (_endpoint?: string, options?: any) => {
+        const client = new FakeMqttClient(clients.length, options);
         clients.push(client);
         return client;
       },

@@ -42,7 +42,7 @@ export default class Logs extends Output {
     return FALLBACK_VERBOSITY;
   }
 
-  async send(message: Message) {
+  async send(message: Message, _traceId: string) {
     const typedMessage = message as unknown as SerializedLogLine;
     const verbosity = this.resolveVerbosity(typedMessage?.verbosity);
 

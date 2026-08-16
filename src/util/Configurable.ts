@@ -31,6 +31,7 @@ export class Configurable {
         "debug",
         opts.topic,
         obj,
+        opts.traceId,
       );
     };
 
@@ -40,6 +41,7 @@ export class Configurable {
         "info",
         opts.topic,
         obj,
+        opts.traceId,
       );
     };
 
@@ -49,6 +51,7 @@ export class Configurable {
         "error",
         opts.topic,
         obj,
+        opts.traceId,
       );
     };
 

@@ -8,13 +8,13 @@ export interface OutputConfig extends StepConfig {
 }
 
 export default abstract class Output extends Step {
-  abstract send(message: Message): Promise<Message>;
+  abstract send(message: Message, traceId: string): Promise<Message>;
 
   constructor(config: OutputConfig, task: Task) {
     super(config, task);
   }
 
-  async doHandleMessage(message: Message, _traceId?: string): Promise<Message> {
-    return this.send(message);
+  async doHandleMessage(message: Message, traceId: string): Promise<Message> {
+    return this.send(message, traceId);
   }
 }
