@@ -1,7 +1,16 @@
-import get from "lodash/get.js";
-
 import Output, { OutputConfig } from "../util/Output.js";
 import { readGpioBase } from "../util/gpio.js";
+import {
+  decodeBitmap,
+  fitRaster,
+  loadRaster,
+  quantize,
+  sourceValueFor,
+  validateSourceConfig,
+  Fit,
+  RGB,
+  SourceConfig,
+} from "../util/raster.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
@@ -27,43 +36,38 @@ const DEFAULT_MIN_REFRESH_MS = 180_000;
 const WIDTH = 212;
 const HEIGHT = 104;
 
-export interface InkyPhatConfig extends OutputConfig {
-  // "bar" fills a horizontal bar in proportion to where the value sits between
-  // min and max. "pixels" takes the message as a row-major array of palette
-  // indices, WIDTH * HEIGHT long. "checkerboard" and "bands" ignore the message
-  // and draw a fixed test pattern.
-  mode?: "bar" | "pixels" | "checkerboard" | "bands";
-  // Bands only: the palette indices to paint as equal vertical columns, left to
-  // right. Defaults to one column per palette entry in index order, which makes
-  // the drawn order a direct readout of whether indices map to the colours they
-  // are supposed to - something no single-colour pattern can show.
-  bands?: Array<number>;
-  // Checkerboard only: the size of each square in pixels. At the panel's ~100
-  // DPI a size of 1 resolves as a flat wash rather than a visible grid, which
-  // still detects an addressing fault (it would show as stripes or banding) but
-  // is harder to read by eye than a larger square.
-  squareSize?: number;
-  // lodash path to the number to display; the whole message when omitted.
-  path?: string;
-  min?: number;
-  max?: number;
-  color?: number;
+// What the panel shows for each palette index, as close as RGB gets. Quantising
+// picks the nearest of these, so the array's order is the panel's index order
+// and the third entry has to match the hardware: a photograph reduced against
+// red on a yellow panel picks the wrong pixels, not merely the wrong shade.
+const PALETTE_WHITE: RGB = [255, 255, 255];
+const PALETTE_BLACK: RGB = [0, 0, 0];
+const PALETTE_THIRD: Record<string, RGB | undefined> = {
+  black: undefined,
+  red: [255, 0, 0],
+  yellow: [255, 255, 0],
+};
+
+export interface InkyPhatConfig extends OutputConfig, SourceConfig {
+  // How a source larger or smaller than the panel is scaled onto it.
+  fit?: Fit;
+  // Whether an image is dithered when reduced to the panel's colours. Worth
+  // turning off for line art and text, where a speckled texture is noise rather
+  // than shading.
+  dither?: boolean;
   border?: number;
   // inkyphat refresh mode - "quick" is the fast, lower-fidelity waveform.
   refreshMode?: string;
-  // The panel's third colour, which selects its drive voltages. There is no way
-  // to tell the variants apart in software, so this is left unset by default
-  // and the package's own (red-oriented) values apply unchanged.
+  // The panel's third colour. It selects the drive voltages and the colour an
+  // image is quantised against. There is no way to tell the variants apart in
+  // software, so this is left unset by default and the package's own
+  // (red-oriented) values apply unchanged.
   panelColor?: "black" | "red" | "yellow";
   spiDevice?: string;
   // Minimum gap between physical refreshes. Messages arriving sooner are
   // dropped rather than queued: the panel shows a current reading, so a stale
   // one waiting its turn has no value. Set 0 to refresh on every message.
   minRefreshMs?: number;
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
 }
 
 // Pimoroni's own driver picks the panel's source driving voltage from its
@@ -165,86 +169,52 @@ export default class InkyPhat extends Output {
     super(config, task);
 
     this.name = "inky-phat";
+    validateSourceConfig(config, this.name);
   }
 
-  fraction(value: number) {
-    const min = this.config.min ?? 0;
-    const max = this.config.max ?? 100;
-    if (max === min) return 0;
-    return clamp((value - min) / (max - min), 0, 1);
+  // The colours an image is reduced to, in palette-index order. A panel with no
+  // third colour quantises to two, which is what its hardware can show.
+  get palette(): Array<RGB> {
+    const third = this.config.panelColor
+      ? PALETTE_THIRD[this.config.panelColor]
+      : PALETTE_THIRD.red;
+
+    return third
+      ? [PALETTE_WHITE, PALETTE_BLACK, third]
+      : [PALETTE_WHITE, PALETTE_BLACK];
   }
 
-  numberFrom(message: Message): number {
-    const raw = this.config.path ? get(message, this.config.path) : message;
-    const value = Number(raw);
-    if (!Number.isFinite(value)) {
-      throw new Error(
-        `inky-phat expected a number${
-          this.config.path ? ` at path "${this.config.path}"` : ""
-        } but got ${JSON.stringify(raw)}.`,
-      );
-    }
-    return value;
-  }
+  // One palette index per pixel, row-major.
+  async indicesFrom(message: Message): Promise<Uint8Array> {
+    const value = sourceValueFor(this.config, message);
 
-  drawBar(value: number) {
-    const filled = Math.round(this.fraction(value) * WIDTH);
-    const color = this.config.color ?? BLACK;
-
-    this.panel.clearBuffer();
-    if (filled > 0) {
-      this.panel.drawRect(0, 0, filled, HEIGHT, color);
-    }
-  }
-
-  drawPixels(message: Message) {
-    if (!Array.isArray(message)) {
-      throw new Error(
-        `inky-phat "pixels" mode expects a row-major array of palette indices.`,
-      );
-    }
-
-    this.panel.clearBuffer();
-    for (let index = 0; index < WIDTH * HEIGHT; index++) {
-      const color = message[index];
-      if (typeof color !== "number" || color === WHITE) continue;
-      this.panel.setPixel(index % WIDTH, Math.floor(index / WIDTH), color);
-    }
-  }
-
-  drawBands() {
-    const bands = this.config.bands ?? [WHITE, BLACK, RED];
-    const width = Math.floor(WIDTH / bands.length);
-
-    this.panel.clearBuffer();
-    bands.forEach((color, index) => {
-      const startX = index * width;
-      // The last band takes the remainder, so an unpainted sliver is never left
-      // at the right edge when the width does not divide evenly.
-      const endX = index === bands.length - 1 ? WIDTH : startX + width;
-      // clearBuffer already leaves the panel white, so painting a white band
-      // would be a no-op on top of a no-op.
-      //
-      // drawRect takes two half-open corners, not a position and a size. The
-      // difference is invisible for a rectangle anchored at x=0 - which is why
-      // drawBar above is correct either way - and silently relocates any
-      // rectangle that is not.
-      if (color !== WHITE) this.panel.drawRect(startX, 0, endX, HEIGHT, color);
-    });
-  }
-
-  drawCheckerboard() {
-    const size = Math.max(1, Math.floor(this.config.squareSize ?? 1));
-    const color = this.config.color ?? BLACK;
-
-    this.panel.clearBuffer();
-    for (let y = 0; y < HEIGHT; y++) {
-      for (let x = 0; x < WIDTH; x++) {
-        if ((Math.floor(x / size) + Math.floor(y / size)) % 2 === 0) {
-          this.panel.setPixel(x, y, color);
-        }
+    if (this.config.source === "bitmap") {
+      const bitmap = decodeBitmap(value, WIDTH * HEIGHT);
+      const stray = bitmap.findIndex((index) => index > LIGHT_RED);
+      if (stray !== -1) {
+        throw new Error(
+          `This panel has ${LIGHT_RED + 1} palette entries, but the bitmap holds ${bitmap[stray]} at index ${stray}.`,
+        );
       }
+      return bitmap;
     }
+
+    if (typeof value !== "string") {
+      throw new Error(
+        `inky-phat expected a path to an image file but got ${JSON.stringify(value)}.`,
+      );
+    }
+
+    // Letterboxed against white, which is the panel's unwritten state and so
+    // the only background that costs no ink.
+    const fitted = fitRaster(
+      await loadRaster(value),
+      WIDTH,
+      HEIGHT,
+      this.config.fit,
+      PALETTE_WHITE,
+    );
+    return quantize(fitted, this.palette, this.config.dither ?? true);
   }
 
   async send(message: Message) {
@@ -260,19 +230,19 @@ export default class InkyPhat extends Output {
       return message;
     }
 
-    switch (this.config.mode ?? "bar") {
-      case "checkerboard":
-        this.drawCheckerboard();
-        break;
-      case "bands":
-        this.drawBands();
-        break;
-      case "bar":
-        this.drawBar(this.numberFrom(message));
-        break;
-      case "pixels":
-        this.drawPixels(message);
-        break;
+    // Read before the buffer is touched, so a source that turns out to be
+    // unreadable leaves the panel showing its last good image.
+    const indices = await this.indicesFrom(message);
+
+    this.panel.clearBuffer();
+    for (let index = 0; index < indices.length; index += 1) {
+      // clearBuffer already leaves every pixel white.
+      if (indices[index] === WHITE) continue;
+      this.panel.setPixel(
+        index % WIDTH,
+        Math.floor(index / WIDTH),
+        indices[index],
+      );
     }
 
     // E-ink refresh takes seconds, so this deliberately awaits rather than
@@ -362,17 +332,28 @@ export default class InkyPhat extends Output {
 {
   "type": "output:inky-phat",
   "disabled": false,
-  "mode": "bar",
-  "path": "temp",
-  "min": 15,
-  "max": 30,
-  "color": 1,
+  "source": "image",
+  "file": "/var/lib/cutie/frame.png",
+  "panelColor": "yellow",
   "refreshMode": "quick"
 }
+
+The panel draws pixels and nothing else. Anything that produces an image or a
+bitmap can feed it - transform:shell and transform:javascript both can - so a
+reading is rendered by whatever step precedes this one:
+
+{
+  "type": "output:inky-phat",
+  "source": "bitmap",
+  "path": "frame",
+  "panelColor": "yellow"
+}
+
+212x104 pixels, one byte per pixel, holding a palette index: 0 white, 1 black,
+2 the panel's third colour, 3 light red. As base64 or an array of numbers.
 
 Shares SPI0 CE0 with the Unicorn HAT Mini's first chip when both are stacked,
 so each controller receives the other's traffic. In practice each ignores
 commands that do not match its own protocol, and both keep working - but that
-is a property of these two controllers rather than anything guaranteed, and it
-has only been observed with the two driven one after the other, not at once.
+is a property of these two controllers rather than anything guaranteed.
 */

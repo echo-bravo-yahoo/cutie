@@ -1,36 +1,29 @@
 import { createRequire } from "node:module";
-import get from "lodash/get.js";
 
 import Output, { OutputConfig } from "../util/Output.js";
+import {
+  decodeBitmap,
+  fitRaster,
+  loadRaster,
+  sourceValueFor,
+  validateSourceConfig,
+  Fit,
+  RGB,
+  SourceConfig,
+} from "../util/raster.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 
-export type RGB = [number, number, number];
+export type { RGB };
 
 // The panel is two HT16D35A chips on the SPI0 hardware chip selects, so they
 // map one-to-one onto the kernel's two spidev nodes.
 const DEFAULT_SPI_DEVICES = ["/dev/spidev0.0", "/dev/spidev0.1"];
 
-export interface UnicornHatMiniConfig extends OutputConfig {
-  // "gauge" fills columns left to right in proportion to where the value sits
-  // between min and max. "all" floods the panel with one interpolated colour.
-  // "pixels" takes the message itself as a row-major array of [r, g, b].
-  // "checkerboard" ignores the message and draws a fixed test pattern.
-  mode?: "gauge" | "all" | "pixels" | "checkerboard";
-  // Checkerboard only: the lit colour, and the size of each square in pixels.
-  // A size of 1 alternates every LED, which is what makes the pattern a usable
-  // check on pixel addressing - any transposition or stride error turns it into
-  // stripes or a scatter rather than an even grid.
-  color?: RGB;
-  squareSize?: number;
-  // lodash path to the number to display; the whole message when omitted.
-  path?: string;
-  min?: number;
-  max?: number;
+export interface UnicornHatMiniConfig extends OutputConfig, SourceConfig {
+  // How a source larger or smaller than the panel is scaled onto it.
+  fit?: Fit;
   brightness?: number;
-  lowColor?: RGB;
-  highColor?: RGB;
-  offColor?: RGB;
   // One spidev node per HT16D35A chip, in chip-select order.
   spiDevices?: Array<string>;
 }
@@ -38,9 +31,10 @@ export interface UnicornHatMiniConfig extends OutputConfig {
 const ROWS = 7;
 const COLS = 17;
 
-const DEFAULT_LOW: RGB = [0, 0, 255];
-const DEFAULT_HIGH: RGB = [255, 0, 0];
-const DEFAULT_OFF: RGB = [0, 0, 0];
+// An unlit LED, which is what a letterboxed pixel has to be: this panel emits
+// light rather than reflecting it, so filling the margins with white would ring
+// the image in seven full-brightness LEDs.
+const BACKGROUND: RGB = [0, 0, 0];
 
 // HT16D35A commands, per the reference driver.
 const CMD_SOFT_RESET = 0xcc;
@@ -166,12 +160,6 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function interpolate(low: RGB, high: RGB, fraction: number): RGB {
-  const at = (index: number) =>
-    Math.round(low[index] + (high[index] - low[index]) * fraction);
-  return [at(0), at(1), at(2)];
-}
-
 export default class UnicornHatMini extends Output {
   declare config: UnicornHatMiniConfig;
   panel?: UnicornPanel;
@@ -180,101 +168,57 @@ export default class UnicornHatMini extends Output {
     super(config, task);
 
     this.name = "unicorn-hat-mini";
+    validateSourceConfig(config, this.name);
   }
 
-  get low(): RGB {
-    return this.config.lowColor ?? DEFAULT_LOW;
-  }
+  // Three bytes per pixel, row-major: red, green, blue.
+  async pixelsFrom(message: Message): Promise<Uint8Array> {
+    const value = sourceValueFor(this.config, message);
 
-  get high(): RGB {
-    return this.config.highColor ?? DEFAULT_HIGH;
-  }
-
-  get off(): RGB {
-    return this.config.offColor ?? DEFAULT_OFF;
-  }
-
-  // Where the value sits between min and max, as 0..1.
-  fraction(value: number) {
-    const min = this.config.min ?? 0;
-    const max = this.config.max ?? 100;
-    if (max === min) return 0;
-    return clamp((value - min) / (max - min), 0, 1);
-  }
-
-  numberFrom(message: Message): number {
-    const raw = this.config.path ? get(message, this.config.path) : message;
-    const value = Number(raw);
-    if (!Number.isFinite(value)) {
-      throw new Error(
-        `unicorn-hat-mini expected a number${
-          this.config.path ? ` at path "${this.config.path}"` : ""
-        } but got ${JSON.stringify(raw)}.`,
-      );
+    if (this.config.source === "bitmap") {
+      return decodeBitmap(value, ROWS * COLS * 3);
     }
-    return value;
-  }
 
-  drawGauge(panel: UnicornPanel, value: number) {
-    const fraction = this.fraction(value);
-    const lit = Math.round(fraction * COLS);
-    const color = interpolate(this.low, this.high, fraction);
-
-    for (let col = 0; col < COLS; col++) {
-      const colour = col < lit ? color : this.off;
-      for (let row = 0; row < ROWS; row++) {
-        panel.setPixel(row, col, colour);
-      }
-    }
-  }
-
-  drawAll(panel: UnicornPanel, value: number) {
-    panel.setAll(interpolate(this.low, this.high, this.fraction(value)));
-  }
-
-  drawPixels(panel: UnicornPanel, message: Message) {
-    if (!Array.isArray(message)) {
+    if (typeof value !== "string") {
       throw new Error(
-        `unicorn-hat-mini "pixels" mode expects an array of [r, g, b] triples.`,
+        `unicorn-hat-mini expected a path to an image file but got ${JSON.stringify(value)}.`,
       );
     }
 
-    for (let index = 0; index < ROWS * COLS; index++) {
-      const pixel = (message[index] as RGB | undefined) ?? this.off;
-      panel.setPixel(Math.floor(index / COLS), index % COLS, pixel);
-    }
-  }
+    const fitted = fitRaster(
+      await loadRaster(value),
+      COLS,
+      ROWS,
+      this.config.fit,
+      BACKGROUND,
+    );
 
-  drawCheckerboard(panel: UnicornPanel) {
-    const size = Math.max(1, Math.floor(this.config.squareSize ?? 1));
-    const on = this.config.color ?? this.high;
-
-    for (let row = 0; row < ROWS; row++) {
-      for (let col = 0; col < COLS; col++) {
-        const lit = (Math.floor(row / size) + Math.floor(col / size)) % 2 === 0;
-        panel.setPixel(row, col, lit ? on : this.off);
-      }
+    // Dropping alpha rather than converting: fitRaster has already resolved it
+    // against the background, so every pixel is opaque.
+    const pixels = new Uint8Array(ROWS * COLS * 3);
+    for (let index = 0; index < ROWS * COLS; index += 1) {
+      pixels[index * 3] = fitted.data[index * 4];
+      pixels[index * 3 + 1] = fitted.data[index * 4 + 1];
+      pixels[index * 3 + 2] = fitted.data[index * 4 + 2];
     }
+    return pixels;
   }
 
   async send(message: Message) {
-    // Narrowed to a local so the draw helpers need no non-null assertions.
+    // Narrowed to a local so the draw below needs no non-null assertions.
     const panel = this.panel;
     if (!this.enabled || !panel) return message;
 
-    switch (this.config.mode ?? "gauge") {
-      case "checkerboard":
-        this.drawCheckerboard(panel);
-        break;
-      case "gauge":
-        this.drawGauge(panel, this.numberFrom(message));
-        break;
-      case "all":
-        this.drawAll(panel, this.numberFrom(message));
-        break;
-      case "pixels":
-        this.drawPixels(panel, message);
-        break;
+    // Read before the buffer is touched, so a source that turns out to be
+    // unreadable leaves the panel showing its last good image.
+    const pixels = await this.pixelsFrom(message);
+
+    for (let index = 0; index < ROWS * COLS; index += 1) {
+      panel.setPixel(Math.floor(index / COLS), index % COLS, [
+        pixels[index * 3],
+        pixels[index * 3 + 1],
+        pixels[index * 3 + 2],
+      ]);
     }
 
     await panel.show();
@@ -291,7 +235,7 @@ export default class UnicornHatMini extends Output {
     );
     await this.panel.open();
 
-    this.panel.setAll(this.off);
+    this.panel.setAll(BACKGROUND);
     await this.panel.show();
 
     this.info("Enabled unicorn hat mini.", { topic: this.logPrefix });
@@ -300,7 +244,7 @@ export default class UnicornHatMini extends Output {
 
   async disable() {
     if (this.panel) {
-      this.panel.setAll(this.off);
+      this.panel.setAll(BACKGROUND);
       await this.panel.show();
       await this.panel.close();
       this.panel = undefined;
@@ -314,21 +258,25 @@ export default class UnicornHatMini extends Output {
 {
   "type": "output:unicorn-hat-mini",
   "disabled": false,
-  "mode": "gauge",
-  "path": "temp",
-  "min": 15,
-  "max": 30,
+  "source": "image",
+  "file": "/var/lib/cutie/frame.png",
   "brightness": 0.2
 }
 
-Runs unprivileged. Every transfer goes through spidev, which the kernel already
-exposes to the spi group, so no /dev/mem mapping and no root are involved.
-
-To check a panel's wiring rather than display a reading:
+The panel draws pixels and nothing else. Anything that produces an image or a
+bitmap can feed it - transform:shell and transform:javascript both can - so a
+reading is rendered by whatever step precedes this one:
 
 {
   "type": "output:unicorn-hat-mini",
-  "mode": "checkerboard",
-  "brightness": 0.3
+  "source": "bitmap",
+  "path": "frame",
+  "brightness": 0.2
 }
+
+17x7 pixels, three bytes per pixel, holding red, green and blue. As base64 or
+an array of numbers.
+
+Runs unprivileged. Every transfer goes through spidev, which the kernel already
+exposes to the spi group, so no /dev/mem mapping and no root are involved.
 */
