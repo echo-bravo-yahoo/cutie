@@ -114,15 +114,22 @@ export default class InfluxDB extends Output {
       await this.sendLine(message);
       return message;
     } else if (isInfluxDBMessage(message)) {
-      const measurementName = this.config.measurement;
+      const measurementName = this.interpolateConfigString(
+        this.config.measurement,
+        { message },
+      );
       let tagsString = "";
 
-      // TO-DO: do interpolation here
+      // Tags supplied on the message get interpolated alongside the configured
+      // ones, matching output:mqtt, which interpolates a topic from either
+      // source.
       if (message.tags || this.config.tags)
-        tagsString = this.objectToLine({
-          ...this.config.tags,
-          ...message.tags,
-        });
+        tagsString = this.objectToLine(
+          this.interpolateDeep(
+            { ...this.config.tags, ...message.tags },
+            { message },
+          ) as Record<string, Message>,
+        );
 
       if (tagsString) tagsString = `,${tagsString}`;
       const data = this.objectToLine(message.fields);

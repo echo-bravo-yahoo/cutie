@@ -9,6 +9,7 @@ export interface FileConfig extends OutputConfig {
   path: string;
   append?: boolean;
   insertNewlines?: boolean;
+  encoding?: BufferEncoding;
 }
 
 export default class File extends Output {
@@ -22,6 +23,7 @@ export default class File extends Output {
     return {
       append: true,
       insertNewlines: true,
+      encoding: "utf8",
       ...config,
     };
   }
@@ -34,10 +36,9 @@ export default class File extends Output {
     if (!isAbsolute(path)) path = resolve(".", path);
 
     if (this.config.append) {
-      // TO-DO: customize encoding
-      await appendFile(path, message, { encoding: "utf8" });
+      await appendFile(path, message, { encoding: this.config.encoding });
     } else {
-      await writeFile(path, message, { encoding: "utf8" });
+      await writeFile(path, message, { encoding: this.config.encoding });
     }
 
     return message;
@@ -50,6 +51,7 @@ export default class File extends Output {
   "disabled": false,
   "path": "./path/to/file", // gets interpolated
   "append": true,           // default; false overwrites the file on every message
-  "insertNewlines": true    // default; prefixes each message with a newline
+  "insertNewlines": true,   // default; prefixes each message with a newline
+  "encoding": "utf8"        // default; any encoding node's fs accepts
 }
 */

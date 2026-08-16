@@ -1,4 +1,5 @@
 import DrunkReader, {
+  DrunkGasResistance,
   DrunkHumidity,
   DrunkPressure,
   DrunkTemp,
@@ -36,8 +37,7 @@ export default class BME680 extends Read {
     this.virtualTemp = new DrunkTemp();
     this.virtualHumidity = new DrunkHumidity();
     this.virtualPressure = new DrunkPressure();
-    // TODO: make a decent virtual read config for this
-    this.virtualGas = new DrunkPressure();
+    this.virtualGas = new DrunkGasResistance();
 
     this.name = "BME680";
   }

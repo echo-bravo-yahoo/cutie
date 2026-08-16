@@ -25,6 +25,8 @@ import {
 import { Configurable } from "../../src/util/Configurable.js";
 import NEC from "../../src/outputs/nec.js";
 import Switchbots from "../../src/outputs/switchbots.js";
+import InfluxDB from "../../src/outputs/influxdb.js";
+import InfluxDBConnection from "../../src/connections/influxdb.js";
 import {
   necToBits,
   necToWave,
@@ -676,6 +678,122 @@ describe("the runtime", function () {
       expect(await stashValue("hello ${message}", "world")).to.equal(
         "hello world",
       );
+    });
+  });
+
+  describe("output:influxdb", function () {
+    // One InfluxDB connection plus a task that stashes a value before writing,
+    // with sendLine stubbed so the line protocol can be read back without a
+    // server.
+    async function lineFor(
+      config: object,
+      message: object,
+      { precision = "ms", deviceId = "kitchen-pi" } = {},
+    ) {
+      const connection = new InfluxDBConnection({
+        type: "connection:influxdb",
+        name: "influx",
+        url: "http://127.0.0.1:8086/api/v2/write",
+        organization: "home",
+        bucket: "sensors",
+        token: "a-token",
+        precision,
+      } as any);
+      globals.connections.push(connection);
+
+      const task = new Task(
+        {
+          steps: [
+            { type: "output:stash", key: "deviceId", value: deviceId } as any,
+            { type: "output:influxdb", connectionName: "influx", ...config },
+          ],
+        },
+        "writes a point to influxdb",
+      );
+      await task.register();
+
+      const lines: Array<string> = [];
+      (task.steps[1] as InfluxDB).sendLine = async (line: string) => {
+        lines.push(line);
+        return undefined as any;
+      };
+
+      try {
+        await task.startMessage(message as any);
+        expect(lines).to.have.lengthOf(1);
+        return lines[0];
+      } finally {
+        globals.connections.length = 0;
+      }
+    }
+
+    it("interpolates a configured tag value", async function () {
+      const line = await lineFor(
+        { measurement: "climate", tags: { device: "${stash.deviceId}" } },
+        { fields: { temp: 21.5 } },
+      );
+
+      expect(line).to.include("device=kitchen-pi");
+      expect(line).to.not.include("${stash.deviceId}");
+    });
+
+    it("interpolates the measurement name", async function () {
+      const line = await lineFor(
+        { measurement: "climate-${stash.deviceId}", tags: {} },
+        { fields: { temp: 21.5 } },
+      );
+
+      expect(line.split(" ")[0]).to.equal("climate-kitchen-pi");
+    });
+
+    it("interpolates a tag supplied on the message, letting it win", async function () {
+      const line = await lineFor(
+        {
+          measurement: "climate",
+          tags: { device: "unset", room: "kitchen" },
+        },
+        { fields: { temp: 21.5 }, tags: { device: "${stash.deviceId}" } },
+      );
+
+      expect(line).to.include("device=kitchen-pi");
+      expect(line).to.include("room=kitchen");
+      expect(line).to.not.include("device=unset");
+    });
+
+    it("escapes separators in an interpolated tag value", async function () {
+      const line = await lineFor(
+        { measurement: "climate", tags: { device: "${stash.deviceId}" } },
+        { fields: { temp: 21.5 } },
+        { deviceId: "kitchen pi,room=a" },
+      );
+
+      expect(line).to.include("device=kitchen\\ pi\\,room\\=a");
+    });
+
+    it("writes a second-precision timestamp in seconds", async function () {
+      const before = Math.floor(Date.now() / 1000);
+      const line = await lineFor(
+        { measurement: "climate", tags: {} },
+        { fields: { temp: 21.5 } },
+        { precision: "s" },
+      );
+
+      const timestamp = Number(line.split(" ").pop());
+      expect(timestamp).to.be.at.least(before);
+      expect(timestamp).to.be.at.most(Math.floor(Date.now() / 1000));
+    });
+
+    it("writes a nanosecond-precision timestamp in nanoseconds", async function () {
+      const before = Date.now() * 1000000;
+      const line = await lineFor(
+        { measurement: "climate", tags: {} },
+        { fields: { temp: 21.5 } },
+        { precision: "ns" },
+      );
+
+      const timestamp = Number(line.split(" ").pop());
+      expect(timestamp).to.be.at.least(before);
+      expect(timestamp).to.be.at.most(Date.now() * 1000000);
     });
   });
 

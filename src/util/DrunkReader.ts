@@ -75,3 +75,17 @@ export class DrunkPressure extends DrunkReader {
     });
   }
 }
+
+// Gas resistance is reported in ohms, so it walks a range orders of magnitude
+// above the other measurements.
+export class DrunkGasResistance extends DrunkReader {
+  constructor() {
+    super({
+      min: 5000,
+      max: 50000,
+      minStep: 50,
+      maxStep: 500,
+      start: 20000,
+    });
+  }
+}

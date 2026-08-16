@@ -7,6 +7,7 @@ import { Message } from "../util/type-helpers.js";
 
 export interface FileConfig extends ReadConfig {
   path: string;
+  encoding?: BufferEncoding;
 }
 
 export default class File extends Read {
@@ -16,11 +17,17 @@ export default class File extends Read {
     super(config, task);
   }
 
+  addDefaultsToConfig(config: FileConfig): FileConfig {
+    return {
+      encoding: "utf8",
+      ...config,
+    };
+  }
+
   async read(message: Message, _traceId: string) {
     let path = this.interpolateConfigString(this.config.path, { message });
     if (!isAbsolute(path)) path = resolve(".", path);
-    // TO-DO: customizable encoding
-    return await readFile(path, { encoding: "utf8" });
+    return await readFile(path, { encoding: this.config.encoding });
   }
 
   async enable() {
@@ -38,6 +45,7 @@ export default class File extends Read {
 {
   "type": "read:file",
   "disabled": false,
-  "path": "./path/to/file"
+  "path": "./path/to/file", // gets interpolated
+  "encoding": "utf8"        // default; any encoding node's fs accepts
 }
 */
