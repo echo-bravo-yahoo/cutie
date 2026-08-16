@@ -136,6 +136,7 @@ The `random` sensor runs without any hardware; use it to test changes to the run
 
 - Logs are written as colorized text by `pino-pretty`, not as JSON, so they are meant to be read rather than piped through `jq`.
 - To filter logs by subsystem, use a `trigger:logs` task instead. It receives every internal log line and matches the line's topic against its `filters`, where `*` is a wildcard and a leading `!` negates. The last matching filter wins, so `["*", "!core.registration.*"]` means "everything except registration".
+- A connection that fails to register (e.g. an unreachable broker) always prints directly, in addition to being available to a `trigger:logs` task -- connections register before tasks, so no `trigger:logs` task can be listening yet when that failure happens.
 - The systemd service logs to a dedicated journal namespace (`LogNamespace=cutie` in `./config/cutie.service`), capped at 50M total / 10M per file by `./config/cutie.journald.conf`, so a runaway log can't fill up the SD card. A plain `journalctl -u cutie` won't show anything for the deployed service -- add `--namespace=cutie`, as below.
 
 #### Deploying to a raspi for development
