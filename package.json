@@ -32,6 +32,7 @@
     "start": "npx tsx ./src/cli-entrypoint.ts start",
     "start:prod": "./built/cli-entrypoint.js start --config ./config/cutie.conf.json",
     "lint": "npx eslint",
+    "typecheck": "tsc -p tsconfig.test.json",
     "prettify": "prettier -w .",
     "add-service": "sudo cp ./config/cutie.service /etc/systemd/system/cutie.service && sudo cp ./config/cutie.journald.conf /etc/systemd/journald@cutie.conf && sudo systemctl daemon-reload && sudo systemctl enable cutie",
     "update-service": "npm run add-service && sudo systemctl restart cutie && sudo systemctl restart systemd-journald@cutie.service"

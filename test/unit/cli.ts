@@ -63,7 +63,7 @@ describe("the CLI's", function () {
     upload: (args: UploadArgs) => Promise<any>;
 
   before(async () => {
-    setGlobals({ logger: fakeLogger });
+    setGlobals({ logger: fakeLogger } as any);
 
     mockFetchConfig = mock.fn(async function () {
       return {
@@ -75,7 +75,9 @@ describe("the CLI's", function () {
         ],
       };
     });
-    mockWriteFile = mock.fn(async function () {});
+    mockWriteFile = mock.fn(async function () {}) as unknown as Mock<
+      typeof writeFile
+    >;
     mockReadYaml = mock.fn(async (path: string) =>
       path.includes("thing") ? remoteConfig2 : remoteConfig,
     );

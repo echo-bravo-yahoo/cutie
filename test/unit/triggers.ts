@@ -22,7 +22,7 @@ describe("triggers", function () {
   };
 
   before(() => {
-    setGlobals({ logger: fakeLogger });
+    setGlobals({ logger: fakeLogger } as any);
   });
 
   describe("specific triggers", function () {

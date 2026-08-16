@@ -88,9 +88,9 @@ describe("examples run correctly, including", function () {
 
     expect(mockWriteFile.mock.callCount()).to.equal(2);
     expect(mockWriteFile.mock.calls).to.satisfy(
-      (calls) =>
+      (calls: Array<any>) =>
         calls.find(
-          (call) =>
+          (call: any) =>
             call.arguments[0] ===
               normalize(`${srcDir}/../config/some/imaginary/path`) &&
             call.arguments[1] === "first" &&
@@ -98,9 +98,9 @@ describe("examples run correctly, including", function () {
         ) !== undefined,
     );
     expect(mockWriteFile.mock.calls).to.satisfy(
-      (calls) =>
+      (calls: Array<any>) =>
         calls.find(
-          (call) =>
+          (call: any) =>
             call.arguments[0] ===
               normalize(`${srcDir}/../config/some/imaginary/second/path`) &&
             call.arguments[1] === "second" &&

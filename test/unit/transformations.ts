@@ -29,7 +29,7 @@ describe("transforms", function () {
   };
 
   before(() => {
-    setGlobals({ logger: fakeLogger });
+    setGlobals({ logger: fakeLogger } as any);
   });
 
   describe("specific transformers", function () {
@@ -572,7 +572,7 @@ describe("transforms", function () {
                   temp: { precision: 2 },
                   humidity: { precision: 1, direction: "down" },
                 },
-              } as RoundConfig,
+              } as unknown as RoundConfig,
             ],
           },
           "works on composite readings",
