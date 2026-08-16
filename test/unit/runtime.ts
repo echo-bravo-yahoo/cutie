@@ -1,5 +1,6 @@
-import { describe, it, before } from "node:test";
+import { describe, it, afterEach, before, mock, Mock } from "node:test";
 import { EventEmitter } from "node:events";
+import * as realFsPromises from "node:fs/promises";
 
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -11,6 +12,7 @@ import { globals, setGlobals } from "../../src/index.js";
 import Sensor from "../../src/util/Sensor.js";
 import MQTTConnection from "../../src/connections/mqtt.js";
 import { registerConnections } from "../../src/util/connections.js";
+import { Connection } from "../../src/util/Connection.js";
 import { redact } from "../../src/util/redact.js";
 import { CronConfig } from "../../src/triggers/cron.js";
 import { EventConfig } from "../../src/triggers/event.js";
@@ -32,8 +34,9 @@ import InfluxDBConnection from "../../src/connections/influxdb.js";
 import {
   necToBits,
   necToWave,
+  transmitNECCommand,
 } from "../../src/util/bitbang/adapters/nec.js";
-import { taskDone } from "../helpers.js";
+import { createPigpioMock, MOCK_WAVE_ID, taskDone } from "../helpers.js";
 
 // A connection with a stubbed-out client, so subscribe/unsubscribe
 // bookkeeping can be observed without a broker.
@@ -58,6 +61,15 @@ function stubbedConnection() {
 }
 
 describe("the runtime", function () {
+  // output:file is the only module here that writes anything, so its two
+  // calls are faked file-wide; everything else in node:fs/promises is real.
+  const appendFile = mock.fn(async () => {}) as unknown as Mock<
+    typeof realFsPromises.appendFile
+  >;
+  const writeFile = mock.fn(async () => {}) as unknown as Mock<
+    typeof realFsPromises.writeFile
+  >;
+
   const fakeLogger = {
     logListeners: [] as Array<unknown>,
     emit: () => {},
@@ -72,6 +84,12 @@ describe("the runtime", function () {
   };
 
   before(() => {
+    // has to be installed before any test imports output:file, which the
+    // declared-defaults tests do
+    mock.module("node:fs/promises", {
+      namedExports: { ...realFsPromises, appendFile, writeFile },
+    });
+
     setGlobals({
       logger: fakeLogger,
       connections: [],
@@ -128,7 +146,7 @@ describe("the runtime", function () {
       const task = new Task(
         {
           disabled: true,
-          trigger: { type: "trigger:once", message: "hi" },
+          trigger: { type: "trigger:once", message: "hi" } as any,
           steps: [
             { type: "read:constant", value: "a value" } as any,
             { type: "transform:prettify" } as any,
@@ -335,7 +353,7 @@ describe("the runtime", function () {
     it("fires more than once", async function () {
       const task = new Task(
         {
-          steps: [{ type: "output:stash", key: "last", value: "tick" }],
+          steps: [{ type: "output:stash", key: "last", value: "tick" } as any],
           trigger: {
             type: "trigger:cron",
             // once per second, so the repeat is observable in a unit test
@@ -358,7 +376,7 @@ describe("the runtime", function () {
     it("stops listening when disabled", async function () {
       const task = new Task(
         {
-          steps: [{ type: "output:stash", key: "last", value: "fired" }],
+          steps: [{ type: "output:stash", key: "last", value: "fired" } as any],
           trigger: {
             type: "trigger:event",
             key: "a-happening",
@@ -566,7 +584,10 @@ describe("the runtime", function () {
         task,
       );
 
-      const result = await bot.send({ id: "abc123", action: "on" } as any);
+      const result = await bot.send(
+        { id: "abc123", action: "on" } as any,
+        "a-trace",
+      );
       expect(result).to.deep.equal({ id: "abc123", action: "on" });
     });
   });
@@ -602,7 +623,7 @@ describe("the runtime", function () {
         task,
       );
 
-      const result = await printer.send("# heading\nbody line");
+      const result = await printer.send("# heading\nbody line", "a-trace");
       expect(result).to.equal("# heading\nbody line");
     });
   });
@@ -630,6 +651,56 @@ describe("the runtime", function () {
 
       expect(wave.some((pulse) => pulse.gpioOn === 23)).to.equal(false);
       expect(wave.some((pulse) => pulse.gpioOn === 17)).to.equal(true);
+    });
+  });
+
+  describe("bitbang NEC transmission", function () {
+    const command = { address: 0x7c, command: 0x66 };
+
+    it("deletes the wave only after the transmission has drained", async function () {
+      const { calls, pigpio } = createPigpioMock();
+
+      await transmitNECCommand(pigpio, command, 23);
+
+      expect(calls.filter((call) => !call.startsWith("waveTxBusy"))).to.deep.equal(
+        [
+          "waveClear",
+          "waveAddGeneric",
+          "waveCreate",
+          `waveTxSend(${MOCK_WAVE_ID}, 0)`,
+          `waveDelete(${MOCK_WAVE_ID})`,
+        ],
+      );
+      // the v3 bug: the promise never settled, and the wave was deleted while
+      // it was still transmitting
+      expect(calls.indexOf(`waveDelete(${MOCK_WAVE_ID})`)).to.be.greaterThan(
+        calls.lastIndexOf("waveTxBusy(true)"),
+      );
+      expect(calls.at(-2)).to.equal("waveTxBusy(false)");
+    });
+
+    it("waits for as long as the queue stays busy", async function () {
+      const { calls, pigpio } = createPigpioMock({ busyFor: 3 });
+
+      await transmitNECCommand(pigpio, command, 23);
+
+      expect(calls.filter((call) => call === "waveTxBusy(true)")).to.have.lengthOf(
+        3,
+      );
+      expect(calls.at(-1)).to.equal(`waveDelete(${MOCK_WAVE_ID})`);
+    });
+
+    it("still deletes the wave when the transmission throws", async function () {
+      const { calls, pigpio } = createPigpioMock();
+      pigpio.waveTxSend = () => {
+        throw new Error("no gpio here");
+      };
+
+      await expect(
+        transmitNECCommand(pigpio, command, 23),
+      ).to.be.rejectedWith(/no gpio here/);
+
+      expect(calls).to.include(`waveDelete(${MOCK_WAVE_ID})`);
     });
   });
 
@@ -752,7 +823,9 @@ describe("the runtime", function () {
         token: "a-token",
         precision,
       } as any);
-      globals.connections.push(connection);
+      // src/connections/influxdb.ts opts fetchConfig out of the base
+      // signature, so the instance is not assignable to Connection
+      globals.connections.push(connection as unknown as Connection);
 
       const task = new Task(
         {
@@ -922,6 +995,61 @@ describe("the runtime", function () {
       redact(original);
 
       expect(original.connections[0].password).to.equal("pw");
+    });
+  });
+
+  describe("output:file", function () {
+    afterEach(function () {
+      appendFile.mock.resetCalls();
+      writeFile.mock.resetCalls();
+    });
+
+    async function writeThrough(name: string, config: object) {
+      const task = new Task(
+        {
+          steps: [
+            {
+              type: "output:file",
+              path: "/tmp/cutie-output-file-test",
+              ...config,
+            } as any,
+          ],
+        },
+        name,
+      );
+      await task.register();
+      await task.startMessage("a line");
+    }
+
+    it("appends rather than overwriting, unless told otherwise", async function () {
+      await writeThrough("appends by default", {});
+
+      expect(appendFile.mock.callCount()).to.equal(1);
+      expect(writeFile.mock.callCount()).to.equal(0);
+    });
+
+    it("prefixes each appended message with a newline", async function () {
+      await writeThrough("inserts newlines by default", {});
+
+      expect(appendFile.mock.calls[0].arguments[1]).to.equal("\na line");
+    });
+
+    it("overwrites the file when append is false", async function () {
+      await writeThrough("overwrites on request", { append: false });
+
+      expect(writeFile.mock.callCount()).to.equal(1);
+      expect(appendFile.mock.callCount()).to.equal(0);
+    });
+
+    it("writes to the configured path with the configured encoding", async function () {
+      await writeThrough("honors the encoding", { encoding: "latin1" });
+
+      expect(appendFile.mock.calls[0].arguments[0]).to.equal(
+        "/tmp/cutie-output-file-test",
+      );
+      expect(appendFile.mock.calls[0].arguments[2]).to.deep.equal({
+        encoding: "latin1",
+      });
     });
   });
 });

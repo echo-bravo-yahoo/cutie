@@ -4,6 +4,7 @@ import MqttTopics from "mqtt-topics";
 
 import { Globals } from "../src/index.js";
 import Task from "../src/util/Task.js";
+import { Pigpio } from "../src/util/bitbang/pulse.js";
 
 export const mockTask = {
   config: { steps: [] },
@@ -105,6 +106,45 @@ export function createMqttMock(retained: Record<string, string> = {}) {
       },
     },
   };
+}
+
+// The wave id createPigpioMock hands back, so an assertion can name the wave
+// that was created and deleted.
+export const MOCK_WAVE_ID = 7;
+
+// The slice of pigpio the waveform code drives (src/util/bitbang/pulse.ts),
+// recording every call in order so a transmission's ordering can be asserted.
+// busyFor is how many times waveTxBusy reports the queue still draining.
+export function createPigpioMock({ busyFor = 1 } = {}) {
+  const calls: Array<string> = [];
+  let busyChecks = 0;
+
+  const pigpio: Pigpio = {
+    waveClear: () => {
+      calls.push("waveClear");
+    },
+    waveAddGeneric: () => {
+      calls.push("waveAddGeneric");
+    },
+    waveCreate: () => {
+      calls.push("waveCreate");
+      return MOCK_WAVE_ID;
+    },
+    waveDelete: (waveId: number) => {
+      calls.push(`waveDelete(${waveId})`);
+    },
+    waveTxSend: (waveId: number, mode: number) => {
+      calls.push(`waveTxSend(${waveId}, ${mode})`);
+    },
+    waveTxBusy: () => {
+      const busy = busyChecks++ < busyFor;
+      calls.push(`waveTxBusy(${busy})`);
+      return busy;
+    },
+    WAVE_MODE_ONE_SHOT: 0,
+  };
+
+  return { calls, pigpio };
 }
 
 interface TaskDoneOptions {

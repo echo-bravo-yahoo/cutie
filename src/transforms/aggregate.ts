@@ -109,11 +109,7 @@ export default class Aggregate extends Transform {
     const newSubObject = {};
 
     for (const path of Object.keys((this.config as MultiConfig).paths)) {
-      context = {
-        ...context,
-        current: `${context.basePath ? `${context.basePath}.` : ""}${path}`,
-        pathChosen: path,
-      };
+      context = { ...context, pathChosen: path };
       const config =
         context.pathChosen && isMultiConfig(this.config)
           ? this.config.paths[context.pathChosen]
@@ -123,7 +119,9 @@ export default class Aggregate extends Transform {
         config.aggregation,
         context.pathChosen,
       );
-      set(newSubObject, context.current, newValue);
+      // The basePath is applied once, below. Keying by it here as well nested
+      // the whole result under it twice.
+      set(newSubObject, path, newValue);
     }
 
     if (context.basePath) {
