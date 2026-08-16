@@ -35,18 +35,30 @@ Copy a pattern to the device and draw it like any other image:
 }
 ```
 
-A display takes pixels and nothing else, so anything that produces pixels can feed one. To render a reading, put a step that draws it in front of the display and hand over the bitmap:
+## Rendering a reading
+
+A display takes pixels and nothing else, so anything that produces pixels can feed one. To show a reading, put a step that draws it in front of the display and hand over the bitmap.
+
+`temperature-frames.js` is a worked example: it turns `message.temp` into a bar for the Inky and a gauge for the Unicorn, which is what the two displays used to draw for themselves. Copy it onto the device, since `codePath` resolves against the cutie directory rather than this repository:
 
 ```json
 {
   "type": "transform:javascript",
-  "codePath": "./config/temperature-bar.js"
+  "codePath": "./config/temperature-frames.js"
+},
+{
+  "type": "output:unicorn-hat-mini",
+  "source": "bitmap",
+  "path": "unicornFrame",
+  "brightness": 0.3
 },
 {
   "type": "output:inky-phat",
   "source": "bitmap",
-  "path": "frame",
-  "panelColor": "yellow"
+  "path": "inkyFrame",
+  "panelColor": "yellow",
+  "minRefreshMs": 900000
 }
 ```
 
+The script runs under `node:vm` with nothing in scope but `message`, so there is no `Buffer` to base64 with -- it returns plain arrays of numbers, which the bitmap format accepts equally. Its last expression is the message that continues down the pipeline.
