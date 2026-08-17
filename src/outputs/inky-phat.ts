@@ -13,6 +13,11 @@ import {
 } from "../util/raster.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
+import { importOptional } from "../util/optional-dependency.js";
+
+// Type-only, so it is erased before runtime and the package is still reached
+// through importOptional below.
+import type { Gpio as OnoffGpio } from "onoff";
 
 // inkyphat's palette indices, from its lib/inkyphat-utils.js.
 //
@@ -265,6 +270,13 @@ export default class InkyPhat extends Output {
   }
 
   async enable() {
+    // Establishes the package is present, and names the step if it is not. The
+    // three subpath imports below are inside this same package, so they need no
+    // separate guard. Cheap: inkyphat's index requires only its utils module,
+    // and its ControllerFactory default parameter never fires because one is
+    // always passed. It has to precede patchBusyPolling(), which the renderers
+    // destructure pollPin from at load time.
+    await importOptional<object>("inkyphat", "output:inky-phat");
     await patchBusyPolling();
 
     const base = await readGpioBase();
@@ -277,7 +289,10 @@ export default class InkyPhat extends Output {
     // The shift goes in via inkyphat's own dependency injection rather than by
     // patching onoff's module exports: its controller factory takes Gpio as an
     // option, and its top-level factory takes the controller factory.
-    const { Gpio } = await import("onoff");
+    const { Gpio } = await importOptional<{ Gpio: typeof OnoffGpio }>(
+      "onoff",
+      "output:inky-phat",
+    );
 
     // A factory rather than `class OffsetGpio extends Gpio`. This project
     // compiles to ES5, where TypeScript downlevels a subclass into

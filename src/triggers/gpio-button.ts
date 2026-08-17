@@ -1,6 +1,11 @@
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { readGpioBase } from "../util/gpio.js";
+import { importOptional } from "../util/optional-dependency.js";
+
+// Type-only, so it is erased before runtime and the package is still reached
+// through importOptional below.
+import type { Gpio as OnoffGpio } from "onoff";
 
 export interface GpioButtonConfig extends TriggerConfig {
   // BCM pin numbers keyed by the name each button reports as.
@@ -12,6 +17,9 @@ export interface GpioButtonConfig extends TriggerConfig {
   // buttons bounce for a few milliseconds and would otherwise emit several
   // messages per physical press.
   debounceMs?: number;
+  // Watch no pins at all, so a config naming buttons loads on a machine with no
+  // GPIO. Nothing can then press them, so the task never fires.
+  virtual?: boolean;
 }
 
 const DEFAULT_DEBOUNCE_MS = 40;
@@ -47,10 +55,21 @@ export default class GpioButton extends Trigger {
   }
 
   async enable() {
+    if (this.config.virtual) {
+      this.info("Enabled gpio buttons (virtual); no pins are watched.", {
+        topic: this.logPrefix,
+      });
+      this.enabled = true;
+      return;
+    }
+
     // onoff writes the pin number straight to /sys/class/gpio/export with no
     // offset, so BCM numbers have to be shifted by the controller's base.
     const base = await readGpioBase();
-    const { Gpio } = await import("onoff");
+    const { Gpio } = await importOptional<{ Gpio: typeof OnoffGpio }>(
+      "onoff",
+      "trigger:gpio-button",
+    );
 
     for (const [name, bcm] of Object.entries(this.config.buttons ?? {})) {
       const gpio = new Gpio(bcm + base, "in", "both");
@@ -99,7 +118,8 @@ export default class GpioButton extends Trigger {
   "disabled": false,
   "buttons": { "a": 5, "b": 6, "x": 16, "y": 24 },
   "emitOn": "press",
-  "debounceMs": 40
+  "debounceMs": 40,
+  "virtual": false
 }
 
 Emits { button, pressed }. The pin numbers above are the four buttons on a

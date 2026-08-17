@@ -5,6 +5,7 @@ import DrunkReader, {
 } from "../util/DrunkReader.js";
 import Sensor, { SensorConfig } from "../util/Sensor.js";
 import Task from "../util/Task.js";
+import { importOptional } from "../util/optional-dependency.js";
 
 export interface BME680Config extends SensorConfig {
   i2cAddress?: number;
@@ -97,7 +98,12 @@ export default class BME680 extends Sensor {
     if (!this.config.virtual) {
       // Imported lazily so a host without the sensor - or without the compiled
       // i2c-bus binding - can still load every other task in the config.
-      const Bme680 = (await import("bme680-sensor")).default.Bme680;
+      const Bme680 = (
+        await importOptional<{
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          default: { Bme680: new (bus: number, address: number) => any };
+        }>("bme680-sensor", "trigger:bme680")
+      ).default.Bme680;
       this.sensor = new Bme680(
         Number(this.config.i2cBus ?? 1),
         Number(this.config.i2cAddress) || 0x77,

@@ -1,6 +1,5 @@
-import { createRequire } from "node:module";
-
 import Output, { OutputConfig } from "../util/Output.js";
+import { importOptional } from "../util/optional-dependency.js";
 import { PIXEL_LUT } from "./unicorn-hat-mini-lut.js";
 import {
   decodeBitmap,
@@ -50,6 +49,19 @@ const CMD_SCROLL_CTRL = 0x20;
 // the combined buffer.
 const CHIP_BYTES = 28 * 8;
 
+// pi-spi ships no types, so only the members used here are named.
+interface SpiHandle {
+  write: (bytes: Buffer, done: (error: Error | null) => void) => void;
+  clockSpeed: (hz: number) => void;
+  dataMode: (mode: number) => void;
+  bitOrder: (order: number) => void;
+}
+
+interface SpiModule {
+  initialize: (device: string) => SpiHandle;
+  order: { MSB_FIRST: number };
+}
+
 // Minimal driver for the two HT16D35A chips, over spidev.
 //
 // This replaces the unicorn-hat-mini package, which cannot be used as shipped:
@@ -67,9 +79,7 @@ const CHIP_BYTES = 28 * 8;
 // table survives from the package, vendored into unicorn-hat-mini-lut.ts since
 // it is data rather than logic.
 class UnicornPanel {
-  private spis: Array<{
-    write: (b: Buffer, cb: (e: Error | null) => void) => void;
-  }> = [];
+  private spis: Array<SpiHandle> = [];
   private buffer = new Array(CHIP_BYTES * 2).fill(0);
   // Pixel index -> the three buffer offsets holding its red, green and blue.
   private lut = PIXEL_LUT;
@@ -88,8 +98,13 @@ class UnicornPanel {
   }
 
   async open() {
-    const require = createRequire(import.meta.url);
-    const SPI = require("pi-spi");
+    // pi-spi's CommonJS module.exports arrives as the namespace's default.
+    const SPI = (
+      await importOptional<{ default: SpiModule }>(
+        "pi-spi",
+        "output:unicorn-hat-mini",
+      )
+    ).default;
 
     this.spis = this.devices.map((device) => {
       const spi = SPI.initialize(device);
