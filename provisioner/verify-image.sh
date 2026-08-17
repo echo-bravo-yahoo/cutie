@@ -140,7 +140,7 @@ else
   bad "cutie.service not enabled"
 fi
 
-if rootcat /home/pi/workspace/cutie/config/cutie.conf.json | grep -q '"connectionName"'; then
+if rootcat /home/pi/workspace/cutie/config/cutie.conf.yaml | grep -q '"connectionName"'; then
   ok "cutie config has a configProvider connection"
 else
   bad "cutie config lacks connectionName - startup dies on 'connection \"undefined\"'"

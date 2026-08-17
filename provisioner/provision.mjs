@@ -109,8 +109,10 @@ function loadConfig() {
 //
 // Returns the staging DIRECTORY, not the file. sdm's copyfile plugin treats
 // `to=` as a destination directory and keeps the source basename, so the staged
-// file has to already be called cutie.conf.json - hence a per-host subdirectory
-// rather than a per-host filename.
+// file has to already be called cutie.conf.yaml - hence a per-host subdirectory
+// rather than a per-host filename. The name is what package.json's start:prod
+// passes to --config, so staging it under any other name boots a host that
+// dies on ENOENT.
 function stageCutieConfig(hostname, config) {
   const source = config.cutieConfig
     ? resolve(__dirname, config.cutieConfig)
@@ -160,8 +162,11 @@ function stageCutieConfig(hostname, config) {
 
   const dir = resolve(CACHE_DIR, "staged", hostname);
   mkdirSync(dir, { recursive: true });
+  // JSON rather than YAML on purpose: it is valid YAML, and cutie's loader
+  // accepts either regardless of extension. Serializing a config that came in
+  // as JSON would otherwise reformat it for no reason.
   writeFileSync(
-    resolve(dir, "cutie.conf.json"),
+    resolve(dir, "cutie.conf.yaml"),
     `${JSON.stringify(staged, null, 2)}\n`,
   );
   return dir;
@@ -290,10 +295,10 @@ function buildCustomizeCommand({ config, image, secrets, cutieConfig }) {
     `mkdir:"dir=/home/pi/logs|chown=pi:pi"`,
     `mkdir:"dir=${cutie.destPath}|chown=pi:pi"`,
     `copydir:"from=${srcDir}|to=${cutie.destPath}|rsyncopts=-a --exclude-from ${rsyncExclude} --owner --group"`,
-    // cutieConfig is a directory holding a file already named cutie.conf.json;
+    // cutieConfig is a directory holding a file already named cutie.conf.yaml;
     // it overwrites the template copydir just placed (sdm renames the displaced
-    // one to cutie.conf.json.sdm).
-    `copyfile:"from=${cutieConfig}/cutie.conf.json|to=${cutie.destPath}/config|chown=pi:pi"`,
+    // one to cutie.conf.yaml.sdm).
+    `copyfile:"from=${cutieConfig}/cutie.conf.yaml|to=${cutie.destPath}/config|chown=pi:pi"`,
   ];
 
   // `files` maps a source file to the destination DIRECTORY it lands in,
