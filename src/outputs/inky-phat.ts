@@ -73,6 +73,10 @@ export interface InkyPhatConfig extends OutputConfig, SourceConfig {
   // dropped rather than queued: the panel shows a current reading, so a stale
   // one waiting its turn has no value. Set 0 to refresh on every message.
   minRefreshMs?: number;
+  // Do everything but drive the panel: the source is still loaded, scaled,
+  // quantised and length-checked, and what would have been drawn is logged.
+  // Lets a display config be developed on a machine with no panel attached.
+  virtual?: boolean;
 }
 
 // Pimoroni's own driver picks the panel's source driving voltage from its
@@ -174,7 +178,19 @@ export default class InkyPhat extends Output {
     super(config, task);
 
     this.name = "inky-phat";
-    validateSourceConfig(config, this.name);
+    validateSourceConfig(this.config, this.name);
+  }
+
+  addDefaultsToConfig(config: InkyPhatConfig): InkyPhatConfig {
+    return {
+      fit: "contain",
+      dither: true,
+      border: WHITE,
+      refreshMode: "quick",
+      minRefreshMs: DEFAULT_MIN_REFRESH_MS,
+      virtual: false,
+      ...config,
+    };
   }
 
   // The colours an image is reduced to, in palette-index order. A panel with no
@@ -219,18 +235,37 @@ export default class InkyPhat extends Output {
       this.config.fit,
       PALETTE_WHITE,
     );
-    return quantize(fitted, this.palette, this.config.dither ?? true);
+    return quantize(fitted, this.palette, this.config.dither);
   }
 
-  async send(message: Message) {
+  // Pixels per palette index, named by the colour the panel shows for each. It
+  // is what makes a virtual draw worth reading: it says what would have
+  // appeared, rather than merely that something would have.
+  histogram(indices: Uint8Array) {
+    const names = [
+      "white",
+      "black",
+      this.config.panelColor ?? "red",
+      "light red",
+    ];
+    const counts = new Array(names.length).fill(0);
+    for (let at = 0; at < indices.length; at += 1) counts[indices[at]] += 1;
+
+    return counts
+      .map((count, index) => (count ? `${count} ${names[index]}` : undefined))
+      .filter((entry) => entry !== undefined)
+      .join(", ");
+  }
+
+  async send(message: Message, traceId: string) {
     if (!this.enabled) return message;
 
-    const minGap = this.config.minRefreshMs ?? DEFAULT_MIN_REFRESH_MS;
+    const minGap = this.config.minRefreshMs;
     const since = Date.now() - this.lastRefresh;
-    if (minGap > 0 && this.lastRefresh > 0 && since < minGap) {
+    if (minGap && this.lastRefresh > 0 && since < minGap) {
       this.debug(
         `Skipping refresh; ${Math.round((minGap - since) / 1000)}s until the panel may be redrawn again.`,
-        { topic: this.logPrefix },
+        { topic: this.logPrefix, traceId },
       );
       return message;
     }
@@ -238,6 +273,17 @@ export default class InkyPhat extends Output {
     // Read before the buffer is touched, so a source that turns out to be
     // unreadable leaves the panel showing its last good image.
     const indices = await this.indicesFrom(message);
+
+    if (this.config.virtual) {
+      // Stamped as a real draw is, so a virtual run paces itself exactly like a
+      // panel would and a refresh interval can be tuned without one attached.
+      this.lastRefresh = Date.now();
+      this.info(
+        `Would draw (virtual): ${WIDTH}x${HEIGHT}, ${this.histogram(indices)}.`,
+        { topic: this.logPrefix, traceId },
+      );
+      return message;
+    }
 
     this.panel.clearBuffer();
     for (let index = 0; index < indices.length; index += 1) {
@@ -270,6 +316,14 @@ export default class InkyPhat extends Output {
   }
 
   async enable() {
+    if (this.config.virtual) {
+      // Returns before the package is even reached: a virtual instance draws
+      // nothing, so nothing it would draw with has to be installed.
+      this.info("Enabled inky phat (virtual).", { topic: this.logPrefix });
+      this.enabled = true;
+      return;
+    }
+
     // Establishes the package is present, and names the step if it is not. The
     // three subpath imports below are inside this same package, so they need no
     // separate guard. Cheap: inkyphat's index requires only its utils module,
@@ -317,8 +371,8 @@ export default class InkyPhat extends Output {
       : undefined;
 
     this.panel = inkyphatFactory({
-      mode: this.config.refreshMode ?? "quick",
-      border: this.config.border ?? WHITE,
+      mode: this.config.refreshMode,
+      border: this.config.border,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ControllerFactory: (options: Record<string, any>) =>
         // A null RendererV2 is the package's own default, so leaving it unset
@@ -347,6 +401,7 @@ export default class InkyPhat extends Output {
 {
   "type": "output:inky-phat",
   "disabled": false,
+  "virtual": false,
   "source": "image",
   "file": "/var/lib/cutie/frame.png",
   "panelColor": "yellow",
@@ -366,6 +421,11 @@ reading is rendered by whatever step precedes this one:
 
 212x104 pixels, one byte per pixel, holding a palette index: 0 white, 1 black,
 2 the panel's third colour, 3 light red. As base64 or an array of numbers.
+
+With "virtual": true the panel is never opened, but the source is still loaded,
+scaled, quantised and length-checked, and each message logs the palette
+histogram of the image that would have been drawn. The refresh interval still
+applies, so a virtual run paces itself exactly as a real panel would.
 
 Shares SPI0 CE0 with the Unicorn HAT Mini's first chip when both are stacked,
 so each controller receives the other's traffic. In practice each ignores

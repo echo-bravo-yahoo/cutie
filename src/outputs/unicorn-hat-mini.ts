@@ -19,6 +19,7 @@ export type { RGB };
 // The panel is two HT16D35A chips on the SPI0 hardware chip selects, so they
 // map one-to-one onto the kernel's two spidev nodes.
 const DEFAULT_SPI_DEVICES = ["/dev/spidev0.0", "/dev/spidev0.1"];
+const DEFAULT_BRIGHTNESS = 0.2;
 
 export interface UnicornHatMiniConfig extends OutputConfig, SourceConfig {
   // How a source larger or smaller than the panel is scaled onto it.
@@ -26,6 +27,10 @@ export interface UnicornHatMiniConfig extends OutputConfig, SourceConfig {
   brightness?: number;
   // One spidev node per HT16D35A chip, in chip-select order.
   spiDevices?: Array<string>;
+  // Do everything but drive the panel: the source is still loaded, scaled and
+  // length-checked, and what would have been drawn is logged. Lets a display
+  // config be developed on a machine with no HAT attached.
+  virtual?: boolean;
 }
 
 const ROWS = 7;
@@ -78,15 +83,19 @@ interface SpiModule {
 // error anywhere. pi-spi sets the speed on each transfer. Only the pixel lookup
 // table survives from the package, vendored into unicorn-hat-mini-lut.ts since
 // it is data rather than logic.
-class UnicornPanel {
+//
+// Exported so a test can assert the buffer mapping directly: getting a pixel to
+// the right three offsets is the part of this file most worth pinning down, and
+// nothing but the panel knows where they are.
+export class UnicornPanel {
   private spis: Array<SpiHandle> = [];
   private buffer = new Array(CHIP_BYTES * 2).fill(0);
   // Pixel index -> the three buffer offsets holding its red, green and blue.
   private lut = PIXEL_LUT;
 
   constructor(
-    private devices: Array<string>,
-    private brightness: number,
+    private devices: Array<string> = DEFAULT_SPI_DEVICES,
+    private brightness: number = DEFAULT_BRIGHTNESS,
   ) {}
 
   private send(chip: number, bytes: Array<number>): Promise<void> {
@@ -174,6 +183,18 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+// A pixel counts as lit if any channel is. The panel is dark by default, so
+// this is the one number that says whether an image would show at all.
+function countLitPixels(pixels: Uint8Array) {
+  let lit = 0;
+  for (let index = 0; index < ROWS * COLS; index += 1) {
+    if (pixels[index * 3] || pixels[index * 3 + 1] || pixels[index * 3 + 2]) {
+      lit += 1;
+    }
+  }
+  return lit;
+}
+
 export default class UnicornHatMini extends Output {
   declare config: UnicornHatMiniConfig;
   panel?: UnicornPanel;
@@ -182,7 +203,17 @@ export default class UnicornHatMini extends Output {
     super(config, task);
 
     this.name = "unicorn-hat-mini";
-    validateSourceConfig(config, this.name);
+    validateSourceConfig(this.config, this.name);
+  }
+
+  addDefaultsToConfig(config: UnicornHatMiniConfig): UnicornHatMiniConfig {
+    return {
+      fit: "contain",
+      brightness: DEFAULT_BRIGHTNESS,
+      spiDevices: DEFAULT_SPI_DEVICES,
+      virtual: false,
+      ...config,
+    };
   }
 
   // Three bytes per pixel, row-major: red, green, blue.
@@ -218,14 +249,24 @@ export default class UnicornHatMini extends Output {
     return pixels;
   }
 
-  async send(message: Message) {
-    // Narrowed to a local so the draw below needs no non-null assertions.
+  async send(message: Message, traceId: string) {
+    // Narrowed to a local so the draw below needs no non-null assertions. A
+    // virtual instance has no panel and returns before reaching that draw.
     const panel = this.panel;
-    if (!this.enabled || !panel) return message;
+    if (!this.enabled) return message;
+    if (!panel && !this.config.virtual) return message;
 
     // Read before the buffer is touched, so a source that turns out to be
     // unreadable leaves the panel showing its last good image.
     const pixels = await this.pixelsFrom(message);
+
+    if (!panel) {
+      this.info(
+        `Would draw (virtual): ${COLS}x${ROWS}, ${countLitPixels(pixels)} lit pixels.`,
+        { topic: this.logPrefix, traceId },
+      );
+      return message;
+    }
 
     for (let index = 0; index < ROWS * COLS; index += 1) {
       panel.setPixel(Math.floor(index / COLS), index % COLS, [
@@ -240,17 +281,19 @@ export default class UnicornHatMini extends Output {
   }
 
   async enable() {
-    // Constructed lazily, per the convention every hardware-backed step
-    // follows: it pulls in a compiled binding, and a host without the HAT must
-    // still be able to load the rest of the config.
-    this.panel = new UnicornPanel(
-      this.config.spiDevices ?? DEFAULT_SPI_DEVICES,
-      this.config.brightness ?? 0.2,
-    );
-    await this.panel.open();
+    if (!this.config.virtual) {
+      // Constructed lazily, per the convention every hardware-backed step
+      // follows: it pulls in a compiled binding, and a host without the HAT
+      // must still be able to load the rest of the config.
+      this.panel = new UnicornPanel(
+        this.config.spiDevices,
+        this.config.brightness,
+      );
+      await this.panel.open();
 
-    this.panel.setAll(BACKGROUND);
-    await this.panel.show();
+      this.panel.setAll(BACKGROUND);
+      await this.panel.show();
+    }
 
     this.info("Enabled unicorn hat mini.", { topic: this.logPrefix });
     this.enabled = true;
@@ -272,6 +315,7 @@ export default class UnicornHatMini extends Output {
 {
   "type": "output:unicorn-hat-mini",
   "disabled": false,
+  "virtual": false,
   "source": "image",
   "file": "/var/lib/cutie/frame.png",
   "brightness": 0.2
@@ -293,4 +337,7 @@ an array of numbers.
 
 Runs unprivileged. Every transfer goes through spidev, which the kernel already
 exposes to the spi group, so no /dev/mem mapping and no root are involved.
+
+With "virtual": true the panel is never opened, but the source is still loaded,
+scaled and length-checked, and each message logs how many pixels would be lit.
 */
