@@ -14,6 +14,11 @@ import BME680 from "../../src/reads/bme680.js";
 import NEC from "../../src/outputs/nec.js";
 import Switchbots from "../../src/outputs/switchbots.js";
 import ThermalPrinter from "../../src/outputs/thermal-printer.js";
+import InkyPhat from "../../src/outputs/inky-phat.js";
+import UnicornHatMini, {
+  UnicornPanel,
+} from "../../src/outputs/unicorn-hat-mini.js";
+import { PIXEL_LUT } from "../../src/outputs/unicorn-hat-mini-lut.js";
 import Aggregate from "../../src/transforms/aggregate.js";
 import { Context } from "../../src/util/Transform.js";
 import { importOptional } from "../../src/util/optional-dependency.js";
@@ -543,6 +548,269 @@ describe("modules", function () {
       const [cannotPrint] = linesMatching("Cannot print");
       expect(cannotPrint.verbosity).to.equal("error");
       expect(cannotPrint.traceId).to.equal("a-printer-trace");
+    });
+  });
+
+  describe("output:unicorn-hat-mini", function () {
+    const ROWS = 7;
+    const COLS = 17;
+    const BITMAP_BYTES = ROWS * COLS * 3;
+
+    // A panel that has never been opened holds no spidev handles, so show() has
+    // nothing to write to and the buffer can be inspected with no hardware
+    // anywhere. Only the vendored lookup table decides where a pixel lands.
+    function attached() {
+      const task = new Task({ steps: [] }, "draws on a unicorn hat mini");
+      const output = new UnicornHatMini(
+        {
+          type: "output:unicorn-hat-mini",
+          source: "bitmap",
+          path: "frame",
+        } as any,
+        task,
+      );
+      const panel = new UnicornPanel();
+
+      output.panel = panel;
+      output.enabled = true;
+
+      return { output, panel, buffer: (panel as any).buffer as Array<number> };
+    }
+
+    async function virtual(name: string, config: object = {}) {
+      const task = new Task(
+        {
+          steps: [
+            {
+              type: "output:unicorn-hat-mini",
+              source: "bitmap",
+              path: "frame",
+              virtual: true,
+              ...config,
+            } as any,
+          ],
+        },
+        name,
+      );
+      await task.register();
+
+      return task.steps[0] as UnicornHatMini;
+    }
+
+    // Columns 0-8 are wired to the first HT16D35A and 9-16 to the second, so
+    // (3, 8) and (3, 9) sit either side of the chip boundary.
+    //
+    // The rest are chosen to tell a column-major read from a row-major one,
+    // which most coordinates cannot: col * ROWS + row and row * COLS + col
+    // agree at (0, 0), (3, 8) and (6, 16), so a spread made only of corners
+    // would pass under either reading.
+    const spread: Array<[number, number]> = [
+      [0, 0],
+      [6, 0],
+      [0, 16],
+      [3, 8],
+      [3, 9],
+      [6, 16],
+    ];
+
+    for (const [row, col] of spread) {
+      it(`writes row ${row}, column ${col} where the lookup table says`, function () {
+        const { panel, buffer } = attached();
+
+        panel.setPixel(row, col, [11, 22, 33]);
+
+        // Column-major: the stride is ROWS, and reading the table row-major
+        // instead scatters the image rather than obviously breaking it.
+        const [red, green, blue] = PIXEL_LUT[col * ROWS + row];
+        expect([buffer[red], buffer[green], buffer[blue]]).to.deep.equal([
+          11, 22, 33,
+        ]);
+      });
+    }
+
+    it("ignores a pixel outside the panel rather than corrupting the buffer", function () {
+      const { panel, buffer } = attached();
+      const before = [...buffer];
+
+      panel.setPixel(0, COLS, [255, 255, 255]);
+      panel.setPixel(-1, 0, [255, 255, 255]);
+      // A row of ROWS is the interesting one: it lands on a real table entry -
+      // the next column's first pixel - so only bounding the row catches it.
+      panel.setPixel(ROWS, 0, [255, 255, 255]);
+
+      expect(buffer).to.deep.equal(before);
+    });
+
+    it("lands a bitmap's pixels three bytes at a time, row-major", async function () {
+      const { output, panel, buffer } = attached();
+
+      // One lit pixel, at a row and column that cannot be confused for each
+      // other: transposing it would put it off the panel entirely.
+      const frame = new Array(BITMAP_BYTES).fill(0);
+      const at = (3 * COLS + 9) * 3;
+      frame[at] = 10;
+      frame[at + 1] = 20;
+      frame[at + 2] = 30;
+
+      await output.send({ frame }, "a-trace");
+
+      const [red, green, blue] = PIXEL_LUT[9 * ROWS + 3];
+      expect([buffer[red], buffer[green], buffer[blue]]).to.deep.equal([
+        10, 20, 30,
+      ]);
+      expect(buffer.filter((value) => value !== 0)).to.have.lengthOf(3);
+      expect(panel).to.equal(output.panel);
+    });
+
+    it("refuses a bitmap that is not exactly the panel's size", async function () {
+      const { output } = attached();
+
+      await expect(
+        output.send({ frame: [1, 2, 3] }, "a-trace"),
+      ).to.be.rejectedWith(/bitmap of 357 bytes, but got 3/);
+    });
+
+    it("logs what it would draw, and touches no panel, when virtual", async function () {
+      const output = await virtual("draws virtually");
+      const frame = new Array(BITMAP_BYTES).fill(0);
+      // Two pixels, lit through different channels: any channel counts.
+      frame[0] = 255;
+      frame[5] = 255;
+      const message = { frame };
+
+      expect(await output.send(message, "a-trace")).to.equal(message);
+      expect(output.panel).to.equal(undefined);
+
+      const [drawn] = linesMatching("Would draw (virtual)");
+      expect(drawn.log).to.include("17x7, 2 lit pixels");
+      expect(drawn.traceId).to.equal("a-trace");
+    });
+  });
+
+  describe("output:inky-phat", function () {
+    const WIDTH = 212;
+    const HEIGHT = 104;
+    const PIXELS = WIDTH * HEIGHT;
+
+    function inkyPhat(config: object = {}) {
+      const task = new Task({ steps: [] }, "draws on an inky phat");
+
+      return new InkyPhat(
+        {
+          type: "output:inky-phat",
+          source: "bitmap",
+          path: "frame",
+          virtual: true,
+          ...config,
+        } as any,
+        task,
+      );
+    }
+
+    async function virtual(name: string, config: object = {}) {
+      const task = new Task(
+        {
+          steps: [
+            {
+              type: "output:inky-phat",
+              source: "bitmap",
+              path: "frame",
+              virtual: true,
+              ...config,
+            } as any,
+          ],
+        },
+        name,
+      );
+      await task.register();
+
+      return task.steps[0] as InkyPhat;
+    }
+
+    it("quantises against the third colour the panel actually shows", function () {
+      // The variants are indistinguishable in software, so this is config's
+      // only say in the matter - and a photograph reduced against red on a
+      // yellow panel picks the wrong pixels, not merely the wrong shade.
+      expect(inkyPhat({ panelColor: "yellow" }).palette).to.deep.equal([
+        [255, 255, 255],
+        [0, 0, 0],
+        [255, 255, 0],
+      ]);
+      expect(inkyPhat({ panelColor: "red" }).palette).to.deep.equal([
+        [255, 255, 255],
+        [0, 0, 0],
+        [255, 0, 0],
+      ]);
+      expect(inkyPhat({ panelColor: "black" }).palette).to.have.lengthOf(2);
+    });
+
+    it("refuses a bitmap holding an index the panel has no colour for", async function () {
+      const output = await virtual("refuses a stray index");
+      const frame = new Array(PIXELS).fill(0);
+      frame[7] = 4;
+
+      await expect(output.send({ frame }, "a-trace")).to.be.rejectedWith(
+        /4 palette entries, but the bitmap holds 4 at index 7/,
+      );
+    });
+
+    it("refuses a bitmap that is not exactly the panel's size", async function () {
+      const output = await virtual("refuses a short bitmap");
+
+      await expect(
+        output.send({ frame: [0, 1, 2] }, "a-trace"),
+      ).to.be.rejectedWith(/bitmap of 22048 bytes, but got 3/);
+    });
+
+    it("skips a message that arrives before the panel may be redrawn", async function (context) {
+      context.mock.timers.enable({ apis: ["Date"], now: 1_000_000 });
+      const output = await virtual("paces its refreshes", {
+        minRefreshMs: 60_000,
+      });
+      const frame = new Array(PIXELS).fill(0);
+
+      await output.send({ frame }, "first");
+      context.mock.timers.tick(30_000);
+      await output.send({ frame }, "second");
+
+      expect(linesMatching("Would draw (virtual)")).to.have.lengthOf(1);
+      const [skipped] = linesMatching("Skipping refresh");
+      expect(skipped.traceId).to.equal("second");
+    });
+
+    it("redraws once the refresh interval has passed", async function (context) {
+      context.mock.timers.enable({ apis: ["Date"], now: 1_000_000 });
+      const output = await virtual("redraws after its interval", {
+        minRefreshMs: 60_000,
+      });
+      const frame = new Array(PIXELS).fill(0);
+
+      await output.send({ frame }, "first");
+      context.mock.timers.tick(60_000);
+      await output.send({ frame }, "second");
+
+      expect(linesMatching("Would draw (virtual)")).to.have.lengthOf(2);
+      expect(linesMatching("Skipping refresh")).to.have.lengthOf(0);
+    });
+
+    it("logs the palette histogram of what it would draw when virtual", async function () {
+      const output = await virtual("draws virtually", { panelColor: "yellow" });
+      const frame = new Array(PIXELS).fill(0);
+      for (let at = 0; at < 500; at += 1) frame[at] = 2;
+      frame[600] = 1;
+      const message = { frame };
+
+      expect(await output.send(message, "a-trace")).to.equal(message);
+
+      const [drawn] = linesMatching("Would draw (virtual)");
+      expect(drawn.log).to.include("212x104, 21547 white, 1 black, 500 yellow");
+      expect(drawn.traceId).to.equal("a-trace");
+    });
+
+    it("refuses a config that names both a file and a path", function () {
+      expect(() => inkyPhat({ file: "/var/lib/cutie/frame.png" })).to.throw(
+        /takes either a file or a path, not both/,
+      );
     });
   });
 

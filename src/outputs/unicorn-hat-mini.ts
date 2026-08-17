@@ -146,9 +146,11 @@ export class UnicornPanel {
   // ROWS, so those names describe (x, y). Transposing here instead keeps
   // (row, col) meaning what it says everywhere else in this file.
   setPixel(row: number, col: number, [r, g, b]: RGB) {
-    const index = col * ROWS + row;
-    if (index < 0 || index >= ROWS * COLS) return;
-    const [ir, ig, ib] = this.lut[index];
+    // Both coordinates are bounded rather than the index they combine into: a
+    // row of ROWS folds into the next column's first pixel, which is a real
+    // entry in the table and would be silently overwritten.
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
+    const [ir, ig, ib] = this.lut[col * ROWS + row];
     this.buffer[ir] = r;
     this.buffer[ig] = g;
     this.buffer[ib] = b;
