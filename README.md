@@ -88,7 +88,7 @@ There are not very many parts to a `cutie` installation, but they look like this
 
 ### Hardware dependencies are optional
 
-Every package that talks to hardware -- `bme280`, `bme680-sensor`, `node-ble`, `node-switchbot`, `pigpio`, `serialport`, and `thermalprinter` -- is an `optionalDependency`. All but `thermalprinter` are native builds needing python and a C++ toolchain, so on a machine without one, `npm install` skips them and succeeds rather than failing outright.
+Every package that talks to hardware -- `bme280`, `bme680-sensor`, `inkyphat`, `node-ble`, `node-switchbot`, `onoff`, `pi-spi`, `pigpio`, `serialport`, and `thermalprinter` -- is an `optionalDependency`. Most are native builds needing python and a C++ toolchain, so on a machine without one, `npm install` skips them and succeeds rather than failing outright.
 
 Nothing is lost until a config asks for that hardware. Each module loads its package when the step is enabled, so a node running only MQTT and transform steps never touches them. A config that does ask for absent hardware fails at startup naming the package:
 
@@ -96,6 +96,8 @@ Nothing is lost until a config asks for that hardware. Each module loads its pac
 read:bme280 needs the optional "bme280" package, which is not installed or
 failed to build. Install build tools and re-run npm install.
 ```
+
+Every hardware-backed step also takes `virtual: true`, which skips the hardware and needs none of these packages installed. A sensor fakes plausible readings; a display still loads, scales and quantises its source, then logs what it would have drawn. See [sensors.md](./sensors.md).
 
 ### Common issues
 

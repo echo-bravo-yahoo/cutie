@@ -7,6 +7,8 @@
 
 Every hardware-backed sensor supports `virtual: true`, which fakes plausible values that drift slowly over time instead of touching hardware. Use it to develop on a machine with no sensor attached.
 
+The display outputs -- `output:inky-phat` and `output:unicorn-hat-mini` -- take `virtual: true` as well, and theirs still does the image work: the source is loaded, scaled, quantised and length-checked exactly as for a real draw, and each message logs what would have appeared on the panel. That makes a display config developable on a workstation, since the only thing skipped is the panel itself.
+
 ## `read:bme280`
 
 Temperature, humidity, and barometric pressure over I2C.
