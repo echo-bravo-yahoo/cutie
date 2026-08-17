@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 
 import Output, { OutputConfig } from "../util/Output.js";
+import { PIXEL_LUT } from "./unicorn-hat-mini-lut.js";
 import {
   decodeBitmap,
   fitRaster,
@@ -63,22 +64,20 @@ const CHIP_BYTES = 28 * 8;
 // to spidev runs at the device tree's spi-max-frequency, 125 MHz on this
 // platform, which the HT16D35A cannot latch - the panel stays dark with no
 // error anywhere. pi-spi sets the speed on each transfer. Only the pixel lookup
-// table is still borrowed from the package, since it is data rather than logic.
+// table survives from the package, vendored into unicorn-hat-mini-lut.ts since
+// it is data rather than logic.
 class UnicornPanel {
   private spis: Array<{
     write: (b: Buffer, cb: (e: Error | null) => void) => void;
   }> = [];
   private buffer = new Array(CHIP_BYTES * 2).fill(0);
   // Pixel index -> the three buffer offsets holding its red, green and blue.
-  private lut: Array<[number, number, number]>;
+  private lut = PIXEL_LUT;
 
   constructor(
     private devices: Array<string>,
     private brightness: number,
-  ) {
-    const require = createRequire(import.meta.url);
-    this.lut = require("unicorn-hat-mini/src/lut");
-  }
+  ) {}
 
   private send(chip: number, bytes: Array<number>): Promise<void> {
     return new Promise((resolve, reject) =>

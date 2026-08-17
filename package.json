@@ -66,8 +66,7 @@
     "onoff": "^6.0.3",
     "pigpio": "^3.3.1",
     "serialport": "^10.4.0",
-    "thermalprinter": "^0.3.10",
-    "unicorn-hat-mini": "^1.0.0"
+    "thermalprinter": "^0.3.10"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",

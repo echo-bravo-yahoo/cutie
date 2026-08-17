@@ -6,7 +6,6 @@ declare module "mqtt-topics" {
 declare module "bme280";
 declare module "bme680-sensor";
 declare module "node-yaml";
-declare module "unicorn-hat-mini";
 declare module "inkyphat";
 // Deep import. inkyphat sets no "exports" field, so its lib/ is reachable, and
 // the controller factory is the only place its Gpio implementation can be
