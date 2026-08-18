@@ -49,6 +49,29 @@ Replaces the message with the contents of a file.
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 
+## `read:ltr559`
+
+Reads ambient light and proximity from an LTR-559 over I2C.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `virtual` | boolean | no | `false` |  | Produce plausible drifting readings instead of opening the sensor. |
+| `i2cAddress` | number | no | `35` |  | The sensor's I2C address. Must be between 8 and 119, a whole number. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+
+## `read:mems-mic`
+
+Reads a sound level from a MEMS I2S digital microphone, over ALSA.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `virtual` | boolean | no | `false` |  | Fake the level instead of capturing audio. |
+| `alsaDevice` | string | **yes** |  |  | The ALSA capture device, e.g. "plughw:CARD=<id>,DEV=0". |
+| `captureSeconds` | number | no | `2` |  | Length of the capture each read performs. Must be at least 1, a whole number. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+
 ## `read:random`
 
 Replaces the message with a number that drifts within bounds, one step at a time. This is the way to build a sensor-shaped task with no hardware attached.

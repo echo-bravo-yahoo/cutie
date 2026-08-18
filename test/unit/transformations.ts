@@ -1131,6 +1131,33 @@ describe("transforms", function () {
           expect(transformed).to.deep.equal(6);
         });
       });
+
+      // A disabled step is left out of the task's chain entirely rather than
+      // reached and made to return unchanged, so there is no per-step guard
+      // left to test here; test/unit/chain.ts covers the chain-level
+      // behaviour. This step gets its own regression test anyway because it
+      // once ran an arbitrary command even while disabled.
+      it("is left out of the chain when it is disabled", async function () {
+        const task = new Task(
+          {
+            steps: [
+              {
+                type: "transform:shell",
+                disabled: true,
+                command: "echo 'ran'",
+                outputType: "string",
+              } as ShellConfig,
+              { type: "output:console" } as any,
+            ],
+          },
+          "a disabled shell",
+        );
+        await task.register();
+
+        expect(task.steps.map((step) => step.config.type)).to.deep.equal([
+          "output:console",
+        ]);
+      });
     });
 
     describe("javascript", function () {

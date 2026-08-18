@@ -104,3 +104,41 @@ export class DrunkRSSI extends DrunkReader {
     });
   }
 }
+
+export class DrunkLux extends DrunkReader {
+  constructor() {
+    super({
+      min: 0,
+      max: 1000,
+      minStep: 5,
+      maxStep: 30,
+      start: 200,
+    });
+  }
+}
+
+export class DrunkProximity extends DrunkReader {
+  constructor() {
+    super({
+      min: 0,
+      max: 2047,
+      minStep: 0,
+      maxStep: 3,
+      start: 0,
+    });
+  }
+}
+
+// Reported in dBFS, so it walks a small negative range rather than the
+// positive-dBm range RSSI does.
+export class DrunkSoundLevel extends DrunkReader {
+  constructor() {
+    super({
+      min: -80,
+      max: -10,
+      minStep: 0.5,
+      maxStep: 3,
+      start: -45,
+    });
+  }
+}

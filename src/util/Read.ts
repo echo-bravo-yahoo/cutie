@@ -1,4 +1,4 @@
-import Step, { StepConfig } from "./Step.js";
+import Step, { HALT, StepConfig } from "./Step.js";
 import Task from "./Task.js";
 import { Message } from "./type-helpers.js";
 
@@ -9,7 +9,14 @@ export interface ReadConfig extends StepConfig {
 
 export default abstract class Read extends Step {
   declare config: ReadConfig;
-  abstract read(message: Message, traceId: string): Promise<Message>;
+  // A read may return HALT instead of a Message to skip a cycle entirely -
+  // e.g. read:mems-mic on a transient capture failure - rather than passing
+  // undefined to steps downstream that do not expect it (output:influxdb
+  // throws on a non-object message, and nothing in the chain catches that).
+  abstract read(
+    message: Message,
+    traceId: string,
+  ): Promise<Message | typeof HALT>;
   // Implemented by the reads that can stand in for their own hardware. Routed
   // instead of read() when `virtual` is true.
   virtualRead?(message: Message, traceId: string): Promise<Message>;

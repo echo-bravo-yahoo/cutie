@@ -1,10 +1,13 @@
-import { execSync } from "node:child_process";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 
 import Transform, { Context, WholeMessageConfig } from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { CODE_OUTPUT_TYPES, requireOneCodeSource } from "../util/Step.js";
 import { Message } from "../util/type-helpers.js";
 import { ModuleSchema } from "../util/schema.js";
+
+const execAsync = promisify(exec);
 
 export interface ShellConfig extends WholeMessageConfig {
   codePath: string;
@@ -27,25 +30,29 @@ export default class Shell extends Transform {
     requireOneCodeSource(this.config, "transform:shell");
   }
 
-  transform(message: Message, _traceId: string) {
+  async transform(message: Message, _traceId: string) {
     const command = this.generateCode(this.config, message);
-    const args: Partial<Parameters<typeof execSync>[1]> = {
+    const args: Partial<Parameters<typeof execAsync>[1]> = {
       encoding: "utf8",
     };
     if (this.config.shellPath) args.shell = this.config.shellPath;
 
-    const result = execSync(command, args);
-
+    // exec() rather than execSync(): a slow command (a multi-second render,
+    // a network call) used to block this process's single thread entirely -
+    // every other task sharing it, including one with a live HVAC feedback
+    // loop, stalled for the full duration. This step is now async, so the
+    // event loop keeps serving other tasks while a slow command runs.
+    const { stdout } = await execAsync(command, args);
     if (this.config.outputType === "object")
-      return JSON.parse(result as unknown as string);
+      return JSON.parse(stdout as unknown as string);
     if (this.config.outputType === "string")
       // Only strip a newline the command actually emitted -- slicing the last
       // character unconditionally eats real output from commands without one.
-      return String(result).replace(/\n$/, "");
-    if (this.config.outputType === "number") return Number(result);
+      return String(stdout).replace(/\n$/, "");
+    if (this.config.outputType === "number") return Number(stdout);
 
     // "any": whatever the command wrote, uncoerced.
-    return result as unknown as Message;
+    return stdout as unknown as Message;
   }
 
   // no-op

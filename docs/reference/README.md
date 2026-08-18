@@ -25,6 +25,8 @@ Every option every module accepts, generated from the schemas the runtime valida
 - [`read:bme680`](./reads.md#readbme680)
 - [`read:constant`](./reads.md#readconstant)
 - [`read:file`](./reads.md#readfile)
+- [`read:ltr559`](./reads.md#readltr559)
+- [`read:mems-mic`](./reads.md#readmems-mic)
 - [`read:random`](./reads.md#readrandom)
 - [`read:stash`](./reads.md#readstash)
 
@@ -52,6 +54,7 @@ Every option every module accepts, generated from the schemas the runtime valida
 - [`output:logs`](./outputs.md#outputlogs)
 - [`output:mqtt`](./outputs.md#outputmqtt)
 - [`output:nec`](./outputs.md#outputnec)
+- [`output:st7735`](./outputs.md#outputst7735)
 - [`output:stash`](./outputs.md#outputstash)
 - [`output:switchbots`](./outputs.md#outputswitchbots)
 - [`output:thermal-printer`](./outputs.md#outputthermal-printer)

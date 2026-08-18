@@ -11,15 +11,19 @@ import { setGlobals } from "../../src/index.js";
 import RandomRead from "../../src/reads/random.js";
 import RandomSensor from "../../src/triggers/random.js";
 import BME680 from "../../src/reads/bme680.js";
+import LTR559 from "../../src/reads/ltr559.js";
+import MemsMic, { dbfsFrom } from "../../src/reads/mems-mic.js";
 import NEC from "../../src/outputs/nec.js";
 import Switchbots from "../../src/outputs/switchbots.js";
 import ThermalPrinter from "../../src/outputs/thermal-printer.js";
 import InkyPhat from "../../src/outputs/inky-phat.js";
+import ST7735, { color565, rotateRaster } from "../../src/outputs/st7735.js";
 import UnicornHatMini, {
   UnicornPanel,
 } from "../../src/outputs/unicorn-hat-mini.js";
 import { PIXEL_LUT } from "../../src/util/unicorn-hat-mini-lut.js";
 import Aggregate from "../../src/transforms/aggregate.js";
+import { HALT } from "../../src/util/Step.js";
 import { Context } from "../../src/util/Transform.js";
 import { importOptional } from "../../src/util/optional-dependency.js";
 import { createPigpioMock } from "../helpers.js";
@@ -307,6 +311,198 @@ describe("modules", function () {
       const [sampled] = linesMatching("Sampled new data point");
       expect(sampled.traceId).to.equal("a-real-trace");
       expect(sampled.topic).to.equal(sensor.logPrefix);
+    });
+  });
+
+  describe("read:ltr559", function () {
+    // Registering a non-virtual ltr559 would reach for i2c, so every test
+    // registers a virtual one and swaps in a fake bus afterwards.
+    async function ltr559(name: string) {
+      const task = new Task(
+        { steps: [{ type: "read:ltr559", virtual: true } as any] },
+        name,
+      );
+      await task.register();
+
+      return task.steps[0] as LTR559;
+    }
+
+    function fakeBus(alsBytes: Buffer, psBytes: Buffer) {
+      return {
+        readI2cBlockSync: (
+          _addr: number,
+          cmd: number,
+          length: number,
+          buffer: Buffer,
+        ) => {
+          (cmd === 0x88 ? alsBytes : psBytes).copy(buffer);
+          return length;
+        },
+        readByteSync: () => 0,
+        writeByteSync: () => {},
+        closeSync: () => {},
+      };
+    }
+
+    // `virtual` is routed by the Read base class rather than branched on
+    // inside read(), so a virtual sample comes from doHandleMessage.
+    it("reads a full virtual sample without any hardware", async function () {
+      const sample = (await (
+        await ltr559("reads virtually")
+      ).doHandleMessage("ignored", "a-trace")) as any;
+
+      expect(sample.lux).to.be.a("number");
+      expect(sample.proximity).to.be.a("number");
+      expect(sample.metadata.timestamp).to.be.a("date");
+    });
+
+    // A disabled step is left out of the task's chain entirely rather than
+    // reached and made to return nothing, so there is no per-read guard left
+    // to test here; test/unit/chain.ts covers the chain-level behaviour.
+    it("is left out of the chain when it is disabled", async function () {
+      const task = new Task(
+        {
+          steps: [
+            { type: "read:ltr559", virtual: true, disabled: true } as any,
+            { type: "output:console" } as any,
+          ],
+        },
+        "a disabled ltr559",
+      );
+      await task.register();
+
+      expect(task.steps.map((step) => step.config.type)).to.deep.equal([
+        "output:console",
+      ]);
+    });
+
+    it("computes lux from the ALS channel bytes", async function () {
+      const sensor = await ltr559("computes lux");
+      sensor.config.virtual = false;
+
+      // ALS_DATA is ch1 lo/hi then ch0 lo/hi, little-endian: ch1=100, ch0=300.
+      sensor.bus = fakeBus(
+        Buffer.from([0x64, 0x00, 0x2c, 0x01]),
+        Buffer.from([0x00, 0x00]),
+      ) as any;
+
+      const sample = (await sensor.read("ignored", "a-trace")) as any;
+
+      // ratio = ch1*100/(ch0+ch1) = 25 -> band 0, coefficients 17743/-11059.
+      // lux = (300*17743 - 100*-11059) / 0.5 / 4 / 10000 = 321.44
+      expect(sample.lux).to.be.closeTo(321.44, 0.01);
+    });
+
+    it("computes an 11-bit proximity value from the PS channel bytes", async function () {
+      const sensor = await ltr559("computes proximity");
+      sensor.config.virtual = false;
+
+      // low byte 0xFF, high byte's low 3 bits 0x03 -> 0xFF | (0x03 << 8) = 1023
+      sensor.bus = fakeBus(
+        Buffer.from([0, 0, 0, 0]),
+        Buffer.from([0xff, 0x03]),
+      ) as any;
+
+      const sample = (await sensor.read("ignored", "a-trace")) as any;
+
+      expect(sample.proximity).to.equal(1023);
+    });
+  });
+
+  describe("read:mems-mic", function () {
+    async function memsMic(name: string, config: object = {}) {
+      const task = new Task(
+        {
+          steps: [
+            {
+              type: "read:mems-mic",
+              virtual: true,
+              alsaDevice: "plughw:CARD=test,DEV=0",
+              ...config,
+            } as any,
+          ],
+        },
+        name,
+      );
+      await task.register();
+
+      return task.steps[0] as MemsMic;
+    }
+
+    // A WAV header's exact bytes never matter to dbfsFrom(): it only skips a
+    // fixed 44-byte offset before reading 16-bit LE PCM samples.
+    function wavFixture(samples: Array<number>) {
+      const buffer = Buffer.alloc(44 + samples.length * 2);
+      samples.forEach((sample, index) =>
+        buffer.writeInt16LE(sample, 44 + index * 2),
+      );
+      return buffer;
+    }
+
+    // `virtual` is routed by the Read base class rather than branched on
+    // inside read(), so a virtual sample comes from doHandleMessage.
+    it("reads a full virtual sample without any hardware", async function () {
+      const sample = (await (
+        await memsMic("reads virtually")
+      ).doHandleMessage("ignored", "a-trace")) as any;
+
+      expect(sample.soundLevel).to.be.a("number");
+      expect(sample.metadata.timestamp).to.be.a("date");
+    });
+
+    // A disabled step is left out of the task's chain entirely rather than
+    // reached and made to halt, so there is no per-read guard left to test
+    // here; test/unit/chain.ts covers the chain-level behaviour.
+    it("is left out of the chain when it is disabled", async function () {
+      const task = new Task(
+        {
+          steps: [
+            {
+              type: "read:mems-mic",
+              virtual: true,
+              alsaDevice: "plughw:CARD=test,DEV=0",
+              disabled: true,
+            } as any,
+            { type: "output:console" } as any,
+          ],
+        },
+        "a disabled mems-mic",
+      );
+      await task.register();
+
+      expect(task.steps.map((step) => step.config.type)).to.deep.equal([
+        "output:console",
+      ]);
+    });
+
+    it("halts rather than reading when the capture fails", async function () {
+      const sensor = await memsMic("capture fails", {
+        virtual: false,
+        alsaDevice: "not-a-real-device",
+      });
+
+      expect(await sensor.read("ignored", "a-trace")).to.equal(HALT);
+
+      const [failed] = linesMatching("Capture failed");
+      expect(failed.verbosity).to.equal("error");
+      expect(failed.traceId).to.equal("a-trace");
+    });
+
+    it("computes dBFS as 20*log10(rms / full scale)", function () {
+      // A constant amplitude at half of full scale: rms equals the amplitude
+      // itself, so the expected value is exact rather than approximate.
+      expect(
+        dbfsFrom(wavFixture([16384, -16384, 16384, -16384])),
+      ).to.be.closeTo(-6.0206, 0.001);
+    });
+
+    it("reports silence as negative infinity rather than throwing", function () {
+      expect(dbfsFrom(wavFixture([0, 0, 0, 0]))).to.equal(-Infinity);
+    });
+
+    it("reports the loudest representable samples at ~0 dBFS", function () {
+      // 32767 is the ceiling of a signed 16-bit sample; 32768 would overflow.
+      expect(dbfsFrom(wavFixture([32767, -32767]))).to.be.closeTo(0, 0.001);
     });
   });
 
@@ -832,6 +1028,107 @@ describe("modules", function () {
       expect(() => inkyPhat({ file: "/var/lib/cutie/frame.png" })).to.throw(
         /takes either a file or a path, not both/,
       );
+    });
+  });
+
+  describe("output:st7735", function () {
+    async function virtual(name: string, config: object = {}) {
+      const task = new Task(
+        {
+          steps: [
+            {
+              type: "output:st7735",
+              source: "bitmap",
+              path: "frame",
+              virtual: true,
+              spiDevice: "/dev/spidev0.1",
+              dcPin: 9,
+              backlightPin: 12,
+              ...config,
+            } as any,
+          ],
+        },
+        name,
+      );
+      await task.register();
+
+      return task.steps[0] as ST7735;
+    }
+
+    it("converts known colours to their known RGB565 values", function () {
+      expect(color565(255, 255, 255)).to.equal(0xffff);
+      expect(color565(0, 0, 0)).to.equal(0x0000);
+      expect(color565(255, 0, 0)).to.equal(0xf800);
+      expect(color565(0, 255, 0)).to.equal(0x07e0);
+      expect(color565(0, 0, 255)).to.equal(0x001f);
+    });
+
+    it("leaves an unrotated raster untouched", function () {
+      const raster = {
+        width: 2,
+        height: 1,
+        data: new Uint8ClampedArray([1, 2, 3, 255, 4, 5, 6, 255]),
+      };
+
+      expect(rotateRaster(raster as any, 0)).to.equal(raster);
+    });
+
+    it("rotates a raster 90 degrees, swapping its dimensions", function () {
+      // A 2-wide, 1-tall raster with distinct pixels, so a transposition or a
+      // wrong rotation direction shows up as the wrong pixel in the wrong
+      // place rather than a coincidentally-correct symmetric result.
+      const raster = {
+        width: 2,
+        height: 1,
+        data: new Uint8ClampedArray([
+          10,
+          0,
+          0,
+          255, // left pixel, red channel 10
+          0,
+          20,
+          0,
+          255, // right pixel, green channel 20
+        ]),
+      };
+
+      const rotated = rotateRaster(raster as any, 90);
+
+      expect(rotated.width).to.equal(1);
+      expect(rotated.height).to.equal(2);
+      // 90 degrees counterclockwise: the right pixel ends up on top.
+      expect([...rotated.data.slice(0, 4)]).to.deep.equal([0, 20, 0, 255]);
+      expect([...rotated.data.slice(4, 8)]).to.deep.equal([10, 0, 0, 255]);
+    });
+
+    it("logs what it would draw, and touches no panel, when virtual", async function () {
+      const output = await virtual("draws virtually", {
+        width: 4,
+        height: 2,
+      });
+      const frame = new Array(4 * 2 * 3).fill(0);
+      // Two lit pixels, through different channels: any channel counts.
+      frame[0] = 255;
+      frame[5] = 255;
+      const message = { frame };
+
+      expect(await output.send(message, "a-trace")).to.equal(message);
+      expect(output.panel).to.equal(undefined);
+
+      const [drawn] = linesMatching("Would draw (virtual)");
+      expect(drawn.log).to.include("4x2, 2 lit pixels");
+      expect(drawn.traceId).to.equal("a-trace");
+    });
+
+    it("refuses a bitmap that is not exactly the panel's size", async function () {
+      const output = await virtual("refuses a short bitmap", {
+        width: 4,
+        height: 2,
+      });
+
+      await expect(
+        output.send({ frame: [1, 2, 3] }, "a-trace"),
+      ).to.be.rejectedWith(/bitmap of 24 bytes, but got 3/);
     });
   });
 

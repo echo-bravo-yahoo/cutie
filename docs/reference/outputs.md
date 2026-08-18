@@ -108,6 +108,29 @@ Transmits an NEC infrared command on a GPIO pin. The message either names a save
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 
+## `output:st7735`
+
+Draws each message on an ST7735 panel. The pixels come from an image file or from a bitmap the message carries.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `source` | `image` or `bitmap` | **yes** |  |  | Where the pixels come from: "image" is a file jimp can decode, "bitmap" is raw pixels carried in the message. |
+| `file` | string | no |  |  | A fixed path on the device to draw. Only meaningful for "image"; a bitmap arrives in the message by definition. |
+| `path` | string | no |  |  | Which value in the message holds the pixels. Omit to use the whole message. |
+| `fit` | `contain` or `cover` or `stretch` | no |  |  | How a source larger or smaller than the panel is scaled onto it. |
+| `width` | number | no | `80` |  | The panel's width as it should appear once rotated, in pixels. Must be at least 1, a whole number. |
+| `height` | number | no | `160` |  | The panel's height as it should appear once rotated, in pixels. Must be at least 1, a whole number. |
+| `rotation` | number | no | `0` |  | Degrees to rotate the source before it is drawn: 0, 90, 180, or 270. Must be between 0 and 270, a whole number. |
+| `offsetLeft` | number | no |  |  | Controller memory column offset. Wiring, not a chip property; left unset, the panel is centred automatically. Must be a whole number. |
+| `offsetTop` | number | no |  |  | Controller memory row offset. Wiring, not a chip property; left unset, the panel is centred automatically. Must be a whole number. |
+| `spiDevice` | string | no |  |  | The spidev node the panel is on. Required unless virtual is set. |
+| `dcPin` | number | no |  |  | The GPIO pin the panel's data/command line is wired to. Required unless virtual is set. Must be at least 0, a whole number. |
+| `backlightPin` | number | no |  |  | The GPIO pin the panel's backlight is wired to. Required unless virtual is set. Must be at least 0, a whole number. |
+| `spiSpeedHz` | number | no | `10000000` | `Hz` | The SPI clock speed to drive the panel at. Must be at least 1, a whole number. |
+| `virtual` | boolean | no | `false` |  | Do everything but drive the panel: the source is still loaded, scaled and length-checked, and each message logs how many pixels would be lit. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+
 ## `output:stash`
 
 Stores a value in the stash, a scratch space belonging to one message.

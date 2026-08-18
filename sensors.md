@@ -44,6 +44,38 @@ Everything the BME280 reads, plus a gas-resistance channel that tracks volatile 
 | `i2cAddress` | `0x77`  | I2C address of the sensor, between 8 and 119     |
 | `virtual`    | `false` | fake the readings instead of opening the I2C bus |
 
+## `read:ltr559`
+
+Ambient light and proximity over I2C. Emits `{ metadata: { timestamp }, lux, proximity }`.
+
+| Field        | Default | Meaning                                          |
+| ------------ | ------- | ------------------------------------------------ |
+| `i2cAddress` | `0x23`  | I2C address of the sensor                        |
+| `virtual`    | `false` | fake the readings instead of opening the I2C bus |
+
+## `read:mems-mic`
+
+Sound level from a MEMS I2S digital microphone, over ALSA. A plain read rather than a self-scheduling sensor: each "sample" is itself a multi-second audio capture, so pair it with `trigger:repeat` and let one longer capture per read stand in for the sample/aggregate smoothing a sensor trigger would otherwise do. Emits `{ metadata: { timestamp }, soundLevel }` - dBFS, relative to full scale. Not a calibrated absolute dB SPL reading; an uncalibrated MEMS mic has no basis for one.
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `alsaDevice` | none, required | ALSA capture device, e.g. `"plughw:CARD=<id>,DEV=0"` |
+| `captureSeconds` | `2` | length of the capture each read performs |
+| `virtual` | `false` | fake the level instead of capturing audio |
+
+```yaml
+tasks:
+  mic:
+    trigger:
+      type: "trigger:repeat"
+      interval: 30000
+    steps:
+      - type: "read:mems-mic"
+        virtual: true
+        alsaDevice: "plughw:CARD=sndrpigooglevoi,DEV=0"
+      - type: "output:console"
+```
+
 ## `read:random`
 
 A number that drifts within bounds, one step at a time, with no hardware attached. Put it where a real sensor's read would go and the rest of the task behaves identically, which makes it the quickest way to exercise a transform chain or a new output.
@@ -117,14 +149,14 @@ Percentiles interpolate linearly between the two closest samples, matching numpy
 
 A sensor trigger that walks a number randomly within bounds. Use `trigger:repeat` into `read:random` instead; the example above is the direct replacement.
 
-| Field                 | Default   | Meaning                                   |
-| --------------------- | --------- | ----------------------------------------- |
-| `start`               | --        | first value                               |
-| `min` / `max`         | --        | bounds the walk stays inside              |
-| `minStep` / `maxStep` | --        | how far one sample may move from the last |
-| `samplingInterval`    | `60000`   | ms between samples                        |
-| `reportingInterval`   | `60000`   | ms between emitted messages               |
-| `sampling`            | undefined | `{ "aggregation": ... }`                  |
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `start` | -- | first value |
+| `min` / `max` | -- | bounds the walk stays inside |
+| `minStep` / `maxStep` | -- | how far one sample may move from the last |
+| `samplingInterval` | `60000` | ms between samples |
+| `reportingInterval` | `60000` | ms between emitted messages |
+| `sampling` | undefined | `{ "aggregation": ... }` |
 
 `sampling` is listed as optional but is required in practice: whenever sampling outpaces reporting there is more than one sample to collapse, and without it the collapse fails. That mismatch is one of the reasons this form is deprecated.
 
@@ -134,12 +166,12 @@ Presence tracking. It watches for BLE advertisements from named devices and repo
 
 There is no `read:ble` to pair with `trigger:cron` yet, so this remains the only way to do BLE presence tracking. Treat the shape as unstable.
 
-| Field               | Default | Meaning                                              |
-| ------------------- | ------- | ---------------------------------------------------- |
-| `devices`           | --      | `[{ "alias": "phone", "macAddress": "..." }]`        |
-| `samplingInterval`  | `60000` | ms between samples                                   |
-| `reportingInterval` | `60000` | ms between emitted messages                          |
-| `virtual`           | `false` | fake RSSI instead of scanning for BLE advertisements |
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `devices` | -- | `[{ "alias": "phone", "macAddress": "..." }]` |
+| `samplingInterval` | `60000` | ms between samples |
+| `reportingInterval` | `60000` | ms between emitted messages |
+| `virtual` | `false` | fake RSSI instead of scanning for BLE advertisements |
 
 `alias` is optional and defaults to the MAC address; it is the key each device's reading appears under. Emits `{ "<alias>": { metadata: { timestamp }, rssi } }` per device.
 
