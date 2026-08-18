@@ -10,11 +10,16 @@ export interface OutputConfig extends StepConfig {
 export default abstract class Output extends Step {
   abstract send(message: Message, traceId: string): Promise<Message>;
 
-  constructor(config: OutputConfig, task: Task) {
-    super(config, task);
+  constructor(config: OutputConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
+  // An output is a side effect, not a transform, so the message a later step
+  // sees is the one this step was handed. Enforced here rather than in each
+  // send(), which makes an output module's return value dead.
   async doHandleMessage(message: Message, traceId: string): Promise<Message> {
-    return this.send(message, traceId);
+    await this.send(message, traceId);
+
+    return message;
   }
 }

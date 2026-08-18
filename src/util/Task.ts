@@ -2,14 +2,15 @@ import { normalize } from "node:path";
 
 import { globals, srcDir } from "../index.js";
 import { Configurable, Config } from "./Configurable.js";
-import Step, { StepConfig } from "./Step.js";
+import { registerSchema } from "./schema.js";
+import Step, { StepConfig, runWithMessageContext } from "./Step.js";
 import { newTraceId } from "./trace.js";
 import { isTrigger, Message } from "./type-helpers.js";
 import Trigger, { TriggerConfig } from "./Trigger.js";
 
 export interface TaskConfig extends Config {
   trigger?: TriggerConfig;
-  steps: Array<StepConfig>;
+  steps?: Array<StepConfig>;
   // Arbitrary task-scoped values, reachable from any step's interpolation
   // context as ${task.config.data...}.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,8 +21,6 @@ export default class Task extends Configurable {
   declare config: TaskConfig;
   declare trigger?: Trigger;
   steps: Array<Step>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  stash?: Record<string, any>;
   messagesHandled: number;
 
   constructor(config: TaskConfig, name: string) {
@@ -38,13 +37,15 @@ export default class Task extends Configurable {
     this.enabled = true;
   }
 
-  async importStep(step: StepConfig) {
+  async importStep(step: StepConfig, index?: number) {
     const [type, subType] = step.type.split(":");
-    const Factory = (
-      await import(normalize(`${srcDir}/${type}s/${subType}.js`))
-    ).default;
+    const module = await import(normalize(`${srcDir}/${type}s/${subType}.js`));
 
-    return new Factory(step, this);
+    // Configurable's constructor reads schema defaults out of a synchronous
+    // cache, so the schema has to land there before the instance is built.
+    if (module.schema) registerSchema(module.schema);
+
+    return new module.default(step, this, index);
   }
 
   async registerSteps(taskConfig: TaskConfig) {
@@ -65,8 +66,8 @@ export default class Task extends Configurable {
       );
     }
 
-    for (const step of taskConfig.steps) {
-      const currentStep = await this.importStep(step);
+    for (const [index, step] of (taskConfig.steps ?? []).entries()) {
+      const currentStep = await this.importStep(step, index);
       if (isTrigger(currentStep))
         throw new Error(`Triggers cannot be specified as a step.`);
       currentStep.task = this;
@@ -79,6 +80,11 @@ export default class Task extends Configurable {
         step,
       );
 
+      // A disabled step is left out of the chain rather than linked and skipped,
+      // so its doHandleMessage never runs. `index` above stays the position in
+      // taskConfig.steps either way, so log topics match the config as written.
+      if (!currentStep.shouldEnable()) continue;
+
       this.steps.push(currentStep);
       if (previousStep) {
         previousStep.next = currentStep;
@@ -90,16 +96,23 @@ export default class Task extends Configurable {
     if (this.trigger?.shouldEnable()) await this.trigger.enable();
 
     for (const step of this.steps) {
-      if (step.shouldEnable()) await step.enable();
+      await step.enable();
     }
   }
 
   // primarily used for testing to cause trigger-less tasks to still emit events
   async startMessage(message: Message, traceId: string = newTraceId()) {
     const startedAt = performance.now();
-    const result = await (this.steps[0]
-      ? this.steps[0].handleMessage(message, traceId)
-      : this.endMessage(message, traceId));
+
+    // The stash belongs to this message, not to the task, so two messages in
+    // flight never read each other's values.
+    const result = await runWithMessageContext(
+      { stash: {}, message, traceId },
+      async () =>
+        this.steps[0]
+          ? this.steps[0].handleMessage(message, traceId)
+          : this.endMessage(message, traceId),
+    );
 
     this.debug(
       `Handled message in ${(performance.now() - startedAt).toFixed(1)}ms.`,

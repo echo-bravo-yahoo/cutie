@@ -1,8 +1,10 @@
 import get from "lodash/get.js";
 
 import Read, { ReadConfig } from "../util/Read.js";
+import { currentMessageContext } from "../util/Step.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface StashConfig extends ReadConfig {
   key: Message;
@@ -11,8 +13,8 @@ export interface StashConfig extends ReadConfig {
 export default class Stash extends Read {
   declare config: StashConfig;
 
-  constructor(config: StashConfig, task: Task) {
-    super(config, task);
+  constructor(config: StashConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
   async read(message: Message, _traceId: string) {
@@ -20,7 +22,7 @@ export default class Stash extends Read {
       message,
     });
 
-    return get(this.task.stash, key);
+    return get(currentMessageContext()?.stash, key);
   }
 
   async enable() {
@@ -34,9 +36,17 @@ export default class Stash extends Read {
   }
 }
 
-/*
-{
-  "type": "read:stash",
-  "key": "string"
-}
-*/
+export const schema: ModuleSchema = {
+  type: "read:stash",
+  description:
+    "Replaces the message with a value the same message stashed earlier.",
+  options: {
+    key: {
+      type: "string",
+      description:
+        "Which stashed value to read; a dotted key reads a nested path.",
+      required: true,
+      interpolated: true,
+    },
+  },
+};

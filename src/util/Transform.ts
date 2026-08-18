@@ -2,9 +2,24 @@ import isArray from "lodash/isArray.js";
 import get from "lodash/get.js";
 import set from "lodash/set.js";
 
+import { OptionSchema, UNIVERSAL_OPTIONS } from "./schema.js";
 import Step, { HALT, StepConfig } from "./Step.js";
 import Task from "./Task.js";
 import { Message } from "./type-helpers.js";
+
+// `paths` is the general form and `path` is shorthand for a single-entry
+// `paths`; `basePath` names an array to walk. A transform that replaces
+// transform() outright consults none of them.
+const TARGETING_OPTIONS = ["path", "paths", "basePath"];
+
+function describeValue(value: unknown): string {
+  if (value === undefined) return "nothing";
+  if (value === null) return "null";
+  if (isArray(value)) return "an array";
+  if (typeof value === "object") return "an object";
+
+  return `a ${typeof value}`;
+}
 
 // some notes on terminology:
 // a primitive reading is one where the reading is a primitive/literal
@@ -45,6 +60,27 @@ export function isMultiConfig(config: TransformConfig): config is MultiConfig {
   return typeof (config as MultiConfig).paths === "object" ? true : false;
 }
 
+// The three targeting options read the same way in every transform that honors
+// them; only the verb changes. Per-path arguments deliberately carry no schema
+// default: a default would be injected at the top level and then collide with
+// the multi-path form, where every argument belongs inside `paths`.
+export function targetingOptions(verb: string): Record<string, OptionSchema> {
+  return {
+    path: {
+      type: "string",
+      description: `Which value in the message to ${verb}. Omit to ${verb} the whole message.`,
+    },
+    paths: {
+      type: "object",
+      description: `Several values to ${verb} at once, each mapped to its own arguments.`,
+    },
+    basePath: {
+      type: "string",
+      description: `An array in the message to ${verb} one entry at a time.`,
+    },
+  };
+}
+
 export interface Context {
   message: { in: Message; out?: Message };
   basePath?: string;
@@ -58,6 +94,11 @@ export interface Context {
 export default abstract class Transform extends Step {
   declare config: TransformConfig;
   preservePaths: boolean;
+  // Set false by a transform that overrides transform() without calling super,
+  // so it drives the whole message itself and the targeting options mean
+  // nothing to it. transform:munge overrides transform() but does call super,
+  // so it stays true.
+  honorsTargeting = true;
   // TO-DO: value's type here is probably string|number|undefined
   abstract transformSingle(
     value: Message,
@@ -65,10 +106,61 @@ export default abstract class Transform extends Step {
     context: Context,
   ): Message;
 
-  constructor(config: TransformConfig, task: Task) {
-    super(config, task);
+  constructor(config: TransformConfig, task: Task, index?: number) {
+    super(config, task, index);
 
     this.preservePaths = true;
+  }
+
+  // A schema describes top-level options, so it cannot see inside `paths`. A
+  // module with per-path arguments walks these at registration and checks both
+  // forms the same way. `path` is "" for the single-path and whole-message
+  // forms.
+  eachTargetArgs(): Array<{ path: string; args: Record<string, unknown> }> {
+    if (isMultiConfig(this.config))
+      return Object.entries(this.config.paths ?? {}).map(([path, args]) => ({
+        path,
+        args: (args ?? {}) as Record<string, unknown>,
+      }));
+
+    return [
+      { path: "", args: this.config as unknown as Record<string, unknown> },
+    ];
+  }
+
+  // Checked at registration rather than in the constructor, because a
+  // subclass's honorsTargeting is not assigned until after super() returns.
+  async register() {
+    const config = this.config as unknown as Record<string, unknown>;
+
+    if (!this.honorsTargeting) {
+      for (const option of TARGETING_OPTIONS)
+        if (config[option] !== undefined)
+          throw new Error(
+            `"${this.config.type}" does not accept "${option}"; it transforms the whole message.`,
+          );
+
+      return;
+    }
+
+    if (config.path !== undefined && config.paths !== undefined)
+      throw new Error(
+        `"${this.config.type}": "path" cannot be combined with "paths".`,
+      );
+
+    if (config.paths === undefined) return;
+
+    // In the multi-path form every per-path option belongs inside `paths`; one
+    // left at the top level is read by nothing.
+    const stray = Object.keys(config).find(
+      (key) =>
+        !UNIVERSAL_OPTIONS.includes(key) && !TARGETING_OPTIONS.includes(key),
+    );
+
+    if (stray !== undefined)
+      throw new Error(
+        `"${this.config.type}": "${stray}" cannot be combined with "paths".`,
+      );
   }
 
   // widened past `transform`'s own return so a subclass may halt the chain
@@ -101,6 +193,18 @@ export default abstract class Transform extends Step {
   }
 
   transform(message: Message, traceId: string) {
+    // Without this the array walkers return early and the message collapses to
+    // {}, which reads as "the transform did nothing" rather than "basePath is
+    // pointed at the wrong place".
+    if (this.config.basePath !== undefined) {
+      const target = get(message, this.config.basePath);
+
+      if (!isArray(target))
+        throw new Error(
+          `"${this.config.type}": "basePath" "${this.config.basePath}" should point at an array, but found ${describeValue(target)}.`,
+        );
+    }
+
     const isArrayOfReadings = !!(
       this.config.basePath !== undefined ||
       (isArray(message) && message.length)

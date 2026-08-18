@@ -29,8 +29,8 @@ export default abstract class Sensor extends Trigger {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abstract collateSamples(): any;
 
-  constructor(config: SensorConfig, task: Task) {
-    super(config, task);
+  constructor(config: SensorConfig, task: Task, index?: number) {
+    super(config, task, index);
 
     this.reportInterval = undefined;
     this.sampleInterval = undefined;
