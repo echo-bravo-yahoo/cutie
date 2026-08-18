@@ -527,10 +527,18 @@ describe("the message chain", function () {
 
   describe("every output", function () {
     // Driven from the filesystem so a new output cannot quietly opt out. The
-    // four that need something outside the process -- three native packages and
-    // one InfluxDB server -- run with send() stubbed to return a deliberately
-    // wrong value, which is also the sharpest test of the base class's promise.
-    const NEEDS_EXTERNAL = ["influxdb", "nec", "switchbots", "thermal-printer"];
+    // six that need something outside the process -- native packages, two
+    // displays, and one InfluxDB server -- run with send() stubbed to return a
+    // deliberately wrong value, which is also the sharpest test of the base
+    // class's promise.
+    const NEEDS_EXTERNAL = [
+      "influxdb",
+      "inky-phat",
+      "nec",
+      "switchbots",
+      "thermal-printer",
+      "unicorn-hat-mini",
+    ];
 
     before(function () {
       useFakeGlobals();
@@ -557,6 +565,7 @@ describe("the message chain", function () {
             ledPin: 23,
             devicePath: "/dev/null",
             measurement: "m",
+            source: "bitmap",
           } as never)) as unknown as Step & {
             send: (message: unknown) => Promise<unknown>;
           };

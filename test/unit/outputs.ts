@@ -107,7 +107,9 @@ describe("outputs", function () {
       return published;
     }
 
-    it("is rejected when it names a single topic", async function () {
+    // `topic` shipped as a working shorthand, so it is deprecated rather than
+    // rejected: accepted with one warning and normalized onto `topics`.
+    it("accepts a single topic as a deprecated alias", async function () {
       const errors = await errorsFor(
         {
           type: "output:mqtt",
@@ -117,10 +119,46 @@ describe("outputs", function () {
         [connection],
       );
 
+      expect(errors).to.deep.equal([
+        {
+          severity: "warning",
+          path: "tasks.t.steps[0].topic",
+          message: 'deprecated; use "topics" instead',
+        },
+      ]);
+    });
+
+    it("normalizes that alias onto a single-element topics", async function () {
+      const task = new Task({ steps: [] }, "normalizes topic");
+      const step = await task.importStep(
+        {
+          type: "output:mqtt",
+          connectionName: "broker",
+          topic: "out/topic",
+        } as never,
+        0,
+      );
+
+      expect((step.config as { topics: Array<string> }).topics).to.deep.equal([
+        "out/topic",
+      ]);
+    });
+
+    it("is rejected when it names both a topic and topics", async function () {
+      const errors = await errorsFor(
+        {
+          type: "output:mqtt",
+          connectionName: "broker",
+          topic: "a",
+          topics: ["b"],
+        },
+        [connection],
+      );
+
       expect(errors).to.deep.include({
         severity: "error",
-        path: "tasks.t.steps[0].topics",
-        message: "missing required option; expected array",
+        path: "tasks.t.steps[0].topic",
+        message: 'cannot be combined with "topics"',
       });
     });
 
@@ -310,14 +348,22 @@ describe("outputs", function () {
       ).to.be.rejectedWith(/does not accept "path"; use "devicePath"/);
     });
 
-    it("requires a devicePath", async function () {
-      const errors = await errorsFor({ type: "output:thermal-printer" });
+    // Required only when a real printer is driven, which is a pairing the
+    // schema cannot express, so register() enforces it instead.
+    it("requires a devicePath unless it is virtual", async function () {
+      await expect(
+        taskWith(
+          [{ type: "output:thermal-printer" }],
+          "printer with no path",
+        ).register(),
+      ).to.be.rejectedWith(/needs a "devicePath"/);
+    });
 
-      expect(errors).to.deep.include({
-        severity: "error",
-        path: "tasks.t.steps[0].devicePath",
-        message: "missing required option; expected string",
-      });
+    it("needs no devicePath when it is virtual", async function () {
+      await taskWith(
+        [{ type: "output:thermal-printer", virtual: true }],
+        "virtual printer",
+      ).register();
     });
 
     // The vendor library reads this with `||`, so its own default only applies
@@ -360,14 +406,12 @@ describe("outputs", function () {
   });
 
   describe("output:nec", function () {
-    it("requires a ledPin", async function () {
-      const errors = await errorsFor({ type: "output:nec" });
-
-      expect(errors).to.deep.include({
-        severity: "error",
-        path: "tasks.t.steps[0].ledPin",
-        message: "missing required option; expected number",
-      });
+    // Same pairing as the thermal printer's devicePath: a pin is only needed
+    // when one is actually driven, so register() enforces it.
+    it("requires a ledPin unless it is virtual", async function () {
+      await expect(
+        taskWith([{ type: "output:nec" }], "nec with no pin").register(),
+      ).to.be.rejectedWith(/needs a "ledPin"/);
     });
 
     it("registers with a ledPin", async function () {

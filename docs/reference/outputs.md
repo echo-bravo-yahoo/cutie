@@ -50,6 +50,26 @@ Writes each message to InfluxDB as one line of line protocol. The message must a
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 
+## `output:inky-phat`
+
+Draws each message on an Inky pHAT e-paper panel, 212x104 pixels in three colours. The pixels come from an image file or from a bitmap the message carries.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `source` | `image` or `bitmap` | **yes** |  |  | Where the pixels come from: "image" is a file jimp can decode, "bitmap" is raw pixels carried in the message. |
+| `file` | string | no |  |  | A fixed path on the device to draw. Only meaningful for "image"; a bitmap arrives in the message by definition. |
+| `path` | string | no |  |  | Which value in the message holds the pixels. Omit to use the whole message. |
+| `fit` | `contain` or `cover` or `stretch` | no |  |  | How a source larger or smaller than the panel is scaled onto it. |
+| `dither` | boolean | no | `true` |  | Dither an image when reducing it to the panel's colours. Worth turning off for line art and text, where a speckled texture is noise rather than shading. |
+| `border` | number | no | `0` |  | The palette index the panel's border is driven to: 0 white, 1 black, 2 the panel's third colour. Must be between 0 and 3, a whole number. |
+| `refreshMode` | string | no | `"quick"` |  | Which refresh waveform to use. "quick" is faster and lower fidelity. |
+| `panelColor` | `black` or `red` or `yellow` | no |  |  | The panel's third colour. There is no way to tell the variants apart in software, so left unset the vendor package's own red-oriented values apply. |
+| `spiDevice` | string | no |  |  | The spidev node the panel is on. Defaults to the vendor package's own. |
+| `minRefreshMs` | number | no | `180000` | `ms` | Least time between physical refreshes. A message arriving sooner is dropped rather than queued, since the panel shows a current reading and a stale one waiting its turn has no value. Zero refreshes on every message. Must be at least 0. |
+| `virtual` | boolean | no | `false` |  | Do everything but drive the panel: the source is still loaded, scaled, quantised and length-checked, and each message logs what would have been drawn. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+
 ## `output:logs`
 
 Writes the message to the node's own log. The message is expected in the shape trigger:logs produces, {log, object, verbosity, topic}; an unrecognized verbosity is logged at info.
@@ -69,9 +89,11 @@ Publishes each message to one or more MQTT topics.
 | --- | --- | --- | --- | --- | --- |
 | `connectionName` | string | **yes** |  |  | Which declared connection to publish on. |
 | `topics` | array | **yes** |  |  | The topics to publish to. Supports ${...} interpolation. |
+| `topic` | string | no |  |  | A single topic to publish to. Superseded by topics. Deprecated; use `topics` instead. |
 | `retain` | boolean | no | `false` |  | Ask the broker to keep the message and hand it to future subscribers. |
 | `qos` | number | no | `0` |  | MQTT quality of service: 0 at most once, 1 at least once, 2 exactly once. Must be between 0 and 2, a whole number. |
 | `raw` | boolean | no | `false` |  | Publish a string message as the payload itself rather than JSON-encoding it. A message that is not a string is encoded either way. |
+| `propagateTrace` | boolean | no | `false` |  | Send the trace id as a W3C traceparent user property, which also needs "protocolVersion": 5 on the connection. The payload is untouched. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 
@@ -81,7 +103,7 @@ Transmits an NEC infrared command on a GPIO pin. The message either names a save
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
-| `ledPin` | number | **yes** |  |  | The GPIO pin the infrared LED is wired to. There is no sensible default for someone else's wiring. Must be at least 0, a whole number. |
+| `ledPin` | number | no |  |  | The GPIO pin the infrared LED is wired to. Required unless virtual is set; there is no sensible default for someone else's wiring. Must be at least 0, a whole number. |
 | `virtual` | boolean | no | `false` |  | Log the command that would be sent without driving the pin. |
 | `savedCommands` | object | no |  |  | Named commands a message can ask for by id, each {"address", "command"} with optional "extendedAddress" and "extendedCommand". A string value is read as hexadecimal. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
@@ -106,6 +128,7 @@ Presses or toggles SwitchBot bots over Bluetooth. The message names one and an a
 | --- | --- | --- | --- | --- | --- |
 | `devices` | array | **yes** |  |  | The bots to control, each {"address", "label", "reverseOnOff"}. The address is the device id or MAC address the discovery reports; the label is only for the logs. |
 | `discoveryTimeout` | any | no | `10000` | `ms` | How long to scan for the configured bots before giving up, as a number of milliseconds or a string with a unit such as "10s". |
+| `virtual` | boolean | no | `false` |  | Log what would be pressed without scanning for or driving any device. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 
@@ -115,12 +138,29 @@ Prints each message on a serial thermal printer, a line at a time. A line may le
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
-| `devicePath` | string | **yes** |  |  | The serial device the printer is on, such as "/dev/ttyS0". There is no sensible default for someone else's wiring. |
+| `devicePath` | string | no |  |  | The serial device the printer is on, such as "/dev/ttyS0". Required unless virtual is set; there is no sensible default for someone else's wiring. |
 | `baudRate` | number | no | `19200` |  | The serial baud rate the printer expects. Must be at least 1, a whole number. |
 | `heatingTime` | number | no | `240` | `10 microseconds` | How long each heating pulse lasts. |
 | `heatingInterval` | number | no | `160` | `10 microseconds` | How long to wait between heating pulses. |
 | `commandDelay` | number | no | `120` | `microseconds` | How long to wait between commands sent to the printer. |
 | `chineseFirmware` | boolean | no |  |  | Set only if the printer runs the Chinese firmware variant. Left unset, the vendor library's own default applies. |
+| `virtual` | boolean | no | `false` |  | Log what would be printed without opening the serial device. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+
+## `output:unicorn-hat-mini`
+
+Draws each message on a Unicorn HAT Mini, a 17x7 grid of RGB LEDs. The pixels come from an image file or from a bitmap the message carries.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `source` | `image` or `bitmap` | **yes** |  |  | Where the pixels come from: "image" is a file jimp can decode, "bitmap" is raw pixels carried in the message. |
+| `file` | string | no |  |  | A fixed path on the device to draw. Only meaningful for "image"; a bitmap arrives in the message by definition. |
+| `path` | string | no |  |  | Which value in the message holds the pixels. Omit to use the whole message. |
+| `fit` | `contain` or `cover` or `stretch` | no |  |  | How a source larger or smaller than the panel is scaled onto it. |
+| `brightness` | number | no | `0.2` |  | How hard to drive the LEDs, from 0 to 1. These are bright enough at low settings that 1 is rarely what you want. Must be between 0 and 1. |
+| `spiDevices` | array | no | `["/dev/spidev0.0","/dev/spidev0.1"]` |  | One spidev node per HT16D35A chip, in chip-select order. The HAT has two. |
+| `virtual` | boolean | no | `false` |  | Do everything but drive the panel: the source is still loaded, scaled and length-checked, and each message logs what would have been drawn. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 

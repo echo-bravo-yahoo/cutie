@@ -599,16 +599,21 @@ describe("the runtime", function () {
     // There is no default: a GPIO pin number is a fact about someone's wiring,
     // and guessing 23 silently drove the wrong pin.
     it("requires the LED pin rather than guessing one", async function () {
+      await expect(
+        new Task(
+          { steps: [{ type: "output:nec" } as never] },
+          "nec without a pin",
+        ).register(),
+      ).to.be.rejectedWith(/needs a "ledPin"/);
+    });
+
+    it("wants no LED pin when it is virtual", async function () {
       const errors = await validateConfig(
-        { tasks: { t: { steps: [{ type: "output:nec" }] } } },
+        { tasks: { t: { steps: [{ type: "output:nec", virtual: true }] } } },
         { configPath: "/tmp/x.json" },
       );
 
-      expect(errors).to.deep.include({
-        severity: "error",
-        path: "tasks.t.steps[0].ledPin",
-        message: "missing required option; expected number",
-      });
+      expect(errors).to.deep.equal([]);
     });
   });
 
@@ -629,7 +634,7 @@ describe("the runtime", function () {
         {
           type: "output:switchbots",
           virtual: true,
-          bots: [{ id: "abc123", name: "kitchen light" }],
+          devices: [{ address: "abc123", label: "kitchen light" }],
         } as any,
         task,
       );
@@ -712,15 +717,15 @@ describe("the runtime", function () {
 
       await transmitNECCommand(pigpio, command, 23);
 
-      expect(calls.filter((call) => !call.startsWith("waveTxBusy"))).to.deep.equal(
-        [
-          "waveClear",
-          "waveAddGeneric",
-          "waveCreate",
-          `waveTxSend(${MOCK_WAVE_ID}, 0)`,
-          `waveDelete(${MOCK_WAVE_ID})`,
-        ],
-      );
+      expect(
+        calls.filter((call) => !call.startsWith("waveTxBusy")),
+      ).to.deep.equal([
+        "waveClear",
+        "waveAddGeneric",
+        "waveCreate",
+        `waveTxSend(${MOCK_WAVE_ID}, 0)`,
+        `waveDelete(${MOCK_WAVE_ID})`,
+      ]);
       // the v3 bug: the promise never settled, and the wave was deleted while
       // it was still transmitting
       expect(calls.indexOf(`waveDelete(${MOCK_WAVE_ID})`)).to.be.greaterThan(
@@ -734,9 +739,9 @@ describe("the runtime", function () {
 
       await transmitNECCommand(pigpio, command, 23);
 
-      expect(calls.filter((call) => call === "waveTxBusy(true)")).to.have.lengthOf(
-        3,
-      );
+      expect(
+        calls.filter((call) => call === "waveTxBusy(true)"),
+      ).to.have.lengthOf(3);
       expect(calls.at(-1)).to.equal(`waveDelete(${MOCK_WAVE_ID})`);
     });
 
@@ -746,9 +751,9 @@ describe("the runtime", function () {
         throw new Error("no gpio here");
       };
 
-      await expect(
-        transmitNECCommand(pigpio, command, 23),
-      ).to.be.rejectedWith(/no gpio here/);
+      await expect(transmitNECCommand(pigpio, command, 23)).to.be.rejectedWith(
+        /no gpio here/,
+      );
 
       expect(calls).to.include(`waveDelete(${MOCK_WAVE_ID})`);
     });
@@ -1117,10 +1122,12 @@ describe("the runtime", function () {
       expect(writeFile.mock.callCount()).to.equal(0);
     });
 
-    it("prefixes each appended message with a newline", async function () {
+    // Trailing rather than leading, so a file that is only ever appended to
+    // ends in a complete line instead of starting with a blank one.
+    it("ends each appended message with a newline", async function () {
       await writeThrough("inserts newlines by default", {});
 
-      expect(appendFile.mock.calls[0].arguments[1]).to.equal("\na line");
+      expect(appendFile.mock.calls[0].arguments[1]).to.equal("a line\n");
     });
 
     it("overwrites the file when append is false", async function () {

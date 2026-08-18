@@ -8,8 +8,8 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 
 - `output:file`'s `insertNewlines` now writes the newline **after** each message rather than before it. Files an existing config already writes will change: the leading blank line goes away and the last line gains its terminator.
 - `output:switchbots` renames `bots: [{id, name, reverseOnOff}]` to `devices: [{address, label, reverseOnOff}]`. The old keys are rejected rather than accepted quietly; `name` in particular collided with the `name` every step accepts.
-- `output:thermal-printer` renames `path` to `devicePath` and requires it. A `path` everywhere else in a config is a filesystem path, and this is a serial device. There is no longer a default of `/dev/ttyS0`.
-- `output:nec` requires `ledPin`. The old default of `23` was a guess about someone else's wiring.
+- `output:thermal-printer` renames `path` to `devicePath` and requires it unless `virtual` is set. A `path` everywhere else in a config is a filesystem path, and this is a serial device. There is no longer a default of `/dev/ttyS0`.
+- `output:nec` requires `ledPin` unless `virtual` is set. The old default of `23` was a guess about someone else's wiring.
 - `read:random` requires `min`, `max`, `minStep`, `maxStep`, and `start`. Omitting any one of them used to produce `NaN` on every reading, silently.
 - `trigger:infrared` no longer accepts `ledPin`. It configured an output pin the module never transmitted on.
 - `transform:shell` and `transform:javascript` require `outputType`. Pass `any` for the uncoerced passthrough that `transform:javascript` used to do by default.
@@ -24,7 +24,7 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 
 ### Deprecated
 
-- `trigger:mqtt`'s `topic` is superseded by `topics`. A config using `topic` still works and reports one warning; naming both is an error.
+- `topic` on `trigger:mqtt` and on `output:mqtt` is superseded by `topics`. A config using `topic` still works and reports one warning; naming both is an error.
 - The sensor-trigger form, `trigger:random` and `trigger:ble-tracker`, is deprecated in favor of a trigger into a read into `transform:aggregate`, which separates when to sample from what to read and how to collapse the samples. See [sensors.md](./sensors.md).
 
 ### Added

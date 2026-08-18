@@ -99,7 +99,10 @@ describe("tracing", function () {
   }
 
   // A second listener, for the tests that care about how a line fans out.
-  function extraListener(prefix: string, shouldEmit: () => boolean = () => true) {
+  function extraListener(
+    prefix: string,
+    shouldEmit: () => boolean = () => true,
+  ) {
     const seen: Array<{ line: SerializedLogLine; traceId?: string }> = [];
     const extra = {
       shouldEmit,
@@ -308,24 +311,24 @@ describe("tracing", function () {
     });
 
     it("rejects a version it does not know", function () {
-      expect(fromTraceparent(`01-${"a".repeat(32)}-${"b".repeat(16)}-01`)).to.equal(
-        undefined,
-      );
+      expect(
+        fromTraceparent(`01-${"a".repeat(32)}-${"b".repeat(16)}-01`),
+      ).to.equal(undefined);
     });
 
     it("rejects a mis-sized trace-id or parent-id", function () {
-      expect(fromTraceparent(`00-${"a".repeat(31)}-${"b".repeat(16)}-01`)).to.equal(
-        undefined,
-      );
-      expect(fromTraceparent(`00-${"a".repeat(32)}-${"b".repeat(15)}-01`)).to.equal(
-        undefined,
-      );
+      expect(
+        fromTraceparent(`00-${"a".repeat(31)}-${"b".repeat(16)}-01`),
+      ).to.equal(undefined);
+      expect(
+        fromTraceparent(`00-${"a".repeat(32)}-${"b".repeat(15)}-01`),
+      ).to.equal(undefined);
     });
 
     it("rejects uppercase hex, which the spec forbids", function () {
-      expect(fromTraceparent(`00-${"A".repeat(32)}-${"b".repeat(16)}-01`)).to.equal(
-        undefined,
-      );
+      expect(
+        fromTraceparent(`00-${"A".repeat(32)}-${"b".repeat(16)}-01`),
+      ).to.equal(undefined);
     });
 
     it("mints a uuid v7, whose ordering is why it was chosen", function () {
@@ -409,7 +412,10 @@ describe("tracing", function () {
     const { connection } = stubbedConnection();
     globals.connections.push(connection);
 
-    const task = await subscribingTask("receives an mqtt message", "some/topic");
+    const task = await subscribingTask(
+      "receives an mqtt message",
+      "some/topic",
+    );
     forgetRegistrationLines();
 
     connection.handleMessage("some/topic", Buffer.from("42"), {} as any);
@@ -426,7 +432,10 @@ describe("tracing", function () {
     const { connection } = stubbedConnection();
     globals.connections.push(connection);
 
-    const task = await subscribingTask("receives a repeated header", "some/topic");
+    const task = await subscribingTask(
+      "receives a repeated header",
+      "some/topic",
+    );
     forgetRegistrationLines();
 
     // a broker hands over an array when the publisher set the property twice
@@ -445,7 +454,10 @@ describe("tracing", function () {
     globals.connections.push(connection);
 
     const first = await subscribingTask("the first subscriber", "shared/topic");
-    const second = await subscribingTask("the second subscriber", "shared/topic");
+    const second = await subscribingTask(
+      "the second subscriber",
+      "shared/topic",
+    );
     forgetRegistrationLines();
 
     connection.handleMessage("shared/topic", Buffer.from("1"), {} as any);
@@ -593,26 +605,27 @@ describe("tracing", function () {
     await task.register();
     forgetRegistrationLines();
 
-    await task.startMessage({ address: "0x7c", command: "0x66" }, "an-nec-trace");
+    await task.startMessage(
+      { address: "0x7c", command: "0x66" },
+      "an-nec-trace",
+    );
 
     const [transmitting] = linesMatching("Transmitting NEC command");
     expect(transmitting.line.traceId).to.equal("an-nec-trace");
   });
 
   it("puts the trace on the thermal printer's cannot-print error", async function () {
-    // Disabled, so registering it opens no serial port; a step handles
-    // messages either way.
-    const task = new Task(
-      {
-        disabled: true,
-        steps: [{ type: "output:thermal-printer" } as any],
-      },
-      "prints without a printer",
+    // Built rather than registered: a disabled step is now left out of its
+    // task's chain entirely, and enabling this one would open a serial port.
+    // Never enabling it is what the cannot-print path is about anyway.
+    const task = new Task({ steps: [] }, "prints without a printer");
+    const printer = await task.importStep(
+      { type: "output:thermal-printer", devicePath: "/dev/null" } as any,
+      0,
     );
-    await task.register();
     forgetRegistrationLines();
 
-    await task.startMessage("a receipt", "a-printer-trace");
+    await printer.handleMessage("a receipt", "a-printer-trace");
 
     const [cannotPrint] = linesMatching("Cannot print");
     expect(cannotPrint.line.traceId).to.equal("a-printer-trace");
@@ -675,7 +688,10 @@ describe("tracing", function () {
     it("logs a trigger's own lines under that topic", async function () {
       // trigger:logs filters match on the topic, so the prefix has to be right
       // where the log bus hands it over, not just on the instance
-      const task = await triggeredTask("reports its trigger", "another-happening");
+      const task = await triggeredTask(
+        "reports its trigger",
+        "another-happening",
+      );
       forgetRegistrationLines();
 
       try {
@@ -803,7 +819,12 @@ describe("tracing", function () {
     it("carries a trace through a real trigger:logs into output:logs", async function () {
       const task = new Task(
         {
-          trigger: { type: "trigger:logs", filters: ["*"] } as any,
+          trigger: {
+            type: "trigger:logs",
+            filters: ["*"],
+            // the default is "warn", and these lines are info
+            minVerbosity: "trace",
+          } as any,
           steps: [{ type: "output:logs" } as any],
         },
         "a real logs task",
@@ -830,18 +851,33 @@ describe("tracing", function () {
     it("puts the trace on the payload a logs task receives", async function () {
       const task = new Task(
         {
-          trigger: { type: "trigger:logs", filters: ["*"] } as any,
+          trigger: {
+            type: "trigger:logs",
+            filters: ["*"],
+            // the default is "warn", and these lines are info
+            minVerbosity: "trace",
+          } as any,
           steps: [
             {
               type: "output:stash",
               key: "trace",
               value: "${message.traceId}",
             } as any,
+            // The stash belongs to the message rather than to the task, so the
+            // only way to see what was stashed is from inside the same message.
+            { type: "read:stash", key: "trace" } as any,
           ],
         },
         "a stashing logs task",
       );
       await task.register();
+
+      const seen: Array<unknown> = [];
+      const endMessage = task.endMessage.bind(task);
+      task.endMessage = async (message, traceId) => {
+        seen.push(message);
+        return endMessage(message, traceId);
+      };
 
       try {
         new Configurable({}, "a source").info("a traced line", {
@@ -850,7 +886,7 @@ describe("tracing", function () {
         });
         await taskDone(task);
 
-        expect(task.stash!.trace).to.equal("a-stashed-trace");
+        expect(seen[0]).to.equal("a-stashed-trace");
       } finally {
         await task.trigger!.disable();
       }

@@ -43,21 +43,26 @@ A display takes pixels and nothing else, so anything that produces pixels can fe
 
 ```json
 {
-  "type": "transform:javascript",
-  "codePath": "./config/temperature-frames.js"
-},
-{
-  "type": "output:unicorn-hat-mini",
-  "source": "bitmap",
-  "path": "unicornFrame",
-  "brightness": 0.3
-},
-{
-  "type": "output:inky-phat",
-  "source": "bitmap",
-  "path": "inkyFrame",
-  "panelColor": "yellow",
-  "minRefreshMs": 900000
+  "steps": [
+    {
+      "type": "transform:javascript",
+      "codePath": "./config/temperature-frames.js",
+      "outputType": "object"
+    },
+    {
+      "type": "output:unicorn-hat-mini",
+      "source": "bitmap",
+      "path": "unicornFrame",
+      "brightness": 0.3
+    },
+    {
+      "type": "output:inky-phat",
+      "source": "bitmap",
+      "path": "inkyFrame",
+      "panelColor": "yellow",
+      "minRefreshMs": 900000
+    }
+  ]
 }
 ```
 

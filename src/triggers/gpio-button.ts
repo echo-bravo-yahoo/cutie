@@ -1,5 +1,6 @@
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
+import { ModuleSchema } from "../util/schema.js";
 import { readGpioBase } from "../util/gpio.js";
 import { importOptional } from "../util/optional-dependency.js";
 
@@ -125,3 +126,37 @@ export default class GpioButton extends Trigger {
 Emits { button, pressed }. The pin numbers above are the four buttons on a
 Unicorn HAT Mini; any active-low button wired to a GPIO works the same way.
 */
+
+export const schema: ModuleSchema = {
+  type: "trigger:gpio-button",
+  description:
+    "Starts a message of {button, pressed} whenever an active-low button wired to a GPIO pin changes.",
+  options: {
+    buttons: {
+      type: "object",
+      description:
+        'The buttons to watch, as a name to BCM pin number map, such as {"a": 5, "b": 6}. The name is what the message reports.',
+      required: true,
+    },
+    emitOn: {
+      type: "string",
+      description: "Which edge starts a message.",
+      default: "press",
+      enum: ["press", "release", "both"],
+    },
+    debounceMs: {
+      type: "number",
+      description:
+        "How long to ignore further edges after one is taken. A button bounces for a few milliseconds and would otherwise emit several messages per press.",
+      default: DEFAULT_DEBOUNCE_MS,
+      unit: "ms",
+      min: 0,
+    },
+    virtual: {
+      type: "boolean",
+      description:
+        "Register without watching any pin, so a config naming buttons loads on a machine with no GPIO.",
+      default: false,
+    },
+  },
+};

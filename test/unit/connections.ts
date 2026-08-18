@@ -364,7 +364,8 @@ describe("connections", function () {
     it("cleans up the temp directory", async function () {
       await rm(directory, { recursive: true, force: true });
     });
->>>>>>> a9cccaa (modules: declare every option, and stop accepting the ones that never worked)
+  });
+});
 
 // "mqtt" can only be mocked once per process, and this file's other tests
 // either stub the client directly or stub register(), so the one mock here is
@@ -374,9 +375,12 @@ describe("registerConnections", function () {
     mock.module("mqtt", {
       defaultExport: {
         connectAsync: async () => {
-          throw Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:1883"), {
-            code: "ECONNREFUSED",
-          });
+          throw Object.assign(
+            new Error("connect ECONNREFUSED 127.0.0.1:1883"),
+            {
+              code: "ECONNREFUSED",
+            },
+          );
         },
       },
     });

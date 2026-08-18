@@ -1,6 +1,6 @@
 import Output, { OutputConfig } from "../util/Output.js";
 import { importOptional } from "../util/optional-dependency.js";
-import { PIXEL_LUT } from "./unicorn-hat-mini-lut.js";
+import { PIXEL_LUT } from "../util/unicorn-hat-mini-lut.js";
 import {
   decodeBitmap,
   fitRaster,
@@ -10,8 +10,11 @@ import {
   Fit,
   RGB,
   SourceConfig,
+  SOURCE_OPTIONS,
+  FIT_OPTION,
 } from "../util/raster.js";
 import Task from "../util/Task.js";
+import { ModuleSchema } from "../util/schema.js";
 import { Message } from "../util/type-helpers.js";
 
 export type { RGB };
@@ -81,8 +84,9 @@ interface SpiModule {
 // to spidev runs at the device tree's spi-max-frequency, 125 MHz on this
 // platform, which the HT16D35A cannot latch - the panel stays dark with no
 // error anywhere. pi-spi sets the speed on each transfer. Only the pixel lookup
-// table survives from the package, vendored into unicorn-hat-mini-lut.ts since
-// it is data rather than logic.
+// table survives from the package, vendored into util/unicorn-hat-mini-lut.ts
+// since it is data rather than logic. It lives under util/ rather than beside
+// this file because every file in an output directory is taken to be a module.
 //
 // Exported so a test can assert the buffer mapping directly: getting a pixel to
 // the right three offsets is the part of this file most worth pinning down, and
@@ -206,16 +210,6 @@ export default class UnicornHatMini extends Output {
 
     this.name = "unicorn-hat-mini";
     validateSourceConfig(this.config, this.name);
-  }
-
-  addDefaultsToConfig(config: UnicornHatMiniConfig): UnicornHatMiniConfig {
-    return {
-      fit: "contain",
-      brightness: DEFAULT_BRIGHTNESS,
-      spiDevices: DEFAULT_SPI_DEVICES,
-      virtual: false,
-      ...config,
-    };
   }
 
   // Three bytes per pixel, row-major: red, green, blue.
@@ -343,3 +337,33 @@ exposes to the spi group, so no /dev/mem mapping and no root are involved.
 With "virtual": true the panel is never opened, but the source is still loaded,
 scaled and length-checked, and each message logs how many pixels would be lit.
 */
+
+export const schema: ModuleSchema = {
+  type: "output:unicorn-hat-mini",
+  description:
+    "Draws each message on a Unicorn HAT Mini, a 17x7 grid of RGB LEDs. The pixels come from an image file or from a bitmap the message carries.",
+  options: {
+    ...SOURCE_OPTIONS,
+    fit: FIT_OPTION,
+    brightness: {
+      type: "number",
+      description:
+        "How hard to drive the LEDs, from 0 to 1. These are bright enough at low settings that 1 is rarely what you want.",
+      default: DEFAULT_BRIGHTNESS,
+      min: 0,
+      max: 1,
+    },
+    spiDevices: {
+      type: "array",
+      description:
+        "One spidev node per HT16D35A chip, in chip-select order. The HAT has two.",
+      default: DEFAULT_SPI_DEVICES,
+    },
+    virtual: {
+      type: "boolean",
+      description:
+        "Do everything but drive the panel: the source is still loaded, scaled and length-checked, and each message logs what would have been drawn.",
+      default: false,
+    },
+  },
+};

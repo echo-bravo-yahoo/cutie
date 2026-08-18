@@ -37,9 +37,10 @@ export default class MQTT extends Output {
     this.enabled = false;
   }
 
-  // User properties are an MQTT v5 feature, and mqtt.js speaks v4 unless the
-  // connection asks for v5, so a v4 connection can only be warned about.
-  traceOptions(traceId: string) {
+  // The trace half of the publish options; send() adds retain and qos around
+  // it. User properties are an MQTT v5 feature, and mqtt.js speaks v4 unless
+  // the connection asks for v5, so a v4 connection can only be warned about.
+  publishOptions(traceId: string) {
     if (!this.config.propagateTrace) return undefined;
 
     // the connection may have been closed out from under this output, which
@@ -70,7 +71,7 @@ export default class MQTT extends Output {
     const options = {
       retain: this.config.retain,
       qos: this.config.qos,
-      ...this.traceOptions(traceId),
+      ...this.publishOptions(traceId),
     };
 
     await Promise.all(

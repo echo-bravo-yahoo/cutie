@@ -5,6 +5,7 @@ import DrunkReader, {
 } from "../util/DrunkReader.js";
 import Sensor, { SensorConfig } from "../util/Sensor.js";
 import Task from "../util/Task.js";
+import { ModuleSchema } from "../util/schema.js";
 import { importOptional } from "../util/optional-dependency.js";
 
 export interface BME680Config extends SensorConfig {
@@ -134,3 +135,51 @@ export default class BME680 extends Sensor {
   "reportingInterval": 60000
 }
 */
+
+export const schema: ModuleSchema = {
+  type: "trigger:bme680",
+  description:
+    "Samples a BME680 on its own schedule and reports an aggregate. Deprecated along with the rest of the sensor-trigger form; prefer trigger:cron into read:bme680 into transform:aggregate.",
+  options: {
+    i2cAddress: {
+      type: "number",
+      description:
+        "The sensor's I2C address; a BME680 uses 0x76 or 0x77 depending on its SDO pin.",
+      default: 0x77,
+      // 0x00 to 0x07 are reserved by the I2C spec, so no device answers there.
+      min: 0x08,
+      max: 0x77,
+      integer: true,
+    },
+    i2cBus: {
+      type: "number",
+      description: "Which I2C bus the sensor is on.",
+      default: 1,
+      min: 0,
+      integer: true,
+    },
+    samplingInterval: {
+      type: "number",
+      description: "How long to wait between samples.",
+      default: 60 * 1000,
+      unit: "ms",
+    },
+    reportingInterval: {
+      type: "number",
+      description: "How long to wait between reported messages.",
+      default: 60 * 1000,
+      unit: "ms",
+    },
+    sampling: {
+      type: "object",
+      description:
+        'How to collapse the samples taken since the last report, as {"aggregation": "average"}. Required in practice whenever sampling outpaces reporting.',
+    },
+    virtual: {
+      type: "boolean",
+      description:
+        "Produce plausible drifting readings instead of opening the sensor.",
+      default: false,
+    },
+  },
+};

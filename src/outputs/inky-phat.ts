@@ -10,8 +10,11 @@ import {
   Fit,
   RGB,
   SourceConfig,
+  SOURCE_OPTIONS,
+  FIT_OPTION,
 } from "../util/raster.js";
 import Task from "../util/Task.js";
+import { ModuleSchema } from "../util/schema.js";
 import { Message } from "../util/type-helpers.js";
 import { importOptional } from "../util/optional-dependency.js";
 
@@ -179,18 +182,6 @@ export default class InkyPhat extends Output {
 
     this.name = "inky-phat";
     validateSourceConfig(this.config, this.name);
-  }
-
-  addDefaultsToConfig(config: InkyPhatConfig): InkyPhatConfig {
-    return {
-      fit: "contain",
-      dither: true,
-      border: WHITE,
-      refreshMode: "quick",
-      minRefreshMs: DEFAULT_MIN_REFRESH_MS,
-      virtual: false,
-      ...config,
-    };
   }
 
   // The colours an image is reduced to, in palette-index order. A panel with no
@@ -432,3 +423,59 @@ so each controller receives the other's traffic. In practice each ignores
 commands that do not match its own protocol, and both keep working - but that
 is a property of these two controllers rather than anything guaranteed.
 */
+
+export const schema: ModuleSchema = {
+  type: "output:inky-phat",
+  description:
+    "Draws each message on an Inky pHAT e-paper panel, 212x104 pixels in three colours. The pixels come from an image file or from a bitmap the message carries.",
+  options: {
+    ...SOURCE_OPTIONS,
+    fit: FIT_OPTION,
+    dither: {
+      type: "boolean",
+      description:
+        "Dither an image when reducing it to the panel's colours. Worth turning off for line art and text, where a speckled texture is noise rather than shading.",
+      default: true,
+    },
+    border: {
+      type: "number",
+      description:
+        "The palette index the panel's border is driven to: 0 white, 1 black, 2 the panel's third colour.",
+      default: WHITE,
+      min: 0,
+      max: 3,
+      integer: true,
+    },
+    refreshMode: {
+      type: "string",
+      description:
+        'Which refresh waveform to use. "quick" is faster and lower fidelity.',
+      default: "quick",
+    },
+    panelColor: {
+      type: "string",
+      description:
+        "The panel's third colour. There is no way to tell the variants apart in software, so left unset the vendor package's own red-oriented values apply.",
+      enum: ["black", "red", "yellow"],
+    },
+    spiDevice: {
+      type: "string",
+      description:
+        "The spidev node the panel is on. Defaults to the vendor package's own.",
+    },
+    minRefreshMs: {
+      type: "number",
+      description:
+        "Least time between physical refreshes. A message arriving sooner is dropped rather than queued, since the panel shows a current reading and a stale one waiting its turn has no value. Zero refreshes on every message.",
+      default: DEFAULT_MIN_REFRESH_MS,
+      unit: "ms",
+      min: 0,
+    },
+    virtual: {
+      type: "boolean",
+      description:
+        "Do everything but drive the panel: the source is still loaded, scaled, quantised and length-checked, and each message logs what would have been drawn.",
+      default: false,
+    },
+  },
+};

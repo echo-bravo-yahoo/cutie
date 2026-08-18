@@ -18,7 +18,7 @@ import InkyPhat from "../../src/outputs/inky-phat.js";
 import UnicornHatMini, {
   UnicornPanel,
 } from "../../src/outputs/unicorn-hat-mini.js";
-import { PIXEL_LUT } from "../../src/outputs/unicorn-hat-mini-lut.js";
+import { PIXEL_LUT } from "../../src/util/unicorn-hat-mini-lut.js";
 import Aggregate from "../../src/transforms/aggregate.js";
 import { Context } from "../../src/util/Transform.js";
 import { importOptional } from "../../src/util/optional-dependency.js";
@@ -234,10 +234,12 @@ describe("modules", function () {
       return task.steps[0] as BME680;
     }
 
+    // `virtual` is routed by the Read base class rather than branched on inside
+    // read(), so a virtual sample comes from doHandleMessage.
     it("reads a full virtual sample without any hardware", async function () {
       const sample = (await (
         await bme680("reads virtually")
-      ).read("ignored", "a-trace")) as any;
+      ).doHandleMessage("ignored", "a-trace")) as any;
 
       expect(sample.temp).to.be.a("number");
       expect(sample.humidity).to.be.a("number");
@@ -246,11 +248,24 @@ describe("modules", function () {
       expect(sample.metadata.timestamp).to.be.a("date");
     });
 
-    it("reads nothing while it is disabled", async function () {
-      const sensor = await bme680("reads while disabled");
-      await sensor.disable();
+    // A disabled step is left out of the task's chain entirely rather than
+    // reached and made to return nothing, so there is no per-read guard left to
+    // test here; test/unit/chain.ts covers the chain-level behaviour.
+    it("is left out of the chain when it is disabled", async function () {
+      const task = new Task(
+        {
+          steps: [
+            { type: "read:bme680", virtual: true, disabled: true } as any,
+            { type: "output:console" } as any,
+          ],
+        },
+        "a disabled bme680",
+      );
+      await task.register();
 
-      expect(await sensor.read("ignored", "a-trace")).to.equal(undefined);
+      expect(task.steps.map((step) => step.config.type)).to.deep.equal([
+        "output:console",
+      ]);
     });
 
     it("reports the sensor's gas resistance as gas", async function () {
@@ -282,7 +297,7 @@ describe("modules", function () {
     it("traces a real sample, and logs nothing for a virtual one", async function () {
       const sensor = await bme680("logs only real samples");
 
-      await sensor.read("ignored", "a-virtual-trace");
+      await sensor.doHandleMessage("ignored", "a-virtual-trace");
       expect(linesMatching("Sampled new data point")).to.have.lengthOf(0);
 
       sensor.config.virtual = false;
@@ -296,10 +311,10 @@ describe("modules", function () {
   });
 
   describe("output:switchbots", function () {
-    function switchbots(bots: Array<object>, { discovered = true } = {}) {
+    function switchbots(devices: Array<object>, { discovered = true } = {}) {
       const task = new Task({ steps: [] }, "drives a switchbot");
       const output = new Switchbots(
-        { type: "output:switchbots", bots } as any,
+        { type: "output:switchbots", devices } as any,
         task,
       );
       const calls: Array<string> = [];
@@ -326,7 +341,7 @@ describe("modules", function () {
     }
 
     it("presses a bot on request", async function () {
-      const { output, calls } = switchbots([{ id: "bot-1" }]);
+      const { output, calls } = switchbots([{ address: "bot-1" }]);
 
       await output.send({ id: "bot-1", action: "press" }, "a-trace");
 
@@ -334,7 +349,7 @@ describe("modules", function () {
     });
 
     it("lowers the arm to turn a normally-mounted bot on", async function () {
-      const { output, calls } = switchbots([{ id: "bot-1" }]);
+      const { output, calls } = switchbots([{ address: "bot-1" }]);
 
       await output.send({ id: "bot-1", action: "on" }, "a-trace");
       await output.send({ id: "bot-1", action: "off" }, "a-trace");
@@ -344,7 +359,7 @@ describe("modules", function () {
 
     it("inverts the arm for a reverse-mounted bot", async function () {
       const { output, calls } = switchbots([
-        { id: "bot-1", reverseOnOff: true },
+        { address: "bot-1", reverseOnOff: true },
       ]);
 
       await output.send({ id: "bot-1", action: "on" }, "a-trace");
@@ -354,28 +369,34 @@ describe("modules", function () {
     });
 
     it("reports a request that names no bot or no action", async function () {
-      const { output } = switchbots([{ id: "bot-1" }]);
+      const { output } = switchbots([{ address: "bot-1" }]);
 
-      await expect(
-        output.send({ action: "on" }, "a-trace"),
-      ).to.be.rejectedWith(/\{"action":"on"\}/);
-      await expect(
-        output.send({ id: "bot-1" }, "a-trace"),
-      ).to.be.rejectedWith(/\{"id":"bot-1"\}/);
+      await expect(output.send({ action: "on" }, "a-trace")).to.be.rejectedWith(
+        /\{"action":"on"\}/,
+      );
+      await expect(output.send({ id: "bot-1" }, "a-trace")).to.be.rejectedWith(
+        /\{"id":"bot-1"\}/,
+      );
     });
 
+    // A message still names a device by `id`; it is the config that renamed its
+    // key to `address`, so that the label a bot carries stops colliding with the
+    // `name` every step accepts.
     it("lists the bots it knows when asked for one it does not", async function () {
-      const { output } = switchbots([{ id: "bot-1" }]);
+      const { output } = switchbots([{ address: "bot-1" }]);
 
       await expect(
         output.send({ id: "bot-9", action: "on" }, "a-trace"),
-      ).to.be.rejectedWith(/known ids are \["bot-1"\]/);
+      ).to.be.rejectedWith(/known addresses are \["bot-1"\]/);
     });
 
     it("says when a configured bot was never discovered", async function () {
-      const { output } = switchbots([{ id: "bot-1", name: "kitchen light" }], {
-        discovered: false,
-      });
+      const { output } = switchbots(
+        [{ address: "bot-1", label: "kitchen light" }],
+        {
+          discovered: false,
+        },
+      );
 
       await expect(
         output.send({ id: "bot-1", action: "on" }, "a-trace"),
@@ -949,7 +970,11 @@ describe("modules", function () {
           { basePath: "readings", path: "temp", aggregation: "average" },
           { readings: 5 },
         ),
-      ).to.be.rejectedWith(/Aggregate attempting to operate on non-array value/);
+        // The Transform base class checks basePath before any walker runs, so
+        // the message names the path and what was found there.
+      ).to.be.rejectedWith(
+        /"basePath" "readings" should point at an array, but found a number/,
+      );
     });
 
     it("refuses an aggregation with nowhere to write its result", async function () {

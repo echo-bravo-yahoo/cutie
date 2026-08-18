@@ -30,8 +30,10 @@ async function namesIn(kind: Kind): Promise<Array<string>> {
   return [...names].sort();
 }
 
-// Reads the four module directories. The filesystem is the registry; nothing
-// hard-codes a module list.
+// Reads the module directories. The filesystem is the registry; nothing
+// hard-codes a module list, which also means every file in one of those
+// directories is taken to be a module and has to declare a schema. Shared data
+// and helpers belong under util/.
 export async function listModules(): Promise<Record<Kind, Array<string>>> {
   const pairs = await Promise.all(
     KINDS.map(async (kind) => [kind, await namesIn(kind)] as const),

@@ -6,6 +6,7 @@ import Transform, {
 import Task from "../util/Task.js";
 import { HALT } from "../util/Step.js";
 import { parseDuration } from "../util/duration.js";
+import { newTraceId } from "../util/trace.js";
 import { Message } from "../util/type-helpers.js";
 import { ModuleSchema } from "../util/schema.js";
 
@@ -69,14 +70,16 @@ export default class Accumulate extends Transform {
   }
 
   // A timed or shutdown flush has no caller to return the batch to, so it hands
-  // it to the rest of the chain itself.
+  // it to the rest of the chain itself. It also has no incoming message to
+  // inherit a trace from, so the batch starts one of its own.
   async flush() {
     if (!this.messages.length) return;
 
     const batch = this.take();
+    const traceId = newTraceId();
 
-    if (this.next) await this.next.handleMessage(batch);
-    else await this.endMessage(batch);
+    if (this.next) await this.next.handleMessage(batch, traceId);
+    else await this.endMessage(batch, traceId);
   }
 
   async disable() {

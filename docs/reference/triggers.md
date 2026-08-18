@@ -14,6 +14,22 @@ Samples the signal strength of named Bluetooth devices and reports an aggregate 
 | `samplingInterval` | number | no | `60000` | `ms` | How long to wait between samples. |
 | `reportingInterval` | number | no | `60000` | `ms` | How long to wait between reported messages. |
 | `sampling` | object | no |  |  | How to collapse the samples taken since the last report, as {"aggregation": "average"}. Required in practice whenever sampling outpaces reporting. |
+| `virtual` | boolean | no | `false` |  | Produce plausible drifting signal strengths instead of scanning for Bluetooth devices. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+
+## `trigger:bme680`
+
+Samples a BME680 on its own schedule and reports an aggregate. Deprecated along with the rest of the sensor-trigger form; prefer trigger:cron into read:bme680 into transform:aggregate.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `i2cAddress` | number | no | `119` |  | The sensor's I2C address; a BME680 uses 0x76 or 0x77 depending on its SDO pin. Must be between 8 and 119, a whole number. |
+| `i2cBus` | number | no | `1` |  | Which I2C bus the sensor is on. Must be at least 0, a whole number. |
+| `samplingInterval` | number | no | `60000` | `ms` | How long to wait between samples. |
+| `reportingInterval` | number | no | `60000` | `ms` | How long to wait between reported messages. |
+| `sampling` | object | no |  |  | How to collapse the samples taken since the last report, as {"aggregation": "average"}. Required in practice whenever sampling outpaces reporting. |
+| `virtual` | boolean | no | `false` |  | Produce plausible drifting readings instead of opening the sensor. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 
@@ -46,6 +62,19 @@ Starts a message of {eventType, filename} whenever a watched file or directory c
 | --- | --- | --- | --- | --- | --- |
 | `path` | string | **yes** |  |  | The file or directory to watch, resolved against the config file's directory unless absolute. |
 | `recursive` | boolean | no | `false` |  | Watch a directory's whole subtree rather than just its entries. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+
+## `trigger:gpio-button`
+
+Starts a message of {button, pressed} whenever an active-low button wired to a GPIO pin changes.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `buttons` | object | **yes** |  |  | The buttons to watch, as a name to BCM pin number map, such as {"a": 5, "b": 6}. The name is what the message reports. |
+| `emitOn` | `press` or `release` or `both` | no | `"press"` |  | Which edge starts a message. |
+| `debounceMs` | number | no | `40` | `ms` | How long to ignore further edges after one is taken. A button bounces for a few milliseconds and would otherwise emit several messages per press. Must be at least 0. |
+| `virtual` | boolean | no | `false` |  | Register without watching any pin, so a config naming buttons loads on a machine with no GPIO. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 

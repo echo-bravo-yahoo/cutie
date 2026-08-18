@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import get from "lodash/get.js";
 import { Jimp } from "jimp";
 
+import { OptionSchema } from "./schema.js";
 import { Message } from "./type-helpers.js";
 
 export type RGB = [number, number, number];
@@ -33,6 +34,35 @@ export interface SourceConfig {
   // the value.
   path?: string;
 }
+
+// The three source options read the same way on every display, so each one's
+// schema spreads these rather than restating them.
+export const SOURCE_OPTIONS: Record<string, OptionSchema> = {
+  source: {
+    type: "string",
+    description:
+      'Where the pixels come from: "image" is a file jimp can decode, "bitmap" is raw pixels carried in the message.',
+    required: true,
+    enum: ["image", "bitmap"],
+  },
+  file: {
+    type: "string",
+    description:
+      'A fixed path on the device to draw. Only meaningful for "image"; a bitmap arrives in the message by definition.',
+  },
+  path: {
+    type: "string",
+    description:
+      "Which value in the message holds the pixels. Omit to use the whole message.",
+  },
+};
+
+export const FIT_OPTION: OptionSchema = {
+  type: "string",
+  description:
+    "How a source larger or smaller than the panel is scaled onto it.",
+  enum: ["contain", "cover", "stretch"],
+};
 
 // Rejects a configuration that cannot work, rather than letting it look
 // plausible until a message arrives. Called from a display's constructor, so a

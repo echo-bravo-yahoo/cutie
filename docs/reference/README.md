@@ -7,9 +7,11 @@ Every option every module accepts, generated from the schemas the runtime valida
 ## triggers
 
 - [`trigger:ble-tracker`](./triggers.md#triggerble-tracker)
+- [`trigger:bme680`](./triggers.md#triggerbme680)
 - [`trigger:cron`](./triggers.md#triggercron)
 - [`trigger:event`](./triggers.md#triggerevent)
 - [`trigger:file-change`](./triggers.md#triggerfile-change)
+- [`trigger:gpio-button`](./triggers.md#triggergpio-button)
 - [`trigger:infrared`](./triggers.md#triggerinfrared)
 - [`trigger:logs`](./triggers.md#triggerlogs)
 - [`trigger:mqtt`](./triggers.md#triggermqtt)
@@ -46,12 +48,14 @@ Every option every module accepts, generated from the schemas the runtime valida
 - [`output:event`](./outputs.md#outputevent)
 - [`output:file`](./outputs.md#outputfile)
 - [`output:influxdb`](./outputs.md#outputinfluxdb)
+- [`output:inky-phat`](./outputs.md#outputinky-phat)
 - [`output:logs`](./outputs.md#outputlogs)
 - [`output:mqtt`](./outputs.md#outputmqtt)
 - [`output:nec`](./outputs.md#outputnec)
 - [`output:stash`](./outputs.md#outputstash)
 - [`output:switchbots`](./outputs.md#outputswitchbots)
 - [`output:thermal-printer`](./outputs.md#outputthermal-printer)
+- [`output:unicorn-hat-mini`](./outputs.md#outputunicorn-hat-mini)
 
 ## connections
 

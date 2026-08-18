@@ -148,7 +148,15 @@ describe("the published package", function () {
       "no example or config paths found in the docs",
     ).to.be.greaterThan(0);
 
+    // A `codePath` in an example names where the file lands on a device, which
+    // is not where the repository keeps it. Matching on the basename still
+    // catches a doc pointing at a file the tarball does not carry at all.
+    const shipped = new Set(files.map((path) => path.split("/").pop()));
+
     for (const path of referenced)
-      expect(files, `${path} is referenced by a doc`).to.include(path);
+      expect(
+        shipped,
+        `${path} is referenced by a doc but not in the package`,
+      ).to.include(path.split("/").pop());
   });
 });

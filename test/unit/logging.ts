@@ -1,4 +1,4 @@
-import { after, afterEach, before, describe, it } from "node:test";
+import { after, afterEach, before, describe, it, mock } from "node:test";
 import { EventEmitter } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -17,6 +17,7 @@ import { fetchConfig } from "../../src/util/configs.js";
 import { registerConnections } from "../../src/util/connections.js";
 import Task from "../../src/util/Task.js";
 import { registerTasks } from "../../src/util/tasks.js";
+import { createMqttMock } from "../helpers.js";
 
 interface Record {
   level: Verbosity;
@@ -289,9 +290,15 @@ describe("logging", function () {
   });
 
   describe("the shipped config", function () {
+    // It names a broker, and a real client would spend its whole connect
+    // timeout reaching for one that is not running.
+    before(function () {
+      mock.module("mqtt", { defaultExport: createMqttMock().mqtt });
+    });
+
     it("logs its registration to pino", async function () {
       const { records } = useLogger();
-      const config = await fetchConfig("./config/cutie.conf.json");
+      const config = await fetchConfig("./config/cutie.conf.yaml");
 
       await registerConnections(config.connections ?? []);
       await registerTasks(config.tasks ?? {});
@@ -302,8 +309,22 @@ describe("logging", function () {
           "no registration record reached pino",
         ).to.equal(true);
       } finally {
+        // The logs task publishes to the broker, so it stops before the
+        // connection it publishes on does.
+        const [logs, rest] = [
+          globals.tasks.filter((task) => task.name === "logs"),
+          globals.tasks.filter((task) => task.name !== "logs"),
+        ];
+
+        for (const group of [logs, rest])
+          await Promise.allSettled(
+            group.map((task) => task.trigger?.disable()),
+          );
+
+        await new Promise((resolve) => setImmediate(resolve));
+
         await Promise.allSettled(
-          globals.tasks.map((task) => task.trigger?.disable()),
+          globals.connections.map((connection) => connection.disable()),
         );
       }
     });

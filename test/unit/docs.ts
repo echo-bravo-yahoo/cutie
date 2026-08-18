@@ -1,4 +1,4 @@
-import { after, before, describe, it } from "node:test";
+import { after, before, describe, it, mock } from "node:test";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -12,6 +12,7 @@ const { expect } = chai;
 import { globals, setGlobals, start } from "../../src/index.js";
 import { validateConfig } from "../../src/util/validate.js";
 import { formatConfigErrors } from "../../src/util/validate.js";
+import { createMqttMock } from "../helpers.js";
 
 interface Block {
   doc: string;
@@ -97,15 +98,21 @@ describe("the documentation's config examples", function () {
         );
       }
 
-      // Only whole configs, not the fragments that illustrate one option.
-      if (
-        parsed === null ||
-        typeof parsed !== "object" ||
-        !("tasks" in parsed || "connections" in parsed)
-      )
-        continue;
+      // Only whole configs and the task-shaped blocks that illustrate a chain,
+      // not the fragments that illustrate one option. A task-shaped block is
+      // wrapped in a config so it goes through the same checks as the rest.
+      if (parsed === null || typeof parsed !== "object") continue;
 
-      const errors = await validateConfig(parsed, { configPath: path });
+      const config =
+        "tasks" in parsed || "connections" in parsed
+          ? parsed
+          : "steps" in parsed || "trigger" in parsed
+            ? { tasks: { example: parsed } }
+            : undefined;
+
+      if (!config) continue;
+
+      const errors = await validateConfig(config, { configPath: path });
 
       expect(
         errors,
@@ -136,21 +143,45 @@ describe("the config npm start uses", function () {
     ).to.deep.equal([]);
   });
 
+  // The shipped config names a broker, and a real client would spend its whole
+  // connect timeout reaching for one that is not there.
+  before(function () {
+    mock.module("mqtt", { defaultExport: createMqttMock().mqtt });
+  });
+
   it("registers without a broker or any hardware", async function (context) {
     context.mock.method(console, "log", () => {});
     context.mock.timers.enable({ apis: ["setInterval"] });
 
     const result = await start({
       _: [],
-      config: "./config/cutie.conf.json",
+      config: "./config/cutie.conf.yaml",
     } as never);
 
     try {
-      expect(result.tasks.map((task) => task.name)).to.deep.equal(["hello"]);
-      expect(result.tasks[0].trigger?.enabled).to.equal(true);
+      expect(result.tasks.map((task) => task.name)).to.deep.equal([
+        "heartbeat",
+        "logs",
+      ]);
+      expect(result.tasks.every((task) => task.trigger?.enabled)).to.equal(
+        true,
+      );
     } finally {
+      // Order matters. Disabling anything logs, and the shipped config has a
+      // logs task publishing to the broker, so that task goes first and the
+      // connections go last, with a tick in between for the chain it started.
+      const [logs, rest] = [
+        globals.tasks.filter((task) => task.name === "logs"),
+        globals.tasks.filter((task) => task.name !== "logs"),
+      ];
+
+      for (const group of [logs, rest])
+        await Promise.allSettled(group.map((task) => task.trigger?.disable()));
+
+      await new Promise((resolve) => setImmediate(resolve));
+
       await Promise.allSettled(
-        globals.tasks.map((task) => task.trigger?.disable()),
+        globals.connections.map((connection) => connection.disable()),
       );
       setGlobals({
         tasks: [],
