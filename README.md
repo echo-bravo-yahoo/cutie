@@ -42,20 +42,20 @@ cutie           # runs it
 
 ### Commands and options
 
-| Command | What it does |
-| --- | --- |
-| `cutie start` | run the tasks in the config file; the default when no command is given |
+| Command          | What it does                                                                   |
+| ---------------- | ------------------------------------------------------------------------------ |
+| `cutie start`    | run the tasks in the config file; the default when no command is given         |
 | `cutie validate` | check the config file and report every problem found, without running anything |
-| `cutie init` | write a starter config file to the current directory |
-| `cutie upload` | publish local config files to a connection |
-| `cutie download` | fetch config files from a connection |
+| `cutie init`     | write a starter config file to the current directory                           |
+| `cutie upload`   | publish local config files to a connection                                     |
+| `cutie download` | fetch config files from a connection                                           |
 
-| Option | Meaning |
-| --- | --- |
-| `--config <path>` | config file to use; defaults to `cutie.conf.yaml` in the working directory |
+| Option                | Meaning                                                                                         |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| `--config <path>`     | config file to use; defaults to `cutie.conf.yaml` in the working directory                      |
 | `--log-level <level>` | lowest level to log: `trace`, `debug`, `info`, `warn`, `error`, or `fatal`; defaults to `debug` |
-| `--help` | usage for the command, or for `cutie` itself when no command is given |
-| `--version` | the installed version |
+| `--help`              | usage for the command, or for `cutie` itself when no command is given                           |
+| `--version`           | the installed version                                                                           |
 
 An unrecognized option is an error rather than a silently ignored argument, and the message suggests the closest real one.
 
@@ -99,13 +99,13 @@ cutie download --config ./cutie.conf.yaml --connectionName my-broker --path ./fl
 cutie download --config ./cutie.conf.yaml --connectionName my-broker --node kitchen-pi --path ./fleet-configs
 ```
 
-| Flag | Meaning |
-| --- | --- |
-| `--config` | the local config file naming the connection to use (not the config being uploaded) |
-| `--connectionName` | which connection in that file to talk to |
-| `--path` | directory to read from or write to; a single file when combined with `--node` on upload |
-| `--node` | operate on one node instead of all of them |
-| `--topic` | override where configs are stored; defaults to `cutie/config/+` |
+| Flag               | Meaning                                                                                 |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `--config`         | the local config file naming the connection to use (not the config being uploaded)      |
+| `--connectionName` | which connection in that file to talk to                                                |
+| `--path`           | directory to read from or write to; a single file when combined with `--node` on upload |
+| `--node`           | operate on one node instead of all of them                                              |
+| `--topic`          | override where configs are stored; defaults to `cutie/config/+`                         |
 
 Uploaded files can be JSON, YAML, or YML, and the node name is taken from the filename. Downloaded files are always written as `<node>.conf.json`, and upload strips both the extension and a trailing `.conf` back off, so a fleet downloaded into a directory and uploaded again goes back to the topics it came from.
 
@@ -225,16 +225,16 @@ Every message gets a uuid v7 trace ID when it starts, and every log line that me
 
 `./provisioner/pi.sh <host> <verb>` drives a Pi over SSH from a development machine. An ARMv6 board is too constrained to develop on directly, so work happens on a workstation and reaches the Pi through this script.
 
-| Verb | What it does |
-| --- | --- |
-| `probe` | Report kernel, Node, buses, service state, and detected I2C addresses |
-| `deploy` | Build locally, rsync `built/` to the Pi, keep the previous build, restart |
-| `install` | Clean on-device `npm ci --omit=dev`, run detached so an SSH drop can't kill it. Rarely needed: images build their own dependencies, and `converge` installs them when the lockfile changes |
-| `rollback` | Swap the retained previous build back in and restart |
-| `restart` | Restart the service |
-| `status` | `systemctl status` for the service |
-| `logs` | Follow the service journal (`--namespace=cutie`) |
-| `converge` | Pipe `configure-host.sh` to the Pi and apply it |
+| Verb       | What it does                                                                                                                                                                               |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `probe`    | Report kernel, Node, buses, service state, and detected I2C addresses                                                                                                                      |
+| `deploy`   | Build locally, rsync `built/` to the Pi, keep the previous build, restart                                                                                                                  |
+| `install`  | Clean on-device `npm ci --omit=dev`, run detached so an SSH drop can't kill it. Rarely needed: images build their own dependencies, and `converge` installs them when the lockfile changes |
+| `rollback` | Swap the retained previous build back in and restart                                                                                                                                       |
+| `restart`  | Restart the service                                                                                                                                                                        |
+| `status`   | `systemctl status` for the service                                                                                                                                                         |
+| `logs`     | Follow the service journal (`--namespace=cutie`)                                                                                                                                           |
+| `converge` | Pipe `configure-host.sh` to the Pi and apply it                                                                                                                                            |
 
 `deploy` never copies `node_modules`. Native modules are compiled per architecture and per Node ABI, so a copy from a development machine lands unloadable binaries on the Pi -- run `npm ci` on the device instead.
 

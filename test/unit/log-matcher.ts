@@ -55,37 +55,41 @@ test(
   },
 );
 
-test("log matching with a minVerbosity", { concurrency: true }, (testContext) => {
-  // ranked trace < debug < info < warn < error < fatal
-  const atOrAbove: Array<Verbosity> = ["warn", "error", "fatal"];
-  const below: Array<Verbosity> = ["trace", "debug", "info"];
+test(
+  "log matching with a minVerbosity",
+  { concurrency: true },
+  (testContext) => {
+    // ranked trace < debug < info < warn < error < fatal
+    const atOrAbove: Array<Verbosity> = ["warn", "error", "fatal"];
+    const below: Array<Verbosity> = ["trace", "debug", "info"];
 
-  const logHelper = () =>
-    new Logs(
-      { type: "trigger:logs", filters: ["*"], minVerbosity: "warn" },
-      mockTask,
-    );
+    const logHelper = () =>
+      new Logs(
+        { type: "trigger:logs", filters: ["*"], minVerbosity: "warn" },
+        mockTask,
+      );
 
-  for (const verbosity of atOrAbove) {
-    testContext.test(`emits at "${verbosity}"`, () => {
-      expect(logHelper().shouldEmit("a.b.c.d", verbosity)).to.equal(true);
+    for (const verbosity of atOrAbove) {
+      testContext.test(`emits at "${verbosity}"`, () => {
+        expect(logHelper().shouldEmit("a.b.c.d", verbosity)).to.equal(true);
+      });
+    }
+
+    for (const verbosity of below) {
+      testContext.test(`is silent at "${verbosity}"`, () => {
+        expect(logHelper().shouldEmit("a.b.c.d", verbosity)).to.equal(false);
+      });
+    }
+
+    testContext.test("still requires the topic filter to match", () => {
+      const narrow = new Logs(
+        { type: "trigger:logs", filters: ["z"], minVerbosity: "trace" },
+        mockTask,
+      );
+      expect(narrow.shouldEmit("a.b.c.d", "fatal")).to.equal(false);
     });
-  }
-
-  for (const verbosity of below) {
-    testContext.test(`is silent at "${verbosity}"`, () => {
-      expect(logHelper().shouldEmit("a.b.c.d", verbosity)).to.equal(false);
-    });
-  }
-
-  testContext.test("still requires the topic filter to match", () => {
-    const narrow = new Logs(
-      { type: "trigger:logs", filters: ["z"], minVerbosity: "trace" },
-      mockTask,
-    );
-    expect(narrow.shouldEmit("a.b.c.d", "fatal")).to.equal(false);
-  });
-});
+  },
+);
 
 const logTestCases: Array<{
   title: string;

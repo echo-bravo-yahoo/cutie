@@ -117,14 +117,14 @@ Percentiles interpolate linearly between the two closest samples, matching numpy
 
 A sensor trigger that walks a number randomly within bounds. Use `trigger:repeat` into `read:random` instead; the example above is the direct replacement.
 
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `start` | -- | first value |
-| `min` / `max` | -- | bounds the walk stays inside |
-| `minStep` / `maxStep` | -- | how far one sample may move from the last |
-| `samplingInterval` | `60000` | ms between samples |
-| `reportingInterval` | `60000` | ms between emitted messages |
-| `sampling` | undefined | `{ "aggregation": ... }` |
+| Field                 | Default   | Meaning                                   |
+| --------------------- | --------- | ----------------------------------------- |
+| `start`               | --        | first value                               |
+| `min` / `max`         | --        | bounds the walk stays inside              |
+| `minStep` / `maxStep` | --        | how far one sample may move from the last |
+| `samplingInterval`    | `60000`   | ms between samples                        |
+| `reportingInterval`   | `60000`   | ms between emitted messages               |
+| `sampling`            | undefined | `{ "aggregation": ... }`                  |
 
 `sampling` is listed as optional but is required in practice: whenever sampling outpaces reporting there is more than one sample to collapse, and without it the collapse fails. That mismatch is one of the reasons this form is deprecated.
 
@@ -134,12 +134,12 @@ Presence tracking. It watches for BLE advertisements from named devices and repo
 
 There is no `read:ble` to pair with `trigger:cron` yet, so this remains the only way to do BLE presence tracking. Treat the shape as unstable.
 
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `devices` | -- | `[{ "alias": "phone", "macAddress": "..." }]` |
-| `samplingInterval` | `60000` | ms between samples |
-| `reportingInterval` | `60000` | ms between emitted messages |
-| `virtual` | `false` | fake RSSI instead of scanning for BLE advertisements |
+| Field               | Default | Meaning                                              |
+| ------------------- | ------- | ---------------------------------------------------- |
+| `devices`           | --      | `[{ "alias": "phone", "macAddress": "..." }]`        |
+| `samplingInterval`  | `60000` | ms between samples                                   |
+| `reportingInterval` | `60000` | ms between emitted messages                          |
+| `virtual`           | `false` | fake RSSI instead of scanning for BLE advertisements |
 
 `alias` is optional and defaults to the MAC address; it is the key each device's reading appears under. Emits `{ "<alias>": { metadata: { timestamp }, rssi } }` per device.
 

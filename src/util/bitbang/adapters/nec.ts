@@ -34,9 +34,7 @@ export function necToBits({
   const invert = (bits: Array<boolean>) => bits.map((bit) => !bit);
 
   const extendedAddressBits = invert(numberToBitArray(address, 8));
-  const addressBits = invert(
-    numberToBitArray(extendedAddress ?? address, 8),
-  );
+  const addressBits = invert(numberToBitArray(extendedAddress ?? address, 8));
 
   const commandBits = numberToBitArray(command, 8);
   const extendedCommandBits =
