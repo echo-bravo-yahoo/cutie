@@ -86,13 +86,15 @@ describe("examples run correctly, including", function () {
     fileChangedCallback!("change", "./some/imaginary/second/path");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
+    // Both paths resolve against the config file's own directory, which for this
+    // example is examples/.
     expect(mockWriteFile.mock.callCount()).to.equal(2);
     expect(mockWriteFile.mock.calls).to.satisfy(
       (calls: Array<any>) =>
         calls.find(
           (call: any) =>
             call.arguments[0] ===
-              normalize(`${srcDir}/../config/some/imaginary/path`) &&
+              normalize(`${srcDir}/../examples/copies/some/imaginary/path`) &&
             call.arguments[1] === "first" &&
             call.arguments[2].encoding === "utf8",
         ) !== undefined,
@@ -102,7 +104,9 @@ describe("examples run correctly, including", function () {
         calls.find(
           (call: any) =>
             call.arguments[0] ===
-              normalize(`${srcDir}/../config/some/imaginary/second/path`) &&
+              normalize(
+                `${srcDir}/../examples/copies/some/imaginary/second/path`,
+              ) &&
             call.arguments[1] === "second" &&
             call.arguments[2].encoding === "utf8",
         ) !== undefined,
@@ -242,6 +246,82 @@ describe("examples run correctly, including", function () {
       // the fetched config is cached next to the local one; it is a copy of a
       // real config and may carry credentials, so never leave it behind
       await rm(`./examples/remote-config.yaml.cache.json`, { force: true });
+    }
+  });
+
+  it("json-manipulation.yaml", async function (context) {
+    console.log = context.mock.fn(console.log, () => {});
+    const mockLogs = (console.log as it.Mock<typeof console.log>)
+      .mock as MockFunctionContext<typeof console.log>;
+
+    await start({
+      _: [],
+      config: `./examples/json-manipulation.yaml`,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(mockLogs.callCount()).to.equal(1);
+    const reshaped = JSON.parse(mockLogs.calls[0].arguments[0] as string);
+
+    // renamed out of "readings" and rounded to the configured precision
+    expect(reshaped.temperature).to.equal(21.47);
+    expect(reshaped.humidity).to.equal(48.9);
+    // duplicated, so both the copy and the original survive
+    expect(reshaped.meta.sensor).to.equal("bme280-1");
+    expect(reshaped.sensorId).to.equal("bme280-1");
+    // merged in from the task's own data block
+    expect(reshaped.node).to.equal("bedroom");
+    expect(reshaped.collectedBy).to.equal("cutie");
+    // removed explicitly
+    expect(reshaped).to.not.have.property("readings");
+    expect(reshaped).to.not.have.property("debug");
+  });
+
+  it("env-interpolation.yaml", async function (context) {
+    console.log = context.mock.fn(console.log, () => {});
+    const mockLogs = (console.log as it.Mock<typeof console.log>)
+      .mock as MockFunctionContext<typeof console.log>;
+    const previous = process.env.name;
+    delete process.env.name;
+
+    try {
+      await start({
+        _: [],
+        config: `./examples/env-interpolation.yaml`,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // An unset name interpolates as the literal text "undefined", which the
+      // example says in a comment. Pinned here so the comment cannot quietly
+      // stop being true; a strict interpolation mode is future work.
+      expect(mockLogs.calls[0].arguments[0]).to.equal("hello undefined");
+    } finally {
+      if (previous === undefined) delete process.env.name;
+      else process.env.name = previous;
+    }
+  });
+
+  it("env-interpolation.yaml with the variable set", async function (context) {
+    console.log = context.mock.fn(console.log, () => {});
+    const mockLogs = (console.log as it.Mock<typeof console.log>)
+      .mock as MockFunctionContext<typeof console.log>;
+    const previous = process.env.name;
+    process.env.name = "world";
+
+    try {
+      await start({
+        _: [],
+        config: `./examples/env-interpolation.yaml`,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(mockLogs.calls[0].arguments[0]).to.equal("hello world");
+    } finally {
+      if (previous === undefined) delete process.env.name;
+      else process.env.name = previous;
     }
   });
 });

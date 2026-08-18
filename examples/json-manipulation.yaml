@@ -35,8 +35,10 @@ tasks:
       #   duplicate - copy the value to "to", keeping the original
       #   remove    - drop the value
       #   retain    - keep the value as-is
-      # the "*" path applies to every key not named above it, so this config
-      # is a whitelist: anything not mentioned is dropped.
+      # the "*" path applies to every key not named above it. with "retain",
+      # as below, everything unmentioned is kept and this config is a
+      # blocklist. change it to "remove" to invert that, and only the keys
+      # named above survive.
       - type: "transform:munge"
         paths:
           readings.degreesC:

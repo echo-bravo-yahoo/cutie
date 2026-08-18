@@ -28,7 +28,7 @@ This recipe listens to all MQTT topics under `alarms` and rebroadcasts them to `
       "trigger": {
         "type": "trigger:mqtt",
         "connectionName": "primary-broker",
-        "topic": "alarms/+"
+        "topics": ["alarms/+"]
       },
       "steps": [
         {
@@ -46,6 +46,8 @@ This recipe listens to all MQTT topics under `alarms` and rebroadcasts them to `
 
 This recipe listens to the MQTT topic `weather/temp`, then rebroadcasts messages raw to `temp/outside/raw`, then rebroadcasts them in fahrenheit, rounded, to `temp/outside`. This example demonstrates the ability to do partial transforms inbetween outputs.
 
+It expects `weather/temp` to carry a bare number, such as `21.4712`. Neither `transform:convert` nor `transform:round` names a `path`, so both operate on the whole message; a publisher sending `{"temp": 21.4712}` would need `"path": "temp"` on each of them instead.
+
 ```json
 {
   "connections": [
@@ -62,7 +64,7 @@ This recipe listens to the MQTT topic `weather/temp`, then rebroadcasts messages
       "trigger": {
         "type": "trigger:mqtt",
         "connectionName": "primary-broker",
-        "topic": "weather/temp"
+        "topics": ["weather/temp"]
       },
       "steps": [
         {

@@ -4,8 +4,10 @@ tasks:
   fs-mover:
     trigger:
       # we can listen for changes to the file system
+      # every relative path in a config is relative to the config file
+      # itself, so "." here means the examples directory
       type: "trigger:file-change"
-      path: "./examples"
+      path: "."
 
     steps:
       # a "stash" is a place we can put information
@@ -25,7 +27,7 @@ tasks:
       # lets read the file that the trigger fired for
       - type: "read:file"
         # we look up the path from the stash
-        path: "./examples/${stash.filename}"
+        path: "./${stash.filename}"
       # now, let's write the file to somewhere else
       - type: "output:file"
         # we can build a path using the filename we stashed!
@@ -34,9 +36,9 @@ tasks:
         # the message, so the previous "read:file" step
         # replaced our message that contained the filename
         # with the _actual contents_ of the file
-        path: "./config/${stash.filename}"
+        path: "./copies/${stash.filename}"
         # this is a copy, not a log, so overwrite the destination and do
-        # not prefix the contents with a newline
+        # not add a trailing newline to the contents
         append: false
         insertNewlines: false
       # now that we've written the file, let's log a
@@ -44,5 +46,5 @@ tasks:
       # we'll start by overwriting the message (which was
       # the file contents) with the message we want to log
       - type: "read:constant"
-        value: "Copied file from ./examples/${stash.filename} to ./config/${stash.filename}."
+        value: "Copied file from ./${stash.filename} to ./copies/${stash.filename}."
       - type: "output:console"

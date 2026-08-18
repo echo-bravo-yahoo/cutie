@@ -1,0 +1,3 @@
+This directory is where interpolation.yaml copies the files it sees change.
+output:file writes a file but does not create the directory holding it, so this
+has to exist for the example to run.

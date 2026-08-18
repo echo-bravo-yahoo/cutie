@@ -7,8 +7,13 @@ tasks:
       # trigger:once fires a single message and then stops
       type: "trigger:once"
       # ${env.X} reads process environment variables. the other things
-      # reachable this way are ${stash.X}, ${message}, ${module.X} (this
+      # reachable this way are ${stash.X}, ${message}, ${globals.X} (the
+      # runtime's own state, such as ${globals.version}), ${module.X} (this
       # step's own config), and ${task.X}.
+      #
+      # a name that resolves to nothing becomes the literal text "undefined"
+      # rather than an error, so running this without name set prints
+      # "hello undefined". check the spelling if you see that.
       message: "hello ${env.name}"
 
     steps:

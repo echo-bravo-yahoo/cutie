@@ -27,3 +27,7 @@ config/*
 !config/cutie.conf.yaml
 !config/cutie.service
 !config/cutie.journald.conf
+
+# written by examples/interpolation.yaml when it is run
+examples/copies/*
+!examples/copies/.gitkeep

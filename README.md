@@ -4,6 +4,8 @@
 
 `cutie` is an application to make it easier to develop and glue together IoT & home automation applications. It primarily consists of three parts: a data transform & routing layer (intended primarily as an MQTT listener/repeater), a software sensor platform for linux computers, and a provisioning script that installs `cutie` on a raspberry pi. It aims to be configuration-first, with code extensions to support use cases the configuration cannot. I wrote [a little bit about the motivation behind it here](https://blog.echobravoyahoo.net/the-problem-with-home-automation-software/).
 
+Every option every module accepts is listed in [the configuration reference](./docs/reference/README.md), which is generated from the schemas the runtime validates against. `cutie validate` checks a config file against those same schemas and reports everything wrong with it at once.
+
 ### `cutie` as a data transform & routing layer
 
 `cutie` can listen to sensors or MQTT topics and transform the data or rebroadcast it to other MQTT topics or other data stores. This should enable users to integrate MQTT services that were not intended to be used together. Take a look at `./cookbook.md` for examples of how this functionality can be used.
@@ -33,9 +35,45 @@ To use `cutie` as a CLI tool:
 
 ```bash
 npm install --global @echobravoyahoo/cutie
-cutie init # this creates a default/blank config file in your current directory
-cutie # this runs cutie using the config file in the current directory
+cutie init      # writes a starter cutie.conf.yaml to the current directory
+cutie validate  # reports anything wrong with it
+cutie           # runs it
 ```
+
+### Commands and options
+
+| Command | What it does |
+| --- | --- |
+| `cutie start` | run the tasks in the config file; the default when no command is given |
+| `cutie validate` | check the config file and report every problem found, without running anything |
+| `cutie init` | write a starter config file to the current directory |
+| `cutie upload` | publish local config files to a connection |
+| `cutie download` | fetch config files from a connection |
+
+| Option | Meaning |
+| --- | --- |
+| `--config <path>` | config file to use; defaults to `cutie.conf.yaml` in the working directory |
+| `--log-level <level>` | lowest level to log: `trace`, `debug`, `info`, `warn`, `error`, or `fatal`; defaults to `debug` |
+| `--help` | usage for the command, or for `cutie` itself when no command is given |
+| `--version` | the installed version |
+
+An unrecognized option is an error rather than a silently ignored argument, and the message suggests the closest real one.
+
+### Using `cutie` as a library
+
+The package publishes `main` and `types`, so a node program can drive the runtime directly instead of through the CLI:
+
+```javascript
+import { start } from "@echobravoyahoo/cutie";
+
+// resolves once every connection and task in the config has registered, and
+// rejects rather than starting anything if the config does not validate
+const globals = await start({ _: [], config: "./cutie.conf.yaml" });
+
+console.log(globals.tasks.map((task) => task.name));
+```
+
+`start` returns the runtime's globals: the registered `tasks`, the open `connections`, the `logger`, and the internal `eventBus`. There is no separate stop function yet; send the process `SIGTERM` and the shutdown path disables every task and connection.
 
 ### The default config
 
@@ -61,15 +99,15 @@ cutie download --config ./cutie.conf.yaml --connectionName my-broker --path ./fl
 cutie download --config ./cutie.conf.yaml --connectionName my-broker --node kitchen-pi --path ./fleet-configs
 ```
 
-| Flag               | Meaning                                                                                 |
-| ------------------ | --------------------------------------------------------------------------------------- |
-| `--config`         | the local config file naming the connection to use (not the config being uploaded)      |
-| `--connectionName` | which connection in that file to talk to                                                |
-| `--path`           | directory to read from or write to; a single file when combined with `--node` on upload |
-| `--node`           | operate on one node instead of all of them                                              |
-| `--topic`          | override where configs are stored; defaults to `cutie/config/+`                         |
+| Flag | Meaning |
+| --- | --- |
+| `--config` | the local config file naming the connection to use (not the config being uploaded) |
+| `--connectionName` | which connection in that file to talk to |
+| `--path` | directory to read from or write to; a single file when combined with `--node` on upload |
+| `--node` | operate on one node instead of all of them |
+| `--topic` | override where configs are stored; defaults to `cutie/config/+` |
 
-Uploaded files can be JSON, YAML, or YML, and the node name is taken from the filename. Downloaded files are always written as `<node>.conf.json`.
+Uploaded files can be JSON, YAML, or YML, and the node name is taken from the filename. Downloaded files are always written as `<node>.conf.json`, and upload strips both the extension and a trailing `.conf` back off, so a fleet downloaded into a directory and uploaded again goes back to the topics it came from.
 
 `--topic` is a single value that works for every combination of these flags, because a `+` segment stands in for the node name. `--topic 'fleet/config/+'` subscribes to `fleet/config/+` when downloading everything, and publishes to `fleet/config/kitchen-pi` when uploading that node.
 
@@ -160,12 +198,18 @@ Once you have it configured to your liking, you can install it to systemctl so i
 
 #### Sensors
 
-The `random` sensor runs without any hardware; use it to test changes to the runtime / behavior on your development box.
+`read:random` produces a number that drifts within bounds, one step at a time, with no hardware attached. Put it where a real sensor's read would go and the rest of the task behaves the same, which makes it the way to test runtime changes on a development box.
+
+#### Config paths
+
+Every relative path a config contains -- a `read:file` path, an `output:file` path, a `codePath` -- resolves against the directory holding the config file, not against the working directory the process was started from. Moving a config moves everything it refers to with it.
 
 #### Logging
 
 - Logs are written as colorized text by `pino-pretty`, not as JSON, so they are meant to be read rather than piped through `jq`.
-- To filter logs by subsystem, use a `trigger:logs` task instead. It receives every internal log line and matches the line's topic against its `filters`, where `*` is a wildcard and a leading `!` negates. The last matching filter wins, so `["*", "!core.registration.*"]` means "everything except registration".
+- `--log-level` sets the lowest level that reaches the console. Everything a module logs goes there, not just what `output:console` prints.
+- To filter logs by subsystem, use a `trigger:logs` task instead. It receives every internal log line and matches the line's topic against its `filters`, where `*` is a wildcard and a leading `!` negates. The last matching filter wins, so `["*", "!core.registration.*"]` means "everything except registration". It only sees lines at `warn` or above unless you lower its `minVerbosity`.
+- A `trigger:logs` task never sees its own subtree's lines, and a line produced while a line is being dispatched still reaches the console but starts no second dispatch. Between them, those two rules are what stop a logs task feeding an output that logs from feeding itself forever.
 - A connection that fails to register (e.g. an unreachable broker) always prints directly, in addition to being available to a `trigger:logs` task -- connections register before tasks, so no `trigger:logs` task can be listening yet when that failure happens.
 - The systemd service logs to a dedicated journal namespace (`LogNamespace=cutie` in `./config/cutie.service`), capped at 50M total / 10M per file by `./config/cutie.journald.conf`, so a runaway log can't fill up the SD card. A plain `journalctl -u cutie` won't show anything for the deployed service -- add `--namespace=cutie`, as below.
 

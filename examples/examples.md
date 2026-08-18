@@ -10,7 +10,7 @@ These are best read in this order:
 6. `env-interpolation.yaml` reads values from the environment
 7. `remote-config.yaml` fetches the config itself from a connection
 
-`remote-clock.yaml` and `remote-config.yaml` need an MQTT broker on `mqtt://127.0.0.1:1883`; the rest run with no hardware and no network.
+`remote-clock.yaml` and `remote-config.yaml` need an MQTT broker on `mqtt://127.0.0.1:1883`. The rest need no hardware and no network, but `interpolation.yaml` does touch the filesystem: it watches this directory and copies whatever changes into `./examples/copies/`. Every relative path in a config resolves against the config file's own directory, which is why those paths are relative to `examples/` rather than to wherever you ran `cutie` from.
 
 ## Display test patterns
 
