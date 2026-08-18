@@ -74,10 +74,13 @@ export default class BME680 extends Read {
       gas: data.gas_resistance,
     };
 
-    this.debug(`Sampled new data point, ${JSON.stringify(datapoint, null, 2)}`, {
-      topic: this.logPrefix,
-      traceId,
-    });
+    this.debug(
+      `Sampled new data point, ${JSON.stringify(datapoint, null, 2)}`,
+      {
+        topic: this.logPrefix,
+        traceId,
+      },
+    );
 
     return datapoint;
   }

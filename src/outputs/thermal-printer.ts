@@ -99,7 +99,8 @@ export default class ThermalPrinter extends Output {
   }
 
   async send(message: Message, traceId: string) {
-    const text = typeof message === "string" ? message : JSON.stringify(message);
+    const text =
+      typeof message === "string" ? message : JSON.stringify(message);
 
     if (this.config.virtual) {
       this.info(`Would print (virtual):\n${text}`, {

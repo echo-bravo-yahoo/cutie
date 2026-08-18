@@ -65,10 +65,13 @@ export default class BME280 extends Read {
       pressure: sensorData.pressure,
     };
 
-    this.debug(`Sampled new data point, ${JSON.stringify(datapoint, null, 2)}`, {
-      topic: this.logPrefix,
-      traceId,
-    });
+    this.debug(
+      `Sampled new data point, ${JSON.stringify(datapoint, null, 2)}`,
+      {
+        topic: this.logPrefix,
+        traceId,
+      },
+    );
 
     return datapoint;
   }

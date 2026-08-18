@@ -81,11 +81,13 @@ describe("fetching a remote config", function () {
     // lifecycle the provider connection would otherwise perform for real.
     const MQTTConnection = (await import("../../src/connections/mqtt.js"))
       .default;
-    mock.method(MQTTConnection.prototype, "register", async function (
-      this: any,
-    ) {
-      this.enabled = true;
-    });
+    mock.method(
+      MQTTConnection.prototype,
+      "register",
+      async function (this: any) {
+        this.enabled = true;
+      },
+    );
     mock.method(MQTTConnection.prototype, "disable", async function () {});
     mock.method(MQTTConnection.prototype, "fetchConfig", async () =>
       fetchRemote(),
