@@ -4,7 +4,7 @@ import Trigger from "./Trigger.js";
 import Output from "./Output.js";
 import Read from "./Read.js";
 import Step from "./Step.js";
-import Task, { TaskConfig } from "./Task.js";
+import Task from "./Task.js";
 import Transform from "./Transform.js";
 
 export const KINDS = [
@@ -50,12 +50,10 @@ export const isOutput = (c: Configurable): c is Output => isKind(c, "output");
 export const isConnection = (c: Configurable): c is Connection =>
   isKind(c, "connection");
 
+// A Task always holds an array of constructed steps, even when its config
+// declared none, which is what separates it from a Step or a Connection.
 export function isTask(configurable: Configurable): configurable is Task {
-  return (
-    configurable &&
-    (configurable as unknown as TaskConfig).steps &&
-    (configurable as unknown as TaskConfig).steps.length !== undefined
-  );
+  return !!configurable && Array.isArray((configurable as Task).steps);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

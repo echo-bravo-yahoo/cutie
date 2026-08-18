@@ -1,8 +1,22 @@
 import { globals } from "../index.js";
+import { applySchemaDefaults, getRegisteredSchema } from "./schema.js";
 import { isStep, Kind } from "./type-helpers.js";
 
 export interface Config {
   disabled?: boolean;
+}
+
+// The schema is the declared source of defaults and of deprecated-option
+// renames. A config with no `type`, or whose module has not been imported yet,
+// is returned untouched.
+function withSchemaDefaults(config: Config): Config {
+  const type = (config as { type?: unknown }).type;
+  if (typeof type !== "string") return config;
+
+  const schema = getRegisteredSchema(type);
+  if (schema === undefined) return config;
+
+  return applySchemaDefaults(config, schema);
 }
 
 export interface LogLineOptions {
@@ -57,16 +71,9 @@ export class Configurable {
 
     // subclasses that log under a topic override this
     this.logPrefix = "";
-    this.config = this.addDefaultsToConfig(config);
+    this.config = withSchemaDefaults(config);
     this.name = name;
     this.enabled = false;
-  }
-
-  // Overridden by modules that declare defaults; the base is the identity.
-  // Called from the constructor, so an override may read only its argument --
-  // no subclass field is initialized yet.
-  addDefaultsToConfig(config: Config): Config {
-    return config;
   }
 
   async register() {}
