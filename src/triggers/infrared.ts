@@ -1,9 +1,9 @@
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { importOptional } from "../util/optional-dependency.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface InfraredConfig extends TriggerConfig {
-  ledPin?: number;
   receiverPin?: number;
   virtual?: boolean;
 }
@@ -16,11 +16,10 @@ type PigpioModule = any;
 
 export default class Infrared extends Trigger {
   declare config: InfraredConfig;
-  infraredLed?: GpioPin;
   infraredReceiver?: GpioPin;
 
-  constructor(config: InfraredConfig, task: Task) {
-    super(config, task);
+  constructor(config: InfraredConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
   async enable() {
@@ -34,13 +33,6 @@ export default class Infrared extends Trigger {
         )
       ).default;
       const Gpio = pigpio.Gpio;
-
-      if (this.config.ledPin) {
-        this.infraredLed = new Gpio(this.config.ledPin, { mode: Gpio.OUTPUT });
-        this.info(`Enabled infrared LED on pin ${this.config.ledPin}.`, {
-          topic: this.logPrefix,
-        });
-      }
 
       if (this.config.receiverPin) {
         this.infraredReceiver = new Gpio(this.config.receiverPin, {
@@ -62,11 +54,6 @@ export default class Infrared extends Trigger {
   }
 
   async disable() {
-    if (this.infraredLed) {
-      this.infraredLed = undefined;
-      this.info("Disabled infrared LED.", { topic: this.logPrefix });
-    }
-
     if (this.infraredReceiver) {
       this.infraredReceiver.removeAllListeners("alert");
       this.infraredReceiver = undefined;
@@ -77,12 +64,21 @@ export default class Infrared extends Trigger {
   }
 }
 
-/*
-{
-  "type": "trigger:infrared",
-  "disabled": false,
-  "virtual": false,
-  "ledPin": 23,
-  "receiverPin": 24
-}
-*/
+export const schema: ModuleSchema = {
+  type: "trigger:infrared",
+  description:
+    "Starts a message of {level, tick} for every edge an infrared receiver sees. Decoding a protocol out of the pulse train is a job for the step chain.",
+  options: {
+    receiverPin: {
+      type: "number",
+      description: "The GPIO pin the infrared receiver's data line is on.",
+      integer: true,
+      min: 0,
+    },
+    virtual: {
+      type: "boolean",
+      description: "Register without opening any GPIO pin.",
+      default: false,
+    },
+  },
+};

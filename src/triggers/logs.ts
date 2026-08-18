@@ -2,6 +2,7 @@ import Trigger from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { StepConfig } from "../util/Step.js";
 import { globals } from "../index.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface LogsConfig extends StepConfig {
   filters: Array<string>;
@@ -19,19 +20,14 @@ const VERBOSITY_RANK: Record<Verbosity, number> = {
   fatal: 5,
 };
 
+// Least to most severe. The single list every level check and enum draws on.
+export const VERBOSITIES = Object.keys(VERBOSITY_RANK) as Array<Verbosity>;
+
 export default class Logs extends Trigger {
   declare config: LogsConfig;
 
-  constructor(config: LogsConfig, task: Task) {
-    super(config, task);
-  }
-
-  addDefaultsToConfig(config: LogsConfig): LogsConfig {
-    return {
-      // emit every level unless the config narrows it
-      minVerbosity: "trace",
-      ...config,
-    };
+  constructor(config: LogsConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
   // Listening starts at enable rather than register, so a logs trigger in a
@@ -114,3 +110,23 @@ export default class Logs extends Trigger {
     return false;
   }
 }
+
+export const schema: ModuleSchema = {
+  type: "trigger:logs",
+  description:
+    "Starts a message for every log line the node produces whose topic matches one of its filters.",
+  options: {
+    filters: {
+      type: "array",
+      description:
+        'Log topics to match, checked last to first; "*" stands in for any run of segments, and a leading "!" excludes.',
+      default: ["*"],
+    },
+    minVerbosity: {
+      type: "string",
+      description: "The least severe level a line may be and still match.",
+      default: "warn",
+      enum: VERBOSITIES,
+    },
+  },
+};

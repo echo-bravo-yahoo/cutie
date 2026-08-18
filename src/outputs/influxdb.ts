@@ -3,6 +3,7 @@ import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
 import InfluxDBConnection from "../connections/influxdb.js";
 import { Message } from "../util/type-helpers.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface InfluxDBConfig extends OutputConfig {
   measurement: string;
@@ -45,8 +46,8 @@ export default class InfluxDB extends Output {
   // @ts-expect-error config is instantiated by enable
   influxdb: InfluxDBConnection;
 
-  constructor(config: InfluxDBConfig, task: Task) {
-    super(config, task);
+  constructor(config: InfluxDBConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
   async enable() {
@@ -146,19 +147,27 @@ export default class InfluxDB extends Output {
   }
 }
 
-/*
-config format:
-{
-  "type": "output:influxdb",
-  "disabled": false,
-  "measurement": string,
-  "tags": Record<string, string>,
-  "connectionName": string,
-}
-
-message format:
-{
-  tags?: Record<string, string>,
-  fields: Record<string, string>, where the value already has any type indicator baked-in (e.g., i)
-}
-*/
+export const schema: ModuleSchema = {
+  type: "output:influxdb",
+  description:
+    'Writes each message to InfluxDB as one line of line protocol. The message must already be shaped {"fields": {...}} with optional "tags"; use transform:munge to get it there.',
+  options: {
+    connectionName: {
+      type: "string",
+      description: "Which declared connection to write through.",
+      required: true,
+    },
+    measurement: {
+      type: "string",
+      description: "The measurement name every line is written under.",
+      required: true,
+      interpolated: true,
+    },
+    tags: {
+      type: "object",
+      description:
+        "Tags added to every line, merged with any the message carries.",
+      interpolated: true,
+    },
+  },
+};

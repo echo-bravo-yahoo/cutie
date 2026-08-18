@@ -8,6 +8,7 @@ import Read, { ReadConfig } from "../util/Read.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 import { importOptional } from "../util/optional-dependency.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface BME680Config extends ReadConfig {
   i2cAddress: number;
@@ -32,8 +33,8 @@ export default class BME680 extends Read {
   virtualPressure: DrunkReader;
   virtualGas: DrunkReader;
 
-  constructor(config: BME680Config, task: Task) {
-    super(config, task);
+  constructor(config: BME680Config, task: Task, index?: number) {
+    super(config, task, index);
 
     this.virtualTemp = new DrunkTemp();
     this.virtualHumidity = new DrunkHumidity();
@@ -55,9 +56,9 @@ export default class BME680 extends Read {
     };
   }
 
+  // The base class routes to virtualRead when `virtual` is set, and a disabled
+  // step is no longer in the chain at all, so neither guard belongs here.
   async read(_message: Message, traceId: string) {
-    if (!this.enabled) return;
-    if (this.config.virtual) return this.virtualRead();
     // bme680-sensor exposes getSensorData(), not read(), and returns its whole
     // state object - readings sit under .data, alongside calibration data and
     // gas heater settings.
@@ -89,7 +90,7 @@ export default class BME680 extends Read {
           default: { Bme680: new (bus: number, address: number) => any };
         }>("bme680-sensor", "read:bme680")
       ).default.Bme680;
-      this.sensor = new Bme680(1, Number(this.config.i2cAddress) || 0x77);
+      this.sensor = new Bme680(1, Number(this.config.i2cAddress));
       await this.sensor.initialize();
     }
 
@@ -104,11 +105,26 @@ export default class BME680 extends Read {
   }
 }
 
-/*
-{
-  "type": "read:bme680",
-  "disabled": false,
-  "virtual": false,
-  "i2cAddress": 0x77
-}
-*/
+export const schema: ModuleSchema = {
+  type: "read:bme680",
+  description:
+    "Reads temperature, humidity, pressure, and gas resistance from a BME680 over I2C.",
+  options: {
+    virtual: {
+      type: "boolean",
+      description:
+        "Produce plausible drifting readings instead of opening the sensor.",
+      default: false,
+    },
+    i2cAddress: {
+      type: "number",
+      description:
+        "The sensor's I2C address; a BME680 uses 0x76 or 0x77 depending on its SDO pin.",
+      default: 0x77,
+      // 0x00 to 0x07 are reserved by the I2C spec, so no device answers there.
+      min: 0x08,
+      max: 0x77,
+      integer: true,
+    },
+  },
+};

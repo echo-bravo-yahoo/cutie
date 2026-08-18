@@ -1,5 +1,6 @@
 import Sensor, { SensorConfig } from "../util/Sensor.js";
 import Task from "../util/Task.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface RandomConfig extends SensorConfig {
   minStep: number;
@@ -15,8 +16,8 @@ export default class Random extends Sensor {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   declare samples: Array<any>;
 
-  constructor(config: RandomConfig, task: Task) {
-    super(config, task);
+  constructor(config: RandomConfig, task: Task, index?: number) {
+    super(config, task, index);
     this.lastNumber = config.start || 0;
 
     this.name = "random";
@@ -73,18 +74,52 @@ export default class Random extends Sensor {
   }
 }
 
-/*
-{
-  "name": "fake-thermometer",
-  "type": "trigger:random",
-  "disabled": false,
-  "start": 22,
-  "minStep": .05,
-  "maxStep": .5,
-  "max": 30,
-  "min": 20,
-  "samplingInterval": 10000,
-  "reportingInterval": 10000
-  }
-}
-*/
+export const schema: ModuleSchema = {
+  type: "trigger:random",
+  description:
+    "Samples a drifting number on one interval and reports an aggregate on another. Deprecated: prefer trigger:cron into read:random into transform:aggregate, which separates when to sample from what to read and how to collapse the samples.",
+  options: {
+    min: {
+      type: "number",
+      description: "The lowest value a sample may take.",
+      required: true,
+    },
+    max: {
+      type: "number",
+      description: "The highest value a sample may take.",
+      required: true,
+    },
+    minStep: {
+      type: "number",
+      description: "The smallest change between consecutive samples.",
+      required: true,
+    },
+    maxStep: {
+      type: "number",
+      description: "The largest change between consecutive samples.",
+      required: true,
+    },
+    start: {
+      type: "number",
+      description: "The value the first sample drifts away from.",
+      required: true,
+    },
+    samplingInterval: {
+      type: "number",
+      description: "How long to wait between samples.",
+      default: 60 * 1000,
+      unit: "ms",
+    },
+    reportingInterval: {
+      type: "number",
+      description: "How long to wait between reported messages.",
+      default: 60 * 1000,
+      unit: "ms",
+    },
+    sampling: {
+      type: "object",
+      description:
+        'How to collapse the samples taken since the last report, as {"aggregation": "average"}. Required in practice whenever sampling outpaces reporting.',
+    },
+  },
+};

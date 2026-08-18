@@ -2,12 +2,12 @@ import mqtt from "mqtt";
 import MqttTopics from "mqtt-topics";
 
 import { Connection, ConnectionConfig } from "../util/Connection.js";
-import { getConnectionsByType } from "../util/connections.js";
 import { globals } from "../index.js";
 import { isMQTT } from "../triggers/mqtt.js";
 import { Message, ProviderConfig } from "../util/type-helpers.js";
 import { ConfigFile } from "../util/configs.js";
 import { redact } from "../util/redact.js";
+import { ModuleSchema } from "../util/schema.js";
 import { fromTraceparent, newTraceId } from "../util/trace.js";
 
 export const DEFAULT_CONFIG_TOPIC = "cutie/config/+";
@@ -26,7 +26,6 @@ export interface MQTTConnectionConfig
     mqtt.IClientOptions {
   endpoint: string;
   type: string;
-  enabled: boolean;
 }
 
 export interface MQTTProviderConfig extends ProviderConfig {
@@ -119,33 +118,63 @@ export default class MQTTConnection extends Connection {
   async fetchConfig(
     provider: MQTTProviderConfig,
     _connection: ConnectionConfig,
+    timeoutMs: number = DEFAULT_FETCH_TIMEOUT_MS,
   ): Promise<ConfigFile> {
     // register() already opened a client; opening a second one here used to
     // overwrite it, leaking the first socket for the life of the process
-    console.log(
-      `Fetching remote config from MQTT topic ${provider.topic} using client ${this.connection.options.clientId}.`,
+    globals.logger.info(
+      `Fetching remote config from MQTT topic "${provider.topic}" using client ${this.connection.options.clientId}.`,
+      { topic: this.logPrefix },
     );
-    this.connection.subscribe(provider.topic);
+    await this.connection.subscribeAsync(provider.topic);
 
-    return new Promise((resolve, _reject) => {
-      this.connection.on("message", async (topic, message) => {
-        if (topic === provider.topic) {
-          const config = JSON.parse(
-            message.toString(),
-          ) as unknown as ConfigFile;
-          const clientId = this.connection.options.clientId;
-          await this.connection.endAsync();
-          globals.logger.info(
-            `Fetched remote config from MQTT topic ${provider.topic} using client ${clientId}. Cleaning up.`,
-            { topic: this.logPrefix, config: redact(config) },
-          );
-          // @ts-expect-error connection is instantiated by register()
-          this.connection = undefined;
-          this.enabled = false;
-          resolve(config);
-        }
+    let handler: (topic: string, message: Buffer) => void = () => {};
+    let timer: NodeJS.Timeout | undefined;
+
+    // Every exit has to be a settled promise. Without the timeout and the two
+    // rejections, a node whose config topic holds nothing -- or holds something
+    // that is not JSON -- waited here forever and the cached copy was never
+    // reached.
+    try {
+      const config = await new Promise<ConfigFile>((resolve, reject) => {
+        handler = (messageTopic: string, message: Buffer) => {
+          if (messageTopic !== provider.topic) return;
+
+          try {
+            resolve(JSON.parse(message.toString()) as ConfigFile);
+          } catch (error) {
+            reject(
+              new Error(
+                `The retained message on MQTT topic "${provider.topic}" is not valid JSON: ${(error as Error).message}.`,
+              ),
+            );
+          }
+        };
+        this.connection.on("message", handler);
+
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                `Timed out after ${timeoutMs}ms waiting for a retained config message on MQTT topic "${provider.topic}".`,
+              ),
+            ),
+          timeoutMs,
+        );
       });
-    });
+
+      globals.logger.info(
+        `Fetched remote config from MQTT topic "${provider.topic}". Cleaning up.`,
+        { topic: this.logPrefix, config: redact(config) },
+      );
+
+      return config;
+    } finally {
+      if (timer) clearTimeout(timer);
+      this.connection.removeListener("message", handler);
+      // the bootstrap client has done its job either way
+      await this.disable();
+    }
   }
 
   async disable(): Promise<void> {
@@ -160,10 +189,11 @@ export default class MQTTConnection extends Connection {
   }
 
   async register() {
+    // Everything left over is handed to the mqtt client, so an option this
+    // schema does not document still reaches it.
     const mqttConfig: Partial<typeof this.config> = { ...this.config };
     delete mqttConfig.name;
     delete mqttConfig.type;
-    delete mqttConfig.enabled;
     delete mqttConfig.endpoint;
     delete mqttConfig.disabled;
 
@@ -199,9 +229,6 @@ export default class MQTTConnection extends Connection {
       { topic: this.logPrefix, traceId },
       { message },
     );
-    const mqttConnectionNames = getConnectionsByType("mqtt").map(
-      (connection) => connection.name,
-    );
     let triggers = 0;
 
     for (let i = 0; i < globals.tasks.length; i++) {
@@ -210,20 +237,15 @@ export default class MQTTConnection extends Connection {
       // The topic stays subscribed while any other trigger still wants it, so
       // a disabled trigger has to be skipped here rather than at the broker.
       if (!trigger.enabled) continue;
-      const desiredConnection = trigger.config.connectionName;
+      // This connection's own name, not the set of every MQTT connection's:
+      // with two brokers the latter fires triggers bound to the other one.
+      if (trigger.config.connectionName !== this.config.name) continue;
 
-      if (mqttConnectionNames.includes(desiredConnection)) {
-        if (
-          MQTTConnection.matchesTopic(
-            topic,
-            trigger.config.topic || trigger.config.topics || "",
-          )
-        ) {
-          // Going through the trigger rather than steps[0] tolerates a task
-          // with no steps.
-          trigger.startMessage(message, traceId);
-          triggers++;
-        }
+      if (MQTTConnection.matchesTopic(topic, trigger.config.topics)) {
+        // Going through the trigger rather than steps[0] tolerates a task
+        // with no steps.
+        trigger.startMessage(message, traceId);
+        triggers++;
       }
     }
 
@@ -260,9 +282,11 @@ export default class MQTTConnection extends Connection {
     if (done.length) return this.connection.unsubscribeAsync(done);
   }
 
+  // publishAsync, not publish: the caller awaits this, and the callback form
+  // resolves before the broker has been told anything.
   sendRaw(
-    topic: Parameters<typeof this.connection.publish>[0],
-    message: Parameters<typeof this.connection.publish>[1],
+    topic: Parameters<typeof this.connection.publishAsync>[0],
+    message: Parameters<typeof this.connection.publishAsync>[1],
     options?: mqtt.IClientPublishOptions,
   ) {
     // register() may have failed to connect and torn the client down, so
@@ -275,7 +299,10 @@ export default class MQTTConnection extends Connection {
       );
       return;
     }
-    return this.connection.publish(topic, message, options);
+
+    // publishAsync, not publish: the caller awaits this, and the callback form
+    // resolves before the broker has been told anything.
+    return this.connection.publishAsync(topic, message, options ?? {});
   }
 
   static matchesTopic(
@@ -290,13 +317,63 @@ export default class MQTTConnection extends Connection {
   }
 }
 
-/*
-{
-  "name": "personal-mqtt",
-  "type": "connection:mqtt",
-  "disabled": false,
-  "username": "",
-  "password": "",
-  "endpoint": "mqtt://127.0.0.1:1883"
-}
-*/
+// Anything this schema does not name is still forwarded to the mqtt client by
+// register(), so a rarely-used client option keeps working; it just reports as
+// an unknown option, which is a warning rather than an error.
+export const schema: ModuleSchema = {
+  type: "connection:mqtt",
+  description:
+    "A connection to an MQTT broker, shared by every trigger and output that names it.",
+  options: {
+    endpoint: {
+      type: "string",
+      description:
+        'The broker to connect to, such as "mqtt://127.0.0.1:1883". Credentials belong in username and password rather than in the URL.',
+      required: true,
+    },
+    username: {
+      type: "string",
+      description:
+        "The username to authenticate with, when the broker wants one.",
+    },
+    password: {
+      type: "string",
+      description:
+        "The password to authenticate with, when the broker wants one.",
+    },
+    clientId: {
+      type: "string",
+      description:
+        "The client identifier to present to the broker. Defaults to a generated one.",
+    },
+    keepalive: {
+      type: "number",
+      description:
+        "How long the broker should wait before considering this client gone.",
+      unit: "s",
+      min: 0,
+    },
+    reconnectPeriod: {
+      type: "number",
+      description: "How long to wait before retrying a dropped connection.",
+      unit: "ms",
+      min: 0,
+    },
+    connectTimeout: {
+      type: "number",
+      description: "How long to wait for the broker to accept a connection.",
+      unit: "ms",
+      min: 0,
+    },
+    clean: {
+      type: "boolean",
+      description:
+        "Start a fresh session rather than resuming the one this client id left behind.",
+    },
+    rejectUnauthorized: {
+      type: "boolean",
+      description:
+        "For a TLS endpoint, refuse a certificate that does not verify.",
+    },
+  },
+};

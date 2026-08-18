@@ -1,14 +1,15 @@
 import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface ConsoleConfig extends OutputConfig {}
 
 export default class Console extends Output {
   declare config: ConsoleConfig;
 
-  constructor(config: ConsoleConfig, task: Task) {
-    super(config, task);
+  constructor(config: ConsoleConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
   async send(message: Message, _traceId: string) {
@@ -23,9 +24,9 @@ export default class Console extends Output {
   }
 }
 
-/*
-{
-  "type": "output:console",
-  "disabled": false
-}
-*/
+export const schema: ModuleSchema = {
+  type: "output:console",
+  description:
+    "Writes each message to standard output, as JSON unless it is already a string.",
+  options: {},
+};

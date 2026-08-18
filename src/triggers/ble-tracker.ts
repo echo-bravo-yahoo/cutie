@@ -4,6 +4,7 @@ import { importOptional } from "../util/optional-dependency.js";
 import DrunkReader, { DrunkRSSI } from "../util/DrunkReader.js";
 // type-only, so no require for this optional dependency survives compilation
 import type NodeBle from "node-ble";
+import { ModuleSchema } from "../util/schema.js";
 
 let ble: ReturnType<typeof NodeBle.createBluetooth>;
 let adapter: NodeBle.Adapter;
@@ -25,8 +26,8 @@ export default class BLETracker extends Sensor {
   declare samples: Record<string, Array<any>>;
   virtualRssi: Record<string, DrunkReader> = {};
 
-  constructor(config: BLETrackerConfig, task: Task) {
-    super(config, task);
+  constructor(config: BLETrackerConfig, task: Task, index?: number) {
+    super(config, task, index);
 
     // TODO: rewrite this, it's bad
     this.samples = {};
@@ -174,14 +175,39 @@ export default class BLETracker extends Sensor {
   }
 }
 
-/*
-{
-  "name": "",
-  "type": "trigger:ble-tracker",
-  "disabled": false,
-  "virtual": false,
-  "devices": [{ "alias": "", "macAddress": "00:00:00:00:00:00" }],
-  "samplingInterval": 10000, // in ms
-  "reportingInterval": 60000 // in ms
-}
-*/
+export const schema: ModuleSchema = {
+  type: "trigger:ble-tracker",
+  description:
+    "Samples the signal strength of named Bluetooth devices and reports an aggregate per device. Deprecated along with the rest of the sensor-trigger form; it awaits a read:ble to pair with trigger:cron.",
+  options: {
+    devices: {
+      type: "array",
+      description:
+        'The devices to track, each {"macAddress": "00:00:00:00:00:00", "alias": "a name"}. The alias, when given, is the key each reading is reported under.',
+      required: true,
+    },
+    samplingInterval: {
+      type: "number",
+      description: "How long to wait between samples.",
+      default: 60 * 1000,
+      unit: "ms",
+    },
+    reportingInterval: {
+      type: "number",
+      description: "How long to wait between reported messages.",
+      default: 60 * 1000,
+      unit: "ms",
+    },
+    sampling: {
+      type: "object",
+      description:
+        'How to collapse the samples taken since the last report, as {"aggregation": "average"}. Required in practice whenever sampling outpaces reporting.',
+    },
+    virtual: {
+      type: "boolean",
+      description:
+        "Produce plausible drifting signal strengths instead of scanning for Bluetooth devices.",
+      default: false,
+    },
+  },
+};

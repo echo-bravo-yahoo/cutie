@@ -1,9 +1,7 @@
-import Transform, {
-  Context,
-  WholeMessageConfig,
-} from "../util/Transform.js";
+import Transform, { Context, WholeMessageConfig } from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface PrettifyConfig extends WholeMessageConfig {
   spaces?: number;
@@ -12,17 +10,11 @@ export interface PrettifyConfig extends WholeMessageConfig {
 
 export default class Prettify extends Transform {
   declare config: PrettifyConfig;
+  // transform() here replaces the base class's targeting entirely
+  honorsTargeting = false;
 
-  constructor(config: PrettifyConfig, task: Task) {
-    super(config, task);
-  }
-
-  addDefaultsToConfig(config: PrettifyConfig): PrettifyConfig {
-    return {
-      spaces: 4,
-      parseInput: false,
-      ...config,
-    };
+  constructor(config: PrettifyConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
   transform(message: Message, _traceId: string) {
@@ -41,11 +33,23 @@ export default class Prettify extends Transform {
   }
 }
 
-/*
-full object form:
-{
-  "type": "transform:prettify",
-  "spaces": 4,
-  "parseInput": false
-}
-*/
+export const schema: ModuleSchema = {
+  type: "transform:prettify",
+  description:
+    "Replaces the message with its JSON text, indented for reading. transform:uglify is the same thing with no indentation.",
+  options: {
+    spaces: {
+      type: "number",
+      description: "How many spaces to indent each level by.",
+      default: 4,
+      min: 0,
+      integer: true,
+    },
+    parseInput: {
+      type: "boolean",
+      description:
+        "Treat a string message as JSON and re-indent it, rather than quoting it as a string.",
+      default: false,
+    },
+  },
+};

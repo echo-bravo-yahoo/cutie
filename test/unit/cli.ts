@@ -12,6 +12,7 @@ const { expect } = chai;
 import { read } from "node-yaml";
 
 import { setGlobals } from "../../src/index.js";
+import * as realConfigs from "../../src/util/configs.js";
 import type { fetchConfig } from "../../src/util/configs.js";
 import type { writeFile } from "fs";
 import { Connection } from "../../src/util/Connection.js";
@@ -98,8 +99,13 @@ describe("the CLI's", function () {
     }));
     mockUploadSingleConfig = mock.fn(async () => {});
 
+    // Only the fetch is stubbed; the node-name derivations are the real ones,
+    // since the round trip they guarantee is what these tests are about.
     mock.module("../../src/util/configs.js", {
-      namedExports: { fetchConfig: mockFetchConfig },
+      namedExports: {
+        ...realConfigs,
+        fetchConfig: mockFetchConfig,
+      },
     });
     mock.module("node:fs/promises", {
       namedExports: {
@@ -287,7 +293,9 @@ describe("the CLI's", function () {
       const uploaded = mockUploadSingleConfig.mock.calls.map(
         (call) => call.arguments[0],
       );
-      expect(uploaded.sort()).to.deep.equal(["bob.conf", "deep", "thing"]);
+      // "bob.conf.json" is the name download writes, so it has to come back as
+      // the node name "bob" and not as "bob.conf".
+      expect(uploaded.sort()).to.deep.equal(["bob", "deep", "thing"]);
     });
 
     it("skips files that are not config-like and skips directories", async function () {
@@ -327,6 +335,55 @@ describe("the CLI's", function () {
       expect(mockUploadSingleConfig.mock.calls[0].arguments[2]).to.equal(
         "mything/config/+",
       );
+    });
+  });
+
+  // download names the file and upload reads the node name back out of it, so
+  // the two derivations are one function and this is what it guarantees.
+  describe("node names", function () {
+    it("survives every config extension", function () {
+      for (const [file, node] of [
+        ["kitchen-pi.conf.json", "kitchen-pi"],
+        ["kitchen-pi.json", "kitchen-pi"],
+        ["kitchen-pi.yaml", "kitchen-pi"],
+        ["kitchen-pi.yml", "kitchen-pi"],
+        ["nested/kitchen-pi.conf.json", "kitchen-pi"],
+      ] as const)
+        expect(realConfigs.nodeNameFromPath(file), file).to.equal(node);
+    });
+
+    it("does not empty out a file called conf.json", function () {
+      expect(realConfigs.nodeNameFromPath("conf.json")).to.equal("conf");
+    });
+
+    it("round-trips through the name download writes", function () {
+      for (const node of ["kitchen-pi", "conf", "a.b"])
+        expect(
+          realConfigs.nodeNameFromPath(realConfigs.configFileNameForNode(node)),
+          node,
+        ).to.equal(node);
+    });
+
+    it("publishes a downloaded fleet back to the topics it came from", async function () {
+      await download({ connectionName: "test" } as DownloadArgs);
+
+      const downloaded = mockWriteFile.mock.calls.map(
+        (call) => call.arguments[0] as string,
+      );
+      expect(downloaded).to.deep.equal(["bob.conf.json", "chicken.conf.json"]);
+
+      // Feed exactly those filenames back through the upload walk.
+      mockReaddir.mock.mockImplementationOnce(async () =>
+        downloaded.map((name) => fakeDirEnt(".", name)),
+      );
+      mockUploadSingleConfig.mock.resetCalls();
+
+      await upload({ connectionName: "test", path: "." } as UploadArgs);
+
+      const uploaded = mockUploadSingleConfig.mock.calls.map(
+        (call) => call.arguments[0],
+      );
+      expect(uploaded.sort()).to.deep.equal(["bob", "chicken"]);
     });
   });
 

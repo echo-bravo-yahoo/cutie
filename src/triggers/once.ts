@@ -1,40 +1,44 @@
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
+import { cloneMessage } from "../util/Step.js";
+import { parseDuration } from "../util/duration.js";
 import { newTraceId } from "../util/trace.js";
 import { Message } from "../util/type-helpers.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface OnceConfig extends TriggerConfig {
-  delay?: number;
+  delay?: number | string;
   message?: Message;
 }
 
 export default class Once extends Trigger {
   declare config: OnceConfig;
+  delayMs = 0;
 
-  constructor(config: OnceConfig, task: Task) {
-    super(config, task);
+  constructor(config: OnceConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
-  addDefaultsToConfig(config: OnceConfig): OnceConfig {
-    return {
-      delay: 0,
-      ...config,
-    };
+  async register() {
+    this.delayMs = parseDuration(this.config.delay, "delay");
   }
 
   delayedStartMessage() {
     setTimeout(() => {
       const traceId = newTraceId();
       const message =
-        this.config.delay !== undefined
-          ? `Running step once after a delay of ${this.config.delay} ms.`
+        this.delayMs > 0
+          ? `Running step once after a delay of ${this.delayMs} ms.`
           : "Running step once, immediately.";
       this.info(message, {
         topic: this.logPrefix,
         traceId,
       });
-      this.startMessage(this.interpolateDeep(this.config.message), traceId);
-    }, this.config.delay);
+      this.startMessage(
+        this.interpolateDeep(cloneMessage(this.config.message)),
+        traceId,
+      );
+    }, this.delayMs);
   }
 
   async enable() {
@@ -48,12 +52,22 @@ export default class Once extends Trigger {
   }
 }
 
-/*
-{
-  "type": "trigger:once",
-  "name": "setupStuff",
-  "disabled": false,
-  "delay": 10000, // in ms
-  "message": any // strings anywhere inside get interpolated
-}
-*/
+export const schema: ModuleSchema = {
+  type: "trigger:once",
+  description: "Starts a single message when the node starts.",
+  options: {
+    delay: {
+      type: "any",
+      description:
+        'How long to wait before starting the message, as a number of milliseconds or a string with a unit such as "2s".',
+      default: 0,
+      unit: "ms",
+    },
+    message: {
+      type: "any",
+      description:
+        "The message to start. Every string inside it is interpolated.",
+      interpolated: true,
+    },
+  },
+};

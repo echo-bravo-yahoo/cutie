@@ -4,7 +4,7 @@ import { normalize } from "node:path";
 import parser from "yargs-parser";
 
 import { globals, initializeGlobals } from "../index.js";
-import { fetchConfig } from "../util/configs.js";
+import { configFileNameForNode, fetchConfig } from "../util/configs.js";
 import {
   getConnection,
   mergeParserArgs,
@@ -29,7 +29,9 @@ async function downloadSingle(
   args: DownloadSingleArgs,
   connection: Connection,
 ) {
-  const filePath = `${normalize(`${args.path ?? "."}/${args.node}`)}.conf.json`;
+  const filePath = normalize(
+    `${args.path ?? "."}/${configFileNameForNode(args.node)}`,
+  );
   await writeFile(
     filePath,
     JSON.stringify(
@@ -48,7 +50,9 @@ async function downloadAll(args: DownloadArgs, connection: Connection) {
     );
   const promises = [];
   for (const [name, config] of Object.entries(configs)) {
-    const filePath = `${normalize(`${args.path ?? "."}/${name}`)}.conf.json`;
+    const filePath = normalize(
+      `${args.path ?? "."}/${configFileNameForNode(name)}`,
+    );
     promises.push(writeFile(filePath, JSON.stringify(config, null, 4)));
   }
   await Promise.all(promises);
@@ -63,19 +67,19 @@ async function downloadAll(args: DownloadArgs, connection: Connection) {
   ).then(() => (globals.connections = []));
 }
 
-export function parseDownloadArgs() {
+export function parseDownloadArgs(args: Array<string> = process.argv.slice(2)) {
   const downloadParserArgs = {
     string: ["path", "node", "connectionName", "topic"],
   };
 
   return parser(
-    process.argv.slice(2) || "",
+    args,
     mergeParserArgs(parserDefaults, downloadParserArgs),
   ) as unknown as DownloadArgs;
 }
 
 export default async function download(args: DownloadArgs) {
-  initializeGlobals();
+  initializeGlobals(args.logLevel, args.config);
   const config = await fetchConfig(args.config);
   // Deliberately no registerTasks here: downloading config should not start
   // live triggers.

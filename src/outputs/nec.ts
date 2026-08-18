@@ -2,10 +2,12 @@ import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 import { importOptional } from "../util/optional-dependency.js";
-import { NECCommand, transmitNECCommand } from "../util/bitbang/adapters/nec.js";
+import {
+  NECCommand,
+  transmitNECCommand,
+} from "../util/bitbang/adapters/nec.js";
 import { Pigpio } from "../util/bitbang/pulse.js";
-
-const DEFAULT_LED_PIN = 23;
+import { ModuleSchema } from "../util/schema.js";
 
 // A command as a config or a message writes it: numbers may arrive as hex
 // strings, and the extended halves are optional.
@@ -17,7 +19,7 @@ export interface RawNECCommand {
 }
 
 export interface NECConfig extends OutputConfig {
-  ledPin?: number;
+  ledPin: number;
   virtual?: boolean;
   savedCommands?: Record<string, RawNECCommand>;
 }
@@ -26,15 +28,17 @@ export default class NEC extends Output {
   declare config: NECConfig;
   pigpio?: Pigpio;
 
-  constructor(config: NECConfig, task: Task) {
-    super(config, task);
+  // A pin is required only when one is actually driven, which is a pairing no
+  // single option's schema can express.
+  async register() {
+    if (!this.config.virtual && this.config.ledPin === undefined)
+      throw new Error(
+        `"output:nec" needs a "ledPin" naming the GPIO pin the infrared LED is on, or "virtual": true.`,
+      );
   }
 
-  addDefaultsToConfig(config: NECConfig): NECConfig {
-    return {
-      ledPin: DEFAULT_LED_PIN,
-      ...config,
-    };
+  constructor(config: NECConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
   // Number(value, 16) ignores its second argument, so a bare "7c" used to come
@@ -96,11 +100,7 @@ export default class NEC extends Output {
 
     if (this.config.virtual || !this.pigpio) return message;
 
-    await transmitNECCommand(
-      this.pigpio,
-      necCommand,
-      this.config.ledPin ?? DEFAULT_LED_PIN,
-    );
+    await transmitNECCommand(this.pigpio, necCommand, this.config.ledPin);
 
     return message;
   }
@@ -123,21 +123,28 @@ export default class NEC extends Output {
   }
 }
 
-/*
-{
-  "type": "output:nec",
-  "disabled": false,
-  "virtual": false,
-  "ledPin": 23,
-  "savedCommands": {
-    "volumeDown": {
-      "address": "0x7c",
-      "command": "0x66",
-      "extendedAddress": "0xaa"
-    }
-  }
-}
-
-The message either names a saved command, {"id": "volumeDown"}, or spells one
-out, {"address": "0x7c", "command": "0x66"}.
-*/
+export const schema: ModuleSchema = {
+  type: "output:nec",
+  description:
+    'Transmits an NEC infrared command on a GPIO pin. The message either names a saved command, {"id": "volumeDown"}, or spells one out, {"address": "0x7c", "command": "0x66"}.',
+  options: {
+    ledPin: {
+      type: "number",
+      description:
+        "The GPIO pin the infrared LED is wired to. Required unless virtual is set; there is no sensible default for someone else's wiring.",
+      integer: true,
+      min: 0,
+    },
+    virtual: {
+      type: "boolean",
+      description:
+        "Log the command that would be sent without driving the pin.",
+      default: false,
+    },
+    savedCommands: {
+      type: "object",
+      description:
+        'Named commands a message can ask for by id, each {"address", "command"} with optional "extendedAddress" and "extendedCommand". A string value is read as hexadecimal.',
+    },
+  },
+};

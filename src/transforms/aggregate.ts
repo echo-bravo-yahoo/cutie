@@ -4,12 +4,14 @@ import set from "lodash/set.js";
 
 import Sensor from "../util/Sensor.js";
 import Transform, {
+  targetingOptions,
   Context,
   isMultiConfig,
   MultiConfig,
   TransformConfig,
 } from "../util/Transform.js";
 import Task from "../util/Task.js";
+import { ModuleSchema } from "../util/schema.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isNumberArray(possibleArray: any): possibleArray is Array<number> {
@@ -24,8 +26,8 @@ function isNumberArray(possibleArray: any): possibleArray is Array<number> {
 }
 
 export default class Aggregate extends Transform {
-  constructor(config: TransformConfig, task: Task) {
-    super(config, task);
+  constructor(config: TransformConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
   transformPrimitiveReadingArray(context: Context) {
@@ -163,28 +165,21 @@ export default class Aggregate extends Transform {
   }
 
   // no-op for class composition reasons
-  transformSingle(
-    value: number,
-    _config: TransformConfig,
-    _context: Context,
-  ) {
+  transformSingle(value: number, _config: TransformConfig, _context: Context) {
     return value;
   }
 }
 
-/*
-single path form:
-{
-  "type": "transform:aggregate",
-  "path": "a.b.c",
-  "aggregation": "latest|average|sum|median|pX"
-}
-
-multi-path form:
-{
-  "type": "transform:aggregate",
-  "paths": {
-    "a.b.c": { "aggregation": "latest|average|sum|median|pX" }
-  }
-}
-*/
+export const schema: ModuleSchema = {
+  type: "transform:aggregate",
+  description:
+    "Collapses an array of readings into one value. The other half of a batching task, after transform:accumulate has gathered the array.",
+  options: {
+    ...targetingOptions("aggregate"),
+    aggregation: {
+      type: "string",
+      description:
+        'How to collapse the values: "latest", "average", "sum", "median", or "pN" for any percentile.',
+    },
+  },
+};

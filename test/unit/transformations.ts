@@ -29,7 +29,10 @@ describe("transforms", function () {
   };
 
   before(() => {
-    setGlobals({ logger: fakeLogger } as any);
+    // codePath resolves against the config file's directory; the fixtures below
+    // are addressed relative to the repo root, so that is the config directory
+    // for these tests.
+    setGlobals({ logger: fakeLogger, configDir: process.cwd() } as any);
   });
 
   describe("specific transformers", function () {
@@ -522,18 +525,17 @@ describe("transforms", function () {
           await task.register();
 
           const transformed = await task.startMessage(testCase.input);
-          expect(transformed, `${testCase.direction} of ${testCase.input}`).to.equal(
-            testCase.output,
-          );
+          expect(
+            transformed,
+            `${testCase.direction} of ${testCase.input}`,
+          ).to.equal(testCase.output);
         }
       });
 
       it("works on primitive readings", async function () {
         const task = new Task(
           {
-            steps: [
-              { type: "transform:round", precision: 2 } as RoundConfig,
-            ],
+            steps: [{ type: "transform:round", precision: 2 } as RoundConfig],
           },
           "works on primitive readings",
         );
@@ -956,62 +958,52 @@ describe("transforms", function () {
         });
       });
       describe("fails", function () {
-        it("when provided an incorrect 'to' or 'from'", async function () {
-          let task = new Task(
+        // An unknown unit is now caught when the task registers rather than on
+        // the first message, so a wrong config never runs at all.
+        function converting(from: string, to: string) {
+          const task = new Task(
             {
               steps: [
                 {
                   type: "transform:convert",
-                  from: "nonsense",
-                  to: "celsius",
+                  from,
+                  to,
                 } as unknown as ConvertConfig,
               ],
             },
-            "works on primitive readings",
-          );
-          await task.register();
-
-          expect(task.startMessage(20)).to.eventually.be.rejectedWith(
-            Error,
-            /Unknown conversion from "nonsense" to "celsius" in config./,
+            `converts ${from} to ${to}`,
           );
 
-          task = new Task(
-            {
-              steps: [
-                {
-                  type: "transform:convert",
-                  from: "fahrenheit",
-                  to: "nonsense",
-                } as unknown as ConvertConfig,
-              ],
-            },
-            "works on primitive readings",
-          );
-          await task.register();
+          return task.register();
+        }
 
-          expect(task.startMessage(20)).to.eventually.be.rejectedWith(
-            Error,
-            /Unknown conversion from "fahrenheit" to "nonsense" in config./,
+        it("at registration when 'from' is not a unit", async function () {
+          await expect(converting("nonsense", "celsius")).to.be.rejectedWith(
+            /"from" is "nonsense", which is not one of: celsius, fahrenheit, kelvin/,
           );
+        });
 
-          task = new Task(
-            {
-              steps: [
-                {
-                  type: "transform:convert",
-                  from: "nonsense",
-                  to: "double-nonsense",
-                } as unknown as ConvertConfig,
-              ],
-            },
-            "works on primitive readings",
+        it("at registration when 'to' is not a unit", async function () {
+          await expect(converting("fahrenheit", "nonsense")).to.be.rejectedWith(
+            /"to" is "nonsense", which is not one of: celsius, fahrenheit, kelvin/,
           );
-          await task.register();
+        });
 
-          expect(task.startMessage(20)).to.eventually.be.rejectedWith(
-            Error,
-            /Unknown conversion from "nonsense" to "double-nonsense" in config./,
+        it("at registration when neither is a unit", async function () {
+          await expect(
+            converting("nonsense", "double-nonsense"),
+          ).to.be.rejectedWith(/"from" is "nonsense"/);
+        });
+
+        it("at registration when the units are different dimensions", async function () {
+          await expect(converting("celsius", "pascal")).to.be.rejectedWith(
+            /cannot convert celsius \(temperature\) to pascal \(pressure\)/,
+          );
+        });
+
+        it("at registration when the units are the same", async function () {
+          await expect(converting("celsius", "celsius")).to.be.rejectedWith(
+            /both "celsius".*would do nothing/,
           );
         });
       });

@@ -3,6 +3,7 @@ import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 import { EventEmitter } from "stream";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface EventConfig extends OutputConfig {
   key: string;
@@ -12,8 +13,8 @@ export default class Event extends Output {
   declare config: EventConfig;
   declare bus: EventEmitter;
 
-  constructor(config: EventConfig, task: Task) {
-    super(config, task);
+  constructor(config: EventConfig, task: Task, index?: number) {
+    super(config, task, index);
 
     this.bus = globals.eventBus;
   }
@@ -37,9 +38,15 @@ export default class Event extends Output {
   }
 }
 
-/*
-{
-  "type": "output:event",
-  "key": "a-happening",
-}
-*/
+export const schema: ModuleSchema = {
+  type: "output:event",
+  description:
+    "Emits the message on this node's internal event bus, where a trigger:event with the same key picks it up. A way to hand work from one task to another without a broker.",
+  options: {
+    key: {
+      type: "string",
+      description: "The event name to emit under.",
+      required: true,
+    },
+  },
+};

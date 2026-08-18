@@ -4,6 +4,7 @@ import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { newTraceId } from "../util/trace.js";
 import { Message } from "../util/type-helpers.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface EventConfig extends TriggerConfig {
   key: string;
@@ -16,8 +17,8 @@ export default class Event extends Trigger {
   // hand the bus the same bound function.
   boundHandleEvent: (message: Message, traceId?: string) => void;
 
-  constructor(config: EventConfig, task: Task) {
-    super(config, task);
+  constructor(config: EventConfig, task: Task, index?: number) {
+    super(config, task, index);
 
     this.bus = globals.eventBus;
     this.boundHandleEvent = this.handleEvent.bind(this);
@@ -58,9 +59,15 @@ export default class Event extends Trigger {
   }
 }
 
-/*
-{
-  "type": "trigger:event",
-  "key": "a-happening",
-}
-*/
+export const schema: ModuleSchema = {
+  type: "trigger:event",
+  description:
+    "Starts a message whenever an output:event on this node emits the matching key.",
+  options: {
+    key: {
+      type: "string",
+      description: "The event name to listen for.",
+      required: true,
+    },
+  },
+};

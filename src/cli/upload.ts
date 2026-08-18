@@ -1,12 +1,12 @@
 import { readdir } from "node:fs/promises";
-import { extname, join, normalize, parse } from "node:path";
+import { extname, join, normalize } from "node:path";
 
 import parser from "yargs-parser";
 import { read as readConfigFile } from "node-yaml";
 
 import { Connection } from "../util/Connection.js";
 import { CLIArgs, parserDefaults } from "../util/cli.js";
-import { fetchConfig } from "../util/configs.js";
+import { fetchConfig, nodeNameFromPath } from "../util/configs.js";
 import { globals, initializeGlobals } from "../index.js";
 import {
   getConnection,
@@ -35,10 +35,6 @@ function isDirEntConfigLike(dirEnt: Dirent) {
   );
 }
 
-function pathToNode(filePath: string) {
-  return parse(filePath).name;
-}
-
 async function uploadFromDirEnt(
   dirEnt: Dirent,
   connection: Connection,
@@ -48,7 +44,7 @@ async function uploadFromDirEnt(
   // directory it came from is on dirEnt.parentPath.
   const configFile = await readConfigFile(join(dirEnt.parentPath, dirEnt.name));
   return connection.uploadSingleConfig(
-    pathToNode(dirEnt.name),
+    nodeNameFromPath(dirEnt.name),
     configFile,
     topic,
   );
@@ -72,19 +68,19 @@ async function uploadAll(args: UploadArgs, connection: Connection) {
   return Promise.all(promises);
 }
 
-export function parseUploadArgs() {
+export function parseUploadArgs(args: Array<string> = process.argv.slice(2)) {
   const uploadParserArgs = {
     string: ["path", "node", "connectionName", "topic"],
   };
 
   return parser(
-    process.argv.slice(2) || "",
+    args,
     mergeParserArgs(parserDefaults, uploadParserArgs),
   ) as unknown as UploadArgs;
 }
 
 export default async function upload(args: UploadArgs) {
-  initializeGlobals();
+  initializeGlobals(args.logLevel, args.config);
   const config = await fetchConfig(args.config);
   // Deliberately no registerTasks here: uploading config should not start
   // live triggers.

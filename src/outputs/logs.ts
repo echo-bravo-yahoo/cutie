@@ -4,6 +4,7 @@ import Task from "../util/Task.js";
 import { SerializedLogLine } from "../util/LogHelper.js";
 import { Verbosity } from "../triggers/logs.js";
 import { Message } from "../util/type-helpers.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface LogsConfig extends OutputConfig {}
 
@@ -22,14 +23,15 @@ export default class Logs extends Output {
   declare config: LogsConfig;
   warnedVerbosities: Set<string> = new Set();
 
-  constructor(config: LogsConfig, task: Task) {
-    super(config, task);
+  constructor(config: LogsConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
   // A message can reach this output from anywhere, so its verbosity may be
   // absent or misspelled; indexing the logger with it directly threw.
   resolveVerbosity(verbosity: unknown): Verbosity {
-    if (VERBOSITIES.includes(verbosity as Verbosity)) return verbosity as Verbosity;
+    if (VERBOSITIES.includes(verbosity as Verbosity))
+      return verbosity as Verbosity;
 
     const key = String(verbosity);
     if (!this.warnedVerbosities.has(key)) {
@@ -52,9 +54,9 @@ export default class Logs extends Output {
   }
 }
 
-/*
-{
-  "type": "output:logs",
-  "disabled": false,
-}
-*/
+export const schema: ModuleSchema = {
+  type: "output:logs",
+  description:
+    "Writes the message to the node's own log. The message is expected in the shape trigger:logs produces, {log, object, verbosity, topic}; an unrecognized verbosity is logged at info.",
+  options: {},
+};

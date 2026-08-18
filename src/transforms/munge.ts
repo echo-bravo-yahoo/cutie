@@ -4,6 +4,7 @@ import set from "lodash/set.js";
 import unset from "lodash/unset.js";
 
 import Transform, {
+  targetingOptions,
   Context,
   isMultiConfig,
   MultiConfig,
@@ -11,6 +12,7 @@ import Transform, {
 } from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export type MungeArgsWithTo = {
   op: "duplicate" | "rename";
@@ -20,6 +22,15 @@ export interface MungeArgsWithoutTo {
   op: "remove" | "retain";
 }
 export type MungeOp = MungeArgsWithTo["op"] | MungeArgsWithoutTo["op"];
+
+const MUNGE_OPS: ReadonlyArray<MungeOp> = [
+  "duplicate",
+  "rename",
+  "remove",
+  "retain",
+];
+
+const OPS_NEEDING_TO: ReadonlyArray<MungeOp> = ["duplicate", "rename"];
 
 export type MungeArgs = MungeArgsWithTo | MungeArgsWithoutTo;
 
@@ -36,10 +47,32 @@ export type MungeConfig = SinglePathMungeConfig | MultiPathMungeConfig;
 export default class Munge extends Transform {
   declare untouched: Set<string>;
 
-  constructor(config: MungeConfig, task: Task) {
-    super(config, task);
+  constructor(config: MungeConfig, task: Task, index?: number) {
+    super(config, task, index);
 
     this.untouched = new Set();
+  }
+
+  // `to` is required by two of the four ops and meaningless to the other two,
+  // which no single option's schema can say. Without this, a missing `to` wrote
+  // a key literally named "undefined".
+  async register() {
+    await super.register();
+
+    for (const { path, args } of this.eachTargetArgs()) {
+      const where = path ? ` at path "${path}"` : "";
+      const op = args.op as MungeOp | undefined;
+
+      if (!MUNGE_OPS.includes(op as MungeOp))
+        throw new Error(
+          `"transform:munge": "op" is ${JSON.stringify(op)}${where}, which is not one of: ${MUNGE_OPS.join(", ")}.`,
+        );
+
+      if (OPS_NEEDING_TO.includes(op as MungeOp) && args.to === undefined)
+        throw new Error(
+          `"transform:munge": "op" is "${op}"${where}, which needs a "to" naming where the value goes.`,
+        );
+    }
   }
 
   transform(message: Message, traceId: string) {
@@ -129,24 +162,22 @@ export default class Munge extends Transform {
   }
 }
 
-/*
-
-single path form:
-{
-  "type": "transform:munge",
-  "path": "a.b.c",
-  "op": "duplicate" | "rename" | "remove" | "retain",
-  "to": "a.d" // required for "duplicate" and "rename"
-}
-
-multi-path form:
-{
-  "type": "transform:munge",
-  "paths": {
-    "a.b.c": {
-      "op": "rename",
-      "to": "a.d"
-    }
-  }
-}
-*/
+export const schema: ModuleSchema = {
+  type: "transform:munge",
+  description:
+    'Moves, copies, keeps, or drops keys of the message. A "*" path in the multi-path form applies to every key no other path mentions.',
+  options: {
+    ...targetingOptions("munge"),
+    op: {
+      type: "string",
+      description:
+        "What to do with the key: copy it to a second place, move it, drop it, or keep it while other keys are dropped.",
+      enum: MUNGE_OPS,
+    },
+    to: {
+      type: "string",
+      description:
+        'Where the value goes. Required by "duplicate" and "rename"; unused by the others.',
+    },
+  },
+};

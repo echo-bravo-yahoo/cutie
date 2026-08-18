@@ -1,9 +1,7 @@
-import Transform, {
-  Context,
-  WholeMessageConfig,
-} from "../util/Transform.js";
+import Transform, { Context, WholeMessageConfig } from "../util/Transform.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface UglifyConfig extends WholeMessageConfig {
   parseInput?: boolean;
@@ -11,16 +9,22 @@ export interface UglifyConfig extends WholeMessageConfig {
 
 export default class Uglify extends Transform {
   declare config: UglifyConfig;
+  // transform() here replaces the base class's targeting entirely
+  honorsTargeting = false;
 
-  constructor(config: UglifyConfig, task: Task) {
-    super(config, task);
+  constructor(config: UglifyConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
-  addDefaultsToConfig(config: UglifyConfig): UglifyConfig {
-    return {
-      parseInput: false,
-      ...config,
-    };
+  // "spaces" is what separates prettify from uglify, so accepting it here would
+  // be accepting a request for the other module.
+  async register() {
+    await super.register();
+
+    if ((this.config as { spaces?: unknown }).spaces !== undefined)
+      throw new Error(
+        `"transform:uglify" does not accept "spaces"; it is "transform:prettify" with no indentation. Use "transform:prettify" with a "spaces" of 0 to say so explicitly.`,
+      );
   }
 
   transform(message: Message, _traceId: string) {
@@ -39,10 +43,16 @@ export default class Uglify extends Transform {
   }
 }
 
-/*
-full object form:
-{
-  "type": "transform:uglify",
-  "parseInput": false
-}
-*/
+export const schema: ModuleSchema = {
+  type: "transform:uglify",
+  description:
+    "Replaces the message with its JSON text on one line. transform:prettify with a spaces of 0 does the same thing.",
+  options: {
+    parseInput: {
+      type: "boolean",
+      description:
+        "Treat a string message as JSON and re-encode it, rather than quoting it as a string.",
+      default: false,
+    },
+  },
+};

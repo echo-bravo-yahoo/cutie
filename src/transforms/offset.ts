@@ -1,9 +1,11 @@
 import Task from "../util/Task.js";
 import Transform, {
+  targetingOptions,
   Context,
   MultiConfig,
   SingleConfig,
 } from "../util/Transform.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface OffsetArgs {
   offset: number;
@@ -18,8 +20,8 @@ interface MultiPathOffsetConfig extends MultiConfig {
 export type OffsetConfig = SinglePathOffsetConfig | MultiPathOffsetConfig;
 
 export default class Offset extends Transform {
-  constructor(config: OffsetConfig, task: Task) {
-    super(config, task);
+  constructor(config: OffsetConfig, task: Task, index?: number) {
+    super(config, task, index);
   }
 
   transformSingle(
@@ -31,21 +33,14 @@ export default class Offset extends Transform {
   }
 }
 
-/*
-single path form:
-{
-  "type": "transform:offset",
-  "path": "",
-  "offset": -5
-}
-
-multi-path form:
-{
-  "type": "transform:offset",
-  "paths": {
-    "a.b.c": {
-      "offset": -5
-    }
-  }
-}
-*/
+export const schema: ModuleSchema = {
+  type: "transform:offset",
+  description: "Adds a fixed amount to a number.",
+  options: {
+    ...targetingOptions("offset"),
+    offset: {
+      type: "number",
+      description: "How much to add. A negative value subtracts.",
+    },
+  },
+};

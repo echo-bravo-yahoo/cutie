@@ -25,6 +25,8 @@ import {
   KINDS,
 } from "../../src/util/type-helpers.js";
 import { Configurable } from "../../src/util/Configurable.js";
+import LogHelper from "../../src/util/LogHelper.js";
+import { validateConfig } from "../../src/util/validate.js";
 import NEC from "../../src/outputs/nec.js";
 import Switchbots from "../../src/outputs/switchbots.js";
 import BLETracker from "../../src/triggers/ble-tracker.js";
@@ -181,20 +183,51 @@ describe("the runtime", function () {
       expect(globals.logger.logListeners).to.not.include(task.trigger);
     });
 
+    // Driven by a real LogHelper rather than the no-op fake the rest of this
+    // file uses: the fake never dispatches, which is how the re-entrancy defect
+    // stayed hidden. See test/unit/logging.ts for the rest of that coverage.
     it("listens once enabled and stops again when disabled", async function () {
-      const task = new Task(
-        {
-          trigger: { type: "trigger:logs", filters: ["*"] } as any,
-          steps: [{ type: "output:stash", key: "line", value: "x" } as any],
-        },
-        "an enabled logs task",
-      );
+      const realLogger = new LogHelper();
+      realLogger.logger = {
+        trace: () => {},
+        debug: () => {},
+        info: () => {},
+        warn: () => {},
+        error: () => {},
+        fatal: () => {},
+      } as any;
+      const previousLogger = globals.logger;
+      globals.logger = realLogger;
 
-      await task.register();
-      expect(globals.logger.logListeners).to.include(task.trigger);
+      try {
+        const task = new Task(
+          {
+            trigger: {
+              type: "trigger:logs",
+              filters: ["core.test"],
+              minVerbosity: "trace",
+            } as any,
+            steps: [{ type: "output:stash", key: "line", value: "x" } as any],
+          },
+          "an enabled logs task",
+        );
 
-      await task.trigger!.disable();
-      expect(globals.logger.logListeners).to.not.include(task.trigger);
+        await task.register();
+        expect(realLogger.logListeners).to.include(task.trigger);
+
+        realLogger.emit("a line", "info", "core.test");
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        expect(task.messagesHandled).to.equal(1);
+
+        await task.trigger!.disable();
+        expect(realLogger.logListeners).to.not.include(task.trigger);
+
+        realLogger.emit("another line", "info", "core.test");
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        expect(task.messagesHandled).to.equal(1);
+      } finally {
+        globals.logger = previousLogger;
+      }
     });
   });
 
@@ -563,11 +596,19 @@ describe("the runtime", function () {
       expect(() => nec.resolveCommand({ id: "nope" })).to.throw(/"nope"/);
     });
 
-    it("defaults the LED pin", async function () {
-      const task = new Task({ steps: [] }, "nec default pin");
-      const nec = new NEC({ type: "output:nec" } as any, task);
+    // There is no default: a GPIO pin number is a fact about someone's wiring,
+    // and guessing 23 silently drove the wrong pin.
+    it("requires the LED pin rather than guessing one", async function () {
+      const errors = await validateConfig(
+        { tasks: { t: { steps: [{ type: "output:nec" }] } } },
+        { configPath: "/tmp/x.json" },
+      );
 
-      expect(nec.config.ledPin).to.equal(23);
+      expect(errors).to.deep.include({
+        severity: "error",
+        path: "tasks.t.steps[0].ledPin",
+        message: "missing required option; expected number",
+      });
     });
   });
 
@@ -782,14 +823,18 @@ describe("the runtime", function () {
     async function stashValue(value: unknown, message: unknown = "a message") {
       const task = new Task(
         {
-          steps: [{ type: "output:stash", key: "stashed", value } as any],
+          steps: [
+            { type: "output:stash", key: "stashed", value } as any,
+            // The stash belongs to the message, not the task, so the only way
+            // to see what was stashed is from inside the same message.
+            { type: "read:stash", key: "stashed" } as any,
+          ],
         },
         "stashes a value",
       );
       await task.register();
-      await task.startMessage(message as any);
 
-      return task.stash!.stashed;
+      return task.startMessage(message as any);
     }
 
     it("stashes a number without stringifying it", async function () {
@@ -989,14 +1034,49 @@ describe("the runtime", function () {
     it("redacts secrets nested inside a whole config file", function () {
       const redacted = redact({
         connections: [
-          { name: "a", password: "pw", token: "tok", endpoint: "mqtt://x" },
+          {
+            name: "a",
+            password: "pw",
+            token: "tok",
+            apiKey: "ak",
+            secret: "sh",
+            endpoint: "mqtt://x",
+          },
         ],
         tasks: {},
       });
 
       expect(redacted.connections[0].password).to.equal("[redacted]");
       expect(redacted.connections[0].token).to.equal("[redacted]");
+      expect(redacted.connections[0].apiKey).to.equal("[redacted]");
+      expect(redacted.connections[0].secret).to.equal("[redacted]");
       expect(redacted.connections[0].endpoint).to.equal("mqtt://x");
+    });
+
+    // An endpoint carries a credential in its userinfo, under a key no denylist
+    // would catch.
+    it("strips userinfo out of an endpoint while keeping host and port", function () {
+      const redacted = redact({
+        connections: [{ endpoint: "mqtt://user:pass@broker:1883" }],
+      });
+
+      expect(redacted.connections[0].endpoint).to.equal("mqtt://broker:1883");
+    });
+
+    it("leaves a string that is not a URL exactly as it is", function () {
+      expect(redact({ topic: "data/weather/kitchen" }).topic).to.equal(
+        "data/weather/kitchen",
+      );
+      expect(redact({ note: "mail me at user@example.com" }).note).to.equal(
+        "mail me at user@example.com",
+      );
+    });
+
+    // read:stash, output:stash, and the event modules all take a `key` that
+    // names a place rather than a credential; masking it would blank out the
+    // useful half of every registration line.
+    it("does not redact a key, which is a stash path or an event name", function () {
+      expect(redact({ key: "device.name" }).key).to.equal("device.name");
     });
 
     it("does not mutate the config it redacts", function () {

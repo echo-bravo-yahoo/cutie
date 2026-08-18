@@ -7,6 +7,7 @@ import Read, { ReadConfig } from "../util/Read.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 import { importOptional } from "../util/optional-dependency.js";
+import { ModuleSchema } from "../util/schema.js";
 
 export interface BME280Config extends ReadConfig {
   i2cAddress: number;
@@ -29,8 +30,8 @@ export default class BME280 extends Read {
   virtualHumidity: DrunkReader;
   virtualPressure: DrunkReader;
 
-  constructor(config: BME280Config, task: Task) {
-    super(config, task);
+  constructor(config: BME280Config, task: Task, index?: number) {
+    super(config, task, index);
 
     this.virtualTemp = new DrunkTemp();
     this.virtualHumidity = new DrunkHumidity();
@@ -50,9 +51,9 @@ export default class BME280 extends Read {
     };
   }
 
+  // The base class routes to virtualRead when `virtual` is set, and a disabled
+  // step is no longer in the chain at all, so neither guard belongs here.
   async read(_message: Message, traceId: string) {
-    if (!this.enabled) return;
-    if (this.config.virtual) return this.virtualRead();
     const sensorData = await this.sensor.read();
 
     const datapoint: Sample = {
@@ -78,7 +79,7 @@ export default class BME280 extends Read {
         open(options: { i2cAddress: number }): Promise<unknown>;
       }>("bme280", "read:bme280");
       this.sensor = await bme280Sensor.open({
-        i2cAddress: Number(this.config.i2cAddress) || 0x76,
+        i2cAddress: Number(this.config.i2cAddress),
       });
     }
 
@@ -93,11 +94,26 @@ export default class BME280 extends Read {
   }
 }
 
-/*
-{
-  "type": "read:bme280",
-  "disabled": false,
-  "virtual": false,
-  "i2cAddress": 0x76
-}
-*/
+export const schema: ModuleSchema = {
+  type: "read:bme280",
+  description:
+    "Reads temperature, humidity, and pressure from a BME280 over I2C.",
+  options: {
+    virtual: {
+      type: "boolean",
+      description:
+        "Produce plausible drifting readings instead of opening the sensor.",
+      default: false,
+    },
+    i2cAddress: {
+      type: "number",
+      description:
+        "The sensor's I2C address; a BME280 uses 0x76 or 0x77 depending on its SDO pin.",
+      default: 0x76,
+      // 0x00 to 0x07 are reserved by the I2C spec, so no device answers there.
+      min: 0x08,
+      max: 0x77,
+      integer: true,
+    },
+  },
+};
