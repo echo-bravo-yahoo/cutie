@@ -6,9 +6,8 @@ export interface Config {
   disabled?: boolean;
 }
 
-// The schema is the declared source of defaults and of deprecated-option
-// renames. A config with no `type`, or whose module has not been imported yet,
-// is returned untouched.
+// The schema is the declared source of defaults. A config with no `type`, or
+// whose module has not been imported yet, is returned untouched.
 function withSchemaDefaults(config: Config): Config {
   const type = (config as { type?: unknown }).type;
   if (typeof type !== "string") return config;

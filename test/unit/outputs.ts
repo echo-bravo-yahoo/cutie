@@ -107,58 +107,25 @@ describe("outputs", function () {
       return published;
     }
 
-    // `topic` shipped as a working shorthand, so it is deprecated rather than
-    // rejected: accepted with one warning and normalized onto `topics`.
-    it("accepts a single topic as a deprecated alias", async function () {
+    it("is rejected when it names a single topic", async function () {
       const errors = await errorsFor(
         {
           type: "output:mqtt",
           connectionName: "broker",
           topic: "out/topic",
-        },
-        [connection],
-      );
-
-      expect(errors).to.deep.equal([
-        {
-          severity: "warning",
-          path: "tasks.t.steps[0].topic",
-          message: 'deprecated; use "topics" instead',
-        },
-      ]);
-    });
-
-    it("normalizes that alias onto a single-element topics", async function () {
-      const task = new Task({ steps: [] }, "normalizes topic");
-      const step = await task.importStep(
-        {
-          type: "output:mqtt",
-          connectionName: "broker",
-          topic: "out/topic",
-        } as never,
-        0,
-      );
-
-      expect((step.config as { topics: Array<string> }).topics).to.deep.equal([
-        "out/topic",
-      ]);
-    });
-
-    it("is rejected when it names both a topic and topics", async function () {
-      const errors = await errorsFor(
-        {
-          type: "output:mqtt",
-          connectionName: "broker",
-          topic: "a",
-          topics: ["b"],
         },
         [connection],
       );
 
       expect(errors).to.deep.include({
         severity: "error",
+        path: "tasks.t.steps[0].topics",
+        message: "missing required option; expected array",
+      });
+      expect(errors).to.deep.include({
+        severity: "warning",
         path: "tasks.t.steps[0].topic",
-        message: 'cannot be combined with "topics"',
+        message: "unknown option for output:mqtt",
       });
     });
 

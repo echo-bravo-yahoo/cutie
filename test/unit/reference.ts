@@ -60,12 +60,6 @@ describe("the generated reference", function () {
     );
   });
 
-  it("marks a deprecated option as deprecated", function () {
-    expect(pages["triggers.md"]).to.include(
-      "Deprecated; use `topics` instead.",
-    );
-  });
-
   it("is built from the same loader the runtime validates with", async function () {
     // The generator calls loadSchema per module, so a module that ships without
     // a schema fails the build of this page rather than being skipped.

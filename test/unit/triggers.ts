@@ -220,7 +220,7 @@ describe("triggers", function () {
     });
   });
 
-  describe("trigger:mqtt's topic", function () {
+  describe("trigger:mqtt's topics", function () {
     const connections = [
       { type: "connection:mqtt", name: "broker", endpoint: "mqtt://x" },
     ];
@@ -234,7 +234,7 @@ describe("triggers", function () {
       );
     }
 
-    it("is accepted as a deprecated alias for topics, with one warning", async function () {
+    it("is rejected, naming topics as the missing option", async function () {
       const errors = await errorsFor({
         type: "trigger:mqtt",
         connectionName: "broker",
@@ -243,28 +243,19 @@ describe("triggers", function () {
 
       expect(errors).to.deep.equal([
         {
+          severity: "error",
+          path: "tasks.t.trigger.topics",
+          message: "missing required option; expected array",
+        },
+        {
           severity: "warning",
           path: "tasks.t.trigger.topic",
-          message: 'deprecated; use "topics" instead',
+          message: "unknown option for trigger:mqtt",
         },
       ]);
     });
 
-    it("normalizes onto a single-element topics", async function () {
-      const task = new Task({ steps: [] }, "normalizes topic");
-      const trigger = await task.importStep({
-        type: "trigger:mqtt",
-        connectionName: "broker",
-        topic: "alarms/+",
-      } as never);
-
-      expect(
-        (trigger.config as { topics: Array<string> }).topics,
-      ).to.deep.equal(["alarms/+"]);
-      expect((trigger.config as { topic?: string }).topic).to.equal(undefined);
-    });
-
-    it("warns about nothing when topics is used", async function () {
+    it("is accepted in its plural form", async function () {
       expect(
         await errorsFor({
           type: "trigger:mqtt",
@@ -274,22 +265,7 @@ describe("triggers", function () {
       ).to.deep.equal([]);
     });
 
-    it("is rejected alongside topics", async function () {
-      const errors = await errorsFor({
-        type: "trigger:mqtt",
-        connectionName: "broker",
-        topic: "a",
-        topics: ["b"],
-      });
-
-      expect(errors).to.deep.include({
-        severity: "error",
-        path: "tasks.t.trigger.topic",
-        message: 'cannot be combined with "topics"',
-      });
-    });
-
-    it("is rejected when neither is given", async function () {
+    it("is rejected when it is not given at all", async function () {
       const errors = await errorsFor({
         type: "trigger:mqtt",
         connectionName: "broker",

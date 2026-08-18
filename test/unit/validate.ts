@@ -100,12 +100,7 @@ const SYNTHETIC: ModuleSchema = {
       description: "has a default",
       default: "hello",
     },
-    topic: {
-      type: "string",
-      description: "the old name for topics",
-      deprecated: { replacedBy: "topics" },
-    },
-    topics: { type: "array", description: "the new name" },
+    topics: { type: "array", description: "an array-typed option" },
   },
 };
 
@@ -521,41 +516,6 @@ describe("config validation", function () {
       });
     });
 
-    it("warns about a deprecated option and accepts it", async function () {
-      await withSchema(SYNTHETIC, async function () {
-        const errors = await check(
-          stepConfig({ type: "read:constant", label: "x", topic: "a/b" }),
-        );
-
-        expect(errors).to.deep.equal([
-          {
-            severity: "warning",
-            path: "tasks.t.steps[0].topic",
-            message: 'deprecated; use "topics" instead',
-          },
-        ]);
-      });
-    });
-
-    it("rejects a deprecated option alongside its replacement", async function () {
-      await withSchema(SYNTHETIC, async function () {
-        const errors = await check(
-          stepConfig({
-            type: "read:constant",
-            label: "x",
-            topic: "a/b",
-            topics: ["a/b"],
-          }),
-        );
-
-        expect(errorsAt(errors, "tasks.t.steps[0].topic")).to.deep.include({
-          severity: "error",
-          path: "tasks.t.steps[0].topic",
-          message: 'cannot be combined with "topics"',
-        });
-      });
-    });
-
     it("resolves a connectionName against the declared connections", async function () {
       const declared = {
         connections: [
@@ -823,21 +783,6 @@ describe("schema defaults", function () {
       expect((explicit.config as Record<string, unknown>).greeting).to.equal(
         "hi",
       );
-    });
-  });
-
-  it("moves a deprecated option onto its replacement", async function () {
-    await withSchema(SYNTHETIC, async function () {
-      const task = new Task({ steps: [] }, "deprecated");
-      const step = new Constant(
-        { type: "read:constant", topic: "a/b" } as never,
-        task,
-        0,
-      );
-      const config = step.config as Record<string, unknown>;
-
-      expect(config.topics).to.deep.equal(["a/b"]);
-      expect(config.topic).to.equal(undefined);
     });
   });
 });

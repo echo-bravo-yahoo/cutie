@@ -4,7 +4,6 @@ import {
   OptionSchema,
   OptionType,
   UNIVERSAL_OPTIONS,
-  normalizeDeprecated,
 } from "./schema.js";
 import { Kind, KINDS } from "./type-helpers.js";
 
@@ -101,29 +100,7 @@ function validateOptions(
   errors: Array<ConfigError>,
 ) {
   for (const [name, option] of Object.entries(schema.options)) {
-    const replacedBy = option.deprecated?.replacedBy;
-    if (replacedBy === undefined || config[name] === undefined) continue;
-
-    errors.push(
-      warning(`${path}.${name}`, `deprecated; use "${replacedBy}" instead`),
-    );
-    if (config[replacedBy] !== undefined)
-      errors.push(
-        error(`${path}.${name}`, `cannot be combined with "${replacedBy}"`),
-      );
-  }
-
-  // The required and type checks run against the normalized config, so a value
-  // supplied under a deprecated name satisfies its replacement.
-  const normalized = normalizeDeprecated(config, schema) as Record<
-    string,
-    unknown
-  >;
-
-  for (const [name, option] of Object.entries(schema.options)) {
-    if (option.deprecated) continue;
-
-    const value = normalized[name];
+    const value = config[name];
 
     if (value === undefined) {
       if (option.required)

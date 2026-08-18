@@ -89,7 +89,6 @@ Publishes each message to one or more MQTT topics.
 | --- | --- | --- | --- | --- | --- |
 | `connectionName` | string | **yes** |  |  | Which declared connection to publish on. |
 | `topics` | array | **yes** |  |  | The topics to publish to. Supports ${...} interpolation. |
-| `topic` | string | no |  |  | A single topic to publish to. Superseded by topics. Deprecated; use `topics` instead. |
 | `retain` | boolean | no | `false` |  | Ask the broker to keep the message and hand it to future subscribers. |
 | `qos` | number | no | `0` |  | MQTT quality of service: 0 at most once, 1 at least once, 2 exactly once. Must be between 0 and 2, a whole number. |
 | `raw` | boolean | no | `false` |  | Publish a string message as the payload itself rather than JSON-encoding it. A message that is not a string is encoded either way. |

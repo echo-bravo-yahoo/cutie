@@ -68,10 +68,5 @@ export const schema: ModuleSchema = {
         'Topic filters to subscribe to, MQTT wildcards included, such as "alarms/+".',
       required: true,
     },
-    topic: {
-      type: "string",
-      description: "A single topic filter. Superseded by topics.",
-      deprecated: { replacedBy: "topics" },
-    },
   },
 };

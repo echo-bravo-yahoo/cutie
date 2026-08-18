@@ -82,8 +82,6 @@ function renderDescription(option) {
   // Skipped when the description already says so, which several of them do.
   if (option.interpolated && !option.description.includes("nterpolat"))
     notes.push("Supports ${...} interpolation.");
-  if (option.deprecated)
-    notes.push(`Deprecated; use \`${option.deprecated.replacedBy}\` instead.`);
 
   return [option.description + renderRange(option), ...notes].join(" ").trim();
 }

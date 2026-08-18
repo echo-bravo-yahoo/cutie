@@ -503,7 +503,7 @@ describe("the runtime", function () {
           trigger: {
             type: "trigger:mqtt",
             connectionName: "stub",
-            topic: "some/topic",
+            topics: ["some/topic"],
           } as any,
           steps: [],
         },

@@ -15,8 +15,8 @@ export default class Random extends Read {
   constructor(config: RandomConfig, task: Task, index?: number) {
     super(config, task, index);
 
-    // this.config rather than the argument: the schema's defaults and
-    // deprecated-name normalization have been applied to it.
+    // this.config rather than the argument: the schema's defaults have been
+    // applied to it.
     this.reader = new DrunkReader(this.config);
     this.name = "random";
   }

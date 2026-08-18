@@ -6,6 +6,7 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 
 ### Breaking
 
+- `trigger:mqtt` and `output:mqtt` require `topics` as an array. Neither accepts a singular `topic` any more. There is no deprecation period and no alias: a config naming `topic` is rejected with `topics` named as the missing option.
 - `output:file`'s `insertNewlines` now writes the newline **after** each message rather than before it. Files an existing config already writes will change: the leading blank line goes away and the last line gains its terminator.
 - `output:switchbots` renames `bots: [{id, name, reverseOnOff}]` to `devices: [{address, label, reverseOnOff}]`. The old keys are rejected rather than accepted quietly; `name` in particular collided with the `name` every step accepts.
 - `output:thermal-printer` renames `path` to `devicePath` and requires it unless `virtual` is set. A `path` everywhere else in a config is a filesystem path, and this is a serial device. There is no longer a default of `/dev/ttyS0`.
@@ -24,7 +25,6 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 
 ### Deprecated
 
-- `topic` on `trigger:mqtt` and on `output:mqtt` is superseded by `topics`. A config using `topic` still works and reports one warning; naming both is an error.
 - The sensor-trigger form, `trigger:random` and `trigger:ble-tracker`, is deprecated in favor of a trigger into a read into `transform:aggregate`, which separates when to sample from what to read and how to collapse the samples. See [sensors.md](./sensors.md).
 
 ### Added

@@ -161,7 +161,7 @@ describe("tracing", function () {
         trigger: {
           type: "trigger:mqtt",
           connectionName: "stub",
-          topic,
+          topics: [topic],
         } as any,
         steps: [{ type: "output:stash", key: "received", value: "yes" } as any],
       },
@@ -228,7 +228,7 @@ describe("tracing", function () {
         trigger: {
           type: "trigger:mqtt",
           connectionName: "broker",
-          topic: "trace/roundtrip",
+          topics: ["trace/roundtrip"],
         } as any,
         steps: [{ type: "output:stash", key: "received", value: "yes" } as any],
       },

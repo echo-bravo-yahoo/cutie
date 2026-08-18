@@ -23,8 +23,6 @@ export interface OptionSchema {
   interpolated?: boolean;
   // e.g. "ms", "bytes". Reference page only; no coercion.
   unit?: string;
-  // Accepted, warned about, and normalized into `replacedBy`.
-  deprecated?: { replacedBy: string };
 }
 
 export interface ModuleSchema {
@@ -58,41 +56,13 @@ export function getRegisteredSchema(type: string): ModuleSchema | undefined {
   return schemas.get(type);
 }
 
-// Moves every deprecated option onto its replacement, so a module and the
-// validator both only ever read the new name. An array-typed replacement wraps
-// a scalar, which is what lets `topic: "x"` stand in for `topics: ["x"]`.
-export function normalizeDeprecated<T extends object>(
+export function applySchemaDefaults<T extends object>(
   config: T,
   schema: ModuleSchema,
 ): T {
   const result = { ...config } as Record<string, unknown>;
 
   for (const [name, option] of Object.entries(schema.options)) {
-    const replacedBy = option.deprecated?.replacedBy;
-    if (replacedBy === undefined || result[name] === undefined) continue;
-
-    if (result[replacedBy] === undefined) {
-      const replacement = schema.options[replacedBy];
-      const value = result[name];
-      result[replacedBy] =
-        replacement?.type === "array" && !Array.isArray(value)
-          ? [value]
-          : value;
-    }
-    delete result[name];
-  }
-
-  return result as T;
-}
-
-export function applySchemaDefaults<T extends object>(
-  config: T,
-  schema: ModuleSchema,
-): T {
-  const result = normalizeDeprecated(config, schema) as Record<string, unknown>;
-
-  for (const [name, option] of Object.entries(schema.options)) {
-    if (option.deprecated) continue;
     if (option.default !== undefined && result[name] === undefined)
       result[name] = option.default;
   }

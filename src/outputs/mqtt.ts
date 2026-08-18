@@ -8,8 +8,6 @@ import { Message } from "../util/type-helpers.js";
 import { ModuleSchema } from "../util/schema.js";
 
 export interface MQTTConfig extends OutputConfig {
-  // `topic` is accepted in a config and normalized onto `topics` before a
-  // module ever sees it, so only the plural form exists here.
   topics: Array<string>;
   connectionName: string;
   propagateTrace?: boolean;
@@ -102,11 +100,6 @@ export const schema: ModuleSchema = {
       description: "The topics to publish to.",
       required: true,
       interpolated: true,
-    },
-    topic: {
-      type: "string",
-      description: "A single topic to publish to. Superseded by topics.",
-      deprecated: { replacedBy: "topics" },
     },
     retain: {
       type: "boolean",

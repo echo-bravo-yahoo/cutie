@@ -108,7 +108,6 @@ Starts a message for every MQTT message published to one of its topics.
 | --- | --- | --- | --- | --- | --- |
 | `connectionName` | string | **yes** |  |  | Which declared connection to subscribe on. |
 | `topics` | array | **yes** |  |  | Topic filters to subscribe to, MQTT wildcards included, such as "alarms/+". |
-| `topic` | string | no |  |  | A single topic filter. Superseded by topics. Deprecated; use `topics` instead. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 
