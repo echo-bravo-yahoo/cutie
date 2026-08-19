@@ -208,10 +208,21 @@ Every relative path a config contains -- a `read:file` path, an `output:file` pa
 
 - Logs are written as colorized text by `pino-pretty`, not as JSON, so they are meant to be read rather than piped through `jq`.
 - `--log-level` sets the lowest level that reaches the console. Everything a module logs goes there, not just what `output:console` prints.
-- To filter logs by subsystem, use a `trigger:logs` task instead. It receives every internal log line and matches the line's topic against its `filters`, where `*` is a wildcard and a leading `!` negates. The last matching filter wins, so `["*", "!core.registration.*"]` means "everything except registration". It only sees lines at `warn` or above unless you lower its `minVerbosity`.
+- To filter logs by subsystem, use a `trigger:logs` task instead. It receives every internal log line and matches the line's topic against its `filters`, where `*` is a wildcard and a leading `!` negates. The last matching filter wins, so `["*", "!core.registration.*"]` means "everything except registration". It only sees lines at `warn` or above unless you lower its `minVerbosity`, and `maxVerbosity` adds a ceiling, so two tasks can split the same topics by severity rather than both seeing the severe lines.
 - A `trigger:logs` task never sees its own subtree's lines, and a line produced while a line is being dispatched still reaches the console but starts no second dispatch. Between them, those two rules are what stop a logs task feeding an output that logs from feeding itself forever.
-- A connection that fails to register (e.g. an unreachable broker) always prints directly, in addition to being available to a `trigger:logs` task -- connections register before tasks, so no `trigger:logs` task can be listening yet when that failure happens.
+- A connection that fails to register (e.g. an unreachable broker) always prints directly, and still reaches a `trigger:logs` task even though connections register before tasks: every line the node writes while no logs task is listening yet is held, at every level, and replayed to each logs task as it registers. The window closes when registration ends, so a config with no logs task holds nothing.
 - The systemd service logs to a dedicated journal namespace (`LogNamespace=cutie` in `./config/cutie.service`), capped at 50M total / 10M per file by `./config/cutie.journald.conf`, so a runaway log can't fill up the SD card. A plain `journalctl -u cutie` won't show anything for the deployed service -- add `--namespace=cutie`, as below.
+
+##### Errors
+
+A step that throws does not take the node down with it, and never took the rest of the config with it either.
+
+- The step logs the failure under its own topic, at `error`, with the message's trace ID and a structured object naming the task, the step, the module type, and the error. That is enough to route on without parsing log text.
+- The trigger then abandons the message and logs one line saying so. The task stays enabled and the next message runs; every other task is untouched.
+- A task that fails to register is skipped and reported under `core.registration.tasks`, and the rest of the config registers. A config whose every task fails to register refuses to start.
+- Add `rescue: "<task name>"` to a step -- or to a task, as the default for its steps -- to say what should happen instead. The named task is handed the message that failed and an `${error...}` namespace (`${error.message}`, `${error.name}`, `${error.task}`, `${error.step}`, `${error.type}`), and works on a deep copy of the failing message's stash. If it ends at a `control:return`, the value that step names replaces the message and the chain carries on; if it falls off its own end, the message ends there. A rescue naming a task the config does not declare, or one that leads back to the task it rescues, is refused by `cutie validate`.
+- `output:inky-phat` and `output:st7735` no longer swallow a failed draw. A `rescue` whose only step is a bare `control:return` restores the old behaviour: it hands the message straight back, so the chain carries on as if the draw had worked.
+- Routing errors somewhere of their own is a pair of `trigger:logs` tasks: `minVerbosity: "error"` on the one that alerts, and `minVerbosity: "info"` with `maxVerbosity: "warn"` on the one that keeps the ordinary log. Without the ceiling an error lands in both. See the "routing a failing step" recipe in [cookbook.md](./cookbook.md).
 
 ##### Tracing
 

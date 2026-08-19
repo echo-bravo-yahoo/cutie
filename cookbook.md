@@ -91,3 +91,129 @@ It expects `weather/temp` to carry a bare number, such as `21.4712`. Neither `tr
   }
 }
 ```
+
+### Failures
+
+#### Route a failing step somewhere you will see it
+
+A step that throws no longer takes the node down with it: the failure is logged under that step's own topic and the trigger abandons the message, leaving every other task running. What a config adds on top of that is where those failures go, and what to do about them.
+
+This recipe reads a sensor every five minutes and writes it to InfluxDB. It sends every failure three places: a counter in InfluxDB, a line in a file, and an alert on its own MQTT topic. The sensor read has a rescue of its own, so a reading that fails is replaced by a degraded one rather than dropped.
+
+Four pieces are doing the work:
+
+- `rescue` on the `weather` task names the task to run when any of its steps fails. `rescue` on a step overrides that for that step alone.
+- A rescue is handed the message that failed and an `${error...}` namespace: `${error.message}`, `${error.name}`, `${error.task}`, `${error.step}`, and `${error.type}`.
+- `control:return` hands a value back. `last-resort` returns a degraded reading, so the chain carries on with it. `on-failure` never returns, so the message it was handed ends there.
+- `minVerbosity` and `maxVerbosity` split the log bus by severity, so an error reaches `alerts` and nothing else, and everything below it reaches `logs`.
+
+```json
+{
+  "connections": [
+    {
+      "type": "connection:mqtt",
+      "name": "broker",
+      "endpoint": "mqtt://127.0.0.1:1883"
+    },
+    {
+      "type": "connection:influxdb",
+      "name": "metrics",
+      "url": "http://127.0.0.1:8086/api/v2/write",
+      "organization": "home",
+      "bucket": "sensors",
+      "token": "an-influxdb-token"
+    }
+  ],
+  "tasks": {
+    "weather": {
+      "rescue": "on-failure",
+      "trigger": {
+        "type": "trigger:cron",
+        "expression": "*/5 * * * *"
+      },
+      "steps": [
+        {
+          "type": "read:bme680",
+          "rescue": "last-resort"
+        },
+        {
+          "type": "output:influxdb",
+          "connectionName": "metrics",
+          "measurement": "weather"
+        }
+      ]
+    },
+    "last-resort": {
+      "steps": [
+        {
+          "type": "control:return",
+          "value": {
+            "temp": null,
+            "degraded": "${error.message}"
+          },
+          "stash": {
+            "lastFailure": "${error.message}"
+          }
+        }
+      ]
+    },
+    "on-failure": {
+      "steps": [
+        {
+          "type": "transform:merge",
+          "sources": [
+            {
+              "failedAt": "${error.step}",
+              "because": "${error.message}"
+            }
+          ]
+        },
+        {
+          "type": "output:file",
+          "path": "./failures.jsonl"
+        },
+        {
+          "type": "output:influxdb",
+          "connectionName": "metrics",
+          "measurement": "cutie_errors",
+          "tags": {
+            "task": "${error.task}",
+            "step": "${error.type}"
+          }
+        }
+      ]
+    },
+    "alerts": {
+      "trigger": {
+        "type": "trigger:logs",
+        "filters": ["*"],
+        "minVerbosity": "error"
+      },
+      "steps": [
+        {
+          "type": "output:mqtt",
+          "connectionName": "broker",
+          "topics": ["cutie/alerts"]
+        }
+      ]
+    },
+    "logs": {
+      "trigger": {
+        "type": "trigger:logs",
+        "filters": ["*"],
+        "minVerbosity": "info",
+        "maxVerbosity": "warn"
+      },
+      "steps": [
+        {
+          "type": "output:mqtt",
+          "connectionName": "broker",
+          "topics": ["cutie/logs"]
+        }
+      ]
+    }
+  }
+}
+```
+
+A rescue that only reports, like `on-failure`, ends the message it was handed: the step that called it produced nothing, so there is nothing to carry on with. A rescue that recovers has to say so with `control:return`, and only what that step names crosses back -- the returned value as the message, and each `stash` key written into the caller's stash. Everything else the rescue stashed stays with the rescue.
