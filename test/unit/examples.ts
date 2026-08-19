@@ -195,7 +195,10 @@ describe("examples run correctly, including", function () {
 
     expect(
       received.some(
-        (m) => m.topic === "cutie/heartbeat" && m.payload === '"online"',
+        (m) =>
+          m.topic === "cutie/heartbeat" &&
+          m.payload ===
+            JSON.stringify({ status: "online", version: globals.version }),
       ),
     ).to.equal(true);
     expect(

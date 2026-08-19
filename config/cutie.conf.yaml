@@ -13,12 +13,14 @@ connections:
 
 tasks:
   # publishes a message every minute, so anything subscribed to
-  # cutie/heartbeat knows this node is alive
+  # cutie/heartbeat knows this node is alive and which version it's running
   heartbeat:
     trigger:
       type: "trigger:repeat"
       interval: 60000
-      message: "online"
+      message:
+        status: "online"
+        version: "${globals.version}"
 
     steps:
       - type: "output:mqtt"
