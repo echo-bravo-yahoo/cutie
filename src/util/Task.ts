@@ -84,11 +84,22 @@ export default class Task extends Configurable {
       previousStep = currentStep;
     }
 
-    if (this.trigger?.shouldEnable()) await this.trigger.enable();
-
+    // Steps are enabled before the trigger, not after: the trigger is what starts
+    // messages flowing, and it can begin firing the instant its own enable()
+    // returns - trigger:once fires on the next tick, an MQTT subscribe can
+    // deliver a retained message right away, a GPIO watch can fire on a pin
+    // that's already asserted, and trigger:repeat fires as soon as its interval
+    // elapses, which can be shorter than a slow step's enable(). If the trigger
+    // went first, any one of those could reach a step whose own enable() is
+    // still mid-flight - hardware init in particular can take the better part
+    // of a second - and land on a message silently dropped by that step's own
+    // `!this.enabled` guard. Enabling the chain first means every step is
+    // fully ready before anything can start a message.
     for (const step of this.steps) {
       await step.enable();
     }
+
+    if (this.trigger?.shouldEnable()) await this.trigger.enable();
   }
 
   // primarily used for testing to cause trigger-less tasks to still emit events

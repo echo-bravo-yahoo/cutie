@@ -29,6 +29,8 @@ import LogHelper from "../../src/util/LogHelper.js";
 import { validateConfig } from "../../src/util/validate.js";
 import NEC from "../../src/outputs/nec.js";
 import Switchbots from "../../src/outputs/switchbots.js";
+import Once from "../../src/triggers/once.js";
+import Console from "../../src/outputs/console.js";
 import ThermalPrinter from "../../src/outputs/thermal-printer.js";
 import InfluxDB from "../../src/outputs/influxdb.js";
 import InfluxDBConnection from "../../src/connections/influxdb.js";
@@ -162,6 +164,40 @@ describe("the runtime", function () {
       expect(task.trigger!.enabled, "trigger").to.equal(false);
       for (const step of task.steps) {
         expect(step.enabled, step.config.type).to.equal(false);
+      }
+    });
+  });
+
+  describe("enable order", function () {
+    it("enables every step before it enables the trigger", async function () {
+      const order: Array<string> = [];
+      const originalTriggerEnable = Once.prototype.enable;
+      const originalStepEnable = Console.prototype.enable;
+
+      Once.prototype.enable = async function (this: Once) {
+        order.push("trigger");
+        return originalTriggerEnable.call(this);
+      };
+      Console.prototype.enable = async function (this: Console) {
+        order.push("step");
+        return originalStepEnable.call(this);
+      };
+
+      try {
+        const task = new Task(
+          {
+            trigger: { type: "trigger:once", message: "hi" } as any,
+            steps: [{ type: "output:console" } as any],
+          },
+          "enable order",
+        );
+
+        await task.register();
+
+        expect(order).to.deep.equal(["step", "trigger"]);
+      } finally {
+        Once.prototype.enable = originalTriggerEnable;
+        Console.prototype.enable = originalStepEnable;
       }
     });
   });
