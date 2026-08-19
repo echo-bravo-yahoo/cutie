@@ -9,7 +9,7 @@ const { expect } = chai;
 
 import Task from "../../src/util/Task.js";
 import { globals, setGlobals } from "../../src/index.js";
-import Sensor from "../../src/util/Sensor.js";
+import { doAggregation } from "../../src/util/aggregation.js";
 import MQTTConnection from "../../src/connections/mqtt.js";
 import { registerConnections } from "../../src/util/connections.js";
 import { Connection } from "../../src/util/Connection.js";
@@ -29,7 +29,6 @@ import LogHelper from "../../src/util/LogHelper.js";
 import { validateConfig } from "../../src/util/validate.js";
 import NEC from "../../src/outputs/nec.js";
 import Switchbots from "../../src/outputs/switchbots.js";
-import BLETracker from "../../src/triggers/ble-tracker.js";
 import ThermalPrinter from "../../src/outputs/thermal-printer.js";
 import InfluxDB from "../../src/outputs/influxdb.js";
 import InfluxDBConnection from "../../src/connections/influxdb.js";
@@ -647,29 +646,6 @@ describe("the runtime", function () {
     });
   });
 
-  describe("trigger:ble-tracker", function () {
-    it("fakes RSSI within DrunkRSSI's bounds when virtual", async function () {
-      const task = new Task({ steps: [] }, "virtual ble tracker");
-      const tracker = new BLETracker(
-        {
-          type: "trigger:ble-tracker",
-          virtual: true,
-          devices: [{ alias: "phone", macAddress: "00:00:00:00:00:00" }],
-        } as any,
-        task,
-      );
-      tracker.enabled = true;
-
-      await tracker.sample();
-      const reading = tracker.collateSamples() as Record<
-        string,
-        { rssi: string }
-      >;
-
-      expect(Number(reading.phone.rssi)).to.be.within(-95, -40);
-    });
-  });
-
   describe("output:thermal-printer", function () {
     it("logs instead of printing and returns the message when virtual", async function () {
       const task = new Task({ steps: [] }, "virtual thermal printer");
@@ -759,66 +735,66 @@ describe("the runtime", function () {
     });
   });
 
-  describe("Sensor.doAggregation", function () {
+  describe("doAggregation", function () {
     it("sums", function () {
-      expect(Sensor.doAggregation([1, 2, 3], "sum")).to.equal(6);
+      expect(doAggregation([1, 2, 3], "sum")).to.equal(6);
     });
 
     it("takes a median of an odd-length set", function () {
-      expect(Sensor.doAggregation([3, 1, 2], "median")).to.equal(2);
+      expect(doAggregation([3, 1, 2], "median")).to.equal(2);
     });
 
     it("interpolates a median of an even-length set", function () {
-      expect(Sensor.doAggregation([1, 2, 3, 4], "median")).to.equal(2.5);
+      expect(doAggregation([1, 2, 3, 4], "median")).to.equal(2.5);
     });
 
     it("treats median as p50", function () {
-      expect(Sensor.doAggregation([1, 2, 3, 4], "p50")).to.equal(
-        Sensor.doAggregation([1, 2, 3, 4], "median"),
+      expect(doAggregation([1, 2, 3, 4], "p50")).to.equal(
+        doAggregation([1, 2, 3, 4], "median"),
       );
     });
 
     it("interpolates an arbitrary percentile", function () {
       // rank = 0.95 * 9 = 8.55, between the 9th and 10th values
       expect(
-        Sensor.doAggregation([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "p95"),
+        doAggregation([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "p95"),
       ).to.be.closeTo(9.55, 1e-9);
     });
 
     it("accepts fractional percentiles", function () {
       expect(
-        Sensor.doAggregation([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "p99.5"),
+        doAggregation([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "p99.5"),
       ).to.be.closeTo(9.955, 1e-9);
     });
 
     it("bounds p0 and p100 to the extremes", function () {
-      expect(Sensor.doAggregation([5, 1, 9], "p0")).to.equal(1);
-      expect(Sensor.doAggregation([5, 1, 9], "p100")).to.equal(9);
+      expect(doAggregation([5, 1, 9], "p0")).to.equal(1);
+      expect(doAggregation([5, 1, 9], "p100")).to.equal(9);
     });
 
     it("still supports latest and average", function () {
-      expect(Sensor.doAggregation([1, 2, 3], "latest")).to.equal(3);
-      expect(Sensor.doAggregation([1, 2, 3], "average")).to.equal(2);
+      expect(doAggregation([1, 2, 3], "latest")).to.equal(3);
+      expect(doAggregation([1, 2, 3], "average")).to.equal(2);
     });
 
     it("reads through a path", function () {
       const samples = [{ v: 1 }, { v: 3 }, { v: 5 }] as any;
-      expect(Sensor.doAggregation(samples, "sum", "v")).to.equal(9);
-      expect(Sensor.doAggregation(samples, "median", "v")).to.equal(3);
+      expect(doAggregation(samples, "sum", "v")).to.equal(9);
+      expect(doAggregation(samples, "median", "v")).to.equal(3);
     });
 
     it("collapses a single datapoint to latest regardless of aggregation", function () {
-      expect(Sensor.doAggregation([7], "sum")).to.equal(7);
+      expect(doAggregation([7], "sum")).to.equal(7);
     });
 
     it("throws on an unsupported aggregation", function () {
-      expect(() => Sensor.doAggregation([1, 2], "nonsense")).to.throw(
+      expect(() => doAggregation([1, 2], "nonsense")).to.throw(
         /Unsupported aggregation/,
       );
     });
 
     it("throws on an out-of-range percentile", function () {
-      expect(() => Sensor.doAggregation([1, 2], "p101")).to.throw(
+      expect(() => doAggregation([1, 2], "p101")).to.throw(
         /Unsupported aggregation/,
       );
     });

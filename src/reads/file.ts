@@ -33,12 +33,12 @@ export default class File extends Read {
   }
 
   async enable() {
-    this.info("Enabled file read.", { topic: this.logPrefix });
+    this.info("Enabled file read.");
     this.enabled = true;
   }
 
   async disable() {
-    this.info("Disabled file read.", { topic: this.logPrefix });
+    this.info("Disabled file read.");
     this.enabled = false;
   }
 }

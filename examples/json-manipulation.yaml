@@ -22,11 +22,11 @@ tasks:
 
     steps:
       # transform:merge folds additional objects into the message. sources can
-      # be literal objects, or "$$"-prefixed paths looked up from the
+      # be literal objects, or templates looked up from the
       # interpolation context - here, the task's own data block.
       - type: "transform:merge"
         sources:
-          - "$$task.config.data"
+          - "${task.config.data}"
           - collectedBy: "cutie"
 
       # transform:munge moves, copies, and drops keys. each path names an

@@ -64,7 +64,7 @@ describe("transforms", function () {
             steps: [
               {
                 type: "transform:merge",
-                sources: ["$$task.config.data"],
+                sources: ["${task.config.data}"],
               } as MergeConfig,
             ],
           },
@@ -89,7 +89,7 @@ describe("transforms", function () {
               {
                 type: "transform:merge",
                 sources: [
-                  "$$task.config.data",
+                  "${task.config.data}",
                   { metadata: { priority: "high" } },
                 ],
               } as MergeConfig,

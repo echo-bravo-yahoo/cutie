@@ -57,9 +57,7 @@ export default class GpioButton extends Trigger {
 
   async enable() {
     if (this.config.virtual) {
-      this.info("Enabled gpio buttons (virtual); no pins are watched.", {
-        topic: this.logPrefix,
-      });
+      this.info("Enabled gpio buttons (virtual); no pins are watched.");
       this.enabled = true;
       return;
     }
@@ -77,18 +75,14 @@ export default class GpioButton extends Trigger {
 
       gpio.watch((error: Error | null | undefined, value: number) => {
         if (error) {
-          this.error(`Watch failed for button ${name}: ${error.message}`, {
-            topic: this.logPrefix,
-          });
+          this.error(`Watch failed for button ${name}: ${error.message}`);
           return;
         }
 
         const pressed = value === 0;
         if (!this.shouldEmit(name, pressed)) return;
 
-        this.debug(`Button ${name} ${pressed ? "pressed" : "released"}.`, {
-          topic: this.logPrefix,
-        });
+        this.debug(`Button ${name} ${pressed ? "pressed" : "released"}.`);
         this.startMessage({ button: name, pressed });
       });
 
@@ -97,7 +91,6 @@ export default class GpioButton extends Trigger {
 
     this.info(
       `Enabled gpio buttons (${this.pins.map((p) => p.name).join(", ") || "none"}), gpio base ${base}.`,
-      { topic: this.logPrefix },
     );
     this.enabled = true;
   }
@@ -108,7 +101,7 @@ export default class GpioButton extends Trigger {
       gpio.unexport();
     }
     this.pins = [];
-    this.info("Disabled gpio buttons.", { topic: this.logPrefix });
+    this.info("Disabled gpio buttons.");
     this.enabled = false;
   }
 }

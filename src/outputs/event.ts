@@ -22,10 +22,7 @@ export default class Event extends Output {
   async send(message: Message, traceId: string) {
     this.info(
       `Emitting event with key "${this.config.key}".`,
-      {
-        topic: this.logPrefix,
-        traceId,
-      },
+      { traceId },
       {
         event: message,
       },

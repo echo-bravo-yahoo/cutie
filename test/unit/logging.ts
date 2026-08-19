@@ -159,6 +159,93 @@ describe("logging", function () {
       expect(found?.message).to.include(step.logPrefix);
     });
 
+    it("reaches a listener under the module's own topic with no topic passed", async function () {
+      useLogger();
+      const listening = new Task(
+        {
+          trigger: {
+            type: "trigger:logs",
+            filters: ["core.runtime.tasks.*"],
+            minVerbosity: "trace",
+          } as never,
+          steps: [{ type: "output:stash", key: "line", value: "x" } as never],
+        },
+        "sees module lines",
+      );
+      await listening.register();
+      globals.tasks.push(listening);
+
+      const task = new Task({ steps: [] }, "a quiet module");
+      const step = await task.importStep(
+        { type: "read:constant", value: 1 } as never,
+        0,
+      );
+
+      step.info("no topic given");
+      await handled(listening, 1);
+
+      expect(listening.messagesHandled).to.equal(1);
+    });
+
+    it("carries a passthrough to a listener as well as to pino", async function () {
+      const { records } = useLogger();
+      const listening = new Task(
+        {
+          trigger: {
+            type: "trigger:logs",
+            filters: ["core.runtime"],
+            minVerbosity: "trace",
+          } as never,
+          steps: [{ type: "output:stash", key: "line", value: "x" } as never],
+        },
+        "sees runtime lines",
+      );
+      await listening.register();
+      globals.tasks.push(listening);
+
+      // The line a node republishing its own logs most needs to see.
+      globals.logger.fatal("Uncaught Exception. Terminating now.");
+      await handled(listening, 1);
+
+      expect(
+        records.some((entry) =>
+          entry.message.includes("Uncaught Exception. Terminating now."),
+        ),
+      ).to.equal(true);
+      expect(listening.messagesHandled).to.equal(1);
+    });
+
+    it("keeps the re-entrancy guard when a passthrough runs inside a dispatch", async function () {
+      const { helper } = useLogger();
+      const listening = new Task(
+        {
+          trigger: {
+            type: "trigger:logs",
+            filters: ["*"],
+            minVerbosity: "trace",
+          } as never,
+          steps: [{ type: "output:stash", key: "line", value: "x" } as never],
+        },
+        "logs while handling a log",
+      );
+      await listening.register();
+      globals.tasks.push(listening);
+
+      const counted = capDispatches(helper);
+      // A step that logs through the passthrough while a dispatch is in flight
+      // would fan out forever without the guard.
+      listening.steps[0].doHandleMessage = async (message) => {
+        globals.logger.warn("logging from inside a dispatch");
+        return message;
+      };
+
+      globals.logger.emit("the first line", "info", "core.test");
+      await settle(20);
+
+      expect(counted.dispatches).to.be.lessThan(RUNAWAY_CAP);
+      expect(helper.logListeners).to.include(listening.trigger);
+    });
+
     it("is suppressed below the configured level", function () {
       const { helper, records } = useLogger("warn");
 

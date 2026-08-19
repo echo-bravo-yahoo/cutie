@@ -76,10 +76,7 @@ export default class BME680 extends Read {
 
     this.debug(
       `Sampled new data point, ${JSON.stringify(datapoint, null, 2)}`,
-      {
-        topic: this.logPrefix,
-        traceId,
-      },
+      { traceId },
     );
 
     return datapoint;
@@ -97,13 +94,13 @@ export default class BME680 extends Read {
       await this.sensor.initialize();
     }
 
-    this.info("Enabled bme680.", { topic: this.logPrefix });
+    this.info("Enabled bme680.");
     this.enabled = true;
   }
 
   async disable() {
     if (this.sensor?.close) await this.sensor.close();
-    this.info("Disabled bme680.", { topic: this.logPrefix });
+    this.info("Disabled bme680.");
     this.enabled = false;
   }
 }

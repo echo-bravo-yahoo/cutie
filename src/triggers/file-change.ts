@@ -28,7 +28,6 @@ export default class FileChange extends Trigger {
     );
     this.info(
       `Started watching filesystem changes${this.config.recursive ? " recursively" : ""} on path ${this.config.path}.`,
-      { topic: this.logPrefix },
     );
     this.enabled = true;
   }
@@ -40,7 +39,6 @@ export default class FileChange extends Trigger {
     }
     this.info(
       `Stopped watching filesystem changes${this.config.recursive ? " recursively" : ""} on path ${this.config.path}.`,
-      { topic: this.logPrefix },
     );
     this.enabled = false;
   }

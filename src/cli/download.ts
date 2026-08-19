@@ -5,13 +5,12 @@ import parser from "yargs-parser";
 
 import { globals, initializeGlobals } from "../index.js";
 import { configFileNameForNode, fetchConfig } from "../util/configs.js";
+import { getConnection, registerConnections } from "../util/connections.js";
 import {
-  getConnection,
-  mergeParserArgs,
-  registerConnections,
-} from "../util/connections.js";
-import { Connection } from "../util/Connection.js";
-import { CLIArgs, parserDefaults } from "../util/cli.js";
+  ProvidingConnection,
+  requireConfigProvider,
+} from "../util/Connection.js";
+import { CLIArgs, mergeParserArgs, parserDefaults } from "../util/cli.js";
 
 export interface DownloadArgs extends Omit<CLIArgs, "_"> {
   connectionName: string;
@@ -27,7 +26,7 @@ interface DownloadSingleArgs extends DownloadArgs {
 // usage: `npm run build; ./built/cli-entrypoint.js download --config ./config/cutie-downloader.conf.json --connectionName personal-mqtt --path ./config-management`
 async function downloadSingle(
   args: DownloadSingleArgs,
-  connection: Connection,
+  connection: ProvidingConnection,
 ) {
   const filePath = normalize(
     `${args.path ?? "."}/${configFileNameForNode(args.node)}`,
@@ -42,7 +41,10 @@ async function downloadSingle(
   );
 }
 
-async function downloadAll(args: DownloadArgs, connection: Connection) {
+async function downloadAll(
+  args: DownloadArgs,
+  connection: ProvidingConnection,
+) {
   const configs = await connection.fetchAllConfigs(args.topic);
   if (!configs)
     throw new Error(
@@ -84,7 +86,7 @@ export default async function download(args: DownloadArgs) {
   // Deliberately no registerTasks here: downloading config should not start
   // live triggers.
   await registerConnections(config.connections);
-  const connection = getConnection(args.connectionName);
+  const connection = requireConfigProvider(getConnection(args.connectionName));
 
   if (args.node) {
     await downloadSingle(args as DownloadSingleArgs, connection);

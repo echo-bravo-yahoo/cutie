@@ -40,13 +40,13 @@ export default class Repeat extends Trigger {
         this.interpolateDeep(cloneMessage(this.config.message)),
       );
     }, this.intervalMs);
-    this.info("Enabled repeat.", { topic: this.logPrefix });
+    this.info("Enabled repeat.");
     this.enabled = true;
   }
 
   async disable() {
     clearInterval(this.repeat);
-    this.info("Disabled repeat.", { topic: this.logPrefix });
+    this.info("Disabled repeat.");
     this.enabled = false;
   }
 }

@@ -30,10 +30,7 @@ export default class Once extends Trigger {
         this.delayMs > 0
           ? `Running step once after a delay of ${this.delayMs} ms.`
           : "Running step once, immediately.";
-      this.info(message, {
-        topic: this.logPrefix,
-        traceId,
-      });
+      this.info(message, { traceId });
       this.startMessage(
         this.interpolateDeep(cloneMessage(this.config.message)),
         traceId,
@@ -47,7 +44,7 @@ export default class Once extends Trigger {
   }
 
   async disable() {
-    this.info("Skipping running step once.", { topic: this.logPrefix });
+    this.info("Skipping running step once.");
     this.enabled = false;
   }
 }

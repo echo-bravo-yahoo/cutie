@@ -56,11 +56,11 @@ Replaces the message with the result of a JavaScript expression, evaluated with 
 
 ## `transform:merge`
 
-Merges values into the message. A source may be a literal object or a $$-prefixed path to look one up.
+Merges values into the message. A source may be a literal object or a template that resolves to one.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
-| `sources` | array | **yes** |  |  | What to merge in, in order. Each entry is either an object or a "$$"-prefixed path such as "$$stash.device". Supports ${...} interpolation. |
+| `sources` | array | **yes** |  |  | What to merge in, in order. Each entry is either an object or a template naming one, such as "${stash.device}". Supports ${...} interpolation. |
 | `arrayStrategy` | `replace` or `concat` | no | `"replace"` |  | What to do when both sides hold an array at the same key. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |

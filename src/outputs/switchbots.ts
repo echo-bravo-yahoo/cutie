@@ -125,7 +125,6 @@ export default class Switchbots extends Output {
 
     if (request.action === "press") {
       this.info(`Pressing switchbot ${this.deviceToNameString(configured)}.`, {
-        topic: this.logPrefix,
         traceId,
       });
       if (device) await device.press();
@@ -139,7 +138,7 @@ export default class Switchbots extends Output {
     );
     this.info(
       `Turning switchbot ${this.deviceToNameString(configured)} ${request.action} (${motion}).`,
-      { topic: this.logPrefix, traceId },
+      { traceId },
     );
     if (device) await device[motion]();
 
@@ -164,9 +163,7 @@ export default class Switchbots extends Output {
 
       wanted.delete(key);
       this.devices[key] = device;
-      this.debug(`Discovered switchbot ${key} (${device.deviceType}).`, {
-        topic: this.logPrefix,
-      });
+      this.debug(`Discovered switchbot ${key} (${device.deviceType}).`);
     }
 
     if (wanted.size)
@@ -174,7 +171,7 @@ export default class Switchbots extends Output {
         `Could not discover switchbots ${JSON.stringify([...wanted])}.`,
       );
 
-    this.info("All switchbots discovered.", { topic: this.logPrefix });
+    this.info("All switchbots discovered.");
   }
 
   async enable() {
@@ -188,7 +185,6 @@ export default class Switchbots extends Output {
 
       this.info(
         `Enabling switchbots to control ${(this.config.devices || []).length} devices...`,
-        { topic: this.logPrefix },
       );
       await this.discover();
     }
@@ -200,7 +196,7 @@ export default class Switchbots extends Output {
     if (this.switchbot) await this.switchbot.cleanup();
     this.switchbot = undefined;
     this.devices = {};
-    this.info("Disabled switchbots.", { topic: this.logPrefix });
+    this.info("Disabled switchbots.");
     this.enabled = false;
   }
 }

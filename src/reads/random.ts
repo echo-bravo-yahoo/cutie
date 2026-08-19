@@ -42,12 +42,12 @@ export default class Random extends Read {
   }
 
   async enable() {
-    this.info("Enabled random number module.", { topic: this.logPrefix });
+    this.info("Enabled random number module.");
     this.enabled = true;
   }
 
   async disable() {
-    this.info("Disabled random number module.", { topic: this.logPrefix });
+    this.info("Disabled random number module.");
     this.enabled = false;
   }
 }

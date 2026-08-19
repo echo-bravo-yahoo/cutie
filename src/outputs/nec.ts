@@ -94,7 +94,7 @@ export default class NEC extends Output {
 
     this.info(
       `Transmitting NEC command with address 0x${necCommand.address.toString(16)} and command 0x${necCommand.command.toString(16)}.`,
-      { topic: this.logPrefix, traceId },
+      { traceId },
       { command: necCommand },
     );
 
@@ -112,13 +112,13 @@ export default class NEC extends Output {
       ).default;
     }
 
-    this.info("Enabled nec.", { topic: this.logPrefix });
+    this.info("Enabled nec.");
     this.enabled = true;
   }
 
   async disable() {
     this.pigpio = undefined;
-    this.info("Disabled nec.", { topic: this.logPrefix });
+    this.info("Disabled nec.");
     this.enabled = false;
   }
 }

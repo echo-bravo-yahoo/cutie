@@ -1,11 +1,12 @@
 import { normalize } from "node:path";
 
-import { globals, srcDir } from "../index.js";
+import { srcDir } from "../index.js";
 import { Configurable, Config } from "./Configurable.js";
+import { logAt } from "./LogHelper.js";
 import { registerSchema } from "./schema.js";
 import Step, { StepConfig, runWithMessageContext } from "./Step.js";
 import { newTraceId } from "./trace.js";
-import { isTrigger, Message } from "./type-helpers.js";
+import { isStep, Message } from "./type-helpers.js";
 import Trigger, { TriggerConfig } from "./Trigger.js";
 
 export interface TaskConfig extends Config {
@@ -58,27 +59,17 @@ export default class Task extends Configurable {
       )) as unknown as Trigger;
       this.trigger.task = this;
       await this.trigger.register();
-      globals.logger.emit(
-        Configurable.formatLogLine("Registered trigger.", { topic }),
-        "info",
-        topic,
-        taskConfig.trigger,
-      );
+      logAt(topic, "info", "Registered trigger.", taskConfig.trigger);
     }
 
     for (const [index, step] of (taskConfig.steps ?? []).entries()) {
       const currentStep = await this.importStep(step, index);
-      if (isTrigger(currentStep))
+      if (!isStep(currentStep))
         throw new Error(`Triggers cannot be specified as a step.`);
       currentStep.task = this;
 
       await currentStep.register();
-      globals.logger.emit(
-        Configurable.formatLogLine("Registered step.", { topic }),
-        "info",
-        topic,
-        step,
-      );
+      logAt(topic, "info", "Registered step.", step);
 
       // A disabled step is left out of the chain rather than linked and skipped,
       // so its doHandleMessage never runs. `index` above stays the position in
@@ -116,7 +107,7 @@ export default class Task extends Configurable {
 
     this.debug(
       `Handled message in ${(performance.now() - startedAt).toFixed(1)}ms.`,
-      { topic: this.logPrefix, traceId },
+      { traceId },
       { steps: this.steps.length },
     );
 

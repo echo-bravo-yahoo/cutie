@@ -9,7 +9,7 @@ const { expect } = chai;
 import Task from "../../src/util/Task.js";
 import { setGlobals } from "../../src/index.js";
 import RandomRead from "../../src/reads/random.js";
-import RandomSensor from "../../src/triggers/random.js";
+import BLE from "../../src/reads/ble.js";
 import BME680 from "../../src/reads/bme680.js";
 import LTR559 from "../../src/reads/ltr559.js";
 import MemsMic, { dbfsFrom } from "../../src/reads/mems-mic.js";
@@ -22,9 +22,7 @@ import UnicornHatMini, {
   UnicornPanel,
 } from "../../src/outputs/unicorn-hat-mini.js";
 import { PIXEL_LUT } from "../../src/util/unicorn-hat-mini-lut.js";
-import Aggregate from "../../src/transforms/aggregate.js";
 import { HALT } from "../../src/util/Step.js";
-import { Context } from "../../src/util/Transform.js";
 import { importOptional } from "../../src/util/optional-dependency.js";
 import { createPigpioMock } from "../helpers.js";
 
@@ -129,99 +127,75 @@ describe("modules", function () {
     });
   });
 
-  describe("trigger:random", function () {
-    // The only exercise Sensor's sample/publish scheduling gets anywhere.
-    function sensorTask(name: string, config: object = {}) {
+  describe("read:ble", function () {
+    const DEVICES = [
+      { address: "00:00:00:00:00:01", label: "phone" },
+      { address: "00:00:00:00:00:02", label: "watch" },
+    ];
+
+    // Registering a non-virtual read:ble would reach for node-ble, so every
+    // test here registers a virtual one.
+    async function ble(name: string, config: object = {}) {
       const task = new Task(
         {
-          trigger: {
-            type: "trigger:random",
-            ...WALK,
-            samplingInterval: 1000,
-            // deliberately not a multiple of the sampling interval, so the two
-            // never come due on the same tick
-            reportingInterval: 5500,
-            sampling: { aggregation: "average" },
-            ...config,
-          } as any,
-          steps: [],
+          steps: [
+            { type: "read:ble", virtual: true, devices: DEVICES, ...config },
+          ] as any,
         },
         name,
       );
-
-      const published: Array<unknown> = [];
-      // where a message lands when a task has no steps
-      task.endMessage = async (message: any) => {
-        published.push(message);
-        return message;
-      };
-
-      return { task, published };
-    }
-
-    it("publishes its first reading as soon as it is enabled", async function (context) {
-      context.mock.timers.enable({ apis: ["setInterval"] });
-      const { task, published } = sensorTask("publishes on enable");
-
-      try {
-        await task.register();
-        await new Promise((resolve) => setImmediate(resolve));
-
-        expect(published).to.have.lengthOf(1);
-        expect(published[0]).to.have.lengthOf(1);
-      } finally {
-        await task.trigger!.disable();
-      }
-    });
-
-    it("samples on the sampling interval without publishing", async function (context) {
-      context.mock.timers.enable({ apis: ["setInterval"] });
-      const { task, published } = sensorTask("samples between reports");
-
-      try {
-        await task.register();
-        await new Promise((resolve) => setImmediate(resolve));
-        context.mock.timers.tick(3000);
-
-        expect((task.trigger as RandomSensor).samples).to.have.lengthOf(3);
-        expect(published).to.have.lengthOf(1);
-      } finally {
-        await task.trigger!.disable();
-      }
-    });
-
-    it("publishes the samples it collected and then starts over", async function (context) {
-      context.mock.timers.enable({ apis: ["setInterval"] });
-      const { task, published } = sensorTask("reports what it sampled");
-
-      try {
-        await task.register();
-        await new Promise((resolve) => setImmediate(resolve));
-        context.mock.timers.tick(5500);
-        await new Promise((resolve) => setImmediate(resolve));
-
-        expect(published).to.have.lengthOf(2);
-        // one sample per second up to the report at 5500ms
-        expect(published[1]).to.have.lengthOf(5);
-        for (const value of published[1] as Array<number>)
-          expect(value).to.be.within(WALK.min, WALK.max);
-        expect((task.trigger as RandomSensor).samples).to.have.lengthOf(0);
-      } finally {
-        await task.trigger!.disable();
-      }
-    });
-
-    it("collects nothing while it is disabled", async function () {
-      const { task } = sensorTask("stays quiet while disabled", {
-        disabled: true,
-      });
       await task.register();
 
-      const trigger = task.trigger as RandomSensor;
-      await trigger.sample();
+      return task.steps[0] as BLE;
+    }
 
-      expect(trigger.enabled).to.equal(false);
-      expect(trigger.samples).to.have.lengthOf(0);
+    it("reads one entry per configured device without node-ble", async function () {
+      const reading = (await (
+        await ble("reads every device")
+      ).doHandleMessage(undefined, "a-trace")) as any;
+
+      expect(Object.keys(reading.devices)).to.deep.equal(["phone", "watch"]);
+      expect(reading.metadata.timestamp).to.be.an.instanceOf(Date);
+    });
+
+    it("reports rssi as a number, not a string", async function () {
+      const reading = (await (
+        await ble("reports numbers")
+      ).doHandleMessage(undefined, "a-trace")) as any;
+
+      for (const label of ["phone", "watch"]) {
+        expect(reading.devices[label].rssi, label).to.be.a("number");
+        expect(reading.devices[label].rssi, label).to.be.within(-95, -40);
+      }
+    });
+
+    it("leaves out a device it did not see, rather than inventing a floor", async function () {
+      const reader = await ble("omits an unseen device");
+      // The virtual path always answers, so absence is driven through the real
+      // one with an adapter that never turns the second device up.
+      reader.config.virtual = false;
+      reader.adapter = {
+        isDiscovering: async () => true,
+        startDiscovery: async () => {},
+        waitDevice: async (address: string) => {
+          if (address !== DEVICES[0].address) throw new Error("not found");
+          return { getRSSI: async () => -63 };
+        },
+      } as any;
+
+      const reading = (await reader.read(undefined, "a-trace")) as any;
+
+      expect(reading.devices).to.deep.equal({ phone: { rssi: -63 } });
+    });
+
+    it("keeps its device handles to itself", async function () {
+      const first = await ble("first tracker");
+      const second = await ble("second tracker");
+
+      first.devices["00:00:00:00:00:01"] = {} as any;
+
+      expect(second.devices).to.deep.equal({});
+      expect(first.devices).to.not.equal(second.devices);
     });
   });
 
@@ -1159,19 +1133,6 @@ describe("modules", function () {
       return task.startMessage(message as any);
     }
 
-    // For the throw sites the config shapes cannot reach: a basePath always
-    // makes message.out an object, and a `path` config always defines
-    // context.path, so both are driven through the method directly.
-    async function step(config: object) {
-      const task = new Task(
-        { steps: [{ type: "transform:aggregate", ...config } as any] },
-        "aggregates directly",
-      );
-      await task.register();
-
-      return task.steps[0] as Aggregate;
-    }
-
     it("aggregates a bare array of numbers", async function () {
       expect(
         await aggregate("sums an array", { aggregation: "sum" }, [1, 2, 3]),
@@ -1248,18 +1209,6 @@ describe("modules", function () {
       ).to.be.rejectedWith(/Expected to find a number array but did not!/);
     });
 
-    it("refuses to write a primitive aggregation onto a non-object", async function () {
-      const aggregator = await step({ aggregation: "sum" });
-
-      expect(() =>
-        aggregator.transformPrimitiveReadingArray({
-          message: { in: [1, 2, 3], out: "not an object" },
-          basePath: "readings",
-          current: "readings",
-        } as Context),
-      ).to.throw(/Expected to find an object!/);
-    });
-
     it("refuses a basePath that does not point at an array", async function () {
       await expect(
         aggregate(
@@ -1273,22 +1222,8 @@ describe("modules", function () {
         /"basePath" "readings" should point at an array, but found a number/,
       );
     });
-
-    it("refuses an aggregation with nowhere to write its result", async function () {
-      const aggregator = await step({ path: "temp", aggregation: "latest" });
-
-      expect(() =>
-        aggregator.transformSimpleReadingArray({
-          message: { in: [{ temp: 1 }], out: undefined },
-          current: "",
-          path: undefined,
-        } as Context),
-      ).to.throw(/Need either context.current or context.path to be defined./);
-    });
   });
 });
 
 // trigger:infrared is left out: its virtual path does nothing but set enabled,
-// so there is no behavior to assert. trigger:ble-tracker is left out too, but
-// only because these tests predate the virtual RSSI reader added in 3256e7a --
-// it now has a seam, and a virtual sample is worth covering.
+// so there is no behavior to assert.

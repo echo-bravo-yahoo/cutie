@@ -103,17 +103,13 @@ export default class ThermalPrinter extends Output {
       typeof message === "string" ? message : JSON.stringify(message);
 
     if (this.config.virtual) {
-      this.info(`Would print (virtual):\n${text}`, {
-        topic: this.logPrefix,
-        traceId,
-      });
+      this.info(`Would print (virtual):\n${text}`, { traceId });
 
       return message;
     }
 
     if (!this.printer) {
       this.error("Cannot print; the thermal printer is not enabled.", {
-        topic: this.logPrefix,
         traceId,
       });
 
@@ -128,7 +124,7 @@ export default class ThermalPrinter extends Output {
     this.printer.printLine("\n\n\n");
 
     await new Promise<void>((resolve) => this.printer.print(() => resolve()));
-    this.info("Printed a message.", { topic: this.logPrefix, traceId });
+    this.info("Printed a message.", { traceId });
 
     return message;
   }
@@ -145,7 +141,7 @@ export default class ThermalPrinter extends Output {
         ) => PrinterInstance;
       }>("thermalprinter", "output:thermal-printer");
 
-      this.info("Enabling thermal printer...", { topic: this.logPrefix });
+      this.info("Enabling thermal printer...");
 
       await new Promise<void>((resolve, reject) => {
         this.serialPort = new SerialPort({
@@ -154,9 +150,7 @@ export default class ThermalPrinter extends Output {
         });
 
         this.serialPort.on("error", (error: Error) =>
-          this.error(`Thermal printer serial error: ${error}.`, {
-            topic: this.logPrefix,
-          }),
+          this.error(`Thermal printer serial error: ${error}.`),
         );
 
         this.serialPort.on("open", () => {
@@ -178,7 +172,7 @@ export default class ThermalPrinter extends Output {
       });
     }
 
-    this.info("Enabled thermal printer.", { topic: this.logPrefix });
+    this.info("Enabled thermal printer.");
     this.enabled = true;
   }
 
@@ -188,7 +182,7 @@ export default class ThermalPrinter extends Output {
       this.serialPort.close();
       this.serialPort = undefined;
     }
-    this.info("Disabled thermal printer.", { topic: this.logPrefix });
+    this.info("Disabled thermal printer.");
     this.enabled = false;
   }
 }

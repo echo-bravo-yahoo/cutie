@@ -81,6 +81,14 @@ export function targetingOptions(verb: string): Record<string, OptionSchema> {
   };
 }
 
+// Joins a target path onto the position being walked, so that "" stays "" and
+// a walked entry keeps its index: ("readings[0]", "temp") => "readings[0].temp".
+function joinPath(current: string, path?: string) {
+  if (!path) return current;
+
+  return current ? `${current}.${path}` : path;
+}
+
 export interface Context {
   message: { in: Message; out?: Message };
   basePath?: string;
@@ -89,16 +97,24 @@ export interface Context {
   paths?: Record<string, any>;
   current: string;
   pathChosen?: string;
+  // Where the array being collapsed whole lives, set only when walksArrays is
+  // false and there is an array to collapse. Its presence is what tells
+  // doTransformSingle to hand the array itself to transformSingle, and what
+  // tells a transform that `path` names a key inside each entry rather than a
+  // place in the output.
+  arrayPath?: string;
 }
 
 export default abstract class Transform extends Step {
   declare config: TransformConfig;
-  preservePaths: boolean;
   // Set false by a transform that overrides transform() without calling super,
   // so it drives the whole message itself and the targeting options mean
   // nothing to it. transform:munge overrides transform() but does call super,
   // so it stays true.
   honorsTargeting = true;
+  // Whether an array at the target is a list to map over or data to collapse.
+  // transform:aggregate is the one that collapses.
+  walksArrays = true;
   // TO-DO: value's type here is probably string|number|undefined
   abstract transformSingle(
     value: Message,
@@ -108,8 +124,6 @@ export default abstract class Transform extends Step {
 
   constructor(config: TransformConfig, task: Task, index?: number) {
     super(config, task, index);
-
-    this.preservePaths = true;
   }
 
   // A schema describes top-level options, so it cannot see inside `paths`. A
@@ -177,19 +191,12 @@ export default abstract class Transform extends Step {
     isPrimitiveReading: boolean,
     messageIn: Message,
   ) {
-    if (isArrayOfReadings) {
-      if (hasBasePath) {
-        return {};
-      } else {
-        return [];
-      }
-    } else if (isPrimitiveReading) {
-      return undefined;
-    } else if (this.preservePaths) {
-      return messageIn;
-    } else {
-      return {};
-    }
+    // A collapsed array writes one value at a named path rather than an entry
+    // per element, so it starts from an object even with no basePath.
+    if (isArrayOfReadings) return hasBasePath || !this.walksArrays ? {} : [];
+    if (isPrimitiveReading) return undefined;
+
+    return messageIn;
   }
 
   transform(message: Message, traceId: string) {
@@ -227,11 +234,15 @@ export default abstract class Transform extends Step {
       path: (this.config as SingleConfig).path,
       paths: (this.config as MultiConfig).paths,
       current: this.config.basePath || "",
+      arrayPath:
+        isArrayOfReadings && !this.walksArrays
+          ? this.config.basePath || ""
+          : undefined,
     };
 
     this.debug(
       "Transforming message.",
-      { topic: this.logPrefix, traceId },
+      { traceId },
       {
         isArrayOfReadings,
         isSimpleReading,
@@ -241,27 +252,19 @@ export default abstract class Transform extends Step {
       },
     );
 
-    if (isArrayOfReadings) {
-      if (isPrimitiveReading) {
-        this.transformPrimitiveReadingArray(context);
-      } else if (isSimpleReading) {
-        this.transformSimpleReadingArray(context);
-      } else if (isCompositeReading) {
-        this.transformCompositeReadingArray(context);
-      }
+    // A primitive reading and a simple one differ only in whether `path` is
+    // set, which joinPath already handles, so both take transformOne.
+    const step = isCompositeReading ? this.transformEach : this.transformOne;
+
+    if (isArrayOfReadings && this.walksArrays) {
+      this.walkArray(context, step);
     } else {
-      if (isPrimitiveReading) {
-        this.transformPrimitiveReading(context);
-      } else if (isSimpleReading) {
-        this.transformSimpleReading(context);
-      } else if (isCompositeReading) {
-        this.transformCompositeReading(context);
-      }
+      step.call(this, context);
     }
 
     this.debug(
       "Transformed message.",
-      { topic: this.logPrefix, traceId },
+      { traceId },
       {
         context: {
           in: context.message.in,
@@ -280,7 +283,7 @@ export default abstract class Transform extends Step {
         : this.config;
     const oldValue = get(
       context.message.in,
-      context.current,
+      context.arrayPath ?? context.current,
       context.message.in,
     );
     const newValue = this.transformSingle(oldValue, config, context);
@@ -297,57 +300,39 @@ export default abstract class Transform extends Step {
     }
   }
 
-  transformPrimitiveReadingArray(context: Context) {
+  // Runs `step` once per entry of the array at the current position, with
+  // `current` moved onto that entry.
+  walkArray(context: Context, step: (context: Context) => void) {
     const array = get(context.message.in, context.current, context.message.in);
     if (!isArray(array)) return;
 
     for (let i = 0; i < array.length; i++) {
       context.current = `${context.basePath || ""}[${i}]`;
-      this.transformPrimitiveReading(context);
+      step.call(this, context);
     }
   }
 
-  transformSimpleReadingArray(context: Context) {
-    const array = get(context.message.in, context.current, context.message.in);
-    if (!isArray(array)) return;
-
-    for (let i = 0; i < array.length; i++) {
-      context.current = `${context.basePath || ""}[${i}]`;
-      this.transformSimpleReading(context);
-    }
+  // The whole message, or the one value `path` names. A collapsed array writes
+  // at the array's own position, because there `path` names a key inside each
+  // entry; with no basePath there is no such position, so `path` names one.
+  transformOne(context: Context) {
+    this.doTransformSingle({
+      ...context,
+      current:
+        context.arrayPath === undefined
+          ? joinPath(context.current, context.path)
+          : context.current || context.path || "",
+    });
   }
 
-  transformCompositeReadingArray(context: Context) {
-    const array = get(context.message.in, context.current, context.message.in);
-    if (!isArray(array)) return;
-
-    for (let i = 0; i < array.length; i++) {
-      context.current = `${context.basePath || ""}[${i}]`;
-      this.transformCompositeReading(context);
-    }
-  }
-
-  transformCompositeReading(context: Context) {
+  // One target per `paths` entry, each written under the current position.
+  transformEach(context: Context) {
     for (const path of Object.keys((this.config as MultiConfig).paths || {})) {
       this.doTransformSingle({
         ...context,
-        current: `${context.current ? `${context.current}.` : ""}${path}`,
+        current: joinPath(context.current, path),
         pathChosen: path,
       });
     }
-  }
-
-  transformPrimitiveReading(context: Context) {
-    this.doTransformSingle({
-      ...context,
-      current: `${context.current}${context.path && context.current ? "." : ""}${context.path || ""}`,
-    });
-  }
-
-  transformSimpleReading(context: Context) {
-    this.doTransformSingle({
-      ...context,
-      current: `${context.current}${context.path && context.current ? "." : ""}${context.path || ""}`,
-    });
   }
 }

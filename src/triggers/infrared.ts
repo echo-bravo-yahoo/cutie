@@ -45,7 +45,6 @@ export default class Infrared extends Trigger {
         });
         this.info(
           `Enabled infrared receiver on pin ${this.config.receiverPin}.`,
-          { topic: this.logPrefix },
         );
       }
     }
@@ -57,7 +56,7 @@ export default class Infrared extends Trigger {
     if (this.infraredReceiver) {
       this.infraredReceiver.removeAllListeners("alert");
       this.infraredReceiver = undefined;
-      this.info("Disabled infrared receiver.", { topic: this.logPrefix });
+      this.info("Disabled infrared receiver.");
     }
 
     this.enabled = false;

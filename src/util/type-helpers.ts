@@ -5,6 +5,7 @@ import Output from "./Output.js";
 import Read from "./Read.js";
 import Step from "./Step.js";
 import Task from "./Task.js";
+import TaskModule from "./TaskModule.js";
 import Transform from "./Transform.js";
 
 export const KINDS = [
@@ -22,14 +23,13 @@ export interface ProviderConfig {
 }
 
 export function isStep(configurable: Configurable): configurable is Step {
-  return (
-    !isConnection(configurable) &&
-    !isTask(configurable) &&
-    (isTrigger(configurable) ||
-      isOutput(configurable) ||
-      isTransform(configurable) ||
-      isRead(configurable))
-  );
+  return configurable instanceof Step;
+}
+
+export function isTaskModule(
+  configurable: Configurable,
+): configurable is TaskModule {
+  return configurable instanceof TaskModule;
 }
 
 // A config's `type` is the whole "kind:subKind" string, but an instance stores
@@ -50,10 +50,8 @@ export const isOutput = (c: Configurable): c is Output => isKind(c, "output");
 export const isConnection = (c: Configurable): c is Connection =>
   isKind(c, "connection");
 
-// A Task always holds an array of constructed steps, even when its config
-// declared none, which is what separates it from a Step or a Connection.
 export function isTask(configurable: Configurable): configurable is Task {
-  return !!configurable && Array.isArray((configurable as Task).steps);
+  return configurable instanceof Task;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

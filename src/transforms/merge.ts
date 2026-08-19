@@ -24,13 +24,7 @@ export default class Merge extends Transform {
     if (typeof message !== "object") return message;
     return mergeWith(
       message,
-      ...this.config.sources.map((source) => {
-        if (typeof source === "object") {
-          return source;
-        } else {
-          return this.interpolatePath(source);
-        }
-      }),
+      ...this.config.sources.map((source) => this.interpolateDeep(source)),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (objValue: any, srcValue: any) =>
         isArray(objValue)
@@ -50,12 +44,12 @@ export default class Merge extends Transform {
 export const schema: ModuleSchema = {
   type: "transform:merge",
   description:
-    "Merges values into the message. A source may be a literal object or a $$-prefixed path to look one up.",
+    "Merges values into the message. A source may be a literal object or a template that resolves to one.",
   options: {
     sources: {
       type: "array",
       description:
-        'What to merge in, in order. Each entry is either an object or a "$$"-prefixed path such as "$$stash.device".',
+        'What to merge in, in order. Each entry is either an object or a template naming one, such as "${stash.device}".',
       required: true,
       interpolated: true,
     },

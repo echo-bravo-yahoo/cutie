@@ -138,7 +138,7 @@ Stores a value in the stash, a scratch space belonging to one message.
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
 | `key` | string | **yes** |  |  | Where to store the value; a dotted key writes a nested path. Supports ${...} interpolation. |
-| `value` | any | **yes** |  |  | The value to store. A string is interpolated first. |
+| `value` | any | **yes** |  |  | The value to store. A string is interpolated first; one that is exactly one template keeps the resolved value's type. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 

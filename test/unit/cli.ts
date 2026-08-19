@@ -15,7 +15,7 @@ import { setGlobals } from "../../src/index.js";
 import * as realConfigs from "../../src/util/configs.js";
 import type { fetchConfig } from "../../src/util/configs.js";
 import type { writeFile } from "fs";
-import { Connection } from "../../src/util/Connection.js";
+import { ConfigProvider } from "../../src/util/Connection.js";
 import MQTTConnection from "../../src/connections/mqtt.js";
 import { DownloadArgs } from "../../src/cli/download.js";
 import { UploadArgs } from "../../src/cli/upload.js";
@@ -59,9 +59,9 @@ describe("the CLI's", function () {
     mockWriteFile: Mock<typeof writeFile>,
     mockReaddir: Mock<typeof realFsPromises.readdir>,
     mockReadYaml: Mock<(path: string) => Promise<unknown>>,
-    mockFetchSingleConfig: Mock<Connection["fetchSingleConfig"]>,
-    mockFetchAllConfigs: Mock<Connection["fetchAllConfigs"]>,
-    mockUploadSingleConfig: Mock<Connection["uploadSingleConfig"]>,
+    mockFetchSingleConfig: Mock<ConfigProvider["fetchSingleConfig"]>,
+    mockFetchAllConfigs: Mock<ConfigProvider["fetchAllConfigs"]>,
+    mockUploadSingleConfig: Mock<ConfigProvider["uploadSingleConfig"]>,
     download: (args: DownloadArgs) => Promise<any>,
     upload: (args: UploadArgs) => Promise<any>;
 

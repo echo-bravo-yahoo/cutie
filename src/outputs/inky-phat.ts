@@ -256,7 +256,7 @@ export default class InkyPhat extends Output {
     if (minGap && this.lastRefresh > 0 && since < minGap) {
       this.debug(
         `Skipping refresh; ${Math.round((minGap - since) / 1000)}s until the panel may be redrawn again.`,
-        { topic: this.logPrefix, traceId },
+        { traceId },
       );
       return message;
     }
@@ -271,7 +271,7 @@ export default class InkyPhat extends Output {
       this.lastRefresh = Date.now();
       this.info(
         `Would draw (virtual): ${WIDTH}x${HEIGHT}, ${this.histogram(indices)}.`,
-        { topic: this.logPrefix, traceId },
+        { traceId },
       );
       return message;
     }
@@ -299,7 +299,7 @@ export default class InkyPhat extends Output {
       // output among many, and every other step in the pipeline is unaffected
       // by it. The timestamp above still stands, so a panel that keeps failing
       // is retried on the normal schedule rather than on every message.
-      this.error(`Refresh failed: ${error}`, { topic: this.logPrefix });
+      this.error(`Refresh failed: ${error}`);
     }
     this.lastRefresh = Date.now();
 
@@ -310,7 +310,7 @@ export default class InkyPhat extends Output {
     if (this.config.virtual) {
       // Returns before the package is even reached: a virtual instance draws
       // nothing, so nothing it would draw with has to be installed.
-      this.info("Enabled inky phat (virtual).", { topic: this.logPrefix });
+      this.info("Enabled inky phat (virtual).");
       this.enabled = true;
       return;
     }
@@ -375,15 +375,13 @@ export default class InkyPhat extends Output {
       this.config.spiDevice ? { spiDevice: this.config.spiDevice } : {},
     );
 
-    this.info(`Enabled inky phat (gpio base ${base}).`, {
-      topic: this.logPrefix,
-    });
+    this.info(`Enabled inky phat (gpio base ${base}).`);
     this.enabled = true;
   }
 
   async disable() {
     if (this.panel) await this.panel.destroy();
-    this.info("Disabled inky phat.", { topic: this.logPrefix });
+    this.info("Disabled inky phat.");
     this.enabled = false;
   }
 }

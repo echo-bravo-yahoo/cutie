@@ -1,6 +1,4 @@
-import { ConfigFile } from "../util/configs.js";
 import { Connection, ConnectionConfig } from "../util/Connection.js";
-import { ProviderConfig } from "../util/type-helpers.js";
 import { ModuleSchema } from "../util/schema.js";
 
 export interface InfluxDBConnectionConfig extends ConnectionConfig {
@@ -16,24 +14,6 @@ export default class InfluxDBConnection extends Connection {
 
   constructor(config: InfluxDBConnectionConfig) {
     super(config);
-  }
-
-  fetchSingleConfig(_nodeName: string): Promise<ConfigFile> {
-    throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
-  }
-
-  fetchAllConfigs() {
-    throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
-  }
-
-  // @ts-expect-error should throw on call
-  fetchConfig(_provider: ProviderConfig): void {
-    throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
-  }
-
-  // @ts-expect-error should throw on call
-  uploadSingleConfig(_nodeName: string, _config: ConfigFile) {
-    throw new Error(`The InfluxDB connection cannot be used to fetch config.`);
   }
 
   async enable() {

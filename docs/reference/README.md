@@ -6,8 +6,6 @@ Every option every module accepts, generated from the schemas the runtime valida
 
 ## triggers
 
-- [`trigger:ble-tracker`](./triggers.md#triggerble-tracker)
-- [`trigger:bme680`](./triggers.md#triggerbme680)
 - [`trigger:cron`](./triggers.md#triggercron)
 - [`trigger:event`](./triggers.md#triggerevent)
 - [`trigger:file-change`](./triggers.md#triggerfile-change)
@@ -16,11 +14,11 @@ Every option every module accepts, generated from the schemas the runtime valida
 - [`trigger:logs`](./triggers.md#triggerlogs)
 - [`trigger:mqtt`](./triggers.md#triggermqtt)
 - [`trigger:once`](./triggers.md#triggeronce)
-- [`trigger:random`](./triggers.md#triggerrandom)
 - [`trigger:repeat`](./triggers.md#triggerrepeat)
 
 ## reads
 
+- [`read:ble`](./reads.md#readble)
 - [`read:bme280`](./reads.md#readbme280)
 - [`read:bme680`](./reads.md#readbme680)
 - [`read:constant`](./reads.md#readconstant)

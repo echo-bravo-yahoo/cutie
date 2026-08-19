@@ -24,7 +24,7 @@ export default class Cron extends Trigger {
   }
 
   errorHandler(error: unknown) {
-    this.error(`Cron task failed: ${error}`, { topic: this.logPrefix });
+    this.error(`Cron task failed: ${error}`);
   }
 
   async enable() {
@@ -39,13 +39,13 @@ export default class Cron extends Trigger {
         ),
       { errorHandler: this.errorHandler.bind(this) },
     );
-    this.info("Enabled cron task.", { topic: this.logPrefix });
+    this.info("Enabled cron task.");
     this.enabled = true;
   }
 
   async disable() {
     scheduler.clearTimeoutOrInterval(this.cronHandle);
-    this.info("Disabled cron task.", { topic: this.logPrefix });
+    this.info("Disabled cron task.");
     this.enabled = false;
   }
 }

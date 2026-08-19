@@ -15,6 +15,16 @@ export type ParserDefaults = Pick<
 > &
   parser.Options;
 
+export function mergeParserArgs(
+  defaults: ParserDefaults,
+  overrides: parser.Options,
+) {
+  const results = defaults;
+  if (overrides.string)
+    defaults.string = [...defaults.string, ...overrides.string];
+  return results;
+}
+
 export const LOG_LEVELS: ReadonlyArray<Verbosity> = [
   "trace",
   "debug",

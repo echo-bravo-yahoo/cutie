@@ -387,14 +387,19 @@ describe("registerConnections", function () {
   });
 
   it("logs a connection failure instead of crashing, and still resolves", async function () {
-    const emitted: Array<{ message: string; verbosity: string }> = [];
-    const errored: Array<{ message: string; object?: object }> = [];
+    const emitted: Array<{
+      message: string;
+      verbosity: string;
+      object?: object;
+    }> = [];
     setGlobals({
       logger: {
-        emit: (message: string, verbosity: string) =>
-          emitted.push({ message, verbosity }),
-        error: (message: string, object?: object) =>
-          errored.push({ message, object }),
+        emit: (
+          message: string,
+          verbosity: string,
+          _topic: string,
+          object?: object,
+        ) => emitted.push({ message, verbosity, object }),
         logListeners: [],
       },
       connections: [],
@@ -412,17 +417,15 @@ describe("registerConnections", function () {
       ]),
     ).to.not.be.rejected;
 
-    expect(
-      emitted.some(
-        (line) => line.verbosity === "error" && line.message.includes("broker"),
-      ),
-    ).to.equal(true);
-
-    // Connections register before tasks, so no trigger:logs listener can be
-    // active yet -- emit() alone would be invisible on a real run. This
-    // asserts the direct-pino fallback fires too.
-    expect(errored.some((line) => line.message.includes("broker"))).to.equal(
-      true,
+    // One call, not two: emit() writes to pino before it fans out, so the
+    // failure reaches the console and the log bus from the same call site.
+    const [failure] = emitted.filter(
+      (line) => line.verbosity === "error" && line.message.includes("broker"),
     );
+
+    expect(failure, "an error line naming the connection").to.not.equal(
+      undefined,
+    );
+    expect(failure.object).to.have.nested.property("connection.name", "broker");
   });
 });

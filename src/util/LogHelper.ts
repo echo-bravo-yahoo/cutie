@@ -4,6 +4,30 @@ import loggerFactory, { Logger, LoggerOptions } from "pino";
 
 import Logs, { Verbosity } from "../triggers/logs.js";
 import { LOG_LEVELS } from "./cli.js";
+import { Configurable } from "./Configurable.js";
+import { globals } from "./globals.js";
+
+// Where the runtime's own lines land. Code that is not a Configurable has no
+// logPrefix to log under, but its lines still belong on the bus: a node whose
+// whole job is republishing its own logs must not lose the one about the
+// uncaught exception that killed it.
+export const CORE_TOPIC = "core.runtime";
+
+// The ergonomic wrapper a Configurable gets from `this.info`, for the code that
+// is not one.
+export function logAt(
+  topic: string,
+  verbosity: Verbosity,
+  message: string,
+  object?: object,
+) {
+  globals.logger.emit(
+    Configurable.formatLogLine(message, { topic }),
+    verbosity,
+    topic,
+    object,
+  );
+}
 
 export interface SerializedLogLine {
   log: string;
@@ -49,28 +73,31 @@ export default class LogHelper {
     this.logListeners = [];
   }
 
+  // Through emit rather than straight to pino, so that a line from the runtime
+  // itself reaches a trigger:logs task the same way a module's line does. emit
+  // writes to pino first, so the console sees exactly what it saw before.
   info(message: string, object?: object) {
-    this.logger.info(object || {}, message);
+    this.emit(message, "info", CORE_TOPIC, object);
   }
 
   error(message: string, object?: object) {
-    this.logger.error(object || {}, message);
+    this.emit(message, "error", CORE_TOPIC, object);
   }
 
   debug(message: string, object?: object) {
-    this.logger.debug(object || {}, message);
+    this.emit(message, "debug", CORE_TOPIC, object);
   }
 
   warn(message: string, object?: object) {
-    this.logger.warn(object || {}, message);
+    this.emit(message, "warn", CORE_TOPIC, object);
   }
 
   trace(message: string, object?: object) {
-    this.logger.trace(object || {}, message);
+    this.emit(message, "trace", CORE_TOPIC, object);
   }
 
   fatal(message: string, object?: object) {
-    this.logger.fatal(object || {}, message);
+    this.emit(message, "fatal", CORE_TOPIC, object);
   }
 
   meetsLevel(verbosity: Verbosity) {

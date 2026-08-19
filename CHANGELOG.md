@@ -22,10 +22,12 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 - The stash belongs to one message rather than to the task, which is what `examples/interpolation.yaml` always claimed. Two messages in flight no longer share it, and it is no longer reachable from outside the message.
 - `output:stash` writes with a path setter, so a dotted key such as `device.name` nests the way `read:stash` reads it back rather than creating a literal flat key of that name.
 - `trigger:logs` defaults `minVerbosity` to `warn` rather than `trace`. A logs task that wants everything has to ask for it.
-
-### Deprecated
-
-- The sensor-trigger form, `trigger:random` and `trigger:ble-tracker`, is deprecated in favor of a trigger into a read into `transform:aggregate`, which separates when to sample from what to read and how to collapse the samples. See [sensors.md](./sensors.md).
+- The sensor-trigger form is gone. `trigger:random`, `trigger:bme680`, and `trigger:ble-tracker` are removed, along with the `samplingInterval`, `reportingInterval`, and `sampling` options they shared. A trigger into a read into `transform:accumulate` into `transform:aggregate` does the same work and says where each schedule and each aggregation lives; see [sensors.md](./sensors.md) for the replacement shape.
+- `trigger:random` becomes `trigger:repeat` (or `trigger:cron`) into `read:random`, and `trigger:bme680` becomes the same into `read:bme680`.
+- `trigger:ble-tracker` becomes `read:ble`, which renames `devices: [{alias, macAddress}]` to `devices: [{label, address}]`, reports each reading under `devices` rather than at the top level, and reports `rssi` as a number rather than a string. A device that was not seen is left out of the reading rather than reported at `-99`.
+- There is one interpolation syntax. The `$$path` form is gone; write `${path}`. A string that is exactly one `${path}` now yields the value with its type intact rather than its stringification, which is what `$$` existed to do. A `${...}` inside longer text still splices, and a template naming something absent still reads as `undefined`.
+- `transform:merge`'s `sources` take `"${stash.device}"` where they took `"$$stash.device"`. Every source is interpolated now, a literal object included, so a `${...}` inside one is resolved rather than passed through as text.
+- `output:stash` stores the value's own type: `value: "${message.count}"` stashes the number `5` where it used to stash the string `"5"`. A `key` is still a string, as are topics, file paths, and shell commands.
 
 ### Added
 
@@ -36,6 +38,7 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 - `transform:accumulate` takes a `maxAge`, so a slow topic's partial batch is passed on rather than held indefinitely, and a pending batch is flushed on shutdown instead of dropped.
 - `output:mqtt` takes `retain`, `qos`, and `raw`, and `send` now awaits the publish.
 - `read:file` supports `virtual` with a `virtualValue`. A read with nothing external to stand in for now rejects `virtual` rather than ignoring it.
+- `read:ble` reads the Bluetooth signal strength of named devices, one sample per call, and supports `virtual`. It replaces `trigger:ble-tracker`.
 - A duration option accepts a unit suffix: `interval: "5m"` alongside `interval: 300000`.
 
 ### Fixed
@@ -51,3 +54,6 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 - `cutie download` and `cutie upload` agree on a node's name, so downloading a fleet and uploading it again republishes each node to the topic it came from.
 - `transform:round`'s `precision` and the BME sensors' `i2cAddress` accept a literal `0` instead of falling back to their defaults.
 - A config that is empty, or a YAML file that does not parse, is reported with the resolved path and, for a syntax error, the line and column.
+- The runtime's own log lines reach a `trigger:logs` task, under the topic `core.runtime`. The uncaught-exception line, the shutdown lines, and the connection-registration failures all used to go to the console alone, which is exactly the set of lines a node republishing its own logs most needs to send on.
+- A `configProvider` naming a connection that cannot serve one is refused by name at startup, rather than throwing a generic error from a stub method partway through the fetch.
+- An unrecognized `connections` entry is now an error. It used to be skipped without a word, so a typo left a task naming a connection that was never built.

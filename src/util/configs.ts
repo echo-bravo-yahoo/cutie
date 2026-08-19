@@ -4,7 +4,7 @@ import { normalize, parse } from "node:path";
 import { read } from "node-yaml";
 
 import { globals } from "../index.js";
-import { ConnectionConfig } from "./Connection.js";
+import { ConnectionConfig, requireConfigProvider } from "./Connection.js";
 import { getConnection, registerConnections } from "./connections.js";
 import { TaskConfig } from "./Task.js";
 import { ProviderConfig } from "./type-helpers.js";
@@ -145,7 +145,9 @@ async function fetchCachedConfig(
 async function fetchRemoteConfig(config: RemoteConfigFile) {
   const providerConfig = config.configProvider;
   await registerConnections(config.connections);
-  const connection = getConnection(config.configProvider.connectionName);
+  const connection = requireConfigProvider(
+    getConnection(config.configProvider.connectionName),
+  );
   globals.logger.info(
     `Fetching remote config from "${connection.name}" provider (type: ${connection.subKind}).`,
   );

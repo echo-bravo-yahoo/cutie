@@ -637,8 +637,11 @@ describe("reading the config file", function () {
         JSON.stringify(remoteConfig),
       );
 
+      // The connection is named, and named as the kind it is: only
+      // connection:mqtt implements ConfigProvider, so this is refused before
+      // any fetch is attempted rather than throwing from a stub.
       await expect(fetchConfig(path)).to.be.rejectedWith(
-        /Could not fetch the remote config .*cannot be used to fetch config.*could not read the cached copy at/s,
+        /Could not fetch the remote config .*Connection "influx" is a "connection:influxdb", which cannot serve a config.*could not read the cached copy at/s,
       );
       globals.connections = [];
     });
@@ -651,7 +654,7 @@ describe("reading the config file", function () {
       await writeConfig("bad-cache.conf.json.cache.json", "not json at all");
 
       await expect(fetchConfig(path)).to.be.rejectedWith(
-        /Could not fetch the remote config .*cannot be used to fetch config.*is not valid JSON/s,
+        /Could not fetch the remote config .*which cannot serve a config.*is not valid JSON/s,
       );
       globals.connections = [];
     });

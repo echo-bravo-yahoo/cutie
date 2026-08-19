@@ -26,12 +26,12 @@ export default class Stash extends Read {
   }
 
   async enable() {
-    this.info("Enabled reading from stash.", { topic: this.logPrefix });
+    this.info("Enabled reading from stash.");
     this.enabled = true;
   }
 
   async disable() {
-    this.info("Disabled reading from stash.", { topic: this.logPrefix });
+    this.info("Disabled reading from stash.");
     this.enabled = false;
   }
 }

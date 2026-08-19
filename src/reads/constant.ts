@@ -19,12 +19,12 @@ export default class Constant extends Read {
   }
 
   async enable() {
-    this.info("Enabled constant read.", { topic: this.logPrefix });
+    this.info("Enabled constant read.");
     this.enabled = true;
   }
 
   async disable() {
-    this.info("Disabled constant read.", { topic: this.logPrefix });
+    this.info("Disabled constant read.");
     this.enabled = false;
   }
 }

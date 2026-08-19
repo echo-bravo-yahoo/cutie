@@ -1,7 +1,11 @@
 import mqtt from "mqtt";
 import MqttTopics from "mqtt-topics";
 
-import { Connection, ConnectionConfig } from "../util/Connection.js";
+import {
+  ConfigProvider,
+  Connection,
+  ConnectionConfig,
+} from "../util/Connection.js";
 import { globals } from "../index.js";
 import { isMQTT } from "../triggers/mqtt.js";
 import { Message, ProviderConfig } from "../util/type-helpers.js";
@@ -32,7 +36,10 @@ export interface MQTTProviderConfig extends ProviderConfig {
   topic: string;
 }
 
-export default class MQTTConnection extends Connection {
+export default class MQTTConnection
+  extends Connection
+  implements ConfigProvider
+{
   declare config: MQTTConnectionConfig;
   // @ts-expect-error this will be instantiated by enabling (before it's accessed)
   connection: mqtt.MqttClient;
@@ -124,7 +131,6 @@ export default class MQTTConnection extends Connection {
     // overwrite it, leaking the first socket for the life of the process
     globals.logger.info(
       `Fetching remote config from MQTT topic "${provider.topic}" using client ${this.connection.options.clientId}.`,
-      { topic: this.logPrefix },
     );
     await this.connection.subscribeAsync(provider.topic);
 
@@ -226,7 +232,7 @@ export default class MQTTConnection extends Connection {
 
     this.debug(
       `Received new message on topic "${topic}".`,
-      { topic: this.logPrefix, traceId },
+      { traceId },
       { message },
     );
     let triggers = 0;
@@ -249,10 +255,7 @@ export default class MQTTConnection extends Connection {
       }
     }
 
-    this.debug(`Found ${triggers} matching triggers.`, {
-      topic: this.logPrefix,
-      traceId,
-    });
+    this.debug(`Found ${triggers} matching triggers.`, { traceId });
   }
 
   async subscribe(
@@ -295,7 +298,6 @@ export default class MQTTConnection extends Connection {
     if (!this.connection) {
       this.debug(
         `Dropped a publish to "${topic}"; connection "${this.name}" never connected.`,
-        { topic: this.logPrefix },
       );
       return;
     }

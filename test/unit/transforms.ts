@@ -431,6 +431,71 @@ describe("transform options", function () {
     });
   });
 
+  describe("an array at the target", function () {
+    // walksArrays is what separates the two: transform:round maps over the
+    // entries, transform:aggregate collapses them.
+    it("is collapsed at a path when the transform does not walk arrays", async function () {
+      expect(
+        await through(
+          { type: "transform:aggregate", path: "temp", aggregation: "sum" },
+          [{ temp: 1 }, { temp: 2 }],
+          "collapses at a path",
+        ),
+      ).to.deep.equal({ temp: 3 });
+    });
+
+    it("is collapsed at each paths entry when the transform does not walk arrays", async function () {
+      expect(
+        await through(
+          {
+            type: "transform:aggregate",
+            paths: {
+              temp: { aggregation: "sum" },
+              hum: { aggregation: "sum" },
+            },
+          },
+          [
+            { temp: 1, hum: 10 },
+            { temp: 2, hum: 20 },
+          ],
+          "collapses at each paths entry",
+        ),
+      ).to.deep.equal({ temp: 3, hum: 30 });
+    });
+
+    it("is collapsed whole when the transform does not walk arrays", async function () {
+      expect(
+        await through(
+          { type: "transform:aggregate", aggregation: "sum" },
+          [1, 2, 3],
+          "collapses the whole message",
+        ),
+      ).to.deep.equal(6);
+    });
+
+    it("is mapped over when the transform does walk arrays", async function () {
+      expect(
+        await through(
+          { type: "transform:round", path: "temp", precision: 1 },
+          [{ temp: 1.24 }, { temp: 2.28 }],
+          "maps over the entries",
+        ),
+      ).to.deep.equal([{ temp: 1.2 }, { temp: 2.3 }]);
+    });
+
+    it("is rejected when a basePath points at something else", async function () {
+      await expect(
+        through(
+          { type: "transform:round", basePath: "readings", path: "temp" },
+          { readings: { temp: 1.24 } },
+          "basePath at an object",
+        ),
+      ).to.be.rejectedWith(
+        /"basePath" "readings" should point at an array, but found an object/,
+      );
+    });
+  });
+
   describe("transform:uglify", function () {
     it("rejects spaces, which is prettify's option", async function () {
       await expect(

@@ -22,10 +22,7 @@ export default class Stash extends Output {
   async send(message: Message, traceId: string) {
     this.info(
       `Stashing value under key "${this.config.key}".`,
-      {
-        topic: this.logPrefix,
-        traceId,
-      },
+      { traceId },
       {
         event: message,
       },
@@ -40,11 +37,10 @@ export default class Stash extends Output {
         `"output:stash" can only run inside a message chain; nothing started this one.`,
       );
 
-    // Only strings are interpolated; anything else is stashed as-is.
-    const value =
-      typeof this.config.value === "string"
-        ? this.interpolateConfigString(this.config.value, { message })
-        : this.config.value;
+    // interpolateDeep, not interpolateConfigString: a value that is exactly one
+    // template is stashed with its type, so read:stash hands back the number
+    // the message carried rather than its stringification.
+    const value = this.interpolateDeep(this.config.value, { message });
 
     // `set`, not a plain assignment, so a dotted key writes the nested path
     // read:stash's `get` would read back.
@@ -72,7 +68,8 @@ export const schema: ModuleSchema = {
     },
     value: {
       type: "any",
-      description: "The value to store. A string is interpolated first.",
+      description:
+        "The value to store. A string is interpolated first; one that is exactly one template keeps the resolved value's type.",
       required: true,
       interpolated: true,
     },

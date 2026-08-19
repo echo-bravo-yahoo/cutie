@@ -2,7 +2,6 @@ import { getConnection } from "../util/connections.js";
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import MQTTConnection from "../connections/mqtt.js";
-import Step from "../util/Step.js";
 import { ModuleSchema } from "../util/schema.js";
 
 export interface MQTTConfig extends TriggerConfig {
@@ -12,8 +11,8 @@ export interface MQTTConfig extends TriggerConfig {
   topics: Array<string>;
 }
 
-export function isMQTT(step: Step): step is MQTT {
-  return !!step && Array.isArray((step as unknown as MQTT).config.topics);
+export function isMQTT(trigger: Trigger): trigger is MQTT {
+  return !!trigger && Array.isArray((trigger as unknown as MQTT).config.topics);
 }
 
 export default class MQTT extends Trigger {
@@ -35,7 +34,6 @@ export default class MQTT extends Trigger {
 
       this.info(
         `Started listening to MQTT topics ${this.config.topics.join(", ")} using client ${this.mqtt.connection.options.clientId}.`,
-        { topic: this.logPrefix },
       );
     }
     this.enabled = true;
@@ -46,7 +44,6 @@ export default class MQTT extends Trigger {
 
     this.info(
       `Stopped listening to MQTT topics ${this.config.topics.join(", ")} using client ${this.mqtt.connection.options.clientId}.`,
-      { topic: this.logPrefix },
     );
     this.enabled = false;
   }

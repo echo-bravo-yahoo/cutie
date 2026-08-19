@@ -1,6 +1,6 @@
-import { globals } from "../index.js";
+import { globals } from "./globals.js";
 import { applySchemaDefaults, getRegisteredSchema } from "./schema.js";
-import { isStep, Kind } from "./type-helpers.js";
+import { Kind } from "./type-helpers.js";
 
 export interface Config {
   disabled?: boolean;
@@ -19,17 +19,26 @@ function withSchemaDefaults(config: Config): Config {
 }
 
 export interface LogLineOptions {
-  topic: string;
+  // Defaults to the instance's own logPrefix, which is what every line in the
+  // tree wants; pass one only to log somewhere else deliberately.
+  topic?: string;
   traceId?: string;
 }
 
+type LogLine = (
+  msg: string,
+  opts?: LogLineOptions,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  obj?: Record<string, any>,
+) => void;
+
+// Task is the only direct subclass: a task is named by its key in the `tasks:`
+// record, while everything else a config declares carries a `type` and so is a
+// Module.
 export class Configurable {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  debug: (msg: string, opts: LogLineOptions, obj?: Record<string, any>) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  info: (msg: string, opts: LogLineOptions, obj?: Record<string, any>) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  error: (msg: string, opts: LogLineOptions, obj?: Record<string, any>) => void;
+  debug: LogLine;
+  info: LogLine;
+  error: LogLine;
   logPrefix: string;
   config: Config;
   enabled: boolean;
@@ -38,35 +47,25 @@ export class Configurable {
   kind: Kind | "unknown" = "unknown";
 
   constructor(config: Config, name: string) {
-    this.debug = (msg, opts, obj) => {
-      globals.logger.emit(
-        Configurable.formatLogLine(msg, opts),
-        "debug",
-        opts.topic,
-        obj,
-        opts.traceId,
-      );
-    };
+    const at =
+      (verbosity: "debug" | "info" | "error"): LogLine =>
+      (msg, opts = {}, obj) => {
+        // Read here rather than closed over: logPrefix is assigned after this
+        // constructor returns, by whichever subclass owns the topic.
+        const topic = opts.topic ?? this.logPrefix;
 
-    this.info = (msg, opts, obj) => {
-      globals.logger.emit(
-        Configurable.formatLogLine(msg, opts),
-        "info",
-        opts.topic,
-        obj,
-        opts.traceId,
-      );
-    };
+        globals.logger.emit(
+          Configurable.formatLogLine(msg, { ...opts, topic }),
+          verbosity,
+          topic,
+          obj,
+          opts.traceId,
+        );
+      };
 
-    this.error = (msg, opts, obj) => {
-      globals.logger.emit(
-        Configurable.formatLogLine(msg, opts),
-        "error",
-        opts.topic,
-        obj,
-        opts.traceId,
-      );
-    };
+    this.debug = at("debug");
+    this.info = at("info");
+    this.error = at("error");
 
     // subclasses that log under a topic override this
     this.logPrefix = "";
@@ -78,12 +77,7 @@ export class Configurable {
   async register() {}
 
   shouldEnable(): boolean {
-    let hasDisabledParent = false;
-    if (isStep(this) && typeof this.task.config.disabled === "boolean") {
-      hasDisabledParent = this.task.config.disabled;
-    }
-
-    return !this.config.disabled && !hasDisabledParent;
+    return !this.config.disabled;
   }
   async enable() {
     this.enabled = true;

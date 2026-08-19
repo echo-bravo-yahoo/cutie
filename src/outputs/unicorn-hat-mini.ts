@@ -259,7 +259,7 @@ export default class UnicornHatMini extends Output {
     if (!panel) {
       this.info(
         `Would draw (virtual): ${COLS}x${ROWS}, ${countLitPixels(pixels)} lit pixels.`,
-        { topic: this.logPrefix, traceId },
+        { traceId },
       );
       return message;
     }
@@ -291,7 +291,7 @@ export default class UnicornHatMini extends Output {
       await this.panel.show();
     }
 
-    this.info("Enabled unicorn hat mini.", { topic: this.logPrefix });
+    this.info("Enabled unicorn hat mini.");
     this.enabled = true;
   }
 
@@ -302,7 +302,7 @@ export default class UnicornHatMini extends Output {
       await this.panel.close();
       this.panel = undefined;
     }
-    this.info("Disabled unicorn hat mini.", { topic: this.logPrefix });
+    this.info("Disabled unicorn hat mini.");
     this.enabled = false;
   }
 }

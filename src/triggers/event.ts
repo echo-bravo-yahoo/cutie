@@ -31,10 +31,7 @@ export default class Event extends Trigger {
 
     this.info(
       `Received event with key "${this.config.key}".`,
-      {
-        topic: this.logPrefix,
-        traceId,
-      },
+      { traceId },
       {
         event: message,
       },
@@ -44,17 +41,13 @@ export default class Event extends Trigger {
 
   async enable() {
     this.bus.on(this.config.key, this.boundHandleEvent);
-    this.info(`Listening for events with key "${this.config.key}".`, {
-      topic: this.logPrefix,
-    });
+    this.info(`Listening for events with key "${this.config.key}".`);
     this.enabled = true;
   }
 
   async disable() {
     this.bus.removeListener(this.config.key, this.boundHandleEvent);
-    this.info(`No longer listening for events with key "${this.config.key}".`, {
-      topic: this.logPrefix,
-    });
+    this.info(`No longer listening for events with key "${this.config.key}".`);
     this.enabled = false;
   }
 }

@@ -18,9 +18,9 @@ tasks:
       - type: "output:console"
 ```
 
-There is also an older form, a **sensor trigger** such as `trigger:random` or `trigger:ble-tracker`, which fuses all three: it samples on its own schedule, aggregates the samples itself, and emits the result. It is deprecated. Nothing about it is more capable than the three-step form, and it hides the sampling schedule and the aggregation inside one module's options. New configs should not use it; see [Sampling by hand](#sampling-by-hand) for the shape that replaces it.
+Every sensor is built this way. There is no sensor-shaped trigger that samples on its own schedule and aggregates for you; that form existed until 4.0 and was removed, because it was no more capable than these three steps and hid the sampling schedule and the aggregation inside one module's options. [Sampling by hand](#sampling-by-hand) is the shape that replaces it.
 
-`virtual: true` fakes plausible values that drift slowly over time instead of touching hardware, which is how to develop on a machine with no sensor attached. It is not universal: `read:bme280`, `read:bme680`, and `read:file` accept it, and a read with nothing external to stand in for -- `read:constant`, `read:random`, `read:stash` -- rejects it rather than quietly ignoring it. `read:random` needs no `virtual` because every reading it produces is already synthetic.
+`virtual: true` fakes plausible values that drift slowly over time instead of touching hardware, which is how to develop on a machine with no sensor attached. It is not universal: `read:bme280`, `read:bme680`, `read:ble`, and `read:file` accept it, and a read with nothing external to stand in for -- `read:constant`, `read:random`, `read:stash` -- rejects it rather than quietly ignoring it. `read:random` needs no `virtual` because every reading it produces is already synthetic.
 
 The hardware-backed outputs take `virtual: true` as well: `output:switchbots`, `output:thermal-printer`, `output:nec`, and the two displays. The display outputs' version still does the image work -- the source is loaded, scaled, quantised and length-checked exactly as for a real draw, and each message logs what would have appeared on the panel -- which makes a display config developable on a workstation, since the only thing skipped is the panel itself.
 
@@ -44,6 +44,33 @@ Everything the BME280 reads, plus a gas-resistance channel that tracks volatile 
 | `i2cAddress` | `0x77`  | I2C address of the sensor, between 8 and 119     |
 | `virtual`    | `false` | fake the readings instead of opening the I2C bus |
 
+## `read:ble`
+
+Presence tracking. One scan per message, reporting the Bluetooth signal strength of named devices, which is a proxy for how close each one is. Emits `{ metadata: { timestamp }, devices: { "<label>": { rssi } } }`.
+
+| Field              | Default | Meaning                                                    |
+| ------------------ | ------- | ---------------------------------------------------------- |
+| `devices`          | --      | `[{ "address": "00:00:00:00:00:00", "label": "phone" }]`   |
+| `adapter`          | --      | which adapter to scan with, e.g. `hci0`; default otherwise |
+| `discoveryTimeout` | `10s`   | how long to wait for a device before leaving it out        |
+| `virtual`          | `false` | fake RSSI instead of scanning for BLE advertisements       |
+
+`label` is optional and defaults to the address; it is the key that device's reading appears under. A device that does not turn up within `discoveryTimeout` is left out of `devices` entirely, so absence reads as absence rather than as a very weak signal.
+
+```yaml
+tasks:
+  who-is-home:
+    trigger:
+      type: "trigger:cron"
+      expression: "*/1 * * * *"
+    steps:
+      - type: "read:ble"
+        devices:
+          - address: "00:00:00:00:00:00"
+            label: "phone"
+      - type: "output:console"
+```
+
 ## `read:ltr559`
 
 Ambient light and proximity over I2C. Emits `{ metadata: { timestamp }, lux, proximity }`.
@@ -55,13 +82,13 @@ Ambient light and proximity over I2C. Emits `{ metadata: { timestamp }, lux, pro
 
 ## `read:mems-mic`
 
-Sound level from a MEMS I2S digital microphone, over ALSA. A plain read rather than a self-scheduling sensor: each "sample" is itself a multi-second audio capture, so pair it with `trigger:repeat` and let one longer capture per read stand in for the sample/aggregate smoothing a sensor trigger would otherwise do. Emits `{ metadata: { timestamp }, soundLevel }` - dBFS, relative to full scale. Not a calibrated absolute dB SPL reading; an uncalibrated MEMS mic has no basis for one.
+Sound level from a MEMS I2S digital microphone, over ALSA. Each "sample" is itself a multi-second audio capture, so pair it with `trigger:repeat` and let one longer capture per read stand in for the [accumulate-and-aggregate smoothing](#sampling-by-hand) a faster sensor needs. Emits `{ metadata: { timestamp }, soundLevel }` - dBFS, relative to full scale. Not a calibrated absolute dB SPL reading; an uncalibrated MEMS mic has no basis for one.
 
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `alsaDevice` | none, required | ALSA capture device, e.g. `"plughw:CARD=<id>,DEV=0"` |
-| `captureSeconds` | `2` | length of the capture each read performs |
-| `virtual` | `false` | fake the level instead of capturing audio |
+| Field            | Default        | Meaning                                              |
+| ---------------- | -------------- | ---------------------------------------------------- |
+| `alsaDevice`     | none, required | ALSA capture device, e.g. `"plughw:CARD=<id>,DEV=0"` |
+| `captureSeconds` | `2`            | length of the capture each read performs             |
+| `virtual`        | `false`        | fake the level instead of capturing audio            |
 
 ```yaml
 tasks:
@@ -106,7 +133,7 @@ tasks:
 
 ## Sampling by hand
 
-To sample faster than you report, batch the readings and aggregate the batch. `transform:accumulate` gathers them and `transform:aggregate` collapses them, which is what a sensor trigger used to do behind `samplingInterval`, `reportingInterval`, and `sampling.aggregation`:
+To sample faster than you report, batch the readings and aggregate the batch. `transform:accumulate` gathers them and `transform:aggregate` collapses them:
 
 ```yaml
 tasks:
@@ -144,51 +171,3 @@ Set `aggregation` to one of:
 | `pX`      | the Xth percentile, e.g. `p95`; fractional values are fine |
 
 Percentiles interpolate linearly between the two closest samples, matching numpy's default and InfluxDB's `PERCENTILE`, so values computed here compare against values computed in those tools. A single sample always reports as `latest` regardless of this setting.
-
-## Deprecated: `trigger:random`
-
-A sensor trigger that walks a number randomly within bounds. Use `trigger:repeat` into `read:random` instead; the example above is the direct replacement.
-
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `start` | -- | first value |
-| `min` / `max` | -- | bounds the walk stays inside |
-| `minStep` / `maxStep` | -- | how far one sample may move from the last |
-| `samplingInterval` | `60000` | ms between samples |
-| `reportingInterval` | `60000` | ms between emitted messages |
-| `sampling` | undefined | `{ "aggregation": ... }` |
-
-`sampling` is listed as optional but is required in practice: whenever sampling outpaces reporting there is more than one sample to collapse, and without it the collapse fails. That mismatch is one of the reasons this form is deprecated.
-
-## Deprecated: `trigger:ble-tracker`
-
-Presence tracking. It watches for BLE advertisements from named devices and reports each device's signal strength, which is a proxy for how close the device is.
-
-There is no `read:ble` to pair with `trigger:cron` yet, so this remains the only way to do BLE presence tracking. Treat the shape as unstable.
-
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `devices` | -- | `[{ "alias": "phone", "macAddress": "..." }]` |
-| `samplingInterval` | `60000` | ms between samples |
-| `reportingInterval` | `60000` | ms between emitted messages |
-| `virtual` | `false` | fake RSSI instead of scanning for BLE advertisements |
-
-`alias` is optional and defaults to the MAC address; it is the key each device's reading appears under. Emits `{ "<alias>": { metadata: { timestamp }, rssi } }` per device.
-
-One rough edge to know about: a device that never advertises is reported at an `rssi` of `-99` rather than being left out, so absence looks like a very weak signal rather than as absence.
-
-```yaml
-tasks:
-  who-is-home:
-    trigger:
-      type: "trigger:ble-tracker"
-      samplingInterval: 10000
-      reportingInterval: 60000
-      sampling:
-        aggregation: "average"
-      devices:
-        - alias: "phone"
-          macAddress: "00:00:00:00:00:00"
-    steps:
-      - type: "output:console"
-```

@@ -4,15 +4,14 @@ import { extname, join, normalize } from "node:path";
 import parser from "yargs-parser";
 import { read as readConfigFile } from "node-yaml";
 
-import { Connection } from "../util/Connection.js";
-import { CLIArgs, parserDefaults } from "../util/cli.js";
+import {
+  ProvidingConnection,
+  requireConfigProvider,
+} from "../util/Connection.js";
+import { CLIArgs, mergeParserArgs, parserDefaults } from "../util/cli.js";
 import { fetchConfig, nodeNameFromPath } from "../util/configs.js";
 import { globals, initializeGlobals } from "../index.js";
-import {
-  getConnection,
-  mergeParserArgs,
-  registerConnections,
-} from "../util/connections.js";
+import { getConnection, registerConnections } from "../util/connections.js";
 import { Dirent } from "node:fs";
 
 export interface UploadArgs extends Omit<CLIArgs, "_"> {
@@ -22,7 +21,7 @@ export interface UploadArgs extends Omit<CLIArgs, "_"> {
   topic?: string;
 }
 
-async function uploadSingle(args: UploadArgs, connection: Connection) {
+async function uploadSingle(args: UploadArgs, connection: ProvidingConnection) {
   // node-yaml's reader parses JSON too -- YAML 1.2 is a JSON superset -- so
   // one reader covers every extension isDirEntConfigLike accepts.
   const config = await readConfigFile(normalize(args.path));
@@ -37,7 +36,7 @@ function isDirEntConfigLike(dirEnt: Dirent) {
 
 async function uploadFromDirEnt(
   dirEnt: Dirent,
-  connection: Connection,
+  connection: ProvidingConnection,
   topic?: string,
 ) {
   // With readdir({recursive: true}), dirEnt.name is a bare basename and the
@@ -50,7 +49,7 @@ async function uploadFromDirEnt(
   );
 }
 
-async function uploadAll(args: UploadArgs, connection: Connection) {
+async function uploadAll(args: UploadArgs, connection: ProvidingConnection) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const promises: Array<Promise<any>> = [];
 
@@ -85,7 +84,7 @@ export default async function upload(args: UploadArgs) {
   // Deliberately no registerTasks here: uploading config should not start
   // live triggers.
   await registerConnections(config.connections);
-  const connection = getConnection(args.connectionName);
+  const connection = requireConfigProvider(getConnection(args.connectionName));
 
   if (args.node) {
     await uploadSingle(args, connection);

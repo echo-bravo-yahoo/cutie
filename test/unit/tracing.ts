@@ -556,45 +556,38 @@ describe("tracing", function () {
     }
   });
 
-  it("shares one trace between a sensor's reading and the task it starts", async function (context) {
-    // the sampling and reporting intervals would otherwise outlive the test
-    context.mock.timers.enable({ apis: ["setInterval"] });
-
+  it("shares one trace between a reading and the rest of the chain", async function () {
     const task = new Task(
       {
-        trigger: {
-          type: "trigger:random",
-          start: 20,
-          min: 0,
-          max: 40,
-          minStep: 0.1,
-          maxStep: 1,
-        } as any,
+        trigger: { type: "trigger:once", message: "go" } as any,
         steps: [
+          {
+            type: "read:random",
+            start: 20,
+            min: 0,
+            max: 40,
+            minStep: 0.1,
+            maxStep: 1,
+          } as any,
           { type: "output:stash", key: "reading", value: "${message}" } as any,
         ],
       },
-      "publishes a random reading",
+      "reads a random number",
     );
 
-    try {
-      // enable() publishes its first reading straight away, part-way through
-      // register(), so the registration lines cannot be cleared first
-      await task.register();
-      await new Promise((resolve) => setImmediate(resolve));
+    // trigger:once fires part-way through register(), so the registration
+    // lines cannot be cleared first
+    await task.register();
+    await taskDone(task);
 
-      const [publishing] = linesMatching("Publishing new random data.");
-      const [stashed] = linesMatching("Stashing value under key");
+    const [read] = linesMatching("Handled message");
+    const [stashed] = linesMatching("Stashing value under key");
 
-      expect(publishing.line.traceId).to.match(UUID_V7);
-      expect(stashed.line.traceId).to.equal(publishing.line.traceId);
-      // Sensor logs this one line under the module's type rather than under
-      // its logPrefix, unlike every other line in the tree. Pinned rather than
-      // fixed: deployed trigger:logs filters may match on the current topic.
-      expect(publishing.line.topic).to.equal("trigger:random");
-    } finally {
-      await task.trigger!.disable();
-    }
+    expect(read.line.traceId).to.match(UUID_V7);
+    expect(stashed.line.traceId).to.equal(read.line.traceId);
+    // Every line in the tree lands under the module's own logPrefix, so a
+    // core.runtime.tasks.* filter sees the whole task.
+    expect(read.line.topic).to.equal(`${task.logPrefix}.steps.0`);
   });
 
   it("puts the trace on a virtual nec transmission", async function () {
