@@ -12,8 +12,10 @@ Starts a message on a cron schedule.
 | --- | --- | --- | --- | --- | --- |
 | `expression` | string | **yes** |  |  | A cron expression, such as "*/5 * * * *" for every five minutes. |
 | `message` | any | no |  |  | The message each firing starts. Every string inside it is interpolated. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:event`
 
@@ -22,8 +24,10 @@ Starts a message whenever an output:event on this node emits the matching key.
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
 | `key` | string | **yes** |  |  | The event name to listen for. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:file-change`
 
@@ -33,8 +37,10 @@ Starts a message of {eventType, filename} whenever a watched file or directory c
 | --- | --- | --- | --- | --- | --- |
 | `path` | string | **yes** |  |  | The file or directory to watch, resolved against the config file's directory unless absolute. |
 | `recursive` | boolean | no | `false` |  | Watch a directory's whole subtree rather than just its entries. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:gpio-button`
 
@@ -46,8 +52,10 @@ Starts a message of {button, pressed} whenever an active-low button wired to a G
 | `emitOn` | `press` or `release` or `both` | no | `"press"` |  | Which edge starts a message. |
 | `debounceMs` | number | no | `40` | `ms` | How long to ignore further edges after one is taken. A button bounces for a few milliseconds and would otherwise emit several messages per press. Must be at least 0. |
 | `virtual` | boolean | no | `false` |  | Register without watching any pin, so a config naming buttons loads on a machine with no GPIO. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:infrared`
 
@@ -57,8 +65,10 @@ Starts a message of {level, tick} for every edge an infrared receiver sees. Deco
 | --- | --- | --- | --- | --- | --- |
 | `receiverPin` | number | no |  |  | The GPIO pin the infrared receiver's data line is on. Must be at least 0, a whole number. |
 | `virtual` | boolean | no | `false` |  | Register without opening any GPIO pin. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:logs`
 
@@ -68,8 +78,11 @@ Starts a message for every log line the node produces whose topic matches one of
 | --- | --- | --- | --- | --- | --- |
 | `filters` | array | no | `["*"]` |  | Log topics to match, checked last to first; "*" stands in for any run of segments, and a leading "!" excludes. |
 | `minVerbosity` | `trace` or `debug` or `info` or `warn` or `error` or `fatal` | no | `"warn"` |  | The least severe level a line may be and still match. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `maxVerbosity` | `trace` or `debug` or `info` or `warn` or `error` or `fatal` | no |  |  | The most severe level a line may be and still match. Omit for no ceiling; pair it with minVerbosity to route one band of severities somewhere of its own. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:mqtt`
 
@@ -79,8 +92,10 @@ Starts a message for every MQTT message published to one of its topics.
 | --- | --- | --- | --- | --- | --- |
 | `connectionName` | string | **yes** |  |  | Which declared connection to subscribe on. |
 | `topics` | array | **yes** |  |  | Topic filters to subscribe to, MQTT wildcards included, such as "alarms/+". |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:once`
 
@@ -90,8 +105,10 @@ Starts a single message when the node starts.
 | --- | --- | --- | --- | --- | --- |
 | `delay` | any | no | `0` | `ms` | How long to wait before starting the message, as a number of milliseconds or a string with a unit such as "2s". |
 | `message` | any | no |  |  | The message to start. Every string inside it is interpolated. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:repeat`
 
@@ -101,6 +118,8 @@ Starts a message on a fixed interval.
 | --- | --- | --- | --- | --- | --- |
 | `interval` | any | **yes** |  | `ms` | How long to wait between messages, as a number of milliseconds or a string with a unit such as "5m". |
 | `message` | any | no |  |  | The message each tick starts. Every string inside it is interpolated. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 

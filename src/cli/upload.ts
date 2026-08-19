@@ -84,6 +84,9 @@ export default async function upload(args: UploadArgs) {
   // Deliberately no registerTasks here: uploading config should not start
   // live triggers.
   await registerConnections(config.connections);
+  // No tasks here means no trigger:logs task will ever turn up, so the window
+  // for holding lines is already over.
+  globals.logger.stopBuffering();
   const connection = requireConfigProvider(getConnection(args.connectionName));
 
   if (args.node) {

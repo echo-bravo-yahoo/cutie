@@ -12,8 +12,10 @@ Holds messages back and passes them on as one array, either once enough have arr
 | --- | --- | --- | --- | --- | --- |
 | `count` | number | **yes** |  |  | How many messages make a batch. Must be at least 1, a whole number. |
 | `maxAge` | any | no |  | `ms` | How long a partial batch may wait before being passed on anyway, as a number of milliseconds or a string with a unit such as "5m". Without it, a slow topic can hold a batch indefinitely. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:aggregate`
 
@@ -25,8 +27,10 @@ Collapses an array of readings into one value. The other half of a batching task
 | `paths` | object | no |  |  | Several values to aggregate at once, each mapped to its own arguments. |
 | `basePath` | string | no |  |  | An array in the message to aggregate one entry at a time. |
 | `aggregation` | string | no |  |  | How to collapse the values: "latest", "average", "sum", "median", or "pN" for any percentile. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:convert`
 
@@ -39,8 +43,10 @@ Converts a number from one unit to another within the same dimension: temperatur
 | `basePath` | string | no |  |  | An array in the message to convert one entry at a time. |
 | `from` | `celsius` or `fahrenheit` or `kelvin` or `pascal` or `hectopascal` or `millibar` or `kilopascal` or `bar` or `atmosphere` or `psi` or `meter` or `millimeter` or `centimeter` or `kilometer` or `inch` or `foot` or `mile` | no |  |  | The unit the value is in now. |
 | `to` | `celsius` or `fahrenheit` or `kelvin` or `pascal` or `hectopascal` or `millibar` or `kilopascal` or `bar` or `atmosphere` or `psi` or `meter` or `millimeter` or `centimeter` or `kilometer` or `inch` or `foot` or `mile` | no |  |  | The unit to convert the value into. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:javascript`
 
@@ -51,8 +57,10 @@ Replaces the message with the result of a JavaScript expression, evaluated with 
 | `command` | string | no |  |  | The expression to evaluate. Give this or codePath, not both. Supports ${...} interpolation. |
 | `codePath` | string | no |  |  | A script file to evaluate instead of an inline expression, resolved against the config file's directory. Supports ${...} interpolation. |
 | `outputType` | `object` or `string` or `number` or `any` | **yes** |  |  | What to turn the result into. "any" hands back whatever the expression evaluated to. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:merge`
 
@@ -62,8 +70,10 @@ Merges values into the message. A source may be a literal object or a template t
 | --- | --- | --- | --- | --- | --- |
 | `sources` | array | **yes** |  |  | What to merge in, in order. Each entry is either an object or a template naming one, such as "${stash.device}". Supports ${...} interpolation. |
 | `arrayStrategy` | `replace` or `concat` | no | `"replace"` |  | What to do when both sides hold an array at the same key. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:munge`
 
@@ -76,8 +86,10 @@ Moves, copies, keeps, or drops keys of the message. A "*" path in the multi-path
 | `basePath` | string | no |  |  | An array in the message to munge one entry at a time. |
 | `op` | `duplicate` or `rename` or `remove` or `retain` | no |  |  | What to do with the key: copy it to a second place, move it, drop it, or keep it while other keys are dropped. |
 | `to` | string | no |  |  | Where the value goes. Required by "duplicate" and "rename"; unused by the others. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:offset`
 
@@ -89,8 +101,10 @@ Adds a fixed amount to a number.
 | `paths` | object | no |  |  | Several values to offset at once, each mapped to its own arguments. |
 | `basePath` | string | no |  |  | An array in the message to offset one entry at a time. |
 | `offset` | number | no |  |  | How much to add. A negative value subtracts. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:prettify`
 
@@ -100,8 +114,10 @@ Replaces the message with its JSON text, indented for reading. transform:uglify 
 | --- | --- | --- | --- | --- | --- |
 | `spaces` | number | no | `4` |  | How many spaces to indent each level by. Must be at least 0, a whole number. |
 | `parseInput` | boolean | no | `false` |  | Treat a string message as JSON and re-indent it, rather than quoting it as a string. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:round`
 
@@ -114,8 +130,10 @@ Rounds a number to a given number of decimal places.
 | `basePath` | string | no |  |  | An array in the message to round one entry at a time. |
 | `precision` | number | no |  |  | How many decimal places to keep. Zero rounds to an integer, which is also what omitting it does. Must be at least 0, a whole number. |
 | `direction` | `up` or `down` or `round` | no |  |  | Which way to break a tie. Defaults to nearest. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:shell`
 
@@ -127,8 +145,10 @@ Replaces the message with the output of a shell command. The message is interpol
 | `codePath` | string | no |  |  | A script file to run instead of an inline command, resolved against the config file's directory. Supports ${...} interpolation. |
 | `outputType` | `object` or `string` or `number` or `any` | **yes** |  |  | What to turn the command's output into. "any" hands back the raw text. |
 | `shellPath` | string | no |  |  | Which shell to run the command in. Defaults to the system shell. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:uglify`
 
@@ -137,6 +157,8 @@ Replaces the message with its JSON text on one line. transform:prettify with a s
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
 | `parseInput` | boolean | no | `false` |  | Treat a string message as JSON and re-encode it, rather than quoting it as a string. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 

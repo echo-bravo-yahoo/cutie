@@ -1,5 +1,6 @@
 import { Configurable } from "./Configurable.js";
 import { Connection } from "./Connection.js";
+import Control from "./Control.js";
 import Trigger from "./Trigger.js";
 import Output from "./Output.js";
 import Read from "./Read.js";
@@ -12,6 +13,7 @@ export const KINDS = [
   "trigger",
   "read",
   "transform",
+  "control",
   "output",
   "connection",
 ] as const;
@@ -46,6 +48,8 @@ export const isTrigger = (c: Configurable): c is Trigger =>
 export const isRead = (c: Configurable): c is Read => isKind(c, "read");
 export const isTransform = (c: Configurable): c is Transform =>
   isKind(c, "transform");
+export const isControl = (c: Configurable): c is Control =>
+  isKind(c, "control");
 export const isOutput = (c: Configurable): c is Output => isKind(c, "output");
 export const isConnection = (c: Configurable): c is Connection =>
   isKind(c, "connection");

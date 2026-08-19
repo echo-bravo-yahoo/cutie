@@ -36,7 +36,7 @@ export default class Event extends Trigger {
         event: message,
       },
     );
-    this.startMessage(message, traceId);
+    this.fire(() => message, traceId);
   }
 
   async enable() {

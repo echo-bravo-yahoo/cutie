@@ -59,6 +59,13 @@ function stubbedConnection() {
 describe("tracing", function () {
   const fakeLogger = {
     logListeners: [] as Array<unknown>,
+    addListener(listener: unknown) {
+      this.logListeners.push(listener);
+    },
+    removeListener(listener: unknown) {
+      const index = this.logListeners.indexOf(listener);
+      if (index !== -1) this.logListeners.splice(index, 1);
+    },
     emit: () => {},
     info: () => {},
     warn: () => {},
@@ -76,7 +83,6 @@ describe("tracing", function () {
   const HANDLED = /Handled message in \d+(\.\d+)?ms\./;
 
   const captured: Array<{ line: SerializedLogLine; traceId?: string }> = [];
-  const warnings: Array<string> = [];
   // What pino would have written; captured rather than let out to stdout in
   // the middle of the test report, and read back by the output:logs tests.
   const printed: Array<{ verbosity: Verbosity; log: string }> = [];
@@ -92,9 +98,8 @@ describe("tracing", function () {
   } as any;
 
   for (const verbosity of VERBOSITIES) {
-    logger[verbosity] = (log: string) => {
+    logger[verbosity] = async (log: string) => {
       printed.push({ verbosity, log });
-      if (verbosity === "warn") warnings.push(log);
     };
   }
 
@@ -120,6 +125,14 @@ describe("tracing", function () {
         ? line.log.includes(pattern)
         : pattern.test(line.log),
     );
+  }
+
+  // A module warns under its own topic, so a warning is read back off the bus
+  // like any other line rather than off the logger's own wrapper.
+  function warnings() {
+    return captured
+      .filter(({ line }) => line.verbosity === "warn")
+      .map(({ line }) => line.log);
   }
 
   function timedTopics() {
@@ -258,7 +271,6 @@ describe("tracing", function () {
 
   beforeEach(function () {
     captured.length = 0;
-    warnings.length = 0;
     printed.length = 0;
     logger.logListeners = [listener];
     setGlobals({ ...globals, logger } as any);
@@ -754,8 +766,9 @@ describe("tracing", function () {
       await task.register();
       forgetRegistrationLines();
 
-      // deliberate: no try/finally around the step chain, so a throw is
-      // neither timed nor counted
+      // The step logs the failure under its own topic and rethrows, so a
+      // throw is reported but neither timed nor counted; containing it is the
+      // trigger's job, and startMessage is not that path.
       await expect(
         task.startMessage("start", "a-thrown-trace"),
       ).to.be.rejectedWith(/boom/);
@@ -908,7 +921,7 @@ describe("tracing", function () {
 
       const [ingress] = linesMatching("Received new message on topic");
       expect(ingress.line.traceId).to.equal(traceId);
-      expect(warnings).to.have.lengthOf(0);
+      expect(warnings()).to.have.lengthOf(0);
     });
 
     it("publishes a traceparent that decodes back to the publisher's trace", async function () {
@@ -960,8 +973,8 @@ describe("tracing", function () {
       expect(subscriber.messagesHandled).to.equal(1);
       expect(packets[0].properties).to.equal(undefined);
       // one warning naming the setting that would have made it work
-      expect(warnings).to.have.lengthOf(1);
-      expect(warnings[0]).to.include("protocolVersion");
+      expect(warnings()).to.have.lengthOf(1);
+      expect(warnings()[0]).to.include("protocolVersion");
     });
 
     it("warns once per output rather than once per message", async function () {
@@ -970,7 +983,7 @@ describe("tracing", function () {
       await publisher.startMessage("tick", newTraceId());
       await publisher.startMessage("tick", newTraceId());
 
-      expect(warnings).to.have.lengthOf(1);
+      expect(warnings()).to.have.lengthOf(1);
     });
 
     it("leaves the trace off an mqtt publish that did not ask for it", async function () {
@@ -980,7 +993,7 @@ describe("tracing", function () {
       expect(ingress.line.traceId).to.match(UUID_V7);
       expect(ingress.line.traceId).to.not.equal(traceId);
       expect(packets[0].properties).to.equal(undefined);
-      expect(warnings).to.have.lengthOf(0);
+      expect(warnings()).to.have.lengthOf(0);
     });
 
     it("does not throw when the connection has already been closed", function () {
@@ -996,8 +1009,8 @@ describe("tracing", function () {
       output.mqtt = undefined;
 
       expect(output.publishOptions("a-trace")).to.equal(undefined);
-      expect(warnings).to.have.lengthOf(1);
-      expect(warnings[0]).to.include("protocolVersion");
+      expect(warnings()).to.have.lengthOf(1);
+      expect(warnings()[0]).to.include("protocolVersion");
     });
   });
 });

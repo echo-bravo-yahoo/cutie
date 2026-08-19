@@ -21,6 +21,13 @@ const fakeLogger = {
   warn: () => {},
   error: () => {},
   logListeners: [] as Array<unknown>,
+  addListener(listener: unknown) {
+    this.logListeners.push(listener);
+  },
+  removeListener(listener: unknown) {
+    const index = this.logListeners.indexOf(listener);
+    if (index !== -1) this.logListeners.splice(index, 1);
+  },
   logger: {
     info: () => {},
     debug: () => {},

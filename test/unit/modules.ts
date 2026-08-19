@@ -1,5 +1,7 @@
 import { describe, it, before, beforeEach } from "node:test";
 import { EventEmitter } from "node:events";
+import { readdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
 
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -22,7 +24,6 @@ import UnicornHatMini, {
   UnicornPanel,
 } from "../../src/outputs/unicorn-hat-mini.js";
 import { PIXEL_LUT } from "../../src/util/unicorn-hat-mini-lut.js";
-import { HALT } from "../../src/util/Step.js";
 import { importOptional } from "../../src/util/optional-dependency.js";
 import { createPigpioMock } from "../helpers.js";
 
@@ -40,6 +41,13 @@ describe("modules", function () {
 
   const fakeLogger = {
     logListeners: [] as Array<unknown>,
+    addListener(listener: unknown) {
+      this.logListeners.push(listener);
+    },
+    removeListener(listener: unknown) {
+      const index = this.logListeners.indexOf(listener);
+      if (index !== -1) this.logListeners.splice(index, 1);
+    },
     emit: (
       log: string,
       verbosity: string,
@@ -449,17 +457,21 @@ describe("modules", function () {
       ]);
     });
 
-    it("halts rather than reading when the capture fails", async function () {
+    it("throws when the capture fails, and leaves no capture file behind", async function () {
       const sensor = await memsMic("capture fails", {
         virtual: false,
         alsaDevice: "not-a-real-device",
       });
 
-      expect(await sensor.read("ignored", "a-trace")).to.equal(HALT);
+      // Containing the failure is the runtime's job rather than this module's:
+      // the trigger keeps the node up, and a `rescue` decides what a skipped
+      // reading becomes.
+      await expect(sensor.read("ignored", "a-trace")).to.be.rejected;
 
-      const [failed] = linesMatching("Capture failed");
-      expect(failed.verbosity).to.equal("error");
-      expect(failed.traceId).to.equal("a-trace");
+      const leftovers = (await readdir(tmpdir())).filter((entry) =>
+        entry.startsWith("cutie-mems-mic-"),
+      );
+      expect(leftovers).to.deep.equal([]);
     });
 
     it("computes dBFS as 20*log10(rms / full scale)", function () {

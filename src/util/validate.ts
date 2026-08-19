@@ -4,6 +4,7 @@ import {
   OptionSchema,
   OptionType,
   UNIVERSAL_OPTIONS,
+  UNIVERSAL_OPTION_SCHEMAS,
 } from "./schema.js";
 import { Kind, KINDS } from "./type-helpers.js";
 
@@ -116,6 +117,14 @@ function validateOptions(
     validateOption(value, option, `${path}.${name}`, errors);
   }
 
+  // Before the early return below: a module that accepts unknown options still
+  // does not get to redefine what `disabled` means.
+  for (const [name, option] of Object.entries(UNIVERSAL_OPTION_SCHEMAS)) {
+    if (config[name] === undefined) continue;
+
+    validateOption(config[name], option, `${path}.${name}`, errors);
+  }
+
   if (schema.additionalOptions) return;
 
   for (const name of Object.keys(config)) {
@@ -188,11 +197,89 @@ function resolveType(
   return { kind: kind as Kind, subKind };
 }
 
+// One `rescue:` as written, so a cycle can be reported at the line that closes
+// it rather than at whichever task the search happened to start from.
+interface RescueEdge {
+  from: string;
+  to: string;
+  path: string;
+}
+
 interface ModuleContext {
   modules: Modules;
   connectionNames: Set<string>;
   disabledConnectionNames: Set<string>;
+  taskNames: Set<string>;
+  disabledTaskNames: Set<string>;
+  rescueEdges: Array<RescueEdge>;
   errors: Array<ConfigError>;
+}
+
+// The same cross-check `connectionName` gets: a name that is not declared is an
+// error, and one that is declared but disabled is a warning, because the task
+// exists and turning it back on is one line away.
+function validateRescue(
+  value: unknown,
+  from: string,
+  path: string,
+  context: ModuleContext,
+) {
+  // A non-string is reported by whoever holds the schema for this slot, so
+  // reporting it again here would name one mistake twice.
+  if (typeof value !== "string") return;
+
+  if (!context.taskNames.has(from)) return;
+
+  if (!context.taskNames.has(value)) {
+    context.errors.push(error(path, `no task named "${value}" is declared`));
+    return;
+  }
+
+  if (context.disabledTaskNames.has(value))
+    context.errors.push(
+      warning(path, `task "${value}" is declared but disabled`),
+    );
+
+  context.rescueEdges.push({ from, to: value, path });
+}
+
+// A rescue that leads back to the task it rescues would run again on its own
+// first failure, so it is refused here rather than discovered at three in the
+// morning. Every edge in the loop is named, because any one of them is a place
+// to break it.
+function reportRescueCycles(
+  edges: ReadonlyArray<RescueEdge>,
+  errors: Array<ConfigError>,
+) {
+  const outgoing = new Map<string, Array<string>>();
+
+  for (const edge of edges)
+    outgoing.set(edge.from, [...(outgoing.get(edge.from) ?? []), edge.to]);
+
+  function reaches(start: string, target: string): boolean {
+    const seen = new Set<string>();
+    const queue = [start];
+
+    while (queue.length) {
+      const current = queue.shift() as string;
+      if (current === target) return true;
+      if (seen.has(current)) continue;
+
+      seen.add(current);
+      queue.push(...(outgoing.get(current) ?? []));
+    }
+
+    return false;
+  }
+
+  for (const edge of edges)
+    if (reaches(edge.to, edge.from))
+      errors.push(
+        error(
+          edge.path,
+          `rescue "${edge.to}" leads back to task "${edge.from}"`,
+        ),
+      );
 }
 
 // `expectedKind` is what the slot accepts: a task's trigger takes a trigger, a
@@ -301,6 +388,20 @@ function declaredConnectionNames(
   return names;
 }
 
+// A task is named by its key in the `tasks:` record, so unlike a connection it
+// cannot be missing a name.
+function declaredTaskNames(value: unknown, onlyDisabled = false): Set<string> {
+  const names = new Set<string>();
+
+  if (!isRecord(value)) return names;
+
+  for (const [name, task] of Object.entries(value))
+    if (!onlyDisabled || (isRecord(task) && task.disabled === true))
+      names.add(name);
+
+  return names;
+}
+
 async function validateTasks(
   value: unknown,
   context: ModuleContext,
@@ -324,6 +425,18 @@ async function validateTasks(
       continue;
     }
 
+    if (task.rescue !== undefined && typeof task.rescue !== "string")
+      context.errors.push(
+        error(
+          `${path}.rescue`,
+          `expected string, found ${describeType(task.rescue)}`,
+        ),
+      );
+
+    // The default for every step of this task, so it is checked the same way a
+    // step's own is.
+    validateRescue(task.rescue, name, `${path}.rescue`, context);
+
     if (task.trigger !== undefined)
       await validateModule(
         task.trigger,
@@ -344,14 +457,22 @@ async function validateTasks(
       continue;
     }
 
-    for (const [index, step] of task.steps.entries())
+    for (const [index, step] of task.steps.entries()) {
+      const stepPath = `${path}.steps[${index}]`;
+
       await validateModule(
         step,
-        `${path}.steps[${index}]`,
+        stepPath,
         { not: "trigger", label: "a step" },
         context,
       );
+
+      if (isRecord(step))
+        validateRescue(step.rescue, name, `${stepPath}.rescue`, context);
+    }
   }
+
+  reportRescueCycles(context.rescueEdges, context.errors);
 }
 
 // Never throws for a bad config; collects everything. Throws only on an
@@ -377,6 +498,9 @@ export async function validateConfig(
     modules: await listModules(),
     connectionNames: declaredConnectionNames(config.connections),
     disabledConnectionNames: declaredConnectionNames(config.connections, true),
+    taskNames: declaredTaskNames(config.tasks),
+    disabledTaskNames: declaredTaskNames(config.tasks, true),
+    rescueEdges: [],
     errors,
   };
 

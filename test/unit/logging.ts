@@ -41,8 +41,14 @@ function realLogger(level?: Verbosity) {
   return { helper, records };
 }
 
-function useLogger(level?: Verbosity) {
+// The pre-listener window is closed by default, as it is on a running node
+// once registration is over: a test that emits its own line after registering
+// a listener would otherwise also be handed everything registration logged.
+// The tests that are about the window open it deliberately.
+function useLogger(level?: Verbosity, { buffered = false } = {}) {
   const { helper, records } = realLogger(level);
+
+  if (!buffered) helper.stopBuffering();
 
   setGlobals({
     tasks: [],
@@ -85,10 +91,10 @@ function capDispatches(helper: LogHelper) {
   helper.emit = (message, verbosity, topic, object) => {
     if (++counted.dispatches > RUNAWAY_CAP) {
       helper.logListeners.length = 0;
-      return;
+      return Promise.resolve();
     }
 
-    original(message, verbosity, topic, object);
+    return original(message, verbosity, topic, object);
   };
 
   return counted;
@@ -136,6 +142,43 @@ describe("logging", function () {
         records.some((entry) => entry.message === "a line worth seeing"),
       ).to.equal(true);
       expect(task.messagesHandled).to.be.greaterThan(0);
+    });
+
+    // The pair of bounds is what makes two destinations possible: without a
+    // ceiling an error lands in the ordinary log task as well as the alert one.
+    it("splits one topic across two tasks by severity", async function () {
+      useLogger();
+
+      async function listener(name: string, bounds: object) {
+        const task = new Task(
+          {
+            trigger: {
+              type: "trigger:logs",
+              filters: ["core.test"],
+              ...bounds,
+            } as never,
+            steps: [{ type: "output:stash", key: "line", value: "x" } as never],
+          },
+          name,
+        );
+        await task.register();
+        globals.tasks.push(task);
+
+        return task;
+      }
+
+      const ordinary = await listener("ordinary lines", {
+        minVerbosity: "info",
+        maxVerbosity: "warn",
+      });
+      const alerts = await listener("alerts only", { minVerbosity: "error" });
+
+      globals.logger.emit("a routine line", "info", "core.test");
+      globals.logger.emit("a failure", "error", "core.test");
+      await settle();
+
+      expect(ordinary.messagesHandled).to.equal(1);
+      expect(alerts.messagesHandled).to.equal(1);
     });
 
     it("carries a module's own error to pino under the module's topic", async function () {
@@ -373,6 +416,95 @@ describe("logging", function () {
       await settle();
 
       expect(tasks.map((task) => task.messagesHandled)).to.deep.equal([1, 1]);
+    });
+  });
+
+  // Connections register before tasks, so the likeliest first failure on a
+  // fresh node happens when no trigger:logs task exists yet to route it.
+  describe("the window before any listener exists", function () {
+    async function listeningTask(name: string, bounds: object = {}) {
+      const task = new Task(
+        {
+          trigger: {
+            type: "trigger:logs",
+            filters: ["core.test"],
+            minVerbosity: "trace",
+            ...bounds,
+          } as never,
+          steps: [{ type: "output:stash", key: "line", value: "x" } as never],
+        },
+        name,
+      );
+      await task.register();
+      globals.tasks.push(task);
+
+      return task;
+    }
+
+    it("replays a line emitted before any task registered", async function () {
+      useLogger("trace", { buffered: true });
+      globals.logger.emit(
+        'Failed to register connection "broker".',
+        "error",
+        "core.test",
+      );
+
+      const task = await listeningTask("sees the backlog");
+
+      expect(await handled(task, 1)).to.equal(1);
+    });
+
+    it("lets each listener filter the backlog for itself", async function () {
+      useLogger("trace", { buffered: true });
+      globals.logger.emit("a held debug line", "debug", "core.test");
+
+      const quiet = await listeningTask("quiet", { minVerbosity: "warn" });
+      const chatty = await listeningTask("chatty", { minVerbosity: "trace" });
+
+      expect(await handled(chatty, 1)).to.equal(1);
+      expect(quiet.messagesHandled).to.equal(0);
+    });
+
+    it("replays the backlog in emission order", async function () {
+      useLogger("trace", { buffered: true });
+
+      for (const line of ["one", "two", "three"])
+        globals.logger.emit(line, "info", "core.test");
+
+      const seen: Array<string> = [];
+      globals.eventBus.on("replayed", (line: { log: string }) =>
+        seen.push(line.log),
+      );
+
+      const task = new Task(
+        {
+          trigger: {
+            type: "trigger:logs",
+            filters: ["core.test"],
+            minVerbosity: "trace",
+          } as never,
+          steps: [{ type: "output:event", key: "replayed" } as never],
+        },
+        "records the order",
+      );
+      await task.register();
+      globals.tasks.push(task);
+
+      expect(await handled(task, 3)).to.equal(3);
+      expect(seen).to.deep.equal(["one", "two", "three"]);
+    });
+
+    // Unbounded is only safe because the window closes: a config with no
+    // trigger:logs task would otherwise hold every line the node ever writes.
+    it("holds nothing once the window is closed", async function () {
+      useLogger("trace", { buffered: true });
+      globals.logger.stopBuffering();
+      globals.logger.emit("after the window", "info", "core.test");
+
+      const task = await listeningTask("registers too late");
+      await settle();
+
+      expect(task.messagesHandled).to.equal(0);
     });
   });
 

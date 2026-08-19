@@ -36,9 +36,7 @@ export default class Repeat extends Trigger {
       // Cloned before interpolation so a transform that mutates the message
       // cannot write back into the config and change what the next tick starts
       // from.
-      this.startMessage(
-        this.interpolateDeep(cloneMessage(this.config.message)),
-      );
+      this.fire(() => this.interpolateDeep(cloneMessage(this.config.message)));
     }, this.intervalMs);
     this.info("Enabled repeat.");
     this.enabled = true;

@@ -42,6 +42,10 @@ Every option every module accepts, generated from the schemas the runtime valida
 - [`transform:shell`](./transforms.md#transformshell)
 - [`transform:uglify`](./transforms.md#transformuglify)
 
+## controls
+
+- [`control:return`](./controls.md#controlreturn)
+
 ## outputs
 
 - [`output:console`](./outputs.md#outputconsole)

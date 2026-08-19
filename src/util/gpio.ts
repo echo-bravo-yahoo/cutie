@@ -13,8 +13,10 @@ const BCM_CHIP_LABEL = "pinctrl-bcm2835";
 // library - onoff among them - has to add this first.
 //
 // Reading the base rather than assuming an offset keeps it correct across
-// kernel versions and on boards whose base differs.
-export async function readGpioBase(): Promise<number> {
+// kernel versions and on boards whose base differs. Returns undefined when
+// there is nothing to read, so the caller can say so under its own topic; this
+// module is not a Configurable and has no topic to log under.
+export async function readGpioBase(): Promise<number | undefined> {
   try {
     const entries = await readdir(GPIO_ROOT);
     const chips = entries.filter((entry) => entry.startsWith("gpiochip"));
@@ -39,8 +41,8 @@ export async function readGpioBase(): Promise<number> {
       if (Number.isFinite(base)) return base;
     }
   } catch {
-    // sysfs GPIO absent entirely; the legacy numbering is the best guess.
+    // sysfs GPIO absent entirely.
   }
 
-  return 0;
+  return undefined;
 }

@@ -41,7 +41,7 @@ export default class Infrared extends Trigger {
         // each edge on the receiver becomes a message; decoding a protocol out
         // of the pulse train is a job for the step chain
         this.infraredReceiver.on("alert", (level: number, tick: number) => {
-          this.startMessage({ level, tick });
+          this.fire(() => ({ level, tick }));
         });
         this.info(
           `Enabled infrared receiver on pin ${this.config.receiverPin}.`,

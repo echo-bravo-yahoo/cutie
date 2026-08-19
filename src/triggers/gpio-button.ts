@@ -65,13 +65,20 @@ export default class GpioButton extends Trigger {
     // onoff writes the pin number straight to /sys/class/gpio/export with no
     // offset, so BCM numbers have to be shifted by the controller's base.
     const base = await readGpioBase();
+
+    // The pre-6.6 numbering, where sysfs numbers equalled BCM numbers, is the
+    // only guess left; on a current kernel exporting an unshifted pin fails.
+    if (base === undefined)
+      this.warn(
+        "Could not read the GPIO controller's base from sysfs; assuming 0.",
+      );
     const { Gpio } = await importOptional<{ Gpio: typeof OnoffGpio }>(
       "onoff",
       "trigger:gpio-button",
     );
 
     for (const [name, bcm] of Object.entries(this.config.buttons ?? {})) {
-      const gpio = new Gpio(bcm + base, "in", "both");
+      const gpio = new Gpio(bcm + (base ?? 0), "in", "both");
 
       gpio.watch((error: Error | null | undefined, value: number) => {
         if (error) {
@@ -83,14 +90,14 @@ export default class GpioButton extends Trigger {
         if (!this.shouldEmit(name, pressed)) return;
 
         this.debug(`Button ${name} ${pressed ? "pressed" : "released"}.`);
-        this.startMessage({ button: name, pressed });
+        this.fire(() => ({ button: name, pressed }));
       });
 
       this.pins.push({ name, gpio });
     }
 
     this.info(
-      `Enabled gpio buttons (${this.pins.map((p) => p.name).join(", ") || "none"}), gpio base ${base}.`,
+      `Enabled gpio buttons (${this.pins.map((p) => p.name).join(", ") || "none"}), gpio base ${base ?? 0}.`,
     );
     this.enabled = true;
   }

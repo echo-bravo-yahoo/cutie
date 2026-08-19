@@ -12,8 +12,10 @@ Takes no options of its own.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:event`
 
@@ -22,8 +24,10 @@ Emits the message on this node's internal event bus, where a trigger:event with 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
 | `key` | string | **yes** |  |  | The event name to emit under. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:file`
 
@@ -35,8 +39,10 @@ Writes each message to a file.
 | `append` | boolean | no | `true` |  | Add to the end of the file. False overwrites it on every message. |
 | `insertNewlines` | boolean | no | `true` |  | End each message with a newline, so one message is one line. |
 | `encoding` | `ascii` or `utf8` or `utf-8` or `utf16le` or `utf-16le` or `ucs2` or `ucs-2` or `base64` or `base64url` or `latin1` or `binary` or `hex` | no | `"utf8"` |  | How to encode the bytes written. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:influxdb`
 
@@ -47,8 +53,10 @@ Writes each message to InfluxDB as one line of line protocol. The message must a
 | `connectionName` | string | **yes** |  |  | Which declared connection to write through. |
 | `measurement` | string | **yes** |  |  | The measurement name every line is written under. Supports ${...} interpolation. |
 | `tags` | object | no |  |  | Tags added to every line, merged with any the message carries. Supports ${...} interpolation. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:inky-phat`
 
@@ -67,8 +75,10 @@ Draws each message on an Inky pHAT e-paper panel, 212x104 pixels in three colour
 | `spiDevice` | string | no |  |  | The spidev node the panel is on. Defaults to the vendor package's own. |
 | `minRefreshMs` | number | no | `180000` | `ms` | Least time between physical refreshes. A message arriving sooner is dropped rather than queued, since the panel shows a current reading and a stale one waiting its turn has no value. Zero refreshes on every message. Must be at least 0. |
 | `virtual` | boolean | no | `false` |  | Do everything but drive the panel: the source is still loaded, scaled, quantised and length-checked, and each message logs what would have been drawn. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:logs`
 
@@ -78,8 +88,10 @@ Takes no options of its own.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:mqtt`
 
@@ -93,8 +105,10 @@ Publishes each message to one or more MQTT topics.
 | `qos` | number | no | `0` |  | MQTT quality of service: 0 at most once, 1 at least once, 2 exactly once. Must be between 0 and 2, a whole number. |
 | `raw` | boolean | no | `false` |  | Publish a string message as the payload itself rather than JSON-encoding it. A message that is not a string is encoded either way. |
 | `propagateTrace` | boolean | no | `false` |  | Send the trace id as a W3C traceparent user property, which also needs "protocolVersion": 5 on the connection. The payload is untouched. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:nec`
 
@@ -105,8 +119,10 @@ Transmits an NEC infrared command on a GPIO pin. The message either names a save
 | `ledPin` | number | no |  |  | The GPIO pin the infrared LED is wired to. Required unless virtual is set; there is no sensible default for someone else's wiring. Must be at least 0, a whole number. |
 | `virtual` | boolean | no | `false` |  | Log the command that would be sent without driving the pin. |
 | `savedCommands` | object | no |  |  | Named commands a message can ask for by id, each {"address", "command"} with optional "extendedAddress" and "extendedCommand". A string value is read as hexadecimal. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:st7735`
 
@@ -128,8 +144,10 @@ Draws each message on an ST7735 panel. The pixels come from an image file or fro
 | `backlightPin` | number | no |  |  | The GPIO pin the panel's backlight is wired to. Required unless virtual is set. Must be at least 0, a whole number. |
 | `spiSpeedHz` | number | no | `10000000` | `Hz` | The SPI clock speed to drive the panel at. Must be at least 1, a whole number. |
 | `virtual` | boolean | no | `false` |  | Do everything but drive the panel: the source is still loaded, scaled and length-checked, and each message logs how many pixels would be lit. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:stash`
 
@@ -139,8 +157,10 @@ Stores a value in the stash, a scratch space belonging to one message.
 | --- | --- | --- | --- | --- | --- |
 | `key` | string | **yes** |  |  | Where to store the value; a dotted key writes a nested path. Supports ${...} interpolation. |
 | `value` | any | **yes** |  |  | The value to store. A string is interpolated first; one that is exactly one template keeps the resolved value's type. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:switchbots`
 
@@ -151,8 +171,10 @@ Presses or toggles SwitchBot bots over Bluetooth. The message names one and an a
 | `devices` | array | **yes** |  |  | The bots to control, each {"address", "label", "reverseOnOff"}. The address is the device id or MAC address the discovery reports; the label is only for the logs. |
 | `discoveryTimeout` | any | no | `10000` | `ms` | How long to scan for the configured bots before giving up, as a number of milliseconds or a string with a unit such as "10s". |
 | `virtual` | boolean | no | `false` |  | Log what would be pressed without scanning for or driving any device. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:thermal-printer`
 
@@ -167,8 +189,10 @@ Prints each message on a serial thermal printer, a line at a time. A line may le
 | `commandDelay` | number | no | `120` | `microseconds` | How long to wait between commands sent to the printer. |
 | `chineseFirmware` | boolean | no |  |  | Set only if the printer runs the Chinese firmware variant. Left unset, the vendor library's own default applies. |
 | `virtual` | boolean | no | `false` |  | Log what would be printed without opening the serial device. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:unicorn-hat-mini`
 
@@ -183,6 +207,8 @@ Draws each message on a Unicorn HAT Mini, a 17x7 grid of RGB LEDs. The pixels co
 | `brightness` | number | no | `0.2` |  | How hard to drive the LEDs, from 0 to 1. These are bright enough at low settings that 1 is rarely what you want. Must be between 0 and 1. |
 | `spiDevices` | array | no | `["/dev/spidev0.0","/dev/spidev0.1"]` |  | One spidev node per HT16D35A chip, in chip-select order. The HAT has two. |
 | `virtual` | boolean | no | `false` |  | Do everything but drive the panel: the source is still loaded, scaled and length-checked, and each message logs what would have been drawn. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 

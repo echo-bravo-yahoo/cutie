@@ -1,4 +1,3 @@
-import { globals } from "../index.js";
 import { getConnection } from "../util/connections.js";
 import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
@@ -46,7 +45,7 @@ export default class MQTT extends Output {
     if (this.mqtt?.connection?.options.protocolVersion !== 5) {
       if (!this.warnedAboutProtocolVersion) {
         this.warnedAboutProtocolVersion = true;
-        globals.logger.warn(
+        this.warn(
           `Not propagating trace IDs over MQTT connection "${this.config.connectionName}"; a traceparent user property needs "protocolVersion": 5 on the connection.`,
         );
       }

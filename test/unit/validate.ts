@@ -148,6 +148,13 @@ describe("config validation", function () {
     warn: () => {},
     error: () => {},
     logListeners: [] as Array<unknown>,
+    addListener(listener: unknown) {
+      this.logListeners.push(listener);
+    },
+    removeListener(listener: unknown) {
+      const index = this.logListeners.indexOf(listener);
+      if (index !== -1) this.logListeners.splice(index, 1);
+    },
     logger: { info: () => {}, debug: () => {}, child: () => fakeLogger },
   };
 
@@ -452,6 +459,35 @@ describe("config validation", function () {
       });
     });
 
+    // Every step accepts `disabled`, but until it had a declared type nothing
+    // checked it, so a truthy string turned a step off without saying so.
+    it("type-checks a universal option", async function () {
+      const errors = await check(
+        stepConfig({ type: "read:constant", value: 1, disabled: "maybe" }),
+      );
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "error",
+          path: "tasks.t.steps[0].disabled",
+          message: "expected boolean, found string",
+        },
+      ]);
+    });
+
+    it("accepts a universal option of the declared type", async function () {
+      const errors = await check(
+        stepConfig({
+          type: "read:constant",
+          value: 1,
+          disabled: true,
+          name: "a label",
+        }),
+      );
+
+      expect(errors).to.deep.equal([]);
+    });
+
     it("reports a value outside an enum", async function () {
       await withSchema(SYNTHETIC, async function () {
         const errors = await check(
@@ -544,6 +580,118 @@ describe("config validation", function () {
     });
   });
 
+  describe("a rescue", function () {
+    function tasks(entries: Record<string, unknown>) {
+      return { connections: [], tasks: entries };
+    }
+
+    const STEP = { type: "read:constant", value: 1 };
+
+    it("accepts a step naming a declared task", async function () {
+      const errors = await check(
+        tasks({
+          weather: { rescue: "on-failure", steps: [STEP] },
+          "on-failure": { steps: [STEP] },
+        }),
+      );
+
+      expect(errors).to.deep.equal([]);
+    });
+
+    it("reports a step naming a task the config does not declare", async function () {
+      const errors = await check(
+        tasks({ weather: { steps: [{ ...STEP, rescue: "absent" }] } }),
+      );
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "error",
+          path: "tasks.weather.steps[0].rescue",
+          message: 'no task named "absent" is declared',
+        },
+      ]);
+    });
+
+    // A warning rather than an error, as a disabled connection is: the task
+    // exists, and turning it back on is one line away.
+    it("warns about a rescue that is declared but disabled", async function () {
+      const errors = await check(
+        tasks({
+          weather: { rescue: "on-failure", steps: [STEP] },
+          "on-failure": { disabled: true, steps: [STEP] },
+        }),
+      );
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "warning",
+          path: "tasks.weather.rescue",
+          message: 'task "on-failure" is declared but disabled',
+        },
+      ]);
+    });
+
+    it("reports a rescue that leads back to the task it rescues", async function () {
+      const errors = await check(
+        tasks({
+          weather: { rescue: "on-failure", steps: [STEP] },
+          "on-failure": { rescue: "weather", steps: [STEP] },
+        }),
+      );
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "error",
+          path: "tasks.weather.rescue",
+          message: 'rescue "on-failure" leads back to task "weather"',
+        },
+        {
+          severity: "error",
+          path: "tasks.on-failure.rescue",
+          message: 'rescue "weather" leads back to task "on-failure"',
+        },
+      ]);
+    });
+
+    it("reports a task that rescues itself", async function () {
+      const errors = await check(
+        tasks({ weather: { steps: [{ ...STEP, rescue: "weather" }] } }),
+      );
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "error",
+          path: "tasks.weather.steps[0].rescue",
+          message: 'rescue "weather" leads back to task "weather"',
+        },
+      ]);
+    });
+
+    it("accepts a chain of rescues that does not close", async function () {
+      const errors = await check(
+        tasks({
+          weather: { rescue: "first", steps: [STEP] },
+          first: { rescue: "second", steps: [STEP] },
+          second: { steps: [STEP] },
+        }),
+      );
+
+      expect(errors).to.deep.equal([]);
+    });
+
+    it("reports a non-string rescue once", async function () {
+      const errors = await check(tasks({ weather: { rescue: 5, steps: [] } }));
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "error",
+          path: "tasks.weather.rescue",
+          message: "expected string, found number",
+        },
+      ]);
+    });
+  });
+
   describe("the rendered report", function () {
     it("puts errors before warnings and ends with a count", function () {
       const rendered = formatConfigErrors([
@@ -572,6 +720,13 @@ describe("reading the config file", function () {
     warn: () => {},
     error: (message: string) => logged.push(message),
     logListeners: [] as Array<unknown>,
+    addListener(listener: unknown) {
+      this.logListeners.push(listener);
+    },
+    removeListener(listener: unknown) {
+      const index = this.logListeners.indexOf(listener);
+      if (index !== -1) this.logListeners.splice(index, 1);
+    },
     logger: { info: () => {}, debug: () => {}, child: () => fakeLogger },
   };
   let directory: string;
@@ -686,6 +841,13 @@ describe("a step's log topic", function () {
     warn: () => {},
     error: () => {},
     logListeners: [] as Array<unknown>,
+    addListener(listener: unknown) {
+      this.logListeners.push(listener);
+    },
+    removeListener(listener: unknown) {
+      const index = this.logListeners.indexOf(listener);
+      if (index !== -1) this.logListeners.splice(index, 1);
+    },
     logger: { info: () => {}, debug: () => {}, child: () => fakeLogger },
   };
 
@@ -756,6 +918,13 @@ describe("schema defaults", function () {
     warn: () => {},
     error: () => {},
     logListeners: [] as Array<unknown>,
+    addListener(listener: unknown) {
+      this.logListeners.push(listener);
+    },
+    removeListener(listener: unknown) {
+      const index = this.logListeners.indexOf(listener);
+      if (index !== -1) this.logListeners.splice(index, 1);
+    },
     logger: { info: () => {}, debug: () => {}, child: () => fakeLogger },
   };
 
@@ -945,6 +1114,41 @@ describe("registering a validated config", function () {
       "first",
       "second",
     ]);
+  });
+
+  // The window that lets a pre-listener failure still be routed is unbounded,
+  // so a config with no trigger:logs task must not leave it open for the life
+  // of the process.
+  it("closes the pre-listener log window once registration is over", async function (context) {
+    context.mock.method(console, "log", () => {});
+    const path = join(directory, "no-logs-task.conf.json");
+    await writeFile(
+      path,
+      JSON.stringify({
+        tasks: { quiet: { steps: [{ type: "output:console" }] } },
+      }),
+    );
+
+    const result = await start({ _: [], config: path } as never);
+    result.logger.emit("a line with nowhere to go", "info", "core.test");
+
+    // Registering a listener afterwards is handed nothing, because nothing
+    // was held.
+    const listening = new Task(
+      {
+        trigger: {
+          type: "trigger:logs",
+          filters: ["core.test"],
+          minVerbosity: "trace",
+        },
+        steps: [],
+      } as never,
+      "too late",
+    );
+    await listening.register();
+
+    expect(listening.messagesHandled).to.equal(0);
+    await listening.trigger?.disable();
   });
 
   it("delivers a triggered message to endMessage when a task has no steps", async function () {

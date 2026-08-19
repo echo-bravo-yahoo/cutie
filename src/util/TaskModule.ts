@@ -44,6 +44,20 @@ export function requireOneCodeSource(config: CodeConfig, type: string) {
     throw new Error(`"${type}": "codePath" cannot be combined with "command".`);
 }
 
+// What ${error...} resolves to. Set only on a message a task was invoked to
+// handle a failure with, so an ordinary chain leaves every ${error...} path
+// resolving to nothing.
+export interface ErrorContext {
+  // The error's own message and constructor name.
+  message: string;
+  name: string;
+  // Where it happened: the task it was handling a message for, the log topic
+  // of the step that threw, and that step's module type.
+  task: string;
+  step: string;
+  type: string;
+}
+
 export interface MessageContext {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   stash: Record<string, any>;
@@ -51,6 +65,7 @@ export interface MessageContext {
   // it, so ${message} means the same thing everywhere.
   message: Message;
   traceId?: string;
+  error?: ErrorContext;
 }
 
 // One store per message rather than a field on the step or the task: a step is
@@ -114,6 +129,25 @@ export default abstract class TaskModule extends Module {
     this.logPrefix = `${task.logPrefix}.${index === undefined ? "trigger" : `steps.${index}`}`;
   }
 
+  // Names the failure and where it happened, for the log line the runtime
+  // writes and for the ${error...} namespace a rescue task interpolates
+  // against.
+  errorContext(error: unknown): ErrorContext {
+    // Duck-typed rather than `instanceof Error`: transform:javascript runs its
+    // code in a vm context, which has an Error constructor of its own, so what
+    // it throws is an error without being an instance of this realm's.
+    const thrown = error as Partial<Error> | undefined;
+
+    return {
+      message:
+        typeof thrown?.message === "string" ? thrown.message : String(error),
+      name: typeof thrown?.name === "string" ? thrown.name : typeof error,
+      task: this.task.name,
+      step: this.logPrefix,
+      type: this.config.type,
+    };
+  }
+
   // A task's `disabled` reaches everything the task owns, its trigger
   // included, so disabling a task stops it firing rather than merely emptying
   // its chain.
@@ -149,6 +183,7 @@ export default abstract class TaskModule extends Module {
         ),
       },
       message: context?.message,
+      error: context?.error,
       ...additionalContext,
     };
 

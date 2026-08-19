@@ -14,8 +14,10 @@ Reads the Bluetooth signal strength of named devices, one sample per call, as {"
 | `adapter` | string | no |  |  | Which Bluetooth adapter to scan with, such as "hci0". The system default adapter is used when this is not set. |
 | `discoveryTimeout` | any | no | `10000` | `ms` | How long to wait for a configured device to turn up before leaving it out of the reading, as a number of milliseconds or a string with a unit such as "10s". |
 | `virtual` | boolean | no | `false` |  | Produce plausible drifting signal strengths instead of scanning for Bluetooth devices. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `read:bme280`
 
@@ -25,8 +27,10 @@ Reads temperature, humidity, and pressure from a BME280 over I2C.
 | --- | --- | --- | --- | --- | --- |
 | `virtual` | boolean | no | `false` |  | Produce plausible drifting readings instead of opening the sensor. |
 | `i2cAddress` | number | no | `118` |  | The sensor's I2C address; a BME280 uses 0x76 or 0x77 depending on its SDO pin. Must be between 8 and 119, a whole number. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `read:bme680`
 
@@ -36,8 +40,10 @@ Reads temperature, humidity, pressure, and gas resistance from a BME680 over I2C
 | --- | --- | --- | --- | --- | --- |
 | `virtual` | boolean | no | `false` |  | Produce plausible drifting readings instead of opening the sensor. |
 | `i2cAddress` | number | no | `119` |  | The sensor's I2C address; a BME680 uses 0x76 or 0x77 depending on its SDO pin. Must be between 8 and 119, a whole number. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `read:constant`
 
@@ -46,8 +52,10 @@ Replaces the message with a value from the config.
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
 | `value` | any | **yes** |  |  | What the message becomes. Every string inside it is interpolated. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `read:file`
 
@@ -59,8 +67,10 @@ Replaces the message with the contents of a file.
 | `encoding` | `ascii` or `utf8` or `utf-8` or `utf16le` or `utf-16le` or `ucs2` or `ucs-2` or `base64` or `base64url` or `latin1` or `binary` or `hex` | no | `"utf8"` |  | How to decode the file's bytes. |
 | `virtual` | boolean | no | `false` |  | Return virtualValue instead of reading the file. |
 | `virtualValue` | string | no | `""` |  | What a virtual read returns in place of the file contents. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `read:ltr559`
 
@@ -70,8 +80,10 @@ Reads ambient light and proximity from an LTR-559 over I2C.
 | --- | --- | --- | --- | --- | --- |
 | `virtual` | boolean | no | `false` |  | Produce plausible drifting readings instead of opening the sensor. |
 | `i2cAddress` | number | no | `35` |  | The sensor's I2C address. Must be between 8 and 119, a whole number. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `read:mems-mic`
 
@@ -82,8 +94,10 @@ Reads a sound level from a MEMS I2S digital microphone, over ALSA.
 | `virtual` | boolean | no | `false` |  | Fake the level instead of capturing audio. |
 | `alsaDevice` | string | **yes** |  |  | The ALSA capture device, e.g. "plughw:CARD=<id>,DEV=0". |
 | `captureSeconds` | number | no | `2` |  | Length of the capture each read performs. Must be at least 1, a whole number. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `read:random`
 
@@ -96,8 +110,10 @@ Replaces the message with a number that drifts within bounds, one step at a time
 | `minStep` | number | **yes** |  |  | The smallest change between consecutive readings. |
 | `maxStep` | number | **yes** |  |  | The largest change between consecutive readings. |
 | `start` | number | **yes** |  |  | The value the first reading drifts away from. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `read:stash`
 
@@ -106,6 +122,8 @@ Replaces the message with a value the same message stashed earlier.
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
 | `key` | string | **yes** |  |  | Which stashed value to read; a dotted key reads a nested path. Supports ${...} interpolation. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 

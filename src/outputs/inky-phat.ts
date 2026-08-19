@@ -290,18 +290,15 @@ export default class InkyPhat extends Output {
     // E-ink refresh takes seconds, so this deliberately awaits rather than
     // firing and forgetting: overlapping redraws corrupt the panel. Stamped
     // before the await as well as after, so a refresh still in flight when the
-    // next message lands is treated as recent rather than as never-happened.
+    // next message lands is treated as recent rather than as never-happened,
+    // and so a refresh that throws still counts as an attempt: a panel that
+    // keeps failing is retried on the normal schedule, not on every message.
     this.lastRefresh = Date.now();
     try {
       await this.panel.redraw();
-    } catch (error) {
-      // One panel failing to draw must not terminate the host. This is a single
-      // output among many, and every other step in the pipeline is unaffected
-      // by it. The timestamp above still stands, so a panel that keeps failing
-      // is retried on the normal schedule rather than on every message.
-      this.error(`Refresh failed: ${error}`);
+    } finally {
+      this.lastRefresh = Date.now();
     }
-    this.lastRefresh = Date.now();
 
     return message;
   }
@@ -326,6 +323,13 @@ export default class InkyPhat extends Output {
 
     const base = await readGpioBase();
 
+    // The pre-6.6 numbering, where sysfs numbers equalled BCM numbers, is the
+    // only guess left; on a current kernel exporting an unshifted pin fails.
+    if (base === undefined)
+      this.warn(
+        "Could not read the GPIO controller's base from sysfs; assuming 0.",
+      );
+
     // inkyphat hardcodes BCM pin numbers (RESET 27, BUSY 17, DC 22) and hands
     // them straight to onoff, which writes them to /sys/class/gpio/export with
     // no offset applied. On this kernel that export fails, so the pin numbers
@@ -347,7 +351,7 @@ export default class InkyPhat extends Output {
     // inkyphat's `new Gpio(...)` still gets a genuine Gpio.
     const OffsetGpio = function (pin: number, ...rest: Array<unknown>) {
       return new (Gpio as unknown as new (...args: Array<unknown>) => object)(
-        pin + base,
+        pin + (base ?? 0),
         ...rest,
       );
     } as unknown as typeof Gpio;

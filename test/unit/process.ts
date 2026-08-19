@@ -34,6 +34,13 @@ function fakeProcess(): FakeProcess {
 describe("a signalled shutdown", function () {
   const fakeLogger = {
     logListeners: [] as Array<unknown>,
+    addListener(listener: unknown) {
+      this.logListeners.push(listener);
+    },
+    removeListener(listener: unknown) {
+      const index = this.logListeners.indexOf(listener);
+      if (index !== -1) this.logListeners.splice(index, 1);
+    },
     emit: () => {},
     info: () => {},
     warn: () => {},

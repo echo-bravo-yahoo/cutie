@@ -7,6 +7,7 @@ import { ModuleSchema } from "../util/schema.js";
 export interface LogsConfig extends StepConfig {
   filters: Array<string>;
   minVerbosity?: Verbosity;
+  maxVerbosity?: Verbosity;
 }
 
 export type Verbosity = "fatal" | "error" | "info" | "debug" | "warn" | "trace";
@@ -31,15 +32,15 @@ export default class Logs extends Trigger {
   }
 
   // Listening starts at enable rather than register, so a logs trigger in a
-  // disabled task receives nothing.
+  // disabled task receives nothing. Registering here also replays whatever the
+  // node logged before any listener existed.
   async enable() {
-    globals.logger.logListeners.push(this);
+    globals.logger.addListener(this);
     this.enabled = true;
   }
 
   async disable() {
-    const index = globals.logger.logListeners.indexOf(this);
-    if (index !== -1) globals.logger.logListeners.splice(index, 1);
+    globals.logger.removeListener(this);
     this.enabled = false;
   }
 
@@ -92,16 +93,23 @@ export default class Logs extends Trigger {
       verbosity,
       this.config.filters,
       this.config.minVerbosity,
+      this.config.maxVerbosity,
     );
   }
 
+  // A floor and a ceiling, so two tasks can split the same topics by severity:
+  // one carrying errors to an alert destination, the other everything below
+  // them to the ordinary one. Both default to the end of the range, so a
+  // config that sets neither still matches every level.
   static shouldEmit(
     topic: string,
     verbosity: Verbosity,
     filters: Array<string>,
     minVerbosity: Verbosity = "trace",
+    maxVerbosity: Verbosity = "fatal",
   ): boolean {
     if (VERBOSITY_RANK[verbosity] < VERBOSITY_RANK[minVerbosity]) return false;
+    if (VERBOSITY_RANK[verbosity] > VERBOSITY_RANK[maxVerbosity]) return false;
 
     const lastMatch = [...filters]
       .reverse()
@@ -126,6 +134,12 @@ export const schema: ModuleSchema = {
       type: "string",
       description: "The least severe level a line may be and still match.",
       default: "warn",
+      enum: VERBOSITIES,
+    },
+    maxVerbosity: {
+      type: "string",
+      description:
+        "The most severe level a line may be and still match. Omit for no ceiling; pair it with minVerbosity to route one band of severities somewhere of its own.",
       enum: VERBOSITIES,
     },
   },

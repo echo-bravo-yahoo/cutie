@@ -91,6 +91,52 @@ test(
   },
 );
 
+// The pair is what makes two destinations possible: one task carrying errors
+// somewhere of their own, another carrying everything below them to the
+// ordinary place, with no line landing in both.
+test(
+  "log matching with a maxVerbosity",
+  { concurrency: true },
+  (testContext) => {
+    const band = () =>
+      new Logs(
+        {
+          type: "trigger:logs",
+          filters: ["*"],
+          minVerbosity: "info",
+          maxVerbosity: "warn",
+        },
+        mockTask,
+      );
+
+    for (const verbosity of ["info", "warn"] as Array<Verbosity>) {
+      testContext.test(`emits inside the band at "${verbosity}"`, () => {
+        expect(band().shouldEmit("a.b.c.d", verbosity)).to.equal(true);
+      });
+    }
+
+    for (const verbosity of [
+      "trace",
+      "debug",
+      "error",
+      "fatal",
+    ] as Array<Verbosity>) {
+      testContext.test(`is silent outside the band at "${verbosity}"`, () => {
+        expect(band().shouldEmit("a.b.c.d", verbosity)).to.equal(false);
+      });
+    }
+
+    testContext.test("has no ceiling when only a floor is set", () => {
+      const floorOnly = new Logs(
+        { type: "trigger:logs", filters: ["*"], minVerbosity: "info" },
+        mockTask,
+      );
+
+      expect(floorOnly.shouldEmit("a.b.c.d", "fatal")).to.equal(true);
+    });
+  },
+);
+
 const logTestCases: Array<{
   title: string;
   topic: string;

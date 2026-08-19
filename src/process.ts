@@ -43,9 +43,26 @@ export function setupProcess(process: NodeJS.Process) {
     exitWhenDrained(process, 0);
   });
 
-  process.on("uncaughtException", async (err) => {
-    globals.logger.fatal("Uncaught Exception. Terminating now.", { err });
+  // The line is awaited, unlike a signal handler's: cleanUp disables every log
+  // listener, so a line emitted and then immediately abandoned is lost by the
+  // task whose whole job is republishing it -- and this is the one line that
+  // says why the node stopped.
+  const crash = async (message: string, object: object) => {
+    await globals.logger.fatal(message, object);
     await cleanUp();
     exitWhenDrained(process, 1);
-  });
+  };
+
+  process.on("uncaughtException", (err, origin) =>
+    crash("Uncaught Exception. Terminating now.", { err, origin }),
+  );
+
+  // Without this Node reports a rejection nothing caught as an uncaught
+  // exception, which names neither the reason nor that a promise was involved.
+  process.on("unhandledRejection", (reason) =>
+    crash("Unhandled Rejection. Terminating now.", {
+      err: reason,
+      origin: "unhandledRejection",
+    }),
+  );
 }

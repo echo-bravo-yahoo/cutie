@@ -36,7 +36,7 @@ export default class Logs extends Output {
     const key = String(verbosity);
     if (!this.warnedVerbosities.has(key)) {
       this.warnedVerbosities.add(key);
-      globals.logger.warn(
+      this.warn(
         `Unrecognized log verbosity "${key}"; logging at "${FALLBACK_VERBOSITY}" instead.`,
       );
     }

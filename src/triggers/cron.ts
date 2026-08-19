@@ -34,7 +34,7 @@ export default class Cron extends Trigger {
         // Cloned before interpolation so a transform that mutates the message
         // cannot write back into the config and change what the next firing
         // starts from.
-        this.startMessage(
+        this.fire(() =>
           this.interpolateDeep(cloneMessage(this.config.message)),
         ),
       { errorHandler: this.errorHandler.bind(this) },

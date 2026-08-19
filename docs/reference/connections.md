@@ -15,8 +15,10 @@ A connection to an InfluxDB write endpoint. It cannot serve a remote config; onl
 | `bucket` | string | **yes** |  |  | The bucket to write into. |
 | `token` | string | **yes** |  |  | An API token with write permission on the bucket. |
 | `precision` | `ns` or `us` or `ms` or `s` | no | `"ms"` |  | The timestamp precision the written lines carry. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `connection:mqtt`
 
@@ -33,6 +35,8 @@ A connection to an MQTT broker, shared by every trigger and output that names it
 | `connectTimeout` | number | no |  | `ms` | How long to wait for the broker to accept a connection. Must be at least 0. |
 | `clean` | boolean | no |  |  | Start a fresh session rather than resuming the one this client id left behind. |
 | `rejectUnauthorized` | boolean | no |  |  | For a TLS endpoint, refuse a certificate that does not verify. |
-| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 

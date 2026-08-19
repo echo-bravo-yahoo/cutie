@@ -31,8 +31,8 @@ export default class Once extends Trigger {
           ? `Running step once after a delay of ${this.delayMs} ms.`
           : "Running step once, immediately.";
       this.info(message, { traceId });
-      this.startMessage(
-        this.interpolateDeep(cloneMessage(this.config.message)),
+      this.fire(
+        () => this.interpolateDeep(cloneMessage(this.config.message)),
         traceId,
       );
     }, this.delayMs);

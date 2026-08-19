@@ -1,5 +1,6 @@
 import Output, { OutputConfig } from "../util/Output.js";
 import { readGpioBase } from "../util/gpio.js";
+import { CORE_TOPIC, logAt } from "../util/LogHelper.js";
 import {
   decodeBitmap,
   fitRaster,
@@ -317,13 +318,24 @@ export class ST7735Panel {
     );
     const base = await readGpioBase();
 
+    // The pre-6.6 numbering, where sysfs numbers equalled BCM numbers, is the
+    // only guess left; on a current kernel exporting an unshifted pin fails.
+    // Under the core topic because the panel driver is not a Configurable and
+    // has none of its own.
+    if (base === undefined)
+      logAt(
+        CORE_TOPIC,
+        "warn",
+        "Could not read the GPIO controller's base from sysfs; assuming 0.",
+      );
+
     // A factory rather than `class OffsetGpio extends Gpio`, matching
     // output:inky-phat's own OffsetGpio: this project compiles to ES5, where
     // a subclass becomes `_super.call(this, ...)`, and calling a real ES6
     // class constructor that way throws.
     const OffsetGpio = function (pin: number, ...rest: Array<unknown>) {
       return new (Gpio as unknown as new (...args: Array<unknown>) => object)(
-        pin + base,
+        pin + (base ?? 0),
         ...rest,
       );
     } as unknown as typeof Gpio;
@@ -457,14 +469,7 @@ export default class ST7735 extends Output {
       return message;
     }
 
-    try {
-      await panel.show(raster);
-    } catch (error) {
-      // One panel failing to draw must not terminate the host - this is a
-      // single output among many, matching output:inky-phat's own guard on
-      // its hardware write.
-      this.error(`Draw failed: ${error}`, { traceId });
-    }
+    await panel.show(raster);
 
     return message;
   }

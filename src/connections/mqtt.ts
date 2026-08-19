@@ -296,7 +296,7 @@ export default class MQTTConnection
     // this has to tolerate being called with no client rather than throwing
     // on every message a task tries to send while disconnected.
     if (!this.connection) {
-      this.debug(
+      this.warn(
         `Dropped a publish to "${topic}"; connection "${this.name}" never connected.`,
       );
       return;

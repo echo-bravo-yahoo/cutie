@@ -30,6 +30,9 @@ export default class Event extends Output {
     // The trace rides along as a second argument, so trigger:event continues
     // it rather than starting one of its own. An external listener taking one
     // argument is unaffected.
+    //
+    // The stash and the error do not cross, which nothing ever decided: see
+    // .claude/docs/design-principles.md, "Message context across a hand-off".
     globals.eventBus.emit(this.config.key, message, traceId);
     return message;
   }

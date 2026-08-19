@@ -10,6 +10,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { listModules, loadSchema } from "../src/util/modules.js";
+import { UNIVERSAL_OPTION_SCHEMAS } from "../src/util/schema.js";
 import { KINDS } from "../src/util/type-helpers.js";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -20,31 +21,12 @@ const KIND_BLURBS = {
   trigger: "A trigger decides when a task runs and what message it starts.",
   read: "A read replaces the message with a value from somewhere else.",
   transform: "A transform changes the message on its way through a task.",
+  control:
+    "A control decides what the chain does next, rather than changing the message on its way through it.",
   output: "An output sends the message somewhere and passes it on unchanged.",
   connection:
     "A connection is a shared link to something outside the node, named by the steps that use it.",
 };
-
-// Every step accepts these, whatever its type, so each page says it once rather
-// than repeating it in thirty-nine tables.
-const UNIVERSAL_ROWS = [
-  [
-    "`disabled`",
-    "boolean",
-    "no",
-    "`false`",
-    "",
-    "Leave this step out of the task.",
-  ],
-  [
-    "`name`",
-    "string",
-    "no",
-    "",
-    "",
-    "A label for this step, used in error messages.",
-  ],
-];
 
 function cell(value) {
   return value === undefined || value === "" ? "" : String(value);
@@ -96,8 +78,8 @@ function table(rows) {
   return [...header, ...body].join("\n");
 }
 
-function renderModule(schema) {
-  const rows = Object.entries(schema.options).map(([name, option]) => [
+function rowsFor(options) {
+  return Object.entries(options).map(([name, option]) => [
     `\`${name}\``,
     renderType(option),
     option.required ? "**yes**" : "no",
@@ -105,6 +87,14 @@ function renderModule(schema) {
     option.unit ? `\`${option.unit}\`` : "",
     renderDescription(option),
   ]);
+}
+
+// Every step accepts these, whatever its type, so they come from the same
+// declaration the validator checks against rather than a table repeated here.
+const UNIVERSAL_ROWS = rowsFor(UNIVERSAL_OPTION_SCHEMAS);
+
+function renderModule(schema) {
+  const rows = rowsFor(schema.options);
 
   return [
     `## \`${schema.type}\``,

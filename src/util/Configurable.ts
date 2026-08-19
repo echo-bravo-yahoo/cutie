@@ -38,6 +38,7 @@ type LogLine = (
 export class Configurable {
   debug: LogLine;
   info: LogLine;
+  warn: LogLine;
   error: LogLine;
   logPrefix: string;
   config: Config;
@@ -48,7 +49,7 @@ export class Configurable {
 
   constructor(config: Config, name: string) {
     const at =
-      (verbosity: "debug" | "info" | "error"): LogLine =>
+      (verbosity: "debug" | "info" | "warn" | "error"): LogLine =>
       (msg, opts = {}, obj) => {
         // Read here rather than closed over: logPrefix is assigned after this
         // constructor returns, by whichever subclass owns the topic.
@@ -65,6 +66,7 @@ export class Configurable {
 
     this.debug = at("debug");
     this.info = at("info");
+    this.warn = at("warn");
     this.error = at("error");
 
     // subclasses that log under a topic override this

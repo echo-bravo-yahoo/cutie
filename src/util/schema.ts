@@ -35,13 +35,35 @@ export interface ModuleSchema {
   additionalOptions?: boolean;
 }
 
-// Supplied by the validator for every step, so a module schema must not repeat
-// them.
-export const UNIVERSAL_OPTIONS: ReadonlyArray<string> = [
-  "type",
-  "name",
-  "disabled",
-];
+// Accepted by every step, whatever its type, so a module schema must not
+// repeat them. Declared as schemas rather than as a list of names because two
+// readers need more than the names: the validator type-checks them, and the
+// reference generator renders them into every module's table.
+export const UNIVERSAL_OPTION_SCHEMAS: Record<string, OptionSchema> = {
+  type: {
+    type: "string",
+    description: 'Which module this step is, as "kind:subKind".',
+    required: true,
+  },
+  name: {
+    type: "string",
+    description: "A label for this step, used in error messages.",
+  },
+  disabled: {
+    type: "boolean",
+    description: "Leave this step out of the task.",
+    default: false,
+  },
+  rescue: {
+    type: "string",
+    description:
+      "Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there.",
+  },
+};
+
+export const UNIVERSAL_OPTIONS: ReadonlyArray<string> = Object.keys(
+  UNIVERSAL_OPTION_SCHEMAS,
+);
 
 // Looked up synchronously from Configurable's constructor, which cannot await
 // an import. Both loadSchema and Task.importStep populate it, so any module

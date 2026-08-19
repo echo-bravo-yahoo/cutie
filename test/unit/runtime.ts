@@ -18,6 +18,7 @@ import { CronConfig } from "../../src/triggers/cron.js";
 import { EventConfig } from "../../src/triggers/event.js";
 import {
   isConnection,
+  isControl,
   isOutput,
   isRead,
   isTransform,
@@ -75,6 +76,13 @@ describe("the runtime", function () {
 
   const fakeLogger = {
     logListeners: [] as Array<unknown>,
+    addListener(listener: unknown) {
+      this.logListeners.push(listener);
+    },
+    removeListener(listener: unknown) {
+      const index = this.logListeners.indexOf(listener);
+      if (index !== -1) this.logListeners.splice(index, 1);
+    },
     emit: () => {},
     info: () => {},
     warn: () => {},
@@ -111,6 +119,7 @@ describe("the runtime", function () {
       trigger: isTrigger,
       read: isRead,
       transform: isTransform,
+      control: isControl,
       output: isOutput,
       connection: isConnection,
     };
@@ -119,6 +128,7 @@ describe("the runtime", function () {
       trigger: "trigger:once",
       read: "read:constant",
       transform: "transform:prettify",
+      control: "control:return",
       output: "output:console",
       connection: "connection:influxdb",
     };

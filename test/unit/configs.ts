@@ -32,6 +32,13 @@ describe("fetching a remote config", function () {
   const errors: Array<string> = [];
   const fakeLogger = {
     logListeners: [] as Array<unknown>,
+    addListener(listener: unknown) {
+      this.logListeners.push(listener);
+    },
+    removeListener(listener: unknown) {
+      const index = this.logListeners.indexOf(listener);
+      if (index !== -1) this.logListeners.splice(index, 1);
+    },
     emit: () => {},
     info: () => {},
     warn: (message: string) => warnings.push(message),

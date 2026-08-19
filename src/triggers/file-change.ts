@@ -23,7 +23,7 @@ export default class FileChange extends Trigger {
       resolveConfigPath(this.config.path),
       { recursive: this.config.recursive },
       (eventType, filename) => {
-        this.startMessage({ eventType, filename });
+        this.fire(() => ({ eventType, filename }));
       },
     );
     this.info(

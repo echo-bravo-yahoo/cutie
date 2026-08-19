@@ -66,5 +66,9 @@ export async function start(maybeArgs?: CLIArgs) {
   await registerConnections(config.connections ?? []);
   await registerTasks(config.tasks ?? []);
 
+  // Registration is over, so every trigger:logs task the config declares is
+  // listening and there is no window left to hold lines for.
+  globals.logger.stopBuffering();
+
   return globals;
 }

@@ -7,7 +7,6 @@ import { promisify } from "node:util";
 
 import DrunkReader, { DrunkSoundLevel } from "../util/DrunkReader.js";
 import Read, { ReadConfig } from "../util/Read.js";
-import { HALT } from "../util/Step.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
 import { ModuleSchema } from "../util/schema.js";
@@ -73,13 +72,10 @@ export default class MemsMic extends Read {
   async read(_message: Message, traceId: string) {
     const captureFile = join(tmpdir(), `cutie-mems-mic-${randomUUID()}.wav`);
 
-    // A read runs on trigger:repeat's bare setInterval, with no try/catch
-    // above it - an unhandled rejection here would crash every other task
-    // sharing this process. arecord failing transiently (device busy, an
-    // I2S hiccup) should skip one reading, not take the process down. HALT
-    // rather than undefined, because a bare undefined message reaching
-    // output:influxdb throws (it only accepts a string or an object with a
-    // fields key), and nothing downstream catches that.
+    // The capture file is removed whether or not arecord produced one, so a
+    // failed capture leaves nothing in the temp directory. The failure itself
+    // belongs to the runtime: the trigger contains it, and a `rescue` decides
+    // what a skipped reading should become.
     try {
       await execFileAsync("arecord", [
         "-D",
@@ -109,9 +105,6 @@ export default class MemsMic extends Read {
       );
 
       return datapoint;
-    } catch (error) {
-      this.error(`Capture failed: ${error}`, { traceId });
-      return HALT;
     } finally {
       await rm(captureFile, { force: true });
     }
