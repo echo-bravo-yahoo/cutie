@@ -105,15 +105,12 @@ export default class MemsMic extends Read {
 
       this.debug(
         `Sampled new data point, ${JSON.stringify(datapoint, null, 2)}`,
-        { topic: this.logPrefix, traceId },
+        { traceId },
       );
 
       return datapoint;
     } catch (error) {
-      this.error(`Capture failed: ${error}`, {
-        topic: this.logPrefix,
-        traceId,
-      });
+      this.error(`Capture failed: ${error}`, { traceId });
       return HALT;
     } finally {
       await rm(captureFile, { force: true });
@@ -123,12 +120,12 @@ export default class MemsMic extends Read {
   async enable() {
     // arecord is a fresh subprocess per read(), unlike a kept-open I2C/SPI
     // handle, so there is no persistent resource to open here.
-    this.info("Enabled mems-mic.", { topic: this.logPrefix });
+    this.info("Enabled mems-mic.");
     this.enabled = true;
   }
 
   async disable() {
-    this.info("Disabled mems-mic.", { topic: this.logPrefix });
+    this.info("Disabled mems-mic.");
     this.enabled = false;
   }
 }
@@ -145,8 +142,7 @@ export const schema: ModuleSchema = {
     },
     alsaDevice: {
       type: "string",
-      description:
-        'The ALSA capture device, e.g. "plughw:CARD=<id>,DEV=0".',
+      description: 'The ALSA capture device, e.g. "plughw:CARD=<id>,DEV=0".',
       required: true,
     },
     captureSeconds: {

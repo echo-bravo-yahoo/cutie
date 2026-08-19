@@ -122,10 +122,7 @@ export default class LTR559 extends Read {
 
     this.debug(
       `Sampled new data point, ${JSON.stringify(datapoint, null, 2)}`,
-      {
-        topic: this.logPrefix,
-        traceId,
-      },
+      { traceId },
     );
 
     return datapoint;
@@ -157,13 +154,13 @@ export default class LTR559 extends Read {
       this.bus.writeByteSync(address, REG_ALS_MEAS_RATE, 0x08); // 50ms integration, 50ms repeat
     }
 
-    this.info("Enabled ltr559.", { topic: this.logPrefix });
+    this.info("Enabled ltr559.");
     this.enabled = true;
   }
 
   async disable() {
     if (this.bus) this.bus.closeSync();
-    this.info("Disabled ltr559.", { topic: this.logPrefix });
+    this.info("Disabled ltr559.");
     this.enabled = false;
   }
 }

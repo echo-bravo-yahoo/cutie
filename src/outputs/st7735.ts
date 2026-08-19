@@ -452,7 +452,7 @@ export default class ST7735 extends Output {
     if (!panel) {
       this.info(
         `Would draw (virtual): ${this.config.width}x${this.config.height}, ${countLitPixels(raster)} lit pixels.`,
-        { topic: this.logPrefix, traceId },
+        { traceId },
       );
       return message;
     }
@@ -463,7 +463,7 @@ export default class ST7735 extends Output {
       // One panel failing to draw must not terminate the host - this is a
       // single output among many, matching output:inky-phat's own guard on
       // its hardware write.
-      this.error(`Draw failed: ${error}`, { topic: this.logPrefix, traceId });
+      this.error(`Draw failed: ${error}`, { traceId });
     }
 
     return message;
@@ -485,7 +485,7 @@ export default class ST7735 extends Output {
       await this.panel.open();
     }
 
-    this.info("Enabled st7735.", { topic: this.logPrefix });
+    this.info("Enabled st7735.");
     this.enabled = true;
   }
 
@@ -494,7 +494,7 @@ export default class ST7735 extends Output {
       await this.panel.close();
       this.panel = undefined;
     }
-    this.info("Disabled st7735.", { topic: this.logPrefix });
+    this.info("Disabled st7735.");
     this.enabled = false;
   }
 }
