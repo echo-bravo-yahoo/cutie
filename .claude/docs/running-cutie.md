@@ -99,6 +99,7 @@ Type string is `<kind>:<subKind>`, and loads `src/<kind>s/<subKind>.ts` (see des
 - `control:return` — ends the chain and hands a value back to whatever invoked the task, plus any `stash` keys to publish into the caller's stash. A task that falls off its own end returns nothing. `cutie validate` warns about one in a task nothing invokes.
 - `control:branch` — runs the task named by `task:` from inside this one, then carries on. The target decides what comes back exactly as a rescue does. The name is resolved per message, so a task may branch to one declared after it.
 - `control:stop` — ends the chain here, so the steps after it never run. The message is consumed rather than failed, so it produces no `error` line and does not count as handled.
+- `control:delay` — holds the message here for a fixed `duration` before the rest of the chain runs, via a plain `setTimeout`-backed `await` (costs only this message's own progress, not the process).
 - `control:branch` and `control:stop` both take an optional `when`, a JavaScript function body compiled once at registration and read for truthiness. It means the same thing in both: when this holds, do what the module is named for. Omit it to do that every time, and note that a predicate that throws is an ordinary step failure rather than a false condition.
 
 **Outputs** (`src/outputs/`):

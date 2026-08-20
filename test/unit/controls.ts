@@ -350,6 +350,40 @@ describe("flow control", function () {
     });
   });
 
+  describe("a delay", function () {
+    it("passes the message through unchanged after the wait", async function () {
+      const task = await registered(
+        { steps: [{ type: "control:delay", duration: 5 }] },
+        "waits a beat",
+      );
+
+      expect(await task.startMessage("unchanged", "a-trace")).to.equal(
+        "unchanged",
+      );
+    });
+
+    it("actually waits, rather than resolving immediately", async function () {
+      const task = await registered(
+        { steps: [{ type: "control:delay", duration: "20ms" }] },
+        "waits with a unit",
+      );
+
+      const start = Date.now();
+      await task.startMessage("go", "a-trace");
+
+      expect(Date.now() - start).to.be.at.least(20);
+    });
+
+    it("fails to register with an unparseable duration", async function () {
+      await expect(
+        registered(
+          { steps: [{ type: "control:delay", duration: "not-a-duration" }] },
+          "bad duration",
+        ),
+      ).to.be.rejectedWith(/duration/);
+    });
+  });
+
   describe("a predicate that will not compile", function () {
     it("fails its own task at registration and leaves the others running", async function () {
       await registerTasks({

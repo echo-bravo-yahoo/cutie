@@ -17,6 +17,18 @@ Runs another task from inside this one, always or only when a predicate holds, t
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
+## `control:delay`
+
+Holds the message here for a fixed duration before the rest of the chain runs.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `duration` | any | **yes** |  | `ms` | How long to wait, as a number of milliseconds or a string with a unit such as "2s". |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
+
 ## `control:return`
 
 Ends the chain and hands a value back to whatever invoked this task, such as the step that named it as its rescue.
