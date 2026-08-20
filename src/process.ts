@@ -1,22 +1,11 @@
 import { globals } from "./index.js";
+import { shutdown } from "./util/lifecycle.js";
 
 // How long to wait for the event loop to drain on its own before forcing the
 // exit, in ms.
 const FORCED_EXIT_DELAY = 2000;
 
-// Disables everything that holds a timer, a socket, or a listener, so a
-// signalled shutdown closes cleanly instead of being killed mid-flight.
-async function cleanUp() {
-  await Promise.allSettled([
-    ...globals.tasks.flatMap((task) => [
-      task.trigger?.disable(),
-      ...task.steps.map((step) => step.disable()),
-    ]),
-    ...globals.connections.map((connection) => connection.disable()),
-  ]);
-}
-
-// Once cleanUp has released every timer and socket the event loop drains by
+// Once shutdown has released every timer and socket the event loop drains by
 // itself, which is also what gives pino's transport thread a chance to flush
 // the final lines -- process.exit() would kill it mid-write. The watchdog is
 // unref'd, so it only ever fires if something failed to release.
@@ -30,7 +19,7 @@ export function setupProcess(process: NodeJS.Process) {
     globals.logger.info(
       `Process ${process.pid} received SIGTERM signal. Terminating.`,
     );
-    await cleanUp();
+    await shutdown();
     // a signalled stop is a clean stop; only a crash exits non-zero
     exitWhenDrained(process, 0);
   });
@@ -39,17 +28,17 @@ export function setupProcess(process: NodeJS.Process) {
     globals.logger.info(
       `Process ${process.pid} received SIGINT signal. Terminating.`,
     );
-    await cleanUp();
+    await shutdown();
     exitWhenDrained(process, 0);
   });
 
-  // The line is awaited, unlike a signal handler's: cleanUp disables every log
+  // The line is awaited, unlike a signal handler's: shutdown disables every log
   // listener, so a line emitted and then immediately abandoned is lost by the
   // task whose whole job is republishing it -- and this is the one line that
   // says why the node stopped.
   const crash = async (message: string, object: object) => {
     await globals.logger.fatal(message, object);
-    await cleanUp();
+    await shutdown();
     exitWhenDrained(process, 1);
   };
 

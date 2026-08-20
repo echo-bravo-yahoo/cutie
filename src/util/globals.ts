@@ -1,6 +1,6 @@
 import type { EventEmitter } from "node:events";
 
-import type { Connection } from "./Connection.js";
+import type { Connection, ProvidingConnection } from "./Connection.js";
 import type LogHelper from "./LogHelper.js";
 import type Task from "./Task.js";
 
@@ -13,6 +13,10 @@ export interface Globals {
   // Directory of the config file in use. Every relative path a config supplies
   // resolves against this, not against the process's working directory.
   configDir: string;
+  // The connection this node watches its own config on. Owned by the runtime
+  // rather than by the config, so it is not in `connections` and a reload does
+  // not close it.
+  configConnection?: ProvidingConnection;
 }
 
 // by the time consumers see this object, it's been properly instantiated
