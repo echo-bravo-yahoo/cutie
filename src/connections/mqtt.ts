@@ -62,6 +62,7 @@ export default class MQTTConnection
       if (nodeName) configs[nodeName] = JSON.parse(message.toString());
     };
 
+    // Registered before subscribing, matching fetchSingleConfig's fix below -- do not reorder these two lines.
     this.connection.on("message", handler);
     await this.connection.subscribeAsync(topic);
 
@@ -91,7 +92,6 @@ export default class MQTTConnection
     timeoutMs: number = DEFAULT_FETCH_TIMEOUT_MS,
   ): Promise<ConfigFile> {
     const nodeTopic = topicForNode(topic, nodeName);
-    await this.connection.subscribeAsync(nodeTopic);
 
     let handler: (topic: string, message: Buffer) => void = () => {};
     let timer: NodeJS.Timeout | undefined;
@@ -102,7 +102,14 @@ export default class MQTTConnection
           if (messageTopic === nodeTopic)
             resolve(JSON.parse(message.toString()));
         };
+        // Registered before subscribing: a broker can deliver a retained
+        // message as soon as it processes the SUBSCRIBE packet, which can beat
+        // this function's own subscribeAsync() promise back from the broker. A
+        // listener attached only after that await missed a message that
+        // arrived that fast, and waited out the full timeout for it anyway.
         this.connection.on("message", handler);
+
+        this.connection.subscribeAsync(nodeTopic).catch(reject);
 
         timer = setTimeout(
           () =>
@@ -132,7 +139,6 @@ export default class MQTTConnection
     globals.logger.info(
       `Fetching remote config from MQTT topic "${provider.topic}" using client ${this.connection.options.clientId}.`,
     );
-    await this.connection.subscribeAsync(provider.topic);
 
     let handler: (topic: string, message: Buffer) => void = () => {};
     let timer: NodeJS.Timeout | undefined;
@@ -156,7 +162,10 @@ export default class MQTTConnection
             );
           }
         };
+        // Registered before subscribing -- see fetchSingleConfig's comment above for why.
         this.connection.on("message", handler);
+
+        this.connection.subscribeAsync(provider.topic).catch(reject);
 
         timer = setTimeout(
           () =>

@@ -372,6 +372,68 @@ describe("connections", function () {
       await rm(directory, { recursive: true, force: true });
     });
   });
+
+  describe("the retained-message listener race", function () {
+    // Hands the retained message back out of subscribeAsync's own synchronous
+    // call, before subscribeAsync's promise has even resolved -- the fastest a
+    // real broker can possibly reply, and the exact case that used to be
+    // missed. createMqttMock() (test/helpers.ts) can't reproduce this: its
+    // subscribeAsync defers delivery by a full setTimeout(0) turn specifically
+    // to mimic a normal round trip, which is always slow enough for the old
+    // buggy code to still work by accident.
+    class InstantBroker extends EventEmitter {
+      options = { clientId: "instant" };
+      async subscribeAsync(topic: string) {
+        this.emit(
+          "message",
+          topic,
+          Buffer.from(JSON.stringify({ tasks: {} })),
+          {},
+        );
+      }
+      async endAsync() {}
+    }
+
+    it("fetchConfig catches a message delivered synchronously from subscribeAsync", async function () {
+      useFakeGlobals();
+      const connection = new MQTTConnection({
+        type: "connection:mqtt",
+        name: "instant",
+        endpoint: "mqtt://127.0.0.1:1883",
+      } as never);
+      connection.connection = new InstantBroker() as never;
+      connection.enabled = true;
+
+      // A short timeout: this has to resolve well inside it via the listener,
+      // not eventually reject once it elapses.
+      const config = await connection.fetchConfig(
+        { connectionName: "instant", topic: "cutie/config/x" } as never,
+        connection.config,
+        50,
+      );
+
+      expect(config).to.deep.equal({ tasks: {} });
+    });
+
+    it("fetchSingleConfig catches a message delivered synchronously from subscribeAsync", async function () {
+      useFakeGlobals();
+      const connection = new MQTTConnection({
+        type: "connection:mqtt",
+        name: "instant",
+        endpoint: "mqtt://127.0.0.1:1883",
+      } as never);
+      connection.connection = new InstantBroker() as never;
+      connection.enabled = true;
+
+      const config = await connection.fetchSingleConfig(
+        "x",
+        "cutie/config/+",
+        50,
+      );
+
+      expect(config).to.deep.equal({ tasks: {} });
+    });
+  });
 });
 
 // "mqtt" can only be mocked once per process, and this file's other tests
