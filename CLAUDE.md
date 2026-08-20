@@ -7,6 +7,10 @@ Claude-facing reference docs:
 - `.claude/docs/design-principles.md` — the class hierarchy (`Configurable`/`Task`/`Step`/`Trigger`/`Transform`/`Output`/`Connection`), the linked-list step chain, interpolation syntax, and the deliberate design choices (optional hardware, virtual mode, credential redaction). Read before changing runtime internals.
 - `.claude/docs/running-cutie.md` — CLI commands, the local dev loop, the full step-type inventory, provisioning a new Pi, running as a systemd service, and the retained-MQTT remote-config mechanism. Read before running, testing, or deploying cutie.
 
+## Documentation
+
+Never commit specifics of a real cutie installation to this repo: hostnames, wiring or pin assignments, kernel or board identifiers, deployed commit hashes, credentials, certificate IDs, or endpoints. This repo is public. Keep that kind of note in `echobravoyahoo/` (gitignored) instead.
+
 ## Build & test
 
 - Install: `npm install` (Node 22-24; on ARMv6 use Python <=3.10.8, e.g. `PYTHON="$(which python3.10)" npm install`)

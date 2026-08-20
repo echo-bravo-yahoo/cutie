@@ -162,7 +162,7 @@ For administering the actual live fleet (which devices exist, their topics, read
 3. Burning is a separate, explicitly confirmed step: `node provisioner/provision.mjs --skip-customize --burn /dev/sdX`. It refuses to run without the device path retyped, or without `CUTIE_BURN_CONFIRM=/dev/sdX` when there is no terminal (`provisioner/provision.mjs:362-407`).
 4. `configure-host.sh` runs `npm ci --omit=dev` during sdm's post-install phase, so a freshly burned card boots ready instead of compiling for 15-30 minutes on first use. The same script applies to an already-booted Pi through `provisioner/pi.sh <host> converge`.
 
-The staged config is written under the provisioner's cache directory rather than into `config/`, so a run leaves the working tree clean. Board-specific findings for the Pi Zero W live in `.claude/docs/<node>-hardware.md`.
+The staged config is written under the provisioner's cache directory rather than into `config/`, so a run leaves the working tree clean. Board-specific findings for a Pi Zero W are not committed to this repo (see "Documentation" in `CLAUDE.md`).
 
 ## Running as a systemd service
 
@@ -180,12 +180,12 @@ The staged config is written under the provisioner's cache directory rather than
 `provisioner/pi.sh <host> <verb>` drives a Pi over SSH from a development machine (`README.md:258-271`). An ARMv6 board is too constrained to develop on directly, so work happens on a workstation and reaches the Pi through this script.
 
 ```bash
-provisioner/pi.sh <node> deploy    # build locally, rsync built/, restart
-provisioner/pi.sh <node> logs      # follow the journal, --namespace=cutie
-provisioner/pi.sh <node> rollback  # swap the retained previous build back in
+provisioner/pi.sh <host> deploy    # build locally, rsync built/, restart
+provisioner/pi.sh <host> logs      # follow the journal, --namespace=cutie
+provisioner/pi.sh <host> rollback  # swap the retained previous build back in
 ```
 
-`deploy` never copies `node_modules`: native modules are compiled per architecture and per Node ABI, so a copy from a development machine lands unloadable binaries on the Pi. It also syncs `built/` and nothing else, so a build that imports a newly added runtime dependency starts and then dies at the import — sync `package.json` and `package-lock.json` to the device and run `npm install --omit=dev` there first (`.claude/docs/<node>-hardware.md:47-49`).
+`deploy` never copies `node_modules`: native modules are compiled per architecture and per Node ABI, so a copy from a development machine lands unloadable binaries on the Pi. It also syncs `built/` and nothing else, so a build that imports a newly added runtime dependency starts and then dies at the import — sync `package.json` and `package-lock.json` to the device and run `npm install --omit=dev` there first.
 
 `~/.aeby/scripts/cutie-deploy.sh [--ref <git-ref>] [host ...]` is the fleet-wide alternative: it deploys a git ref over SSH, verifies the service comes back healthy, and is documented in `~/.claude/docs/cutie-admin.md`. Either route is a **code** deploy — distinct from the MQTT retained-config mechanism above, which changes a device's runtime _config_ without touching its code.
 
