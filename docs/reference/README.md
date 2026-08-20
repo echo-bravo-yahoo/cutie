@@ -13,6 +13,7 @@ Every option every module accepts, generated from the schemas the runtime valida
 - [`trigger:infrared`](./triggers.md#triggerinfrared)
 - [`trigger:logs`](./triggers.md#triggerlogs)
 - [`trigger:mqtt`](./triggers.md#triggermqtt)
+- [`trigger:nec`](./triggers.md#triggernec)
 - [`trigger:once`](./triggers.md#triggeronce)
 - [`trigger:repeat`](./triggers.md#triggerrepeat)
 

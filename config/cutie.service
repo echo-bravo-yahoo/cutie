@@ -1,5 +1,10 @@
 [Unit]
 Description=a cute little MQTT service
+# GPIO/IR triggers and outputs talk to pigpiod over a socket via
+# pigpio-client -- pigpiod needs root (enabled separately, see README.md),
+# cutie itself does not. Start it first.
+After=network-online.target pigpiod.service
+Wants=pigpiod.service
 
 [Service]
 User=pi

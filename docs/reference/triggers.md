@@ -97,6 +97,20 @@ Starts a message for every MQTT message published to one of its topics.
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
+## `trigger:nec`
+
+Decodes an NEC infrared protocol frame on a GPIO pin and starts a message of {address, command, extendedAddress, extendedCommand} for each one received.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `receiverPin` | number | no |  |  | The GPIO pin the infrared receiver's data line is on. Must be at least 0, a whole number. |
+| `activeLow` | boolean | no | `true` |  | Whether the receiver pulls its data line low (rather than high) to signal a mark. |
+| `virtual` | boolean | no | `false` |  | Register without opening any GPIO pin. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
+
 ## `trigger:once`
 
 Starts a single message when the node starts.

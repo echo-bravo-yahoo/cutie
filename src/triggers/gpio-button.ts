@@ -1,12 +1,10 @@
 import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import { ModuleSchema } from "../util/schema.js";
-import { readGpioBase } from "../util/gpio.js";
-import { importOptional } from "../util/optional-dependency.js";
-
-// Type-only, so it is erased before runtime and the package is still reached
-// through importOptional below.
-import type { Gpio as OnoffGpio } from "onoff";
+import {
+  getPigpioConnection,
+  PigpioClientGpio,
+} from "../util/pigpio-client.js";
 
 export interface GpioButtonConfig extends TriggerConfig {
   // BCM pin numbers keyed by the name each button reports as.
@@ -25,20 +23,20 @@ export interface GpioButtonConfig extends TriggerConfig {
 
 const DEFAULT_DEBOUNCE_MS = 40;
 
-// Buttons wired to GPIO, read through sysfs.
+// Buttons wired to GPIO, read through pigpiod.
 //
 // Boards of this kind wire buttons active-low against a pull-up, so a pressed
 // button reads 0. The pull-up is usually on the board; where it is not, the
-// firmware can supply one via a `gpio=<pins>=ip,pu` line in config.txt, because
-// sysfs GPIO offers no way to set internal bias.
+// firmware can supply one via a `gpio=<pins>=ip,pu` line in config.txt --
+// pigpio-client can set internal bias itself (pullUpDown), but this trigger
+// doesn't call it, so an unbiased pin still needs the firmware-level pull-up.
 export default class GpioButton extends Trigger {
   declare config: GpioButtonConfig;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private pins: Array<{ name: string; gpio: any }> = [];
+  private pins: Array<{ name: string; gpio: PigpioClientGpio }> = [];
   private lastEmit: Record<string, number> = {};
 
-  constructor(config: GpioButtonConfig, task: Task) {
-    super(config, task);
+  constructor(config: GpioButtonConfig, task: Task, index?: number) {
+    super(config, task, index);
 
     this.name = "gpio-button";
   }
@@ -62,31 +60,17 @@ export default class GpioButton extends Trigger {
       return;
     }
 
-    // onoff writes the pin number straight to /sys/class/gpio/export with no
-    // offset, so BCM numbers have to be shifted by the controller's base.
-    const base = await readGpioBase();
-
-    // The pre-6.6 numbering, where sysfs numbers equalled BCM numbers, is the
-    // only guess left; on a current kernel exporting an unshifted pin fails.
-    if (base === undefined)
-      this.warn(
-        "Could not read the GPIO controller's base from sysfs; assuming 0.",
-      );
-    const { Gpio } = await importOptional<{ Gpio: typeof OnoffGpio }>(
-      "onoff",
-      "trigger:gpio-button",
-    );
+    const pigpioClient = await getPigpioConnection("trigger:gpio-button");
 
     for (const [name, bcm] of Object.entries(this.config.buttons ?? {})) {
-      const gpio = new Gpio(bcm + (base ?? 0), "in", "both");
+      const gpio = pigpioClient.gpio(bcm);
+      gpio.modeSet("input");
+      // pigpio-client calls back once with (null, null) after endNotify() --
+      // ignore it.
+      gpio.notify((level, tick) => {
+        if (level === null || tick === null) return;
 
-      gpio.watch((error: Error | null | undefined, value: number) => {
-        if (error) {
-          this.error(`Watch failed for button ${name}: ${error.message}`);
-          return;
-        }
-
-        const pressed = value === 0;
+        const pressed = level === 0;
         if (!this.shouldEmit(name, pressed)) return;
 
         this.debug(`Button ${name} ${pressed ? "pressed" : "released"}.`);
@@ -97,16 +81,13 @@ export default class GpioButton extends Trigger {
     }
 
     this.info(
-      `Enabled gpio buttons (${this.pins.map((p) => p.name).join(", ") || "none"}), gpio base ${base ?? 0}.`,
+      `Enabled gpio buttons (${this.pins.map((p) => p.name).join(", ") || "none"}).`,
     );
     this.enabled = true;
   }
 
   async disable() {
-    for (const { gpio } of this.pins) {
-      gpio.unwatchAll();
-      gpio.unexport();
-    }
+    for (const { gpio } of this.pins) gpio.endNotify();
     this.pins = [];
     this.info("Disabled gpio buttons.");
     this.enabled = false;

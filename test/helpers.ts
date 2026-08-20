@@ -4,7 +4,16 @@ import MqttTopics from "mqtt-topics";
 
 import { Globals } from "../src/index.js";
 import Task from "../src/util/Task.js";
-import { Pigpio } from "../src/util/bitbang/pulse.js";
+import {
+  PigpioClient,
+  PigpioClientGpio,
+} from "../src/util/pigpio-client.js";
+import {
+  NEC_HEADER_HIGH_US,
+  NEC_HEADER_LOW_US,
+  NEC_TRAILER_US,
+} from "../src/util/bitbang/adapters/nec.js";
+import { NEC_LONG_GAP_US, NEC_PULSE_US } from "../src/util/bitbang/helpers.js";
 
 export const mockTask = {
   config: { steps: [] },
@@ -108,43 +117,94 @@ export function createMqttMock(retained: Record<string, string> = {}) {
   };
 }
 
-// The wave id createPigpioMock hands back, so an assertion can name the wave
-// that was created and deleted.
+// The wave id createPigpioClientMock hands back, so an assertion can name the
+// wave that was created and deleted.
 export const MOCK_WAVE_ID = 7;
 
-// The slice of pigpio the waveform code drives (src/util/bitbang/pulse.ts),
+// The slice of pigpio-client the waveform code drives (src/util/pigpio-client.ts),
 // recording every call in order so a transmission's ordering can be asserted.
-// busyFor is how many times waveTxBusy reports the queue still draining.
-export function createPigpioMock({ busyFor = 1 } = {}) {
+// `gpio` is returned alongside so a test can override one of its methods
+// (e.g. to make waveSendOnce throw).
+export function createPigpioClientMock() {
   const calls: Array<string> = [];
-  let busyChecks = 0;
 
-  const pigpio: Pigpio = {
-    waveClear: () => {
+  const gpio: PigpioClientGpio = {
+    modeSet: (mode) => {
+      calls.push(`modeSet(${mode})`);
+    },
+    write: (level) => {
+      calls.push(`write(${level})`);
+    },
+    notify: () => {
+      calls.push("notify");
+    },
+    endNotify: () => {
+      calls.push("endNotify");
+    },
+    waveClear: async () => {
       calls.push("waveClear");
     },
-    waveAddGeneric: () => {
-      calls.push("waveAddGeneric");
+    waveAddPulse: async () => {
+      calls.push("waveAddPulse");
     },
-    waveCreate: () => {
+    waveCreate: async () => {
       calls.push("waveCreate");
       return MOCK_WAVE_ID;
     },
-    waveDelete: (waveId: number) => {
+    waveSendOnce: async (waveId: number) => {
+      calls.push(`waveSendOnce(${waveId})`);
+    },
+    waveNotBusy: async () => {
+      calls.push("waveNotBusy");
+    },
+    waveDelete: async (waveId: number) => {
       calls.push(`waveDelete(${waveId})`);
     },
-    waveTxSend: (waveId: number, mode: number) => {
-      calls.push(`waveTxSend(${waveId}, ${mode})`);
-    },
-    waveTxBusy: () => {
-      const busy = busyChecks++ < busyFor;
-      calls.push(`waveTxBusy(${busy})`);
-      return busy;
-    },
-    WAVE_MODE_ONE_SHOT: 0,
   };
 
-  return { calls, pigpio };
+  const pigpioClient: PigpioClient = {
+    gpio: (pin: number) => {
+      calls.push(`gpio(${pin})`);
+      return gpio;
+    },
+    once: () => {},
+    on: () => {},
+    removeListener: () => {},
+  };
+
+  return { calls, gpio, pigpioClient };
+}
+
+// Turns a 32-bit NEC payload into the {level, tick} edges a receiver would
+// produce for it, active-low, so decode logic can be tested without pigpio
+// or real hardware.
+export function necReceiverEdges(
+  bits: Array<boolean>,
+  startTick = 1_000_000,
+): Array<{ level: number; tick: number }> {
+  const segments: Array<{ level: 0 | 1; duration: number }> = [
+    { level: 0, duration: NEC_HEADER_HIGH_US },
+    { level: 1, duration: NEC_HEADER_LOW_US },
+  ];
+
+  for (const bit of bits) {
+    segments.push({ level: 0, duration: NEC_PULSE_US });
+    segments.push({
+      level: 1,
+      duration: bit ? NEC_LONG_GAP_US : NEC_PULSE_US,
+    });
+  }
+
+  segments.push({ level: 0, duration: NEC_TRAILER_US });
+
+  let tick = startTick;
+  const edges = [{ level: segments[0].level, tick }];
+  for (const segment of segments) {
+    tick += segment.duration;
+    edges.push({ level: segment.level === 0 ? 1 : 0, tick });
+  }
+
+  return edges;
 }
 
 interface TaskDoneOptions {

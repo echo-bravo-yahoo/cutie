@@ -68,6 +68,7 @@ Type string is `<kind>:<subKind>`, and loads `src/<kind>s/<subKind>.ts` (see des
 - `trigger:file-change` — starts a task on filesystem change events.
 - `trigger:logs` — starts a task for internal log lines matching `filters` (`*` wildcard, `!` negates, last match wins).
 - `trigger:infrared` — GPIO IR receiver; emits raw `{level, tick}` edges (decoding is left to downstream steps).
+- `trigger:nec` — GPIO IR receiver that decodes the NEC protocol itself, emitting `{address, command, extendedAddress, extendedCommand}`.
 - `trigger:gpio-button` — starts a `{button, pressed}` message when an active-low button wired to a GPIO pin changes.
 
 **Reads** (`src/reads/`) — replace the message with a fresh reading; pair with a trigger like `trigger:repeat`:
@@ -109,7 +110,7 @@ Type string is `<kind>:<subKind>`, and loads `src/<kind>s/<subKind>.ts` (see des
 - `output:event` — emits the message on the in-process event bus.
 - `output:logs` — routes a `{log, object, verbosity, topic}` message back into the logger; the sink side of `trigger:logs`.
 - `output:influxdb` — writes a line-protocol point to InfluxDB via `connection:influxdb`.
-- `output:nec` — transmits an NEC infrared remote command via `pigpio` bit-banging.
+- `output:nec` — transmits an NEC infrared remote command via `pigpiod` bit-banging, reached over its socket protocol via `pigpio-client`.
 - `output:switchbots` — drives SwitchBot Bot devices (`on`/`off`/`press`) over BLE.
 - `output:thermal-printer` — prints to a serial thermal printer, with a small markdown-heading dialect.
 - `output:inky-phat` — draws each message on an Inky pHAT e-paper panel, 212x104 in three colours, from an image file or a bitmap the message carries.

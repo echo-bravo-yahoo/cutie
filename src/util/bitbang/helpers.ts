@@ -1,7 +1,9 @@
-// Waveform helpers for bit-banging an infrared carrier through pigpio.
+// Waveform helpers for bit-banging an infrared carrier through pigpiod (the
+// pigpio daemon), reached over its socket protocol via pigpio-client.
 // Ported from the vendored CommonJS "bitbang" sub-package; only the pieces the
-// NEC transmit path reaches came across. The receive-side decoders and the
-// terminal graphing helper were left behind in git history.
+// NEC transmit path reaches came across. NEC receive-side decoding lives in
+// adapters/nec.ts; the other protocols' receive-side code and the terminal
+// graphing helper were left behind in git history.
 
 // One entry of a pigpio generic waveform: which pins to drive high, which to
 // drive low, and how long to hold that state, in microseconds.

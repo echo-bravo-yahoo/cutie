@@ -1,12 +1,11 @@
 import Output, { OutputConfig } from "../util/Output.js";
 import Task from "../util/Task.js";
 import { Message } from "../util/type-helpers.js";
-import { importOptional } from "../util/optional-dependency.js";
 import {
   NECCommand,
   transmitNECCommand,
 } from "../util/bitbang/adapters/nec.js";
-import { Pigpio } from "../util/bitbang/pulse.js";
+import { getPigpioConnection, PigpioClient } from "../util/pigpio-client.js";
 import { ModuleSchema } from "../util/schema.js";
 
 // A command as a config or a message writes it: numbers may arrive as hex
@@ -26,7 +25,7 @@ export interface NECConfig extends OutputConfig {
 
 export default class NEC extends Output {
   declare config: NECConfig;
-  pigpio?: Pigpio;
+  pigpioClient?: PigpioClient;
 
   // A pin is required only when one is actually driven, which is a pairing no
   // single option's schema can express.
@@ -98,18 +97,20 @@ export default class NEC extends Output {
       { command: necCommand },
     );
 
-    if (this.config.virtual || !this.pigpio) return message;
+    if (this.config.virtual || !this.pigpioClient) return message;
 
-    await transmitNECCommand(this.pigpio, necCommand, this.config.ledPin);
+    await transmitNECCommand(
+      this.pigpioClient,
+      necCommand,
+      this.config.ledPin,
+    );
 
     return message;
   }
 
   async enable() {
     if (!this.config.virtual) {
-      this.pigpio = (
-        await importOptional<{ default: Pigpio }>("pigpio", "output:nec")
-      ).default;
+      this.pigpioClient = await getPigpioConnection("output:nec");
     }
 
     this.info("Enabled nec.");
@@ -117,7 +118,7 @@ export default class NEC extends Output {
   }
 
   async disable() {
-    this.pigpio = undefined;
+    this.pigpioClient = undefined;
     this.info("Disabled nec.");
     this.enabled = false;
   }

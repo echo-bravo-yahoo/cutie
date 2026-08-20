@@ -42,20 +42,20 @@ cutie           # runs it
 
 ### Commands and options
 
-| Command          | What it does                                                                   |
-| ---------------- | ------------------------------------------------------------------------------ |
-| `cutie start`    | run the tasks in the config file; the default when no command is given         |
+| Command | What it does |
+| --- | --- |
+| `cutie start` | run the tasks in the config file; the default when no command is given |
 | `cutie validate` | check the config file and report every problem found, without running anything |
-| `cutie init`     | write a starter config file to the current directory                           |
-| `cutie upload`   | publish local config files to a connection                                     |
-| `cutie download` | fetch config files from a connection                                           |
+| `cutie init` | write a starter config file to the current directory |
+| `cutie upload` | publish local config files to a connection |
+| `cutie download` | fetch config files from a connection |
 
-| Option                | Meaning                                                                                         |
-| --------------------- | ----------------------------------------------------------------------------------------------- |
-| `--config <path>`     | config file to use; defaults to `cutie.conf.yaml` in the working directory                      |
+| Option | Meaning |
+| --- | --- |
+| `--config <path>` | config file to use; defaults to `cutie.conf.yaml` in the working directory |
 | `--log-level <level>` | lowest level to log: `trace`, `debug`, `info`, `warn`, `error`, or `fatal`; defaults to `debug` |
-| `--help`              | usage for the command, or for `cutie` itself when no command is given                           |
-| `--version`           | the installed version                                                                           |
+| `--help` | usage for the command, or for `cutie` itself when no command is given |
+| `--version` | the installed version |
 
 An unrecognized option is an error rather than a silently ignored argument, and the message suggests the closest real one.
 
@@ -103,13 +103,13 @@ cutie download --config ./cutie.conf.yaml --connectionName my-broker --path ./fl
 cutie download --config ./cutie.conf.yaml --connectionName my-broker --node kitchen-pi --path ./fleet-configs
 ```
 
-| Flag               | Meaning                                                                                 |
-| ------------------ | --------------------------------------------------------------------------------------- |
-| `--config`         | the local config file naming the connection to use (not the config being uploaded)      |
-| `--connectionName` | which connection in that file to talk to                                                |
-| `--path`           | directory to read from or write to; a single file when combined with `--node` on upload |
-| `--node`           | operate on one node instead of all of them                                              |
-| `--topic`          | override where configs are stored; defaults to `cutie/config/+`                         |
+| Flag | Meaning |
+| --- | --- |
+| `--config` | the local config file naming the connection to use (not the config being uploaded) |
+| `--connectionName` | which connection in that file to talk to |
+| `--path` | directory to read from or write to; a single file when combined with `--node` on upload |
+| `--node` | operate on one node instead of all of them |
+| `--topic` | override where configs are stored; defaults to `cutie/config/+` |
 
 Uploaded files can be JSON, YAML, or YML, and the node name is taken from the filename. Downloaded files are always written as `<node>.conf.json`, and upload strips both the extension and a trailing `.conf` back off, so a fleet downloaded into a directory and uploaded again goes back to the topics it came from.
 
@@ -130,7 +130,7 @@ There are not very many parts to a `cutie` installation, but they look like this
 
 ### Hardware dependencies are optional
 
-Every package that talks to hardware -- `bme280`, `bme680-sensor`, `inkyphat`, `node-ble`, `node-switchbot`, `onoff`, `pi-spi`, `pigpio`, `serialport`, and `thermalprinter` -- is an `optionalDependency`. Most are native builds needing python and a C++ toolchain, so on a machine without one, `npm install` skips them and succeeds rather than failing outright.
+Every package that talks to hardware -- `bme280`, `bme680-sensor`, `inkyphat`, `node-ble`, `node-switchbot`, `onoff`, `pi-spi`, `pigpio-client`, `serialport`, and `thermalprinter` -- is an `optionalDependency`. Most are native builds needing python and a C++ toolchain, so on a machine without one, `npm install` skips them and succeeds rather than failing outright. `pigpio-client` is pure JS and never fails to build, but stays optional for the same reason as the rest: a node with no IR/GPIO hardware shouldn't need it in `node_modules` at all.
 
 Nothing is lost until a config asks for that hardware. Each module loads its package when the step is enabled, so a node running only MQTT and transform steps never touches them. A config that does ask for absent hardware fails at startup naming the package:
 
@@ -140,6 +140,17 @@ failed to build. Install build tools and re-run npm install.
 ```
 
 Every hardware-backed step also takes `virtual: true`, which skips the hardware and needs none of these packages installed. A sensor fakes plausible readings; a display still loads, scales and quantises its source, then logs what it would have drawn. See [sensors.md](./sensors.md).
+
+#### IR/GPIO hardware needs a running `pigpiod`
+
+`trigger:infrared`, `trigger:nec`, `trigger:gpio-button`, and `output:nec` talk to GPIO through `pigpiod`, the pigpio daemon, over its socket protocol (`localhost:8888`) via the `pigpio-client` package -- not through a native addon inside the `cutie` process itself. This is why `config/cutie.service` can run as `User=pi`: `pigpiod` needs root, `cutie` no longer does.
+
+On the target host (the `pigpio` apt package, which provides `pigpiod`, is already installed by `provisioner/configure-host.sh`):
+
+```
+sudo systemctl enable --now pigpiod
+sudo systemctl status pigpiod
+```
 
 ### Common issues
 
@@ -159,7 +170,7 @@ There is no upper bound on the python version to worry about. On ARMv6 with pyth
 
 A native module was compiled for a different architecture than the one loading it -- typically the result of copying `node_modules` onto a Pi from a 64-bit machine. Native modules are never portable across architectures or across Node ABI versions.
 
-Delete `node_modules` on the Pi and run `provisioner/pi.sh <host> install`, which does a clean `npm ci --omit=dev` on the device. Four dependencies compile from source (`i2c-bus`, `pigpio`, `usocket`, `deasync`), and `i2c-bus` alone takes about three minutes on a Pi Zero W.
+Delete `node_modules` on the Pi and run `provisioner/pi.sh <host> install`, which does a clean `npm ci --omit=dev` on the device. Three dependencies compile from source (`i2c-bus`, `usocket`, `deasync`), and `i2c-bus` alone takes about three minutes on a Pi Zero W.
 
 A freshly imaged card should not need this: `configure-host.sh` builds dependencies during the image build, inside sdm's emulated container, so the card boots ready. node-gyp reads the architecture from the running Node binary rather than from `uname`, so the emulated build still produces ARMv6 objects.
 
@@ -263,16 +274,16 @@ A predicate that throws is an ordinary step failure: it is logged under its own 
 
 `./provisioner/pi.sh <host> <verb>` drives a Pi over SSH from a development machine. An ARMv6 board is too constrained to develop on directly, so work happens on a workstation and reaches the Pi through this script.
 
-| Verb       | What it does                                                                                                                                                                               |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `probe`    | Report kernel, Node, buses, service state, and detected I2C addresses                                                                                                                      |
-| `deploy`   | Build locally, rsync `built/` to the Pi, keep the previous build, restart                                                                                                                  |
-| `install`  | Clean on-device `npm ci --omit=dev`, run detached so an SSH drop can't kill it. Rarely needed: images build their own dependencies, and `converge` installs them when the lockfile changes |
-| `rollback` | Swap the retained previous build back in and restart                                                                                                                                       |
-| `restart`  | Restart the service                                                                                                                                                                        |
-| `status`   | `systemctl status` for the service                                                                                                                                                         |
-| `logs`     | Follow the service journal (`--namespace=cutie`)                                                                                                                                           |
-| `converge` | Pipe `configure-host.sh` to the Pi and apply it                                                                                                                                            |
+| Verb | What it does |
+| --- | --- |
+| `probe` | Report kernel, Node, buses, service state, and detected I2C addresses |
+| `deploy` | Build locally, rsync `built/` to the Pi, keep the previous build, restart |
+| `install` | Clean on-device `npm ci --omit=dev`, run detached so an SSH drop can't kill it. Rarely needed: images build their own dependencies, and `converge` installs them when the lockfile changes |
+| `rollback` | Swap the retained previous build back in and restart |
+| `restart` | Restart the service |
+| `status` | `systemctl status` for the service |
+| `logs` | Follow the service journal (`--namespace=cutie`) |
+| `converge` | Pipe `configure-host.sh` to the Pi and apply it |
 
 `deploy` never copies `node_modules`. Native modules are compiled per architecture and per Node ABI, so a copy from a development machine lands unloadable binaries on the Pi -- run `npm ci` on the device instead.
 

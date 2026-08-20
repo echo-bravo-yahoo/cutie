@@ -441,8 +441,8 @@ configure_login_shell() {
 }
 
 # ---------------------------------------------------------------------------
-# Dependencies, including the four native modules that compile from source
-# (i2c-bus, pigpio, usocket, deasync).
+# Dependencies, including the three native modules that compile from source
+# (i2c-bus, usocket, deasync).
 #
 # Running this at image-build time means a card boots ready instead of spending
 # 15-30 minutes compiling on first use. It is safe under sdm's qemu emulation

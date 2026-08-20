@@ -62,12 +62,12 @@ A `MessageContext` (`src/util/TaskModule.ts:61-69`) holds four things: `stash`, 
 
 A config can hand work from one task to another three ways. A `rescue` and a `control:branch` both go through `Task.invoke` and await it, so the whole context crosses. `output:event` into `trigger:event` does not await, and only half of it crosses that hop:
 
-| field     | `rescue` / branch | `output:event` | how                                            |
-| --------- | ----------------- | -------------- | ---------------------------------------------- |
-| `message` | yes               | yes            | `invoke`'s argument 1; `bus.emit`'s argument 2 |
-| `traceId` | yes               | yes            | `invoke`'s argument 2; `bus.emit`'s argument 3 |
-| `stash`   | deep copy         | no             | `Caller.stash`; never wired across the bus     |
-| `error`   | when set          | no             | `Caller.error`; never wired across the bus     |
+| field | `rescue` / branch | `output:event` | how |
+| --- | --- | --- | --- |
+| `message` | yes | yes | `invoke`'s argument 1; `bus.emit`'s argument 2 |
+| `traceId` | yes | yes | `invoke`'s argument 2; `bus.emit`'s argument 3 |
+| `stash` | deep copy | no | `Caller.stash`; never wired across the bus |
+| `error` | when set | no | `Caller.error`; never wired across the bus |
 
 The other half does not cross the bus, and nothing decided that it should not. Before `Task.invoke` existed, `Task.startMessage` unconditionally opened `{ stash: {} }`, because there was no mechanism by which one message could hand anything to another. `invoke`'s `caller` parameter (`src/util/Task.ts:124`) is that mechanism, and `Step.recover` and `control:branch` are the two things that supply it.
 
@@ -94,7 +94,7 @@ A `rescue` and a `control:branch` already satisfy it; what is left is `output:ev
 ## Design choices, and why
 
 - **Config-driven with code escape hatches.** `README.md:5` states the intent directly. `transform:shell` and `transform:javascript` (`src/transforms/shell.ts`, `src/transforms/javascript.ts`) are the escape hatches for logic config can't express.
-- **Optional hardware, graceful degradation.** Every hardware-facing package (`bme280`, `bme680-sensor`, `inkyphat`, `node-ble`, `node-switchbot`, `onoff`, `pi-spi`, `pigpio`, `serialport`, `thermalprinter`) is an `optionalDependency` (`package.json:65-76`), so `npm install` succeeds on a machine with no build toolchain. `importOptional` (`src/util/optional-dependency.ts:6-17`) is the mechanism: every hardware-driving module calls it lazily inside `enable()`, not at import time, so a config that never asks for that hardware never touches the package. A config that does ask for missing hardware fails at startup naming the package (`README.md:131-136`).
+- **Optional hardware, graceful degradation.** Every hardware-facing package (`bme280`, `bme680-sensor`, `inkyphat`, `node-ble`, `node-switchbot`, `onoff`, `pi-spi`, `pigpio-client`, `serialport`, `thermalprinter`) is an `optionalDependency` (`package.json:66-78`), so `npm install` succeeds on a machine with no build toolchain. `importOptional` (`src/util/optional-dependency.ts:6-17`) is the mechanism: every hardware-driving module calls it lazily inside `enable()`, not at import time, so a config that never asks for that hardware never touches the package. A config that does ask for missing hardware fails at startup naming the package (`README.md:131-136`).
 - **Virtual/simulated mode.** Every module that drives something external takes `virtual: true` and stands in for it instead of touching it: a read fakes plausible drifting values (drift logic in `src/util/DrunkReader.ts`), and a display still loads, scales, and quantises its source before logging what it would have drawn (`sensors.md:23-25`). It is not universal, and a read with nothing external to stand in for rejects `virtual` at registration rather than ignoring it (`src/util/Read.ts:32-37`). `read:random` is the one that needs no hardware at all — every reading it produces is already synthetic, which makes it the way to exercise the runtime itself on a development box (`README.md:201`).
 - **Credential redaction is structural.** `src/util/redact.ts` walks a config object and blanks `password`/`username`/`token`/`apiKey`/`secret`, and strips the userinfo out of any value that parses as a URL, before it reaches any log line. Every connection-registration log (`src/util/connections.ts:67`) and every freshly-fetched remote-config log (`src/connections/mqtt.ts:172-175`) goes through it.
 - **Clean, drain-based shutdown.** `shutdown` (`src/util/lifecycle.ts:16`) disables every timer/socket/listener on `SIGTERM`/`SIGINT` and lets the event loop drain, rather than calling `process.exit()` immediately — this is also what gives the pino transport thread a chance to flush its final lines. A 2-second forced-exit watchdog is the safety net if draining hangs (`src/process.ts:12-15`).
@@ -109,6 +109,6 @@ Behavior that matters but isn't written up anywhere outside code:
 - That a `read:*` step **replaces** the message, rather than merging into it — called out only in an inline comment (`examples/interpolation.yaml:34-38`).
 - `output:logs`/`trigger:logs` wildcard-filter matching (`*`, leading `!` negates, last match wins) has a spec only in `README.md:211` and the implementation, `src/triggers/logs.ts:47-118`.
 - Task-level and step-level `disabled` (`Configurable.shouldEnable`, `src/util/Configurable.ts:81-83`, widened to the owning task by `src/util/TaskModule.ts:154-156`) is undocumented outside code.
-- `output:nec`/`trigger:infrared` (IR remote control via `pigpio` bit-banging), `output:switchbots`, and `output:thermal-printer` have no cookbook recipe or example config despite being fully implemented.
+- `output:nec`/`trigger:infrared`/`trigger:nec` (IR remote control via `pigpiod` bit-banging, reached over its socket protocol via `pigpio-client`), `output:switchbots`, and `output:thermal-printer` have no cookbook recipe or example config despite being fully implemented.
 - `connection:influxdb`/`output:influxdb` (line-protocol format, precision, tag interpolation) has no cookbook or example coverage either.
 - `test/unit/*.ts` is a better source of ground truth for interpolation and transform edge cases than any prose doc — check there before assuming behavior.

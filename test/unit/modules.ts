@@ -25,7 +25,7 @@ import UnicornHatMini, {
 } from "../../src/outputs/unicorn-hat-mini.js";
 import { PIXEL_LUT } from "../../src/util/unicorn-hat-mini-lut.js";
 import { importOptional } from "../../src/util/optional-dependency.js";
-import { createPigpioMock } from "../helpers.js";
+import { createPigpioClientMock } from "../helpers.js";
 
 // A walk config with room to move: every step lands well inside the bounds.
 const WALK = { start: 22, min: 20, max: 30, minStep: 0.05, maxStep: 0.5 };
@@ -595,25 +595,25 @@ describe("modules", function () {
 
     it("transmits nothing at all when virtual", async function () {
       const output = nec({ virtual: true });
-      const { calls, pigpio } = createPigpioMock();
-      output.pigpio = pigpio;
+      const { calls, pigpioClient } = createPigpioClientMock();
+      output.pigpioClient = pigpioClient;
 
       const message = { address: "0x7c", command: "0x66" };
       expect(await output.send(message, "a-trace")).to.equal(message);
       expect(calls).to.deep.equal([]);
     });
 
-    it("transmits exactly once when it has a pigpio", async function () {
+    it("transmits exactly once when it has a pigpioClient", async function () {
       const output = nec();
-      const { calls, pigpio } = createPigpioMock();
-      output.pigpio = pigpio;
+      const { calls, pigpioClient } = createPigpioClientMock();
+      output.pigpioClient = pigpioClient;
 
       const message = { address: "0x7c", command: "0x66" };
       expect(await output.send(message, "a-trace")).to.equal(message);
       expect(calls.filter((call) => call === "waveCreate")).to.have.lengthOf(1);
     });
 
-    it("transmits nothing when there is no pigpio to transmit with", async function () {
+    it("transmits nothing when there is no pigpioClient to transmit with", async function () {
       const message = { address: "0x7c", command: "0x66" };
 
       expect(await nec().send(message, "a-trace")).to.equal(message);

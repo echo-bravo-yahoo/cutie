@@ -36,11 +36,19 @@ import ThermalPrinter from "../../src/outputs/thermal-printer.js";
 import InfluxDB from "../../src/outputs/influxdb.js";
 import InfluxDBConnection from "../../src/connections/influxdb.js";
 import {
+  necBitsToCommand,
+  NECFrameDecoder,
   necToBits,
   necToWave,
+  pulseToTriplet,
   transmitNECCommand,
 } from "../../src/util/bitbang/adapters/nec.js";
-import { createPigpioMock, MOCK_WAVE_ID, taskDone } from "../helpers.js";
+import {
+  createPigpioClientMock,
+  MOCK_WAVE_ID,
+  necReceiverEdges,
+  taskDone,
+} from "../helpers.js";
 
 // A connection with a stubbed-out client, so subscribe/unsubscribe
 // bookkeeping can be observed without a broker.
@@ -300,6 +308,10 @@ describe("the runtime", function () {
 
     it("applies trigger:once's delay", async function () {
       expect((await configOf("trigger:once")).delay).to.equal(0);
+    });
+
+    it("applies trigger:nec's activeLow", async function () {
+      expect((await configOf("trigger:nec")).activeLow).to.equal(true);
     });
 
     it("still lets an explicit value win over a default", async function () {
@@ -734,50 +746,140 @@ describe("the runtime", function () {
   describe("bitbang NEC transmission", function () {
     const command = { address: 0x7c, command: 0x66 };
 
-    it("deletes the wave only after the transmission has drained", async function () {
-      const { calls, pigpio } = createPigpioMock();
+    it("clears, loads, sends, waits, and deletes the wave in order", async function () {
+      const { calls, pigpioClient } = createPigpioClientMock();
 
-      await transmitNECCommand(pigpio, command, 23);
+      await transmitNECCommand(pigpioClient, command, 23);
 
-      expect(
-        calls.filter((call) => !call.startsWith("waveTxBusy")),
-      ).to.deep.equal([
+      expect(calls).to.deep.equal([
+        "gpio(23)",
         "waveClear",
-        "waveAddGeneric",
+        "waveAddPulse",
         "waveCreate",
-        `waveTxSend(${MOCK_WAVE_ID}, 0)`,
+        `waveSendOnce(${MOCK_WAVE_ID})`,
+        "waveNotBusy",
         `waveDelete(${MOCK_WAVE_ID})`,
       ]);
-      // the v3 bug: the promise never settled, and the wave was deleted while
-      // it was still transmitting
-      expect(calls.indexOf(`waveDelete(${MOCK_WAVE_ID})`)).to.be.greaterThan(
-        calls.lastIndexOf("waveTxBusy(true)"),
-      );
-      expect(calls.at(-2)).to.equal("waveTxBusy(false)");
-    });
-
-    it("waits for as long as the queue stays busy", async function () {
-      const { calls, pigpio } = createPigpioMock({ busyFor: 3 });
-
-      await transmitNECCommand(pigpio, command, 23);
-
-      expect(
-        calls.filter((call) => call === "waveTxBusy(true)"),
-      ).to.have.lengthOf(3);
-      expect(calls.at(-1)).to.equal(`waveDelete(${MOCK_WAVE_ID})`);
     });
 
     it("still deletes the wave when the transmission throws", async function () {
-      const { calls, pigpio } = createPigpioMock();
-      pigpio.waveTxSend = () => {
+      const { calls, gpio, pigpioClient } = createPigpioClientMock();
+      gpio.waveSendOnce = async () => {
         throw new Error("no gpio here");
       };
 
-      await expect(transmitNECCommand(pigpio, command, 23)).to.be.rejectedWith(
-        /no gpio here/,
-      );
+      await expect(
+        transmitNECCommand(pigpioClient, command, 23),
+      ).to.be.rejectedWith(/no gpio here/);
 
       expect(calls).to.include(`waveDelete(${MOCK_WAVE_ID})`);
+    });
+  });
+
+  describe("bitbang pigpio-client triplet translation", function () {
+    it("sets only the flag matching the configured LED pin", function () {
+      expect(
+        pulseToTriplet({ gpioOn: 23, gpioOff: 0, usDelay: 100 }, 23),
+      ).to.deep.equal([1, 0, 100]);
+      expect(
+        pulseToTriplet({ gpioOn: 0, gpioOff: 23, usDelay: 200 }, 23),
+      ).to.deep.equal([0, 1, 200]);
+    });
+
+    it("leaves both flags at 0 for a pin the pulse doesn't drive", function () {
+      expect(
+        pulseToTriplet({ gpioOn: 17, gpioOff: 0, usDelay: 50 }, 23),
+      ).to.deep.equal([0, 0, 50]);
+    });
+  });
+
+  describe("bitbang NEC decoding", function () {
+    it("decodes a full frame from synthetic edges, emitting only on the final edge", function () {
+      const decoder = new NECFrameDecoder();
+      const edges = necReceiverEdges(
+        necToBits({ address: 0x7c, command: 0x66, extendedAddress: 0xaa }),
+      );
+
+      const results = edges.map((edge) =>
+        decoder.consumeEdge(edge.level, edge.tick),
+      );
+
+      expect(
+        results.slice(0, -1).every((result) => result === undefined),
+      ).to.equal(true);
+      expect(results[results.length - 1]).to.deep.equal({
+        address: 0x7c,
+        extendedAddress: 0xaa,
+        command: 0x66,
+        extendedCommand: 0x99,
+      });
+    });
+
+    it("round-trips boundary byte values through necToBits", function () {
+      expect(
+        necBitsToCommand(necToBits({ address: 0x00, command: 0x00 })),
+      ).to.deep.equal({
+        address: 0x00,
+        extendedAddress: 0x00,
+        command: 0x00,
+        extendedCommand: 0xff,
+      });
+
+      expect(
+        necBitsToCommand(necToBits({ address: 0xff, command: 0xff })),
+      ).to.deep.equal({
+        address: 0xff,
+        extendedAddress: 0xff,
+        command: 0xff,
+        extendedCommand: 0x00,
+      });
+    });
+
+    it("recovers after a corrupted frame", function () {
+      const decoder = new NECFrameDecoder();
+      const bits = necToBits({ address: 0x7c, command: 0x66 });
+
+      // truncate a frame partway through -- header plus a few bits, no trailer
+      const truncatedEdges = necReceiverEdges(bits).slice(0, 10);
+      for (const edge of truncatedEdges)
+        decoder.consumeEdge(edge.level, edge.tick);
+
+      // a subsequent well-formed frame still decodes correctly
+      const goodEdges = necReceiverEdges(bits, 5_000_000);
+      let result;
+      for (const edge of goodEdges)
+        result = decoder.consumeEdge(edge.level, edge.tick);
+
+      expect(result).to.deep.equal({
+        address: 0x7c,
+        extendedAddress: 0x7c,
+        command: 0x66,
+        extendedCommand: 0x99,
+      });
+    });
+  });
+
+  describe("trigger:nec", function () {
+    it("requires the receiver pin rather than guessing one", async function () {
+      await expect(
+        new Task(
+          { trigger: { type: "trigger:nec" } as any, steps: [] },
+          "nec trigger without a pin",
+        ).register(),
+      ).to.be.rejectedWith(/needs a receiverPin/);
+    });
+
+    it("wants no receiver pin when it is virtual", async function () {
+      const errors = await validateConfig(
+        {
+          tasks: {
+            t: { trigger: { type: "trigger:nec", virtual: true }, steps: [] },
+          },
+        },
+        { configPath: "/tmp/x.json" },
+      );
+
+      expect(errors).to.deep.equal([]);
     });
   });
 

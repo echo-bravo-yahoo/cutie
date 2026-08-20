@@ -154,7 +154,7 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 # module:binary pairs, since the .node name rarely matches the package name.
-for pair in i2c-bus:i2c pigpio:pigpio usocket:uwrap rpio:rpio pi-spi:spi_binding; do
+for pair in i2c-bus:i2c usocket:uwrap rpio:rpio pi-spi:spi_binding; do
   module="${pair%%:*}"
   name="${pair##*:}"
   src="/home/pi/workspace/cutie/node_modules/${module}/build/Release/${name}.node"
