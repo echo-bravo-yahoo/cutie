@@ -66,4 +66,4 @@ A display takes pixels and nothing else, so anything that produces pixels can fe
 }
 ```
 
-The script runs under `node:vm` with nothing in scope but `message`, so there is no `Buffer` to base64 with -- it returns plain arrays of numbers, which the bitmap format accepts equally. Its last expression is the message that continues down the pipeline.
+The file is compiled once, when the task registers, into a function that takes `message`, `stash`, `error`, `task`, `module`, and `env` as arguments, and it runs under `node:vm` — so those six names are in scope and the host's globals are not. There is no `Buffer` to base64 with, which is why the script returns plain arrays of numbers; the bitmap format accepts them equally. What it `return`s is the message that continues down the pipeline, and a script that returns nothing hands the next step `undefined`.

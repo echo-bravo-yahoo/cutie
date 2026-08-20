@@ -91,7 +91,7 @@ Type string is `<kind>:<subKind>`, and loads `src/<kind>s/<subKind>.ts` (see des
 - `transform:aggregate` — collapses an array of samples into one value via `latest`/`average`/`sum`/`median`/`pX` (`src/util/aggregation.ts`).
 - `transform:prettify` / `transform:uglify` — stringify the message as indented / compact JSON.
 - `transform:shell` — runs a shell command (`command` or `codePath`), coerces stdout to `string`/`number`/`object`.
-- `transform:javascript` — runs JS in a `node:vm` sandbox (`command` or `codePath`), same output coercion.
+- `transform:javascript` — runs JS in a `node:vm` sandbox (`command` or `codePath`), same output coercion. The source is compiled once at registration into a function taking `message`, `stash`, `error`, `task`, `module`, and `env`; it must `return` its result, and it is not interpolated (`src/util/javascript.ts`).
 
 **Outputs** (`src/outputs/`):
 
