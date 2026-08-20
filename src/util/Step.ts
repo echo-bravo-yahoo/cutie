@@ -16,6 +16,7 @@ export {
   cloneMessage,
   configDir,
   currentMessageContext,
+  readCodeSource,
   requireOneCodeSource,
   resolveConfigPath,
   runWithMessageContext,

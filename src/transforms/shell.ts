@@ -3,7 +3,11 @@ import { promisify } from "node:util";
 
 import Transform, { Context, WholeMessageConfig } from "../util/Transform.js";
 import Task from "../util/Task.js";
-import { CODE_OUTPUT_TYPES, requireOneCodeSource } from "../util/Step.js";
+import {
+  CODE_OUTPUT_TYPES,
+  readCodeSource,
+  requireOneCodeSource,
+} from "../util/Step.js";
 import { Message } from "../util/type-helpers.js";
 import { ModuleSchema } from "../util/schema.js";
 
@@ -31,7 +35,15 @@ export default class Shell extends Transform {
   }
 
   async transform(message: Message, _traceId: string) {
-    const command = this.generateCode(this.config, message);
+    // A command line has no parameter channel, so the message reaches it by
+    // being spliced into the text, stringified unless it already is a string.
+    const command = this.interpolateConfigString(
+      readCodeSource(this.config, "transform:shell"),
+      {
+        message:
+          typeof message === "string" ? message : JSON.stringify(message),
+      },
+    );
     const args: Partial<Parameters<typeof execAsync>[1]> = {
       encoding: "utf8",
     };

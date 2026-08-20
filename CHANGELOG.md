@@ -32,6 +32,10 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 - `read:mems-mic` throws when a capture fails rather than halting the message. Containing a failure is the runtime's job now: the trigger keeps the node up, and a `rescue` decides what a skipped reading becomes.
 - `output:inky-phat` and `output:st7735` no longer swallow a failed draw. The chain sees the failure, which is what makes it routable; a `rescue` whose only step is a bare `control:return` restores the old behaviour of carrying on with the same message.
 - `read:mems-mic` aside, `Read.read` no longer returns `HALT`. `HALT` means "deliberately consumed", which is what `transform:accumulate` uses it for, and no longer doubles as "my read failed".
+- A `transform:javascript` script is a function body and has to `return` its result. `command: "21 * 2"` becomes `command: "return 21 * 2"`. The completion-value rule it replaces was a genuinely surprising one -- `const a = 1` evaluates to `undefined`, and a bare `if` evaluates to whichever branch it took -- and a `return` is what anyone reading the config expects.
+- A `transform:javascript` script is no longer interpolated. `${...}` in one is JavaScript's own template syntax now, so a template literal reaches the VM intact. Everything the interpolation reached is a parameter of the compiled function instead: `message`, `stash`, `error`, `task`, `module`, and `env`. A script that read `${stash.device}` reads `stash.device`.
+- `globals` is not among them, so a script cannot reach `${globals.version}` or the connection list any more. It needs a `redact()` pass per message, which nothing was asking for from JavaScript.
+- A `transform:javascript` `codePath` is read once, when the task registers, rather than on every message. Editing the script file needs a restart to take effect, and a script that cannot be read or cannot be parsed now fails its task at registration instead of failing every message.
 
 ### Added
 
@@ -72,3 +76,4 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 - The line explaining why the node is stopping now reaches a `trigger:logs` task. Shutdown disabled every listener before the fan-out had run, which is exactly when the node most needs to send that line on.
 - `read:mems-mic` removes its capture file whether or not the capture succeeded.
 - A publish dropped because its connection never connected is logged at `warn` rather than `debug`, and a GPIO base that cannot be read from sysfs is reported rather than silently guessed at `0`.
+- `transform:javascript` costs 0.04us a message rather than 341us. It used to stand up a fresh V8 realm and recompile its source for every message, because interpolating the source first meant the text could differ each time; the source is fixed now, so it is compiled once when the task registers and only called per message.

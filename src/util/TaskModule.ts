@@ -30,7 +30,7 @@ export interface CodeConfig {
 // code produced.
 export const CODE_OUTPUT_TYPES = ["object", "string", "number", "any"];
 
-// generateCode prefers codePath and ignores command when both are set, so
+// readCodeSource prefers codePath and ignores command when both are set, so
 // naming both is a config that does not mean what it looks like.
 export function requireOneCodeSource(config: CodeConfig, type: string) {
   const sources = [config.codePath, config.command].filter(
@@ -42,6 +42,28 @@ export function requireOneCodeSource(config: CodeConfig, type: string) {
 
   if (sources.length > 1)
     throw new Error(`"${type}": "codePath" cannot be combined with "command".`);
+}
+
+// The text a code transform was configured with, raw. What happens to it next
+// differs by transform: shell interpolates it, because a command line has no
+// other channel to the message, and javascript compiles it with the same names
+// bound as parameters instead.
+export function readCodeSource(config: CodeConfig, type: string): string {
+  if (config.codePath) {
+    const codePath = resolveConfigPath(config.codePath);
+
+    try {
+      return readFileSync(codePath, { encoding: "utf8" });
+    } catch (error) {
+      throw new Error(
+        `Could not read codePath "${config.codePath}", resolved against the config directory "${configDir()}" to "${codePath}": ${(error as Error).message}.`,
+      );
+    }
+  }
+
+  if (config.command) return config.command;
+
+  throw new Error(`"${type}" needs either a "codePath" or a "command".`);
 }
 
 // What ${error...} resolves to. Set only on a message a task was invoked to
@@ -242,36 +264,5 @@ export default abstract class TaskModule extends Module {
     }
 
     return result;
-  }
-
-  // transform:shell and transform:javascript build their code identically:
-  // read codePath when set, otherwise interpolate command. Either way the
-  // message is stringified first unless it already is a string, because
-  // interpolation splices values into a string.
-  generateCode(config: CodeConfig, message: Message) {
-    const context = {
-      message: typeof message === "string" ? message : JSON.stringify(message),
-    };
-
-    if (config.codePath) {
-      const codePath = resolveConfigPath(config.codePath);
-      let code;
-
-      try {
-        code = readFileSync(codePath, { encoding: "utf8" });
-      } catch (error) {
-        throw new Error(
-          `Could not read codePath "${config.codePath}", resolved against the config directory "${configDir()}" to "${codePath}": ${(error as Error).message}.`,
-        );
-      }
-
-      return this.interpolateConfigString(code, context);
-    } else if (config.command) {
-      return this.interpolateConfigString(config.command, context);
-    }
-
-    throw new Error(
-      `Configuration should either specify a codePath or a command.`,
-    );
   }
 }

@@ -12,13 +12,12 @@ import { registerTasks } from "../../src/util/tasks.js";
 import Trigger from "../../src/util/Trigger.js";
 
 // Throws for the one message that names itself bad, and hands every other one
-// straight back. `${...}` is deliberately absent: generateCode interpolates the
-// command before the VM ever sees it.
+// straight back. The message arrives as a parameter of the compiled function,
+// so it is read by name rather than spliced into the source.
 const FAILS_ON_BAD = {
   type: "transform:javascript",
   outputType: "any",
-  command:
-    'message === "bad" ? (() => { throw new Error("boom") })() : message',
+  command: 'if (message === "bad") throw new Error("boom"); return message;',
 };
 
 interface CapturedLine {

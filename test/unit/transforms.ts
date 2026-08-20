@@ -64,7 +64,7 @@ describe("transform options", function () {
 
   describe("a code transform's outputType", function () {
     const CODE = [
-      { type: "transform:javascript", command: "21 * 2" },
+      { type: "transform:javascript", command: "return 21 * 2" },
       { type: "transform:shell", command: "echo 42" },
     ];
 
@@ -93,7 +93,7 @@ describe("transform options", function () {
         const emitting = { ...code, command: "echo '{\"a\":1}'" };
         const source =
           code.type === "transform:javascript"
-            ? { ...code, command: `'{"a":1}'` }
+            ? { ...code, command: `return '{"a":1}'` }
             : emitting;
 
         expect(
@@ -118,7 +118,7 @@ describe("transform options", function () {
         await through(
           {
             type: "transform:javascript",
-            command: "({ a: 1, b: [2] })",
+            command: "return { a: 1, b: [2] }",
             outputType: "any",
           },
           undefined,
@@ -144,7 +144,7 @@ describe("transform options", function () {
           [
             {
               type: "transform:javascript",
-              command: "1",
+              command: "return 1",
               codePath: "./x.js",
               outputType: "number",
             },

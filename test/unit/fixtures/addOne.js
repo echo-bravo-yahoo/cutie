@@ -1,1 +1,1 @@
-message + 1;
+return message + 1;

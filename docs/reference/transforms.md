@@ -50,13 +50,13 @@ Converts a number from one unit to another within the same dimension: temperatur
 
 ## `transform:javascript`
 
-Replaces the message with the result of a JavaScript expression, evaluated with the message in scope.
+Replaces the message with what a JavaScript function returns. The source is compiled once, when the task registers, into a function taking message, stash, error, task, module, and env as arguments.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
-| `command` | string | no |  |  | The expression to evaluate. Give this or codePath, not both. Supports ${...} interpolation. |
-| `codePath` | string | no |  |  | A script file to evaluate instead of an inline expression, resolved against the config file's directory. Supports ${...} interpolation. |
-| `outputType` | `object` or `string` or `number` or `any` | **yes** |  |  | What to turn the result into. "any" hands back whatever the expression evaluated to. |
+| `command` | string | no |  |  | The body of the function, which must return its result. It receives message, stash, error, task, module, and env as arguments, so ${...} is JavaScript's own template syntax here rather than an interpolation. Give this or codePath, not both. |
+| `codePath` | string | no |  |  | A script file to run instead of an inline body, resolved against the config file's directory and read once when the task registers. |
+| `outputType` | `object` or `string` or `number` or `any` | **yes** |  |  | What to turn the result into. "any" hands back whatever the function returned. |
 | `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |

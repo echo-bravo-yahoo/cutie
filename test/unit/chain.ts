@@ -255,7 +255,7 @@ describe("the message chain", function () {
 
     before(async function () {
       directory = await mkdtemp(join(tmpdir(), "cutie-codepath-"));
-      await writeFile(join(directory, "double.js"), "message * 2;");
+      await writeFile(join(directory, "double.js"), "return message * 2;");
     });
 
     after(async function () {
@@ -301,7 +301,7 @@ describe("the message chain", function () {
 
     it("names the resolved path and the config directory when the file is missing", async function () {
       useFakeGlobals(directory);
-      const task = await registered(
+      const task = new Task(
         {
           steps: [
             {
@@ -310,11 +310,14 @@ describe("the message chain", function () {
               outputType: "number",
             },
           ],
-        },
+        } as any,
         "a missing codePath",
       );
 
-      await expect(task.startMessage(1)).to.be.rejectedWith(
+      // A registration failure rather than a per-message one, because the file
+      // is read once when the script is compiled. registerTasks isolates it to
+      // this task and lets the rest of the config run.
+      await expect(task.register()).to.be.rejectedWith(
         new RegExp(
           `Could not read codePath "\\./absent\\.js".*${directory.replace(/[\\/]/g, "[\\\\/]")}`,
         ),

@@ -1168,7 +1168,7 @@ describe("transforms", function () {
               steps: [
                 {
                   type: "transform:javascript",
-                  command: "10 + message",
+                  command: "return 10 + message",
                 } as JavascriptConfig,
               ],
             },
