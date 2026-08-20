@@ -157,6 +157,13 @@ export default class LogHelper {
     this.held = undefined;
   }
 
+  // Re-opens the window for a reload. Nothing is replayed to a listener that
+  // is already attached, so this only ever reaches the listeners registered
+  // after it.
+  startBuffering() {
+    this.held = [];
+  }
+
   // Returns once every listener this line reached has finished with it.
   // Nothing in the ordinary path awaits that -- a log line must not slow the
   // code that wrote it -- but a shutdown does, so the line about why the node

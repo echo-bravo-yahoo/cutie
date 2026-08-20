@@ -9,7 +9,9 @@ import parser from "yargs-parser";
 import { registerConnections } from "./util/connections.js";
 import { registerTasks } from "./util/tasks.js";
 import LogHelper from "./util/LogHelper.js";
-import { fetchConfig } from "./util/configs.js";
+import { ConfigFile, fetchConfig } from "./util/configs.js";
+import { teardown } from "./util/lifecycle.js";
+import { watchConfig } from "./util/watch-config.js";
 import { EventEmitter } from "node:events";
 import { setupProcess } from "./process.js";
 import { CLIArgs, parserDefaults } from "./util/cli.js";
@@ -52,7 +54,9 @@ export async function start(maybeArgs?: CLIArgs) {
   initializeGlobals(args.logLevel, args.config);
 
   const configPath = normalize(args.config);
-  const config = await fetchConfig(args.config);
+  // keepProvider, unlike every other caller: the connection the config came
+  // over is what watchConfig below goes on listening to.
+  const config = await fetchConfig(args.config, { keepProvider: true });
 
   // Nothing opens a socket or drives a pin until the config is known good, so
   // a wrong config produces one clear report instead of a downstream crash.
@@ -70,5 +74,47 @@ export async function start(maybeArgs?: CLIArgs) {
   // listening and there is no window left to hold lines for.
   globals.logger.stopBuffering();
 
+  await watchConfig(configPath, config);
+
   return globals;
+}
+
+// A running node rebuilt from a new config: the same three calls start() makes,
+// with the fetch already done and a teardown in front of them.
+export async function reload(config: ConfigFile, configPath: string) {
+  // Refused before anything is torn down, so a bad config costs nothing.
+  if (reportConfigErrors(await validateConfig(config, { configPath }))) {
+    globals.logger.error(
+      `Refusing to reload: the new config at "${configPath}" is not valid. Still running the previous one.`,
+    );
+    return false;
+  }
+
+  globals.logger.info(`Config at "${configPath}" changed; reloading.`);
+  // Re-opened for the length of the reload so the lines it writes reach the
+  // trigger:logs tasks the new config declares, exactly as they reach the ones
+  // the first config declared. Safe because the window closes again below.
+  globals.logger.startBuffering();
+
+  await teardown();
+  globals.tasks = [];
+  globals.connections = [];
+
+  try {
+    await registerConnections(config.connections ?? []);
+    await registerTasks(config.tasks ?? []);
+  } catch (error) {
+    // Validation passed, so this is registerTasks refusing a config whose every
+    // task failed. The old config is already gone, so there is nothing to fall
+    // back to in process; the supervisor restarting is the recovery.
+    await globals.logger.fatal(
+      `Reloaded config at "${configPath}" registered nothing. Terminating so the supervisor can restart.`,
+      { err: error },
+    );
+    process.exit(1);
+  }
+
+  globals.logger.stopBuffering();
+  globals.logger.info(`Reloaded config at "${configPath}".`);
+  return true;
 }

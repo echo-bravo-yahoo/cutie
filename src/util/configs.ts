@@ -43,7 +43,13 @@ export function configFileNameForNode(nodeName: string): string {
   return `${nodeName}${CONF_SUFFIX}.json`;
 }
 
-export async function fetchConfig(path: string): Promise<ConfigFile> {
+// keepProvider hands the provider connection to globals.configConnection
+// instead of closing it, so the caller can go on watching the topic its config
+// came from. It defaults off: only start() has a reason to hold it open.
+export async function fetchConfig(
+  path: string,
+  { keepProvider = false } = {},
+): Promise<ConfigFile> {
   const localConfig = await fetchLocalConfig(path);
   if (!localConfig.configProvider) return localConfig;
 
@@ -52,6 +58,7 @@ export async function fetchConfig(path: string): Promise<ConfigFile> {
   try {
     const remoteConfig = await fetchRemoteConfig(
       localConfig as RemoteConfigFile,
+      keepProvider,
     );
     await writeCachedConfig(cacheFilePath, remoteConfig);
     return remoteConfig;
@@ -83,7 +90,9 @@ function describeReadError(error: unknown): string {
   return `${(error as Error)?.message ?? error}`;
 }
 
-async function fetchLocalConfig(path: string): Promise<ConfigFile> {
+// Exported for the config watcher: whether a node watches a file or a topic
+// turns on the `configProvider` block, and that block only ever lives here.
+export async function fetchLocalConfig(path: string): Promise<ConfigFile> {
   const resolved = normalize(path);
 
   try {
@@ -142,7 +151,10 @@ async function fetchCachedConfig(
   return parsed;
 }
 
-async function fetchRemoteConfig(config: RemoteConfigFile) {
+async function fetchRemoteConfig(
+  config: RemoteConfigFile,
+  keepProvider = false,
+) {
   const providerConfig = config.configProvider;
   await registerConnections(config.connections);
   const connection = requireConfigProvider(
@@ -155,6 +167,16 @@ async function fetchRemoteConfig(config: RemoteConfigFile) {
     providerConfig,
     connection.config,
   );
+  // Moved off globals.connections rather than left on it: a reload disables
+  // everything in that list, and this is the one connection that has to
+  // outlive the config that declared it.
+  if (keepProvider) {
+    globals.configConnection = connection;
+    globals.connections = globals.connections.filter(
+      (candidate) => candidate !== connection,
+    );
+  }
+
   // the bootstrap connections have done their job; close them before dropping
   // the references, or their sockets stay open for the life of the process
   await Promise.allSettled(

@@ -57,8 +57,11 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 - `trigger:logs` takes a `maxVerbosity`, the ceiling to pair with `minVerbosity`'s floor. Without it an error lands in the ordinary log task as well as any alert task, so "send errors somewhere else" was not expressible.
 - Every log line the node writes before any `trigger:logs` task is listening is held and replayed to each one as it registers. Connections register before tasks, so an unreachable broker -- the likeliest first failure on a fresh node -- could not previously be routed anywhere at all.
 - Modules can log at `warn`. The three places that warned used to reach past their own topic to the runtime logger, so a topic-scoped filter could not see them.
+- A running node picks up a config change without a restart. A node that fetched its config from a `configProvider` holds that subscription open and rebuilds itself when a new config is published to its topic; a node running from a local file watches the file and rebuilds when it is edited. Each node watches one or the other, never both: where the config lives is what a `configProvider` in the local file decides. The new config is validated first, and one that does not validate is refused and logged while the node keeps running what it already had. There is no option to turn this off, and no new config key.
 
 ### Fixed
+
+- Publishing a new retained config to a running device does something. It used to be inert until someone SSHed in and restarted the process, which is what the two `TODO`s in `connection:mqtt` had stood for since the provider was written. Editing a local `cutie.conf.yaml` on a running node was inert for the same reason.
 
 - Module logging reaches the console. A node running the shipped config used to print only what `output:console` wrote.
 - A `trigger:logs` task feeding an output that logs no longer recurses forever.

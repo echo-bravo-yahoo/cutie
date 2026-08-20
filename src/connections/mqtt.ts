@@ -127,8 +127,6 @@ export default class MQTTConnection
     }
   }
 
-  // TODO: update config if remote config _changes_
-  // TODO: update _local_ config if _local_ config changes
   async fetchConfig(
     provider: MQTTProviderConfig,
     _connection: ConnectionConfig,
@@ -179,7 +177,7 @@ export default class MQTTConnection
       });
 
       globals.logger.info(
-        `Fetched remote config from MQTT topic "${provider.topic}". Cleaning up.`,
+        `Fetched remote config from MQTT topic "${provider.topic}".`,
         { topic: this.logPrefix, config: redact(config) },
       );
 
@@ -187,14 +185,51 @@ export default class MQTTConnection
     } finally {
       if (timer) clearTimeout(timer);
       this.connection.removeListener("message", handler);
-      // the bootstrap client has done its job either way
-      await this.disable();
     }
   }
 
+  // Holds the subscription open where fetchConfig takes one message and stops,
+  // so a config published after this node booted still reaches it.
+  async watchConfig(
+    provider: MQTTProviderConfig,
+    onChange: (config: ConfigFile) => void,
+  ) {
+    const handler = (messageTopic: string, message: Buffer) => {
+      if (messageTopic !== provider.topic) return;
+
+      try {
+        onChange(JSON.parse(message.toString()) as ConfigFile);
+      } catch (error) {
+        // Refused rather than applied: the node keeps running the config it
+        // has, which is the same answer a config that fails validation gets.
+        this.error(
+          `Ignoring the retained message on "${provider.topic}": it is not valid JSON (${(error as Error).message}).`,
+        );
+      }
+    };
+
+    this.connection.on("message", handler);
+    // Re-subscribed on every connect, not only the first: after a dropped
+    // link mqtt.js reconnects underneath us, and a subscription that did not
+    // survive would leave the node deaf to config changes with no sign of it.
+    this.connection.on("connect", () => {
+      this.connection
+        .subscribeAsync(provider.topic)
+        .catch((error: unknown) =>
+          this.error(
+            `Could not re-subscribe to "${provider.topic}": ${error}.`,
+          ),
+        );
+    });
+
+    await this.connection.subscribeAsync(provider.topic);
+    this.info(`Watching "${provider.topic}" for config changes.`);
+  }
+
   async disable(): Promise<void> {
-    // fetchConfig ends and clears the client itself, so this has to tolerate
-    // being called on a connection that is already closed
+    // register() assigns the client only once it has connected, and a
+    // connection can be reached by two teardowns, so this has to tolerate
+    // being called with nothing to close
     if (!this.connection) return;
 
     await this.connection.endAsync();

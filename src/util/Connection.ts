@@ -15,6 +15,12 @@ export interface ConfigProvider {
     provider: ProviderConfig,
     connection: ConnectionConfig,
   ): Promise<ConfigFile>;
+  // Holds the subscription open, instead of fetchConfig's one shot. onChange
+  // is called for every config message after the first.
+  watchConfig(
+    provider: ProviderConfig,
+    onChange: (config: ConfigFile) => void,
+  ): Promise<void>;
   // `topic` overrides the connection's default config location; see
   // MQTTConnection for how a "+" segment stands in for the node name.
   fetchSingleConfig(nodeName: string, topic?: string): Promise<ConfigFile>;
