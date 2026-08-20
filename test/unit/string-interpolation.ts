@@ -90,6 +90,15 @@ describe("string interpolation", function () {
         module().interpolateConfigString("${message.count}", { message }),
       ).to.equal("5");
     });
+
+    // A dotted path into an object used to splice as the useless
+    // "[object Object]", because the default String() coercion doesn't know
+    // how to render one.
+    it("splices an object as its JSON text, not [object Object]", function () {
+      expect(
+        module().interpolateConfigString("${message.device}", { message }),
+      ).to.equal('{"id":"abc","tags":["a"]}');
+    });
   });
 
   describe("output:stash", function () {

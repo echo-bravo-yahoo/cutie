@@ -36,13 +36,12 @@ export default class Shell extends Transform {
 
   async transform(message: Message, _traceId: string) {
     // A command line has no parameter channel, so the message reaches it by
-    // being spliced into the text, stringified unless it already is a string.
+    // being spliced into the text. interpolateConfigString stringifies
+    // whatever it resolves, so a dotted path into the message works the same
+    // way ${message} on its own does.
     const command = this.interpolateConfigString(
       readCodeSource(this.config, "transform:shell"),
-      {
-        message:
-          typeof message === "string" ? message : JSON.stringify(message),
-      },
+      { message },
     );
     const args: Partial<Parameters<typeof execAsync>[1]> = {
       encoding: "utf8",
@@ -80,7 +79,8 @@ export const schema: ModuleSchema = {
   options: {
     command: {
       type: "string",
-      description: "The command to run. Give this or codePath, not both.",
+      description:
+        "The command to run. Give this or codePath, not both. Supports ${...} interpolation.",
       interpolated: true,
     },
     codePath: {

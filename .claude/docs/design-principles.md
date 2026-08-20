@@ -56,81 +56,40 @@ Interpolation runs at message-handling time on module-level config fields. It do
 
 ## Message context across a hand-off
 
-Nothing here is implemented. This records where the design currently is, what
-was decided versus what merely fell out, and what a change would have to settle.
+Nothing here is implemented. This records where the design currently is, what was decided versus what merely fell out, and what a change would have to settle.
 
-A `MessageContext` (`src/util/TaskModule.ts:61-69`) holds four things: `stash`,
-`message`, `traceId`, and `error`. Three are interpolation namespaces
-(`${stash...}`, `${message}`, `${error...}`); `traceId` is not, but rides every
-log line the message produces.
+A `MessageContext` (`src/util/TaskModule.ts:61-69`) holds four things: `stash`, `message`, `traceId`, and `error`. Three are interpolation namespaces (`${stash...}`, `${message}`, `${error...}`); `traceId` is not, but rides every log line the message produces.
 
-`output:event` into `trigger:event` is the only way a config can hand work from
-one task to another - `control:branch` is not written - so it is the closest
-thing the DSL has to a call. Half the context already crosses that hop
-deliberately:
+`output:event` into `trigger:event` is the only way a config can hand work from one task to another - `control:branch` is not written - so it is the closest thing the DSL has to a call. Half the context already crosses that hop deliberately:
 
-| field     | crosses `output:event` | how                                                                              |
-| --------- | ---------------------- | -------------------------------------------------------------------------------- |
-| `message` | yes                    | `bus.emit(key, message, traceId)`, argument 2                                    |
-| `traceId` | yes                    | argument 3, received as `handleEvent(message, upstreamTraceId)`; `README.md:233` |
-| `stash`   | no                     | never wired                                                                      |
-| `error`   | no                     | never wired                                                                      |
+| field | crosses `output:event` | how |
+| --- | --- | --- |
+| `message` | yes | `bus.emit(key, message, traceId)`, argument 2 |
+| `traceId` | yes | argument 3, received as `handleEvent(message, upstreamTraceId)`; `README.md:233` |
+| `stash` | no | never wired |
+| `error` | no | never wired |
 
-The other half does not cross, and nothing decided that it should not. Before
-`Task.invoke` existed, `Task.startMessage` unconditionally opened
-`{ stash: {} }`, because there was no mechanism by which one message could hand
-anything to another. `invoke`'s `caller` parameter (`src/util/Task.ts:124`) is
-that mechanism, and `Step.recover` is the only thing that supplies it.
+The other half does not cross, and nothing decided that it should not. Before `Task.invoke` existed, `Task.startMessage` unconditionally opened `{ stash: {} }`, because there was no mechanism by which one message could hand anything to another. `invoke`'s `caller` parameter (`src/util/Task.ts:124`) is that mechanism, and `Step.recover` is the only thing that supplies it.
 
-The consequence is reachable from a config that follows `cookbook.md`. Split a
-reporting rescue across the event bus and every `${error...}` in the second half
-interpolates the literal string `"undefined"`, because a template naming an
-absent path splices as text:
+The consequence is reachable from a config that follows `cookbook.md`. Split a reporting rescue across the event bus and every `${error...}` in the second half interpolates the literal string `"undefined"`, because a template naming an absent path splices as text:
 
 ```text
 second half received: {"reading":1,"at":"undefined"}
 ```
 
-The same applies to `${stash...}`, which matters more:
-`examples/interpolation.yaml` teaches the stash as the place for metadata a
-`read:` step would otherwise overwrite, so a chain split across two tasks loses
-the only channel the language has for carrying that metadata.
+The same applies to `${stash...}`, which matters more: `examples/interpolation.yaml` teaches the stash as the place for metadata a `read:` step would otherwise overwrite, so a chain split across two tasks loses the only channel the language has for carrying that metadata.
 
 ### The rule this is heading toward
 
-> A message continues the context of the chain it originated inside. A message
-> that originated outside one - a clock, a pin, a file, a broker, or a replayed
-> log backlog - opens a fresh one.
+> A message continues the context of the chain it originated inside. A message that originated outside one - a clock, a pin, a file, a broker, or a replayed log backlog - opens a fresh one.
 
-That covers `output:event`, a `rescue`, and a future `control:branch`. It also
-covers the live `trigger:logs` fan-out, which is not a hand-off but does
-originate inside exactly one chain: `LogHelper.emit` runs synchronously inside
-the step that wrote the line, so every line has one originating context, and a
-logs task reading `${stash.costCenter}` is the ordinary cross-cutting-concern
-use of an async context store.
+That covers `output:event`, a `rescue`, and a future `control:branch`. It also covers the live `trigger:logs` fan-out, which is not a hand-off but does originate inside exactly one chain: `LogHelper.emit` runs synchronously inside the step that wrote the line, so every line has one originating context, and a logs task reading `${stash.costCenter}` is the ordinary cross-cutting-concern use of an async context store.
 
 ### What a change would have to settle
 
-- **Shallow, not deep.** `invoke` currently `structuredClone`s. A callee needs
-  its own top-level object so a write cannot reach its caller's, but not a copy
-  of every value beneath it; under the rule above that copy happens once per log
-  line, which is the hottest path in the runtime.
-- **Snapshot semantics for the backlog.** A held log line (`LogHelper`'s
-  pre-listener window) is replayed from a different stack than the one that
-  wrote it, so it cannot reach the originating context ambiently. Holding a
-  reference makes the replayed line see the stash as it ended up rather than as
-  it was when the line was written, and pins the whole context - `message`
-  included - for the life of the buffer. Capturing a shallow snapshot at emit
-  time instead gives the replayed line what the live path would have given it,
-  and lets the context be collected.
-- **The write-back.** `Task.invoke` publishes the keys `control:return` names
-  into `caller.stash` by reference. That is sound for a rescue, which is
-  synchronously nested inside the message being rescued and finishes before it
-  continues. It is not sound for `output:event` or the log fan-out: neither
-  awaits the receiving chain, so the originating chain has moved on by the time
-  the callee returns, and the write lands in a stash nobody reads again - or one
-  a later step has since rewritten. Any inheritance beyond `rescue` needs the
-  hand-off to be one-way.
+- **Shallow, not deep.** `invoke` currently `structuredClone`s. A callee needs its own top-level object so a write cannot reach its caller's, but not a copy of every value beneath it; under the rule above that copy happens once per log line, which is the hottest path in the runtime.
+- **Snapshot semantics for the backlog.** A held log line (`LogHelper`'s pre-listener window) is replayed from a different stack than the one that wrote it, so it cannot reach the originating context ambiently. Holding a reference makes the replayed line see the stash as it ended up rather than as it was when the line was written, and pins the whole context - `message` included - for the life of the buffer. Capturing a shallow snapshot at emit time instead gives the replayed line what the live path would have given it, and lets the context be collected.
+- **The write-back.** `Task.invoke` publishes the keys `control:return` names into `caller.stash` by reference. That is sound for a rescue, which is synchronously nested inside the message being rescued and finishes before it continues. It is not sound for `output:event` or the log fan-out: neither awaits the receiving chain, so the originating chain has moved on by the time the callee returns, and the write lands in a stash nobody reads again - or one a later step has since rewritten. Any inheritance beyond `rescue` needs the hand-off to be one-way.
 
 ## Design choices, and why
 

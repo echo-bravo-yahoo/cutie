@@ -222,7 +222,15 @@ export default abstract class TaskModule extends Module {
   ) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inject = (str: string, obj: Record<string, any>) =>
-      str.replace(/\${(.*?)}/g, (_x, path) => get(obj, path));
+      str.replace(/\${(.*?)}/g, (_x, path) => {
+        const value = get(obj, path);
+        // A resolved primitive splices as itself; anything else needs
+        // JSON.stringify, or an object would splice in as "[object Object]".
+        // JSON.stringify(undefined) is the value undefined, not a string, so
+        // a missing path still falls back to the literal text "undefined".
+        if (typeof value === "string") return value;
+        return JSON.stringify(value) ?? "undefined";
+      });
 
     const result = inject(template, this.generateContext(additionalContext));
 

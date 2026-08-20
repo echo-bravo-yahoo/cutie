@@ -1130,6 +1130,66 @@ describe("transforms", function () {
           const transformed = await task.startMessage(5);
           expect(transformed).to.deep.equal(6);
         });
+
+        // The command used to stringify the whole message to JSON before
+        // interpolating, so a dotted path had nothing to traverse into and
+        // read as the literal text "undefined".
+        it("resolves a dotted path into the message", async function () {
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transform:shell",
+                  command: "echo '${message.temp}'",
+                  outputType: "number",
+                } as ShellConfig,
+              ],
+            },
+            "resolves a dotted path into the message",
+          );
+          await task.register();
+
+          const transformed = await task.startMessage({ temp: 72 });
+          expect(transformed).to.deep.equal(72);
+        });
+
+        it("splices a dotted path to a string field without JSON quotes", async function () {
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transform:shell",
+                  command: "echo 'hello, ${message.name}'",
+                  outputType: "string",
+                } as ShellConfig,
+              ],
+            },
+            "splices a dotted string field without JSON quotes",
+          );
+          await task.register();
+
+          const transformed = await task.startMessage({ name: "cutie" });
+          expect(transformed).to.deep.equal("hello, cutie");
+        });
+
+        it('still reads an absent path as the literal text "undefined"', async function () {
+          const task = new Task(
+            {
+              steps: [
+                {
+                  type: "transform:shell",
+                  command: "echo '${message.missing}'",
+                  outputType: "string",
+                } as ShellConfig,
+              ],
+            },
+            "absent path reads as undefined",
+          );
+          await task.register();
+
+          const transformed = await task.startMessage({ temp: 72 });
+          expect(transformed).to.deep.equal("undefined");
+        });
       });
 
       // A disabled step is left out of the task's chain entirely rather than
