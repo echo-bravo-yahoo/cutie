@@ -62,12 +62,12 @@ A `MessageContext` (`src/util/TaskModule.ts:61-69`) holds four things: `stash`, 
 
 `output:event` into `trigger:event` is the only way a config can hand work from one task to another - `control:branch` is not written - so it is the closest thing the DSL has to a call. Half the context already crosses that hop deliberately:
 
-| field | crosses `output:event` | how |
-| --- | --- | --- |
-| `message` | yes | `bus.emit(key, message, traceId)`, argument 2 |
-| `traceId` | yes | argument 3, received as `handleEvent(message, upstreamTraceId)`; `README.md:233` |
-| `stash` | no | never wired |
-| `error` | no | never wired |
+| field     | crosses `output:event` | how                                                                              |
+| --------- | ---------------------- | -------------------------------------------------------------------------------- |
+| `message` | yes                    | `bus.emit(key, message, traceId)`, argument 2                                    |
+| `traceId` | yes                    | argument 3, received as `handleEvent(message, upstreamTraceId)`; `README.md:233` |
+| `stash`   | no                     | never wired                                                                      |
+| `error`   | no                     | never wired                                                                      |
 
 The other half does not cross, and nothing decided that it should not. Before `Task.invoke` existed, `Task.startMessage` unconditionally opened `{ stash: {} }`, because there was no mechanism by which one message could hand anything to another. `invoke`'s `caller` parameter (`src/util/Task.ts:124`) is that mechanism, and `Step.recover` is the only thing that supplies it.
 
