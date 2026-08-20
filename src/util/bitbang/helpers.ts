@@ -94,7 +94,10 @@ export function bitArrayToWave(
     wave.push({
       gpioOn: 0,
       gpioOff: ledPin,
-      usDelay: bit ? NEC_PULSE_US : NEC_LONG_GAP_US,
+      // NEC signals a 1 bit with the long gap, a 0 bit with the short one --
+      // this had it backwards, which silently transmitted the bitwise
+      // complement of every command (e.g. address 0x7c went out as 0x83).
+      usDelay: bit ? NEC_LONG_GAP_US : NEC_PULSE_US,
     });
   }
 
