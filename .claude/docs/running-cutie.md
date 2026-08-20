@@ -93,6 +93,13 @@ Type string is `<kind>:<subKind>`, and loads `src/<kind>s/<subKind>.ts` (see des
 - `transform:shell` — runs a shell command (`command` or `codePath`), coerces stdout to `string`/`number`/`object`.
 - `transform:javascript` — runs JS in a `node:vm` sandbox (`command` or `codePath`), same output coercion. The source is compiled once at registration into a function taking `message`, `stash`, `error`, `task`, `module`, and `env`; it must `return` its result, and it is not interpolated (`src/util/javascript.ts`).
 
+**Controls** (`src/controls/`) — decide what the chain does next rather than changing the message:
+
+- `control:return` — ends the chain and hands a value back to whatever invoked the task, plus any `stash` keys to publish into the caller's stash. A task that falls off its own end returns nothing. `cutie validate` warns about one in a task nothing invokes.
+- `control:branch` — runs the task named by `task:` from inside this one, then carries on. The target decides what comes back exactly as a rescue does. The name is resolved per message, so a task may branch to one declared after it.
+- `control:stop` — ends the chain here, so the steps after it never run. The message is consumed rather than failed, so it produces no `error` line and does not count as handled.
+- `control:branch` and `control:stop` both take an optional `when`, a JavaScript function body compiled once at registration and read for truthiness. It means the same thing in both: when this holds, do what the module is named for. Omit it to do that every time, and note that a predicate that throws is an ordinary step failure rather than a false condition.
+
 **Outputs** (`src/outputs/`):
 
 - `output:console` — logs the message.
@@ -147,8 +154,8 @@ For administering the actual live fleet (which devices exist, their topics, read
 
 `provisioner/` builds an SD card image, and splits the work in two. `provision.mjs` owns the **identity** configuration — user password, wifi, locale, SSH keys, and the services a headless Trixie host needs disabled — which is applied at image time and never re-applied to a running host, because getting one wrong strands an unreachable Pi. `configure-host.sh` owns the **convergent** configuration — bus enablement, swap, packages, Node, and the cutie service — and is idempotent, so it is safe to re-apply at any time (`README.md:19-24`, `provisioner/provision.mjs:16-20`).
 
-1. Copy `provisioner/config.example.json` to `provisioner/config.json` (gitignored) and fill in `hostname`, `board`, `wifi.ssid`/`wifi.country`, `locale`, `sshPubKey` or `authorizedKeys`, `cutie.srcPath`/`cutie.destPath`, `cutieConfig`, and the `op://` references under `secrets`. `board` selects both the base image and the Node build: `pi-zero-w` takes the 32-bit armhf image, `pi-zero-2-w` and later take arm64, and an arm64 card will not boot a Pi Zero W (`README.md:262`).
-2. Run `provision.mjs` on the operator machine, never on the Pi. Secrets are never read from disk — the caller resolves them into `CUTIE_PI_PASSWORD` and `CUTIE_WIFI_PSK`, which is what `cc-cred run` is for (`provisioner/provision.mjs:9-14`, `README.md:247-252`). It downloads and caches the base image, stages a per-host `cutie.conf.yaml` under its cache directory with `name` set to the hostname and `configProvider.topic` rewritten to `cutie/config/<hostname>` when the config declares an MQTT connection (`provisioner/provision.mjs:116-173`), then runs `sdm --customize` with the identity plugins plus `--cscript configure-host.sh` (`provisioner/provision.mjs:249-330`). `--dry-run` prints that invocation with the secrets masked, which is the quickest way to review the plugin list.
+1. Copy `provisioner/config.example.json` to `provisioner/config.json` (gitignored) and fill in `hostname`, `board`, `wifi.ssid`/`wifi.country`, `locale`, `sshPubKey` or `authorizedKeys`, `cutie.srcPath`/`cutie.destPath`, `cutieConfig`, and the `op://` references under `secrets`. `board` selects both the base image and the Node build: `pi-zero-w` takes the 32-bit armhf image, `pi-zero-2-w` and later take arm64, and an arm64 card will not boot a Pi Zero W (`README.md:296`).
+2. Run `provision.mjs` on the operator machine, never on the Pi. Secrets are never read from disk — the caller resolves them into `CUTIE_PI_PASSWORD` and `CUTIE_WIFI_PSK`, which is what `cc-cred run` is for (`provisioner/provision.mjs:9-14`, `README.md:279-286`). It downloads and caches the base image, stages a per-host `cutie.conf.yaml` under its cache directory with `name` set to the hostname and `configProvider.topic` rewritten to `cutie/config/<hostname>` when the config declares an MQTT connection (`provisioner/provision.mjs:116-173`), then runs `sdm --customize` with the identity plugins plus `--cscript configure-host.sh` (`provisioner/provision.mjs:249-330`). `--dry-run` prints that invocation with the secrets masked, which is the quickest way to review the plugin list.
 3. Burning is a separate, explicitly confirmed step: `node provisioner/provision.mjs --skip-customize --burn /dev/sdX`. It refuses to run without the device path retyped, or without `CUTIE_BURN_CONFIRM=/dev/sdX` when there is no terminal (`provisioner/provision.mjs:362-407`).
 4. `configure-host.sh` runs `npm ci --omit=dev` during sdm's post-install phase, so a freshly burned card boots ready instead of compiling for 15-30 minutes on first use. The same script applies to an already-booted Pi through `provisioner/pi.sh <host> converge`.
 
@@ -167,7 +174,7 @@ The staged config is written under the provisioner's cache directory rather than
 
 ## Deploying code to an existing device
 
-`provisioner/pi.sh <host> <verb>` drives a Pi over SSH from a development machine (`README.md:224-241`). An ARMv6 board is too constrained to develop on directly, so work happens on a workstation and reaches the Pi through this script.
+`provisioner/pi.sh <host> <verb>` drives a Pi over SSH from a development machine (`README.md:258-271`). An ARMv6 board is too constrained to develop on directly, so work happens on a workstation and reaches the Pi through this script.
 
 ```bash
 provisioner/pi.sh <node> deploy    # build locally, rsync built/, restart

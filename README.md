@@ -232,6 +232,29 @@ Every message gets a uuid v7 trace ID when it starts, and every log line that me
 - Trace IDs only reach a sink when a `trigger:logs` task is configured. Module log lines go to the internal log bus, not to the console, so without such a task there is nothing to read them in.
 - A trace crosses the internal event bus (`output:event` to `trigger:event`) on its own. Crossing MQTT is opt-in: set `propagateTrace: true` on the `output:mqtt` step and `protocolVersion: 5` on its connection. The ID travels as a W3C `traceparent` MQTT user property, which only exists in MQTT v5 and which mqtt.js does not speak unless the connection asks for it; the payload is untouched, so other subscribers see no change. `examples/remote-clock.yaml` wires up both halves.
 
+#### Flow control
+
+Two `control:` steps say when a chain does something, rather than what it does.
+
+- `control:branch` runs another task from inside this one and then carries on with the rest of the steps. `task:` names an ordinary task declared under `tasks:`, which does not have to know it is a branch target. That task decides what comes back exactly as a rescue does: end it at a `control:return` and the value that step names replaces the message, or let it fall off its own end and the message the branch was handed carries on. It works on a deep copy of the caller's stash, and only the keys its `control:return` names are written back.
+- `control:stop` ends the chain, so the steps after it never run. Dropping a message used to mean making a step throw, which filed an `error` line for an entirely ordinary condition; a stopped message is consumed rather than failed, so it produces no error line and does not count as handled.
+- Both take an optional `when`: the body of a JavaScript function, read for whether its result is truthy, and compiled once when the task registers. It receives `message`, `stash`, `error`, `task`, `module`, and `env` as arguments and must `return` its result, the same way `transform:javascript`'s `command` does.
+
+`when` means one thing in both modules -- when this holds, do what the module is named for -- and omitting it means always:
+
+```yaml
+- type: "control:branch"
+  when: "return message.temp > 30" # when hot, branch
+  task: "alert"
+
+- type: "control:stop"
+  when: "return typeof message.value !== 'number'" # when unusable, stop
+```
+
+A predicate that throws is an ordinary step failure: it is logged under its own topic with the message's trace and routed by that step's `rescue`, so a typo'd path cannot quietly read as "condition not met".
+
+`cutie validate` refuses a branch naming a task the config does not declare, and warns about one naming a task that is declared but disabled -- the same cross-check a `rescue` and a `connectionName` get. Branches and rescues share one graph, so a loop closed by one of each is refused too. It also warns about a `control:return` in a task that nothing invokes, since the value that step names has nowhere to go.
+
 #### Deploying to a raspi for development
 
 `./provisioner/pi.sh <host> <verb>` drives a Pi over SSH from a development machine. An ARMv6 board is too constrained to develop on directly, so work happens on a workstation and reaches the Pi through this script.

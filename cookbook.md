@@ -217,3 +217,83 @@ Four pieces are doing the work:
 ```
 
 A rescue that only reports, like `on-failure`, ends the message it was handed: the step that called it produced nothing, so there is nothing to carry on with. A rescue that recovers has to say so with `control:return`, and only what that step names crosses back -- the returned value as the message, and each `stash` key written into the caller's stash. Everything else the rescue stashed stays with the rescue.
+
+### Flow control
+
+#### Branch on a reading, and drop the ones you cannot use
+
+A task's steps run in order, every time. Two `control:` steps change that: `control:stop` ends the chain, and `control:branch` runs another task from inside this one and then carries on.
+
+This recipe reads a BME680 every five minutes and publishes it. A reading whose temperature is not a number is dropped before it reaches the broker, a hot one raises an alert, and every reading that survives is labelled with a comfort band on its way out.
+
+Three things are doing the work:
+
+- `when` is the body of a JavaScript function, read for whether its result is truthy and compiled once when the task registers. It means the same thing in both modules: when this holds, do what the module is named for. Omit it to do that every time.
+- `control:stop` consumes the message rather than failing it, so a reading the sensor could not produce leaves no `error` line behind and does not count as handled.
+- The branch target decides what comes back, exactly as a rescue does. `heat-alert` falls off its own end, so `weather` carries on with the reading it already had. `label-comfort` ends at a `control:return`, so what that step names replaces the message for the rest of `weather`.
+
+```json
+{
+  "connections": [
+    {
+      "type": "connection:mqtt",
+      "name": "broker",
+      "endpoint": "mqtt://127.0.0.1:1883"
+    }
+  ],
+  "tasks": {
+    "weather": {
+      "trigger": {
+        "type": "trigger:cron",
+        "expression": "*/5 * * * *"
+      },
+      "steps": [
+        {
+          "type": "read:bme680"
+        },
+        {
+          "type": "control:stop",
+          "when": "return typeof message.temperature !== 'number'"
+        },
+        {
+          "type": "control:branch",
+          "when": "return message.temperature > 30",
+          "task": "heat-alert"
+        },
+        {
+          "type": "control:branch",
+          "task": "label-comfort"
+        },
+        {
+          "type": "output:mqtt",
+          "connectionName": "broker",
+          "topics": ["home/weather"]
+        }
+      ]
+    },
+    "heat-alert": {
+      "steps": [
+        {
+          "type": "output:mqtt",
+          "connectionName": "broker",
+          "topics": ["home/alerts/heat"]
+        }
+      ]
+    },
+    "label-comfort": {
+      "steps": [
+        {
+          "type": "transform:javascript",
+          "outputType": "object",
+          "command": "return { ...message, comfort: message.temperature > 24 ? 'warm' : 'ok' };"
+        },
+        {
+          "type": "control:return"
+        }
+      ]
+    }
+  }
+}
+```
+
+`heat-alert` and `label-comfort` are ordinary tasks. Neither declares a trigger, because nothing starts them except the branch that names them, and neither has to know it is a branch target. `cutie validate` refuses a branch naming a task the config does not declare, and refuses one that leads back to the task it branches from; branches and rescues share one graph, so a loop closed by one of each is refused as well.
