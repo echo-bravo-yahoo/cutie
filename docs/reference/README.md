@@ -44,7 +44,9 @@ Every option every module accepts, generated from the schemas the runtime valida
 
 ## controls
 
+- [`control:branch`](./controls.md#controlbranch)
 - [`control:return`](./controls.md#controlreturn)
+- [`control:stop`](./controls.md#controlstop)
 
 ## outputs
 

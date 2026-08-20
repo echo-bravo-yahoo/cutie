@@ -1,4 +1,4 @@
-import { globals } from "./globals.js";
+import { findRegisteredTask } from "./globals.js";
 import TaskModule, {
   TaskModuleConfig,
   currentMessageContext,
@@ -160,12 +160,7 @@ export default abstract class Step extends TaskModule {
     const name = this.config.rescue ?? this.task.config.rescue;
     if (name === undefined) return undefined;
 
-    // Registered, not merely declared: the validator rejects a rescue naming a
-    // task the config does not have, so what is left is a task that failed to
-    // register, and a half-registered chain is not one to hand a message to.
-    const rescue = globals.tasks.find(
-      (task) => task.name === name && task.enabled,
-    );
+    const rescue = findRegisteredTask(name);
 
     if (!rescue)
       this.error(`Cannot rescue: no registered task named "${name}".`);

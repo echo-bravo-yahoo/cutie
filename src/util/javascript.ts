@@ -52,3 +52,21 @@ export function compileScript(source: string, type: string): CompiledScript {
     );
   };
 }
+
+export type CompiledPredicate = (
+  message: Message,
+  module: unknown,
+  task: unknown,
+) => boolean;
+
+// A script whose result decides something rather than becoming the message.
+// JavaScript's own truthiness, so 0 and "" are false and [] is true: one rule
+// a config author already knows, rather than a second one to learn.
+export function compilePredicate(
+  source: string,
+  type: string,
+): CompiledPredicate {
+  const run = compileScript(source, type);
+
+  return (message, module, task) => Boolean(run(message, module, task));
+}

@@ -22,3 +22,11 @@ export let globals: Globals = {} as unknown as Globals;
 export function setGlobals(newValue: Globals) {
   globals = newValue;
 }
+
+// Registered and enabled, not merely declared: the validator rejects a rescue
+// or a branch naming a task the config does not have, so what is left is a
+// task that failed to register, and a half-registered chain is not one to hand
+// a message to.
+export function findRegisteredTask(name: string): Task | undefined {
+  return globals.tasks.find((task) => task.name === name && task.enabled);
+}

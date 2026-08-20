@@ -109,11 +109,16 @@ function stepConfig(step: Record<string, unknown>) {
 }
 
 const CONNECTION_NAME = "declared-connection";
+const TASK_NAME = "declared-task";
+const CALLER_NAME = "calling-task";
 
 // The smallest value a schema will accept for an option, so a table-driven test
 // can build a valid config for any module without hard-coding its options.
 function placeholderFor(name: string, option: OptionSchema): unknown {
   if (name === "connectionName") return CONNECTION_NAME;
+  // Only control:branch declares a `task` option, and like a connectionName it
+  // is cross-checked against what the config declares, so "x" would not do.
+  if (name === "task") return TASK_NAME;
   if (option.enum?.length) return option.enum[0];
 
   switch (option.type) {
@@ -242,12 +247,25 @@ describe("config validation", function () {
             type,
             ...(await minimalOptions(await loadSchema(type))),
           };
+          // Two spare tasks, because a step can refer to one either way: a
+          // control:branch names TASK_NAME as its target, and CALLER_NAME
+          // names `t` as its rescue so that a control:return in `t` has
+          // somewhere to hand its value.
+          const steps = {
+            connections: [broker],
+            tasks: {
+              t: { steps: [module] },
+              [TASK_NAME]: { steps: [] },
+              [CALLER_NAME]: { rescue: "t", steps: [] },
+            },
+          };
+
           const config =
             kind === "connection"
               ? { connections: [{ ...module, name: "c" }], tasks: {} }
               : kind === "trigger"
                 ? { connections: [broker], tasks: { t: { trigger: module } } }
-                : { connections: [broker], tasks: { t: { steps: [module] } } };
+                : steps;
 
           expect(await check(config), type).to.deep.equal([]);
         }
@@ -689,6 +707,154 @@ describe("config validation", function () {
           message: "expected string, found number",
         },
       ]);
+    });
+  });
+
+  describe("a branch", function () {
+    function tasks(entries: Record<string, unknown>) {
+      return { connections: [], tasks: entries };
+    }
+
+    const STEP = { type: "read:constant", value: 1 };
+
+    function branchTo(task: string) {
+      return { type: "control:branch", task };
+    }
+
+    it("accepts a step naming a declared task", async function () {
+      const errors = await check(
+        tasks({
+          weather: { steps: [branchTo("alert")] },
+          alert: { steps: [STEP] },
+        }),
+      );
+
+      expect(errors).to.deep.equal([]);
+    });
+
+    it("reports a branch naming a task the config does not declare", async function () {
+      const errors = await check(
+        tasks({ weather: { steps: [branchTo("absent")] } }),
+      );
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "error",
+          path: "tasks.weather.steps[0].task",
+          message: 'no task named "absent" is declared',
+        },
+      ]);
+    });
+
+    it("warns about a target that is declared but disabled", async function () {
+      const errors = await check(
+        tasks({
+          weather: { steps: [branchTo("alert")] },
+          alert: { disabled: true, steps: [STEP] },
+        }),
+      );
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "warning",
+          path: "tasks.weather.steps[0].task",
+          message: 'task "alert" is declared but disabled',
+        },
+      ]);
+    });
+
+    it("reports a branch that leads back to the task it branches from", async function () {
+      const errors = await check(
+        tasks({
+          weather: { steps: [branchTo("alert")] },
+          alert: { steps: [branchTo("weather")] },
+        }),
+      );
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "error",
+          path: "tasks.weather.steps[0].task",
+          message: 'branch "alert" leads back to task "weather"',
+        },
+        {
+          severity: "error",
+          path: "tasks.alert.steps[0].task",
+          message: 'branch "weather" leads back to task "alert"',
+        },
+      ]);
+    });
+
+    // Both kinds of reference share one graph, so neither can be used to hide
+    // half of a loop from the check the other one gets.
+    it("reports a loop closed by one branch and one rescue", async function () {
+      const errors = await check(
+        tasks({
+          weather: { steps: [branchTo("alert")] },
+          alert: { rescue: "weather", steps: [STEP] },
+        }),
+      );
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "error",
+          path: "tasks.weather.steps[0].task",
+          message: 'branch "alert" leads back to task "weather"',
+        },
+        {
+          severity: "error",
+          path: "tasks.alert.rescue",
+          message: 'rescue "weather" leads back to task "alert"',
+        },
+      ]);
+    });
+  });
+
+  describe("a control:return", function () {
+    function tasks(entries: Record<string, unknown>) {
+      return { connections: [], tasks: entries };
+    }
+
+    const RETURNS = { type: "control:return", value: 1 };
+    const STEP = { type: "read:constant", value: 1 };
+
+    it("is reported when nothing can invoke the task holding it", async function () {
+      const errors = await check(tasks({ weather: { steps: [RETURNS] } }));
+
+      expect(errors).to.deep.equal([
+        {
+          severity: "warning",
+          path: "tasks.weather.steps[0]",
+          message:
+            'nothing invokes task "weather", so this control:return hands its value nowhere',
+        },
+      ]);
+    });
+
+    it("is accepted once a rescue names the task", async function () {
+      const errors = await check(
+        tasks({
+          weather: { rescue: "last-resort", steps: [STEP] },
+          "last-resort": { steps: [RETURNS] },
+        }),
+      );
+
+      expect(errors).to.deep.equal([]);
+    });
+
+    // Checked after every task has been read, so a branch further down the
+    // file still counts.
+    it("is accepted once a branch declared later names the task", async function () {
+      const errors = await check(
+        tasks({
+          "last-resort": { steps: [RETURNS] },
+          weather: {
+            steps: [{ type: "control:branch", task: "last-resort" }],
+          },
+        }),
+      );
+
+      expect(errors).to.deep.equal([]);
     });
   });
 

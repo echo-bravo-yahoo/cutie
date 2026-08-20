@@ -197,12 +197,16 @@ function resolveType(
   return { kind: kind as Kind, subKind };
 }
 
-// One `rescue:` as written, so a cycle can be reported at the line that closes
-// it rather than at whichever task the search happened to start from.
-interface RescueEdge {
+// One reference from one task to another as written -- a `rescue:` or a
+// `control:branch`'s `task:` -- so a cycle can be reported at the line that
+// closes it rather than at whichever task the search happened to start from.
+// Both kinds share one graph, so a loop closed by one of each is still a loop.
+interface TaskEdge {
   from: string;
   to: string;
   path: string;
+  // What the reference is called in the message a cycle produces.
+  label: string;
 }
 
 interface ModuleContext {
@@ -211,17 +215,18 @@ interface ModuleContext {
   disabledConnectionNames: Set<string>;
   taskNames: Set<string>;
   disabledTaskNames: Set<string>;
-  rescueEdges: Array<RescueEdge>;
+  taskEdges: Array<TaskEdge>;
   errors: Array<ConfigError>;
 }
 
 // The same cross-check `connectionName` gets: a name that is not declared is an
 // error, and one that is declared but disabled is a warning, because the task
 // exists and turning it back on is one line away.
-function validateRescue(
+function validateTaskReference(
   value: unknown,
   from: string,
   path: string,
+  label: string,
   context: ModuleContext,
 ) {
   // A non-string is reported by whoever holds the schema for this slot, so
@@ -240,15 +245,16 @@ function validateRescue(
       warning(path, `task "${value}" is declared but disabled`),
     );
 
-  context.rescueEdges.push({ from, to: value, path });
+  context.taskEdges.push({ from, to: value, path, label });
 }
 
 // A rescue that leads back to the task it rescues would run again on its own
-// first failure, so it is refused here rather than discovered at three in the
-// morning. Every edge in the loop is named, because any one of them is a place
-// to break it.
-function reportRescueCycles(
-  edges: ReadonlyArray<RescueEdge>,
+// first failure, and a branch that leads back to the task it branches from
+// would never stop, so both are refused here rather than discovered at three in
+// the morning. Every edge in the loop is named, because any one of them is a
+// place to break it.
+function reportTaskCycles(
+  edges: ReadonlyArray<TaskEdge>,
   errors: Array<ConfigError>,
 ) {
   const outgoing = new Map<string, Array<string>>();
@@ -277,7 +283,7 @@ function reportRescueCycles(
       errors.push(
         error(
           edge.path,
-          `rescue "${edge.to}" leads back to task "${edge.from}"`,
+          `${edge.label} "${edge.to}" leads back to task "${edge.from}"`,
         ),
       );
 }
@@ -415,6 +421,8 @@ async function validateTasks(
     return;
   }
 
+  const returningTasks: Array<{ task: string; path: string }> = [];
+
   for (const [name, task] of Object.entries(value)) {
     const path = `tasks.${name}`;
 
@@ -435,7 +443,13 @@ async function validateTasks(
 
     // The default for every step of this task, so it is checked the same way a
     // step's own is.
-    validateRescue(task.rescue, name, `${path}.rescue`, context);
+    validateTaskReference(
+      task.rescue,
+      name,
+      `${path}.rescue`,
+      "rescue",
+      context,
+    );
 
     if (task.trigger !== undefined)
       await validateModule(
@@ -467,12 +481,42 @@ async function validateTasks(
         context,
       );
 
-      if (isRecord(step))
-        validateRescue(step.rescue, name, `${stepPath}.rescue`, context);
+      if (isRecord(step)) {
+        validateTaskReference(
+          step.rescue,
+          name,
+          `${stepPath}.rescue`,
+          "rescue",
+          context,
+        );
+
+        if (step.type === "control:branch")
+          validateTaskReference(
+            step.task,
+            name,
+            `${stepPath}.task`,
+            "branch",
+            context,
+          );
+
+        if (step.type === "control:return")
+          returningTasks.push({ task: name, path: stepPath });
+      }
     }
   }
 
-  reportRescueCycles(context.rescueEdges, context.errors);
+  reportTaskCycles(context.taskEdges, context.errors);
+
+  // After the loop, not during it: a branch or a rescue declared further down
+  // the file can be what makes a task invocable.
+  for (const returned of returningTasks)
+    if (!context.taskEdges.some((edge) => edge.to === returned.task))
+      context.errors.push(
+        warning(
+          returned.path,
+          `nothing invokes task "${returned.task}", so this control:return hands its value nowhere`,
+        ),
+      );
 }
 
 // Never throws for a bad config; collects everything. Throws only on an
@@ -500,7 +544,7 @@ export async function validateConfig(
     disabledConnectionNames: declaredConnectionNames(config.connections, true),
     taskNames: declaredTaskNames(config.tasks),
     disabledTaskNames: declaredTaskNames(config.tasks, true),
-    rescueEdges: [],
+    taskEdges: [],
     errors,
   };
 
