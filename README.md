@@ -83,6 +83,10 @@ The config `cutie init` copies publishes a heartbeat and cutie's own logs to MQT
 
 Once more than one machine runs `cutie`, editing each machine's config file over SSH stops scaling. `cutie` can instead keep config files on a connection -- today, as retained MQTT messages -- so a node fetches its own config at startup and you edit them all from one place. See `./examples/remote-config.yaml` for the node side.
 
+A node stays subscribed to the topic it fetched from, so publishing a new config is all it takes: the node validates what arrives, tears down its tasks and connections, and rebuilds them from the new config, without a restart and without SSH. A config that does not validate is refused and logged, and the node keeps running the one it already had. The exception is the local bootstrap file itself -- the broker endpoint and credentials the node fetches over -- which is still read once at startup and so still needs a restart to change.
+
+A node running from a local config file with no `configProvider` watches that file instead, and reloads the same way when it is edited.
+
 Two subcommands manage those stored configs:
 
 ```bash
