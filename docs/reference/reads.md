@@ -27,6 +27,7 @@ Reads temperature, humidity, and pressure from a BME280 over I2C.
 | --- | --- | --- | --- | --- | --- |
 | `virtual` | boolean | no | `false` |  | Produce plausible drifting readings instead of opening the sensor. |
 | `i2cAddress` | number | no | `118` |  | The sensor's I2C address; a BME280 uses 0x76 or 0x77 depending on its SDO pin. Must be between 8 and 119, a whole number. |
+| `standby` | `MS_0_5` or `MS_10` or `MS_20` or `MS_62_5` or `MS_125` or `MS_250` or `MS_500` or `MS_1000` | no | `"MS_0_5"` |  | Idle time between measurement cycles, in normal (continuous) mode. A shorter standby keeps the sensor converting almost constantly (MS_0_5, the default, is ~95% active); a longer one lets it sit idle most of the time, which may reduce the sensor's own self-heating contribution to its temperature reading -- though Bosch's datasheet does not quantify or guarantee this. If this sensor is also read by another read:bme280 step (e.g. a display task alongside a measurement task), both should use the same value -- they write the same shared hardware register. |
 | `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
