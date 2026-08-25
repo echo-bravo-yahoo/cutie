@@ -277,4 +277,36 @@ describe("reads", function () {
       );
     });
   });
+
+  describe("a BME280 standby setting", function () {
+    it("defaults to MS_0_5", async function () {
+      const task = new Task({ steps: [] }, "standby default");
+
+      const bme280 = await task.importStep({ type: "read:bme280" } as never, 0);
+
+      expect((bme280.config as { standby: string }).standby).to.equal(
+        "MS_0_5",
+      );
+    });
+
+    it("accepts a longer standby value", async function () {
+      expect(
+        await errorsFor({ type: "read:bme280", standby: "MS_500" }),
+      ).to.deep.equal([]);
+    });
+
+    it("rejects a value outside the driver's standby enum", async function () {
+      const errors = await errorsFor({
+        type: "read:bme280",
+        standby: "MS_700",
+      });
+
+      expect(errors).to.deep.include({
+        severity: "error",
+        path: "tasks.t.steps[0].standby",
+        message:
+          '"MS_700" is not one of: MS_0_5, MS_10, MS_20, MS_62_5, MS_125, MS_250, MS_500, MS_1000',
+      });
+    });
+  });
 });

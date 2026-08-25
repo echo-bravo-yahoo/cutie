@@ -11,6 +11,7 @@ import { ModuleSchema } from "../util/schema.js";
 
 export interface BME280Config extends ReadConfig {
   i2cAddress: number;
+  standby: string;
 }
 
 interface Sample {
@@ -76,10 +77,15 @@ export default class BME280 extends Read {
   async enable() {
     if (!this.config.virtual) {
       const bme280Sensor = await importOptional<{
-        open(options: { i2cAddress: number }): Promise<unknown>;
+        open(options: {
+          i2cAddress: number;
+          standby: number;
+        }): Promise<unknown>;
+        STANDBY: Record<string, number>;
       }>("bme280", "read:bme280");
       this.sensor = await bme280Sensor.open({
         i2cAddress: Number(this.config.i2cAddress),
+        standby: bme280Sensor.STANDBY[this.config.standby],
       });
     }
 
@@ -114,6 +120,30 @@ export const schema: ModuleSchema = {
       min: 0x08,
       max: 0x77,
       integer: true,
+    },
+    standby: {
+      type: "string",
+      description:
+        "Idle time between measurement cycles, in normal (continuous) mode. " +
+        "A shorter standby keeps the sensor converting almost constantly " +
+        "(MS_0_5, the default, is ~95% active); a longer one lets it sit " +
+        "idle most of the time, which may reduce the sensor's own " +
+        "self-heating contribution to its temperature reading -- though " +
+        "Bosch's datasheet does not quantify or guarantee this. If this " +
+        "sensor is also read by another read:bme280 step (e.g. a display " +
+        "task alongside a measurement task), both should use the same " +
+        "value -- they write the same shared hardware register.",
+      enum: [
+        "MS_0_5",
+        "MS_10",
+        "MS_20",
+        "MS_62_5",
+        "MS_125",
+        "MS_250",
+        "MS_500",
+        "MS_1000",
+      ],
+      default: "MS_0_5",
     },
   },
 };
