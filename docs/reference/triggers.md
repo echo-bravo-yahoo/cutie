@@ -31,7 +31,7 @@ Starts a message whenever an output:event on this node emits the matching key.
 
 ## `trigger:file-change`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Starts a message of {eventType, filename} whenever a watched file or directory changes.
 
@@ -48,7 +48,7 @@ Starts a message of {eventType, filename} whenever a watched file or directory c
 
 ## `trigger:gpio-button`
 
-<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 
 Starts a message of {button, pressed} whenever an active-low button wired to a GPIO pin changes.
 
@@ -65,7 +65,7 @@ Starts a message of {button, pressed} whenever an active-low button wired to a G
 
 ## `trigger:infrared`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Starts a message of {level, tick} for every edge an infrared receiver sees. Decoding a protocol out of the pulse train is a job for the step chain.
 
@@ -82,7 +82,7 @@ Starts a message of {level, tick} for every edge an infrared receiver sees. Deco
 
 ## `trigger:logs`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Starts a message for every log line the node produces whose topic matches one of its filters.
 
@@ -100,7 +100,7 @@ Starts a message for every log line the node produces whose topic matches one of
 
 ## `trigger:mqtt`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Starts a message for every MQTT message published to one of its topics.
 
@@ -117,7 +117,7 @@ Starts a message for every MQTT message published to one of its topics.
 
 ## `trigger:nec`
 
-<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 
 Decodes an NEC infrared protocol frame on a GPIO pin and starts a message of {address, command, extendedAddress, extendedCommand} for each one received.
 

@@ -6,7 +6,7 @@ A read replaces the message with a value from somewhere else.
 
 ## `read:ble`
 
-<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 
 Reads the Bluetooth signal strength of named devices, one sample per call, as {"devices": {"a name": {"rssi": -63}}}. A device that is not seen is left out rather than reported at a floor value. Pair it with trigger:cron, and with transform:accumulate and transform:aggregate to average a run of samples.
 
@@ -62,7 +62,7 @@ Replaces the message with a value from the config.
 
 ## `read:file`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Replaces the message with the contents of a file.
 
@@ -81,7 +81,7 @@ Replaces the message with the contents of a file.
 
 ## `read:ltr559`
 
-<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 
 Reads ambient light and proximity from an LTR-559 over I2C.
 
@@ -96,7 +96,7 @@ Reads ambient light and proximity from an LTR-559 over I2C.
 
 ## `read:mems-mic`
 
-<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 
 Reads a sound level from a MEMS I2S digital microphone, over ALSA.
 
@@ -112,7 +112,7 @@ Reads a sound level from a MEMS I2S digital microphone, over ALSA.
 
 ## `read:random`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Replaces the message with a number that drifts within bounds, one step at a time. This is the way to build a sensor-shaped task with no hardware attached.
 

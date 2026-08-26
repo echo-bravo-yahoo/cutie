@@ -5,17 +5,21 @@
 // .claude/docs/running-cutie.md, which are not generated -- keep those in
 // sync by eye when this file changes.
 //
-// Badges use a raw <img align="middle"> tag rather than markdown's `![]()`
+// Badges use a raw <img align="top"> tag rather than markdown's `![]()`
 // image syntax. GitHub renders a plain `![]()` image with the browser's
 // default `vertical-align: baseline`, which visibly floats a shields.io
 // badge above the line of text next to it (verified against GitHub's own
-// markdown API); `align="middle"` fixes that and survives GitHub's HTML
-// sanitizer, where a `style` attribute does not.
+// markdown API); align="top" fixes it and survives GitHub's HTML sanitizer,
+// where a `style` attribute does not. align="middle" was tried first and
+// looked closer but still measured 5px low against the surrounding text's
+// line box in a real rendered page (Playwright against github.com); with
+// this badge's natural ~20px height, align="top" measures an exact 0px
+// delta against the line box center instead of relying on eyeballing it.
 
 const NEW_BADGE =
-  '<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">';
+  '<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">';
 const BREAKING_BADGE =
-  '<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">';
+  '<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">';
 
 // Did not exist as any type in v3 (verified against tag 3.0.1-8).
 const NEW_IN_V4 = new Set([

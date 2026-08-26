@@ -31,7 +31,7 @@ Emits the message on this node's internal event bus, where a trigger:event with 
 
 ## `output:file`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Writes each message to a file.
 
@@ -64,7 +64,7 @@ Writes each message to InfluxDB as one line of line protocol. The message must a
 
 ## `output:inky-phat`
 
-<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 
 Draws each message on an Inky pHAT e-paper panel, 212x104 pixels in three colours. The pixels come from an image file or from a bitmap the message carries.
 
@@ -101,7 +101,7 @@ Takes no options of its own.
 
 ## `output:mqtt`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Publishes each message to one or more MQTT topics.
 
@@ -122,7 +122,7 @@ Publishes each message to one or more MQTT topics.
 
 ## `output:nec`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Transmits an NEC infrared command on a GPIO pin. The message either names a saved command, {"id": "volumeDown"}, or spells one out, {"address": "0x7c", "command": "0x66"}.
 
@@ -140,7 +140,7 @@ Transmits an NEC infrared command on a GPIO pin. The message either names a save
 
 ## `output:st7735`
 
-<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 
 Draws each message on an ST7735 panel. The pixels come from an image file or from a bitmap the message carries.
 
@@ -167,7 +167,7 @@ Draws each message on an ST7735 panel. The pixels come from an image file or fro
 
 ## `output:stash`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Stores a value in the stash, a scratch space belonging to one message.
 
@@ -184,7 +184,7 @@ Stores a value in the stash, a scratch space belonging to one message.
 
 ## `output:switchbots`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Presses or toggles SwitchBot bots over Bluetooth. The message names one and an action: {"id": "f84e19c8c70d", "action": "on"}, where the action is "on", "off", or "press".
 
@@ -202,7 +202,7 @@ Presses or toggles SwitchBot bots over Bluetooth. The message names one and an a
 
 ## `output:thermal-printer`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Prints each message on a serial thermal printer, a line at a time. A line may lead with "# " through "###### " for a heading, or "- " for a list item.
 
@@ -224,7 +224,7 @@ Prints each message on a serial thermal printer, a line at a time. A line may le
 
 ## `output:unicorn-hat-mini`
 
-<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 
 Draws each message on a Unicorn HAT Mini, a 17x7 grid of RGB LEDs. The pixels come from an image file or from a bitmap the message carries.
 

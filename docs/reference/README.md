@@ -8,63 +8,63 @@ Every option every module accepts, generated from the schemas the runtime valida
 
 - [`trigger:cron`](./triggers.md#triggercron)
 - [`trigger:event`](./triggers.md#triggerevent)
-- [`trigger:file-change`](./triggers.md#triggerfile-change) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`trigger:gpio-button`](./triggers.md#triggergpio-button) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
-- [`trigger:infrared`](./triggers.md#triggerinfrared) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`trigger:logs`](./triggers.md#triggerlogs) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`trigger:mqtt`](./triggers.md#triggermqtt) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`trigger:nec`](./triggers.md#triggernec) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+- [`trigger:file-change`](./triggers.md#triggerfile-change) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`trigger:gpio-button`](./triggers.md#triggergpio-button) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
+- [`trigger:infrared`](./triggers.md#triggerinfrared) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`trigger:logs`](./triggers.md#triggerlogs) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`trigger:mqtt`](./triggers.md#triggermqtt) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`trigger:nec`](./triggers.md#triggernec) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 - [`trigger:once`](./triggers.md#triggeronce)
 - [`trigger:repeat`](./triggers.md#triggerrepeat)
 
 ## reads
 
-- [`read:ble`](./reads.md#readble) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+- [`read:ble`](./reads.md#readble) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 - [`read:bme280`](./reads.md#readbme280)
 - [`read:bme680`](./reads.md#readbme680)
 - [`read:constant`](./reads.md#readconstant)
-- [`read:file`](./reads.md#readfile) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`read:ltr559`](./reads.md#readltr559) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
-- [`read:mems-mic`](./reads.md#readmems-mic) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
-- [`read:random`](./reads.md#readrandom) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+- [`read:file`](./reads.md#readfile) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`read:ltr559`](./reads.md#readltr559) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
+- [`read:mems-mic`](./reads.md#readmems-mic) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
+- [`read:random`](./reads.md#readrandom) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 - [`read:stash`](./reads.md#readstash)
 
 ## transforms
 
-- [`transform:accumulate`](./transforms.md#transformaccumulate) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+- [`transform:accumulate`](./transforms.md#transformaccumulate) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 - [`transform:aggregate`](./transforms.md#transformaggregate)
 - [`transform:convert`](./transforms.md#transformconvert)
-- [`transform:javascript`](./transforms.md#transformjavascript) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`transform:merge`](./transforms.md#transformmerge) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+- [`transform:javascript`](./transforms.md#transformjavascript) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`transform:merge`](./transforms.md#transformmerge) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 - [`transform:munge`](./transforms.md#transformmunge)
 - [`transform:offset`](./transforms.md#transformoffset)
 - [`transform:prettify`](./transforms.md#transformprettify)
 - [`transform:round`](./transforms.md#transformround)
-- [`transform:shell`](./transforms.md#transformshell) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`transform:uglify`](./transforms.md#transformuglify) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+- [`transform:shell`](./transforms.md#transformshell) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`transform:uglify`](./transforms.md#transformuglify) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 ## controls
 
-- [`control:branch`](./controls.md#controlbranch) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
-- [`control:delay`](./controls.md#controldelay) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
-- [`control:return`](./controls.md#controlreturn) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
-- [`control:stop`](./controls.md#controlstop) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+- [`control:branch`](./controls.md#controlbranch) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
+- [`control:delay`](./controls.md#controldelay) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
+- [`control:return`](./controls.md#controlreturn) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
+- [`control:stop`](./controls.md#controlstop) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 
 ## outputs
 
 - [`output:console`](./outputs.md#outputconsole)
 - [`output:event`](./outputs.md#outputevent)
-- [`output:file`](./outputs.md#outputfile) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+- [`output:file`](./outputs.md#outputfile) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 - [`output:influxdb`](./outputs.md#outputinfluxdb)
-- [`output:inky-phat`](./outputs.md#outputinky-phat) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+- [`output:inky-phat`](./outputs.md#outputinky-phat) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 - [`output:logs`](./outputs.md#outputlogs)
-- [`output:mqtt`](./outputs.md#outputmqtt) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`output:nec`](./outputs.md#outputnec) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`output:st7735`](./outputs.md#outputst7735) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
-- [`output:stash`](./outputs.md#outputstash) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`output:switchbots`](./outputs.md#outputswitchbots) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`output:thermal-printer`](./outputs.md#outputthermal-printer) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
-- [`output:unicorn-hat-mini`](./outputs.md#outputunicorn-hat-mini) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
+- [`output:mqtt`](./outputs.md#outputmqtt) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`output:nec`](./outputs.md#outputnec) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`output:st7735`](./outputs.md#outputst7735) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
+- [`output:stash`](./outputs.md#outputstash) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`output:switchbots`](./outputs.md#outputswitchbots) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`output:thermal-printer`](./outputs.md#outputthermal-printer) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
+- [`output:unicorn-hat-mini`](./outputs.md#outputunicorn-hat-mini) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 
 ## connections
 

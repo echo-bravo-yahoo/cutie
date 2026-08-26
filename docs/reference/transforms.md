@@ -6,7 +6,7 @@ A transform changes the message on its way through a task.
 
 ## `transform:accumulate`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Holds messages back and passes them on as one array, either once enough have arrived or once the oldest has waited long enough.
 
@@ -54,7 +54,7 @@ Converts a number from one unit to another within the same dimension: temperatur
 
 ## `transform:javascript`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Replaces the message with what a JavaScript function returns. The source is compiled once, when the task registers, into a function taking message, stash, error, task, module, and env as arguments.
 
@@ -72,7 +72,7 @@ Replaces the message with what a JavaScript function returns. The source is comp
 
 ## `transform:merge`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Merges values into the message. A source may be a literal object or a template that resolves to one.
 
@@ -149,7 +149,7 @@ Rounds a number to a given number of decimal places.
 
 ## `transform:shell`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Replaces the message with the output of a shell command. The message is interpolated into the command before it runs.
 
@@ -168,7 +168,7 @@ Replaces the message with the output of a shell command. The message is interpol
 
 ## `transform:uglify`
 
-<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 
 Replaces the message with its JSON text on one line. transform:prettify with a spaces of 0 does the same thing.
 
