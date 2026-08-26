@@ -12,7 +12,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { listModules, loadSchema } from "../src/util/modules.js";
 import { UNIVERSAL_OPTION_SCHEMAS } from "../src/util/schema.js";
 import { KINDS } from "../src/util/type-helpers.js";
-import { badgesFor } from "./step-type-badges.mjs";
+import { badgesFor, breakingNoteFor } from "./step-type-badges.mjs";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -97,6 +97,7 @@ const UNIVERSAL_ROWS = rowsFor(UNIVERSAL_OPTION_SCHEMAS);
 function renderModule(schema) {
   const rows = rowsFor(schema.options);
   const badges = badgesFor(schema.type);
+  const breakingNote = breakingNoteFor(schema.type);
 
   return [
     `## \`${schema.type}\``,
@@ -104,6 +105,7 @@ function renderModule(schema) {
     ...(badges.length ? [badges.join(" "), ""] : []),
     schema.description,
     "",
+    ...(breakingNote ? [`> **Breaking in v4:** ${breakingNote}`, ""] : []),
     rows.length
       ? table([...rows, ...UNIVERSAL_ROWS])
       : `Takes no options of its own.\n\n${table(UNIVERSAL_ROWS)}`,

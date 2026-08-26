@@ -6,9 +6,11 @@ A transform changes the message on its way through a task.
 
 ## `transform:accumulate`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Holds messages back and passes them on as one array, either once enough have arrived or once the oldest has waited long enough.
+
+> **Breaking in v4:** `count` is now a required option rather than an optional one.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -52,9 +54,11 @@ Converts a number from one unit to another within the same dimension: temperatur
 
 ## `transform:javascript`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Replaces the message with what a JavaScript function returns. The source is compiled once, when the task registers, into a function taking message, stash, error, task, module, and env as arguments.
+
+> **Breaking in v4:** A script is now a function body that must return its result explicitly, replacing the old completion-value semantics where a bare assignment evaluated to `undefined` and a bare `if` evaluated to whichever branch it took. It is also no longer interpolated: `${...}` inside a script is JavaScript's own template syntax now, and everything interpolation used to reach is a function parameter instead -- `message`, `stash`, `error`, `task`, `module`, `env`.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -68,9 +72,11 @@ Replaces the message with what a JavaScript function returns. The source is comp
 
 ## `transform:merge`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Merges values into the message. A source may be a literal object or a template that resolves to one.
+
+> **Breaking in v4:** `sources` are now interpolated the same way everywhere else in a config is: `${stash.device}` replaces `$$stash.device`, and a `${...}` inside a literal object source is resolved rather than passed through as text.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -143,9 +149,11 @@ Rounds a number to a given number of decimal places.
 
 ## `transform:shell`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Replaces the message with the output of a shell command. The message is interpolated into the command before it runs.
+
+> **Breaking in v4:** `outputType` is now required, closing the implicit uncoerced passthrough `transform:shell` used to fall back to; pass `any` explicitly for the same behavior.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -160,9 +168,11 @@ Replaces the message with the output of a shell command. The message is interpol
 
 ## `transform:uglify`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Replaces the message with its JSON text on one line. transform:prettify with a spaces of 0 does the same thing.
+
+> **Breaking in v4:** Rejects `spaces` rather than accepting it silently -- `transform:uglify` is `transform:prettify` with no indentation, so use `transform:prettify` with a `spaces` of `0` for the same effect, spelled explicitly.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |

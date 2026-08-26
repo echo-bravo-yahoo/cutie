@@ -31,9 +31,11 @@ Starts a message whenever an output:event on this node emits the matching key.
 
 ## `trigger:file-change`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Starts a message of {eventType, filename} whenever a watched file or directory changes.
+
+> **Breaking in v4:** A relative `path` now resolves against the directory holding the config file rather than the process's working directory, so a config that relied on the old cwd-relative resolution now watches a different file.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -46,7 +48,7 @@ Starts a message of {eventType, filename} whenever a watched file or directory c
 
 ## `trigger:gpio-button`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Starts a message of {button, pressed} whenever an active-low button wired to a GPIO pin changes.
 
@@ -63,9 +65,11 @@ Starts a message of {button, pressed} whenever an active-low button wired to a G
 
 ## `trigger:infrared`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Starts a message of {level, tick} for every edge an infrared receiver sees. Decoding a protocol out of the pulse train is a job for the step chain.
+
+> **Breaking in v4:** No longer accepts `ledPin` -- it configured an output pin the module never actually transmitted on, so the option looked load-bearing but was dead weight.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -78,9 +82,11 @@ Starts a message of {level, tick} for every edge an infrared receiver sees. Deco
 
 ## `trigger:logs`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Starts a message for every log line the node produces whose topic matches one of its filters.
+
+> **Breaking in v4:** `minVerbosity` now defaults to `warn` instead of `trace`, so a logs task that wants everything has to ask for it explicitly rather than receiving every trace line by default.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -94,9 +100,11 @@ Starts a message for every log line the node produces whose topic matches one of
 
 ## `trigger:mqtt`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Starts a message for every MQTT message published to one of its topics.
+
+> **Breaking in v4:** `topics` must now be an array; the old singular `topic` option is gone, with no deprecation period or alias, so a config naming `topic` is rejected with `topics` reported as the missing option.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -109,7 +117,7 @@ Starts a message for every MQTT message published to one of its topics.
 
 ## `trigger:nec`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Decodes an NEC infrared protocol frame on a GPIO pin and starts a message of {address, command, extendedAddress, extendedCommand} for each one received.
 

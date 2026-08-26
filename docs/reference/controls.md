@@ -6,7 +6,7 @@ A control decides what the chain does next, rather than changing the message on 
 
 ## `control:branch`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Runs another task from inside this one, always or only when a predicate holds, then carries on with the rest of this task's steps.
 
@@ -21,7 +21,7 @@ Runs another task from inside this one, always or only when a predicate holds, t
 
 ## `control:delay`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Holds the message here for a fixed duration before the rest of the chain runs.
 
@@ -35,7 +35,7 @@ Holds the message here for a fixed duration before the rest of the chain runs.
 
 ## `control:return`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Ends the chain and hands a value back to whatever invoked this task, such as the step that named it as its rescue.
 
@@ -50,7 +50,7 @@ Ends the chain and hands a value back to whatever invoked this task, such as the
 
 ## `control:stop`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Ends the chain here, always or only when a predicate holds, so the steps after it never run. The message is consumed rather than failed.
 

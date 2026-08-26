@@ -31,9 +31,11 @@ Emits the message on this node's internal event bus, where a trigger:event with 
 
 ## `output:file`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Writes each message to a file.
+
+> **Breaking in v4:** `insertNewlines` now writes the newline after each message instead of before it, so the leading blank line goes away and the last line gains its terminator. A relative `path` also now resolves against the directory holding the config file rather than the process's working directory.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -62,7 +64,7 @@ Writes each message to InfluxDB as one line of line protocol. The message must a
 
 ## `output:inky-phat`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Draws each message on an Inky pHAT e-paper panel, 212x104 pixels in three colours. The pixels come from an image file or from a bitmap the message carries.
 
@@ -99,9 +101,11 @@ Takes no options of its own.
 
 ## `output:mqtt`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Publishes each message to one or more MQTT topics.
+
+> **Breaking in v4:** `topics` must now be an array; the old singular `topic` option is gone, with no deprecation period or alias, so a config naming `topic` is rejected with `topics` reported as the missing option.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -118,9 +122,11 @@ Publishes each message to one or more MQTT topics.
 
 ## `output:nec`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Transmits an NEC infrared command on a GPIO pin. The message either names a saved command, {"id": "volumeDown"}, or spells one out, {"address": "0x7c", "command": "0x66"}.
+
+> **Breaking in v4:** `ledPin` is now required unless `virtual` is set; the old default of `23` was a guess about someone else's wiring.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -134,7 +140,7 @@ Transmits an NEC infrared command on a GPIO pin. The message either names a save
 
 ## `output:st7735`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Draws each message on an ST7735 panel. The pixels come from an image file or from a bitmap the message carries.
 
@@ -161,9 +167,11 @@ Draws each message on an ST7735 panel. The pixels come from an image file or fro
 
 ## `output:stash`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Stores a value in the stash, a scratch space belonging to one message.
+
+> **Breaking in v4:** Writes with a path setter, so a dotted key like `device.name` nests the way `read:stash` reads it back rather than creating a literal flat key of that name. It also now stores a value's own type -- a numeric `${message.count}` stashes as a number rather than as its stringified text.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -176,9 +184,11 @@ Stores a value in the stash, a scratch space belonging to one message.
 
 ## `output:switchbots`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Presses or toggles SwitchBot bots over Bluetooth. The message names one and an action: {"id": "f84e19c8c70d", "action": "on"}, where the action is "on", "off", or "press".
+
+> **Breaking in v4:** `bots: [{id, name, reverseOnOff}]` is renamed to `devices: [{address, label, reverseOnOff}]`, and the old keys are rejected rather than accepted quietly -- `name` in particular collided with the `name` every step already accepts.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -192,9 +202,11 @@ Presses or toggles SwitchBot bots over Bluetooth. The message names one and an a
 
 ## `output:thermal-printer`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Prints each message on a serial thermal printer, a line at a time. A line may lead with "# " through "###### " for a heading, or "- " for a list item.
+
+> **Breaking in v4:** `path` is renamed to `devicePath` and is required unless `virtual` is set, with no default of `/dev/ttyS0` any more -- `path` everywhere else in a config names a filesystem path, and this option names a serial device instead.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -212,7 +224,7 @@ Prints each message on a serial thermal printer, a line at a time. A line may le
 
 ## `output:unicorn-hat-mini`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Draws each message on a Unicorn HAT Mini, a 17x7 grid of RGB LEDs. The pixels come from an image file or from a bitmap the message carries.
 

@@ -64,62 +64,62 @@ Type string is `<kind>:<subKind>`, and loads `src/<kind>s/<subKind>.ts` (see des
 - `trigger:once` — fires one (optionally delayed, interpolated) message, then stops.
 - `trigger:repeat` — fires a fixed message on a fixed interval.
 - `trigger:cron` — fires a fixed message on a cron schedule.
-- `trigger:mqtt` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — starts a task when a message arrives on a subscribed MQTT topic.
+- `trigger:mqtt` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — starts a task when a message arrives on a subscribed MQTT topic.
 - `trigger:event` — starts a task when the in-process event bus emits a key.
-- `trigger:file-change` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — starts a task on filesystem change events.
-- `trigger:logs` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — starts a task for internal log lines matching `filters` (`*` wildcard, `!` negates, last match wins).
-- `trigger:infrared` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — GPIO IR receiver; emits raw `{level, tick}` edges (decoding is left to downstream steps).
-- `trigger:nec` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — GPIO IR receiver that decodes the NEC protocol itself, emitting `{address, command, extendedAddress, extendedCommand}`.
-- `trigger:gpio-button` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — starts a `{button, pressed}` message when an active-low button wired to a GPIO pin changes.
+- `trigger:file-change` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — starts a task on filesystem change events.
+- `trigger:logs` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — starts a task for internal log lines matching `filters` (`*` wildcard, `!` negates, last match wins).
+- `trigger:infrared` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — GPIO IR receiver; emits raw `{level, tick}` edges (decoding is left to downstream steps).
+- `trigger:nec` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — GPIO IR receiver that decodes the NEC protocol itself, emitting `{address, command, extendedAddress, extendedCommand}`.
+- `trigger:gpio-button` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — starts a `{button, pressed}` message when an active-low button wired to a GPIO pin changes.
 
 **Reads** (`src/reads/`) — replace the message with a fresh reading; pair with a trigger like `trigger:repeat`:
 
 - `read:bme280` — temperature/humidity/pressure over I2C.
 - `read:bme680` — BME280 fields plus gas-resistance (VOC).
-- `read:ltr559` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — ambient light and proximity over I2C.
-- `read:ble` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — Bluetooth signal strength for named devices, one sample per call, as `{metadata: {timestamp}, devices: {<label>: {rssi}}}`; a device that was not seen is left out rather than reported at a floor value.
-- `read:mems-mic` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — sound level from a MEMS I2S digital microphone over ALSA; each read is itself a multi-second capture.
-- `read:random` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — numeric walk, no hardware.
+- `read:ltr559` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — ambient light and proximity over I2C.
+- `read:ble` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — Bluetooth signal strength for named devices, one sample per call, as `{metadata: {timestamp}, devices: {<label>: {rssi}}}`; a device that was not seen is left out rather than reported at a floor value.
+- `read:mems-mic` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — sound level from a MEMS I2S digital microphone over ALSA; each read is itself a multi-second capture.
+- `read:random` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — numeric walk, no hardware.
 - `read:constant` — replaces the message with a fixed, interpolated literal.
 - `read:stash` — replaces the message with a value from the task's stash.
-- `read:file` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — replaces the message with a file's contents (path interpolated, `encoding` configurable).
+- `read:file` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — replaces the message with a file's contents (path interpolated, `encoding` configurable).
 
 **Transforms** (`src/transforms/`):
 
 - `transform:round` — rounds a numeric value/paths to a precision (up/down/round).
 - `transform:convert` — unit conversion (currently celsius<->fahrenheit only).
 - `transform:offset` — adds a fixed offset to a value/paths.
-- `transform:merge` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — deep-merges additional objects into the message; each source is a literal object or a `${...}` template that resolves to one.
+- `transform:merge` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — deep-merges additional objects into the message; each source is a literal object or a `${...}` template that resolves to one.
 - `transform:munge` — rename/duplicate/remove/retain keys by path, with a `"*"` wildcard default.
-- `transform:accumulate` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — buffers messages, then forwards them as one array once `count` have arrived or the oldest has waited `maxAge`.
+- `transform:accumulate` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — buffers messages, then forwards them as one array once `count` have arrived or the oldest has waited `maxAge`.
 - `transform:aggregate` — collapses an array of samples into one value via `latest`/`average`/`sum`/`median`/`pX` (`src/util/aggregation.ts`).
-- `transform:prettify` / `transform:uglify` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — stringify the message as indented / compact JSON.
-- `transform:shell` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — runs a shell command (`command` or `codePath`), coerces stdout to `string`/`number`/`object`.
-- `transform:javascript` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — runs JS in a `node:vm` sandbox (`command` or `codePath`), same output coercion. The source is compiled once at registration into a function taking `message`, `stash`, `error`, `task`, `module`, and `env`; it must `return` its result, and it is not interpolated (`src/util/javascript.ts`).
+- `transform:prettify` / `transform:uglify` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — stringify the message as indented / compact JSON.
+- `transform:shell` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — runs a shell command (`command` or `codePath`), coerces stdout to `string`/`number`/`object`.
+- `transform:javascript` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — runs JS in a `node:vm` sandbox (`command` or `codePath`), same output coercion. The source is compiled once at registration into a function taking `message`, `stash`, `error`, `task`, `module`, and `env`; it must `return` its result, and it is not interpolated (`src/util/javascript.ts`).
 
 **Controls** (`src/controls/`) — decide what the chain does next rather than changing the message:
 
-- `control:return` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — ends the chain and hands a value back to whatever invoked the task, plus any `stash` keys to publish into the caller's stash. A task that falls off its own end returns nothing. `cutie validate` warns about one in a task nothing invokes.
-- `control:branch` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — runs the task named by `task:` from inside this one, then carries on. The target decides what comes back exactly as a rescue does. The name is resolved per message, so a task may branch to one declared after it.
-- `control:stop` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — ends the chain here, so the steps after it never run. The message is consumed rather than failed, so it produces no `error` line and does not count as handled.
-- `control:delay` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — holds the message here for a fixed `duration` before the rest of the chain runs, via a plain `setTimeout`-backed `await` (costs only this message's own progress, not the process).
+- `control:return` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — ends the chain and hands a value back to whatever invoked the task, plus any `stash` keys to publish into the caller's stash. A task that falls off its own end returns nothing. `cutie validate` warns about one in a task nothing invokes.
+- `control:branch` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — runs the task named by `task:` from inside this one, then carries on. The target decides what comes back exactly as a rescue does. The name is resolved per message, so a task may branch to one declared after it.
+- `control:stop` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — ends the chain here, so the steps after it never run. The message is consumed rather than failed, so it produces no `error` line and does not count as handled.
+- `control:delay` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — holds the message here for a fixed `duration` before the rest of the chain runs, via a plain `setTimeout`-backed `await` (costs only this message's own progress, not the process).
 - `control:branch` and `control:stop` both take an optional `when`, a JavaScript function body compiled once at registration and read for truthiness. It means the same thing in both: when this holds, do what the module is named for. Omit it to do that every time, and note that a predicate that throws is an ordinary step failure rather than a false condition.
 
 **Outputs** (`src/outputs/`):
 
 - `output:console` — logs the message.
-- `output:mqtt` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — publishes to one or more (interpolated) MQTT topics.
-- `output:file` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — appends or overwrites a file (path interpolated, `encoding` configurable).
-- `output:stash` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — stores an interpolated value into the task's stash.
+- `output:mqtt` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — publishes to one or more (interpolated) MQTT topics.
+- `output:file` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — appends or overwrites a file (path interpolated, `encoding` configurable).
+- `output:stash` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — stores an interpolated value into the task's stash.
 - `output:event` — emits the message on the in-process event bus.
 - `output:logs` — routes a `{log, object, verbosity, topic}` message back into the logger; the sink side of `trigger:logs`.
 - `output:influxdb` — writes a line-protocol point to InfluxDB via `connection:influxdb`.
-- `output:nec` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — transmits an NEC infrared remote command via `pigpiod` bit-banging, reached over its socket protocol via `pigpio-client`.
-- `output:switchbots` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — drives SwitchBot Bot devices (`on`/`off`/`press`) over BLE.
-- `output:thermal-printer` ![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical) — prints to a serial thermal printer, with a small markdown-heading dialect.
-- `output:inky-phat` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — draws each message on an Inky pHAT e-paper panel, 212x104 in three colours, from an image file or a bitmap the message carries.
-- `output:st7735` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — draws each message on an ST7735 LCD panel, 80x160 by default, from an image file or a bitmap the message carries.
-- `output:unicorn-hat-mini` ![new in v4](https://img.shields.io/badge/new%20in%20v4-blue) — draws each message on a Unicorn HAT Mini, a 17x7 grid of RGB LEDs, from the same two sources.
+- `output:nec` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — transmits an NEC infrared remote command via `pigpiod` bit-banging, reached over its socket protocol via `pigpio-client`.
+- `output:switchbots` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — drives SwitchBot Bot devices (`on`/`off`/`press`) over BLE.
+- `output:thermal-printer` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle"> — prints to a serial thermal printer, with a small markdown-heading dialect.
+- `output:inky-phat` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — draws each message on an Inky pHAT e-paper panel, 212x104 in three colours, from an image file or a bitmap the message carries.
+- `output:st7735` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — draws each message on an ST7735 LCD panel, 80x160 by default, from an image file or a bitmap the message carries.
+- `output:unicorn-hat-mini` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle"> — draws each message on a Unicorn HAT Mini, a 17x7 grid of RGB LEDs, from the same two sources.
 
 **Connections** (`src/connections/`):
 

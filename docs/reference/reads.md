@@ -6,7 +6,7 @@ A read replaces the message with a value from somewhere else.
 
 ## `read:ble`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Reads the Bluetooth signal strength of named devices, one sample per call, as {"devices": {"a name": {"rssi": -63}}}. A device that is not seen is left out rather than reported at a floor value. Pair it with trigger:cron, and with transform:accumulate and transform:aggregate to average a run of samples.
 
@@ -62,9 +62,11 @@ Replaces the message with a value from the config.
 
 ## `read:file`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Replaces the message with the contents of a file.
+
+> **Breaking in v4:** A relative `path` now resolves against the directory holding the config file rather than the process's working directory, so a config that relied on the old cwd-relative resolution now reads a different file.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -79,7 +81,7 @@ Replaces the message with the contents of a file.
 
 ## `read:ltr559`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Reads ambient light and proximity from an LTR-559 over I2C.
 
@@ -94,7 +96,7 @@ Reads ambient light and proximity from an LTR-559 over I2C.
 
 ## `read:mems-mic`
 
-![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="middle">
 
 Reads a sound level from a MEMS I2S digital microphone, over ALSA.
 
@@ -110,9 +112,11 @@ Reads a sound level from a MEMS I2S digital microphone, over ALSA.
 
 ## `read:random`
 
-![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+<img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="middle">
 
 Replaces the message with a number that drifts within bounds, one step at a time. This is the way to build a sensor-shaped task with no hardware attached.
+
+> **Breaking in v4:** `min`, `max`, `minStep`, `maxStep`, and `start` are all now required. Omitting any one of them used to silently produce `NaN` on every reading, with nothing to signal the mistake.
 
 | Option | Type | Required | Default | Unit | Description |
 | --- | --- | --- | --- | --- | --- |
