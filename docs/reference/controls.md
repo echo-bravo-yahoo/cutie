@@ -6,6 +6,8 @@ A control decides what the chain does next, rather than changing the message on 
 
 ## `control:branch`
 
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+
 Runs another task from inside this one, always or only when a predicate holds, then carries on with the rest of this task's steps.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -19,6 +21,8 @@ Runs another task from inside this one, always or only when a predicate holds, t
 
 ## `control:delay`
 
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+
 Holds the message here for a fixed duration before the rest of the chain runs.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -30,6 +34,8 @@ Holds the message here for a fixed duration before the rest of the chain runs.
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `control:return`
+
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
 
 Ends the chain and hands a value back to whatever invoked this task, such as the step that named it as its rescue.
 
@@ -43,6 +49,8 @@ Ends the chain and hands a value back to whatever invoked this task, such as the
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `control:stop`
+
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
 
 Ends the chain here, always or only when a predicate holds, so the steps after it never run. The message is consumed rather than failed.
 

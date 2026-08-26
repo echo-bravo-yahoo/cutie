@@ -46,6 +46,8 @@ Everything the BME280 reads, plus a gas-resistance channel that tracks volatile 
 
 ## `read:ble`
 
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+
 Presence tracking. One scan per message, reporting the Bluetooth signal strength of named devices, which is a proxy for how close each one is. Emits `{ metadata: { timestamp }, devices: { "<label>": { rssi } } }`.
 
 | Field              | Default | Meaning                                                    |
@@ -73,6 +75,8 @@ tasks:
 
 ## `read:ltr559`
 
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
+
 Ambient light and proximity over I2C. Emits `{ metadata: { timestamp }, lux, proximity }`.
 
 | Field        | Default | Meaning                                          |
@@ -81,6 +85,8 @@ Ambient light and proximity over I2C. Emits `{ metadata: { timestamp }, lux, pro
 | `virtual`    | `false` | fake the readings instead of opening the I2C bus |
 
 ## `read:mems-mic`
+
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
 
 Sound level from a MEMS I2S digital microphone, over ALSA. Each "sample" is itself a multi-second audio capture, so pair it with `trigger:repeat` and let one longer capture per read stand in for the [accumulate-and-aggregate smoothing](#sampling-by-hand) a faster sensor needs. Emits `{ metadata: { timestamp }, soundLevel }` - dBFS, relative to full scale. Not a calibrated absolute dB SPL reading; an uncalibrated MEMS mic has no basis for one.
 
@@ -104,6 +110,8 @@ tasks:
 ```
 
 ## `read:random`
+
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
 
 A number that drifts within bounds, one step at a time, with no hardware attached. Put it where a real sensor's read would go and the rest of the task behaves identically, which makes it the quickest way to exercise a transform chain or a new output.
 
