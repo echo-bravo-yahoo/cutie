@@ -31,6 +31,8 @@ Starts a message whenever an output:event on this node emits the matching key.
 
 ## `trigger:file-change`
 
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+
 Starts a message of {eventType, filename} whenever a watched file or directory changes.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -43,6 +45,8 @@ Starts a message of {eventType, filename} whenever a watched file or directory c
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:gpio-button`
+
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
 
 Starts a message of {button, pressed} whenever an active-low button wired to a GPIO pin changes.
 
@@ -59,6 +63,8 @@ Starts a message of {button, pressed} whenever an active-low button wired to a G
 
 ## `trigger:infrared`
 
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+
 Starts a message of {level, tick} for every edge an infrared receiver sees. Decoding a protocol out of the pulse train is a job for the step chain.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -71,6 +77,8 @@ Starts a message of {level, tick} for every edge an infrared receiver sees. Deco
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:logs`
+
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
 
 Starts a message for every log line the node produces whose topic matches one of its filters.
 
@@ -86,6 +94,8 @@ Starts a message for every log line the node produces whose topic matches one of
 
 ## `trigger:mqtt`
 
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+
 Starts a message for every MQTT message published to one of its topics.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -98,6 +108,8 @@ Starts a message for every MQTT message published to one of its topics.
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `trigger:nec`
+
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
 
 Decodes an NEC infrared protocol frame on a GPIO pin and starts a message of {address, command, extendedAddress, extendedCommand} for each one received.
 

@@ -31,6 +31,8 @@ Emits the message on this node's internal event bus, where a trigger:event with 
 
 ## `output:file`
 
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+
 Writes each message to a file.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -59,6 +61,8 @@ Writes each message to InfluxDB as one line of line protocol. The message must a
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:inky-phat`
+
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
 
 Draws each message on an Inky pHAT e-paper panel, 212x104 pixels in three colours. The pixels come from an image file or from a bitmap the message carries.
 
@@ -95,6 +99,8 @@ Takes no options of its own.
 
 ## `output:mqtt`
 
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+
 Publishes each message to one or more MQTT topics.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -112,6 +118,8 @@ Publishes each message to one or more MQTT topics.
 
 ## `output:nec`
 
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+
 Transmits an NEC infrared command on a GPIO pin. The message either names a saved command, {"id": "volumeDown"}, or spells one out, {"address": "0x7c", "command": "0x66"}.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -125,6 +133,8 @@ Transmits an NEC infrared command on a GPIO pin. The message either names a save
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:st7735`
+
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
 
 Draws each message on an ST7735 panel. The pixels come from an image file or from a bitmap the message carries.
 
@@ -151,6 +161,8 @@ Draws each message on an ST7735 panel. The pixels come from an image file or fro
 
 ## `output:stash`
 
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+
 Stores a value in the stash, a scratch space belonging to one message.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -163,6 +175,8 @@ Stores a value in the stash, a scratch space belonging to one message.
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:switchbots`
+
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
 
 Presses or toggles SwitchBot bots over Bluetooth. The message names one and an action: {"id": "f84e19c8c70d", "action": "on"}, where the action is "on", "off", or "press".
 
@@ -177,6 +191,8 @@ Presses or toggles SwitchBot bots over Bluetooth. The message names one and an a
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:thermal-printer`
+
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
 
 Prints each message on a serial thermal printer, a line at a time. A line may lead with "# " through "###### " for a heading, or "- " for a list item.
 
@@ -195,6 +211,8 @@ Prints each message on a serial thermal printer, a line at a time. A line may le
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `output:unicorn-hat-mini`
+
+![new in v4](https://img.shields.io/badge/new%20in%20v4-blue)
 
 Draws each message on a Unicorn HAT Mini, a 17x7 grid of RGB LEDs. The pixels come from an image file or from a bitmap the message carries.
 

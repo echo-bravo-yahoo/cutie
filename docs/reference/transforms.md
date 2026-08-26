@@ -6,6 +6,8 @@ A transform changes the message on its way through a task.
 
 ## `transform:accumulate`
 
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+
 Holds messages back and passes them on as one array, either once enough have arrived or once the oldest has waited long enough.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -50,6 +52,8 @@ Converts a number from one unit to another within the same dimension: temperatur
 
 ## `transform:javascript`
 
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+
 Replaces the message with what a JavaScript function returns. The source is compiled once, when the task registers, into a function taking message, stash, error, task, module, and env as arguments.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -63,6 +67,8 @@ Replaces the message with what a JavaScript function returns. The source is comp
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:merge`
+
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
 
 Merges values into the message. A source may be a literal object or a template that resolves to one.
 
@@ -137,6 +143,8 @@ Rounds a number to a given number of decimal places.
 
 ## `transform:shell`
 
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
+
 Replaces the message with the output of a shell command. The message is interpolated into the command before it runs.
 
 | Option | Type | Required | Default | Unit | Description |
@@ -151,6 +159,8 @@ Replaces the message with the output of a shell command. The message is interpol
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
 ## `transform:uglify`
+
+![breaking in v4](https://img.shields.io/badge/breaking%20in%20v4-critical)
 
 Replaces the message with its JSON text on one line. transform:prettify with a spaces of 0 does the same thing.
 

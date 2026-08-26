@@ -12,6 +12,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { listModules, loadSchema } from "../src/util/modules.js";
 import { UNIVERSAL_OPTION_SCHEMAS } from "../src/util/schema.js";
 import { KINDS } from "../src/util/type-helpers.js";
+import { badgesFor } from "./step-type-badges.mjs";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -95,10 +96,12 @@ const UNIVERSAL_ROWS = rowsFor(UNIVERSAL_OPTION_SCHEMAS);
 
 function renderModule(schema) {
   const rows = rowsFor(schema.options);
+  const badges = badgesFor(schema.type);
 
   return [
     `## \`${schema.type}\``,
     "",
+    ...(badges.length ? [badges.join(" "), ""] : []),
     schema.description,
     "",
     rows.length
@@ -134,10 +137,12 @@ function renderIndex(modules) {
   const sections = KINDS.map((kind) => [
     `## ${kind}s`,
     "",
-    ...modules[kind].map(
-      (subKind) =>
-        `- [\`${kind}:${subKind}\`](./${kind}s.md#${kind}${subKind})`,
-    ),
+    ...modules[kind].map((subKind) => {
+      const type = `${kind}:${subKind}`;
+      const badges = badgesFor(type);
+      const bullet = `- [\`${type}\`](./${kind}s.md#${kind}${subKind})`;
+      return badges.length ? `${bullet} ${badges.join(" ")}` : bullet;
+    }),
     "",
   ]).flat();
 
