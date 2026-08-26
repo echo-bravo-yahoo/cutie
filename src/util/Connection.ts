@@ -24,7 +24,12 @@ export interface ConfigProvider {
   // `topic` overrides the connection's default config location; see
   // MQTTConnection for how a "+" segment stands in for the node name.
   fetchSingleConfig(nodeName: string, topic?: string): Promise<ConfigFile>;
-  fetchAllConfigs(topic?: string): Promise<Record<string, ConfigFile>>;
+  // waitMs overrides how long a collection window like fetchAllConfigs' stays
+  // open; a caller happy with the implementation's own default omits it.
+  fetchAllConfigs(
+    topic?: string,
+    waitMs?: number,
+  ): Promise<Record<string, ConfigFile>>;
   uploadSingleConfig(
     nodeName: string,
     config: ConfigFile,

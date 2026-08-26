@@ -434,6 +434,90 @@ describe("connections", function () {
       expect(config).to.deep.equal({ tasks: {} });
     });
   });
+
+  describe("fetchAllConfigs", function () {
+    // Mimics a real broker: retained messages are redelivered only on a
+    // subscription's first SUBSCRIBE for a given filter, not on a later
+    // resubscribe to one already held -- the case that used to make a second
+    // fetchAllConfigs call on the same connection come back empty.
+    class RetainedOnceBroker extends EventEmitter {
+      options = { clientId: "retained-once" };
+      subscribed = new Set<string>();
+
+      async subscribeAsync(topic: string) {
+        if (this.subscribed.has(topic)) return;
+        this.subscribed.add(topic);
+        this.emit(
+          "message",
+          "cutie/config/bob",
+          Buffer.from(JSON.stringify({ tasks: {} })),
+        );
+      }
+
+      async unsubscribeAsync(topic: string) {
+        this.subscribed.delete(topic);
+      }
+
+      async endAsync() {}
+    }
+
+    it("can be called repeatedly on the same long-lived connection", async function () {
+      useFakeGlobals();
+      const connection = new MQTTConnection({
+        type: "connection:mqtt",
+        name: "retained-once",
+        endpoint: "mqtt://127.0.0.1:1883",
+      } as never);
+      connection.connection = new RetainedOnceBroker() as never;
+      connection.enabled = true;
+
+      const first = await connection.fetchAllConfigs("cutie/config/+", 10);
+      expect(first).to.deep.equal({ bob: { tasks: {} } });
+
+      const second = await connection.fetchAllConfigs("cutie/config/+", 10);
+      expect(second).to.deep.equal({ bob: { tasks: {} } });
+    });
+
+    // A shared connection's "message" event fires for every subscription it
+    // holds, not just this call's own -- the web UI keeps a concurrent "#"
+    // subscription open for its live message feed while this runs. A message
+    // on some other topic used to be JSON.parse'd anyway and crash the whole
+    // process on the first non-JSON payload (e.g. a plain-string Home
+    // Assistant sensor state).
+    it("ignores a concurrent message on a non-matching topic, even when it is not JSON", async function () {
+      useFakeGlobals();
+      class SharedConnectionBroker extends EventEmitter {
+        options = { clientId: "shared" };
+
+        async subscribeAsync() {
+          this.emit(
+            "message",
+            "homeassistant/sensor/some-device/lastactive/state",
+            Buffer.from("2026-08-26 16:52:28Z"),
+          );
+          this.emit(
+            "message",
+            "cutie/config/bob",
+            Buffer.from(JSON.stringify({ tasks: {} })),
+          );
+        }
+
+        async unsubscribeAsync() {}
+        async endAsync() {}
+      }
+
+      const connection = new MQTTConnection({
+        type: "connection:mqtt",
+        name: "shared",
+        endpoint: "mqtt://127.0.0.1:1883",
+      } as never);
+      connection.connection = new SharedConnectionBroker() as never;
+      connection.enabled = true;
+
+      const configs = await connection.fetchAllConfigs("cutie/config/+", 10);
+      expect(configs).to.deep.equal({ bob: { tasks: {} } });
+    });
+  });
 });
 
 // "mqtt" can only be mocked once per process, and this file's other tests

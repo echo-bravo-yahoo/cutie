@@ -58,6 +58,12 @@ export default class MQTTConnection
   ): Promise<Record<string, ConfigFile>> {
     const configs: Record<string, ConfigFile> = {};
     const handler = (messageTopic: string, message: Buffer) => {
+      // The "message" event fires for every subscription this shared
+      // connection holds, not just this one -- a concurrent wildcard
+      // subscriber (the web UI's live message feed subscribes to "#") used to
+      // make this handler JSON.parse arbitrary broker traffic and crash the
+      // whole process on the first non-JSON payload.
+      if (!MQTTConnection.matchesTopic(messageTopic, topic)) return;
       const nodeName = messageTopic.split("/").pop();
       if (nodeName) configs[nodeName] = JSON.parse(message.toString());
     };
@@ -69,7 +75,17 @@ export default class MQTTConnection
     return new Promise((resolve) =>
       setTimeout(() => {
         this.connection.removeListener("message", handler);
-        resolve(configs);
+        // Most brokers redeliver a topic's retained messages only on a
+        // subscription's first SUBSCRIBE, not on a later resubscribe to a
+        // filter this client already holds -- unsubscribing here is what lets
+        // a caller on a long-lived connection (the web UI's node list, on
+        // every refresh) call this again and still see anything.
+        this.connection
+          .unsubscribeAsync(topic)
+          .catch((error: unknown) =>
+            this.warn(`Could not unsubscribe from "${topic}": ${error}.`),
+          )
+          .finally(() => resolve(configs));
       }, waitMs),
     );
   }
