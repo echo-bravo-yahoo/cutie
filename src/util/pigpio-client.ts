@@ -20,10 +20,7 @@ export interface PigpioClientGpio {
 export interface PigpioClient {
   gpio(pin: number): PigpioClientGpio;
   once(event: "connected" | "error", listener: (arg?: unknown) => void): void;
-  on(
-    event: "disconnected" | "error",
-    listener: (arg?: unknown) => void,
-  ): void;
+  on(event: "disconnected" | "error", listener: (arg?: unknown) => void): void;
   removeListener(event: string, listener: (arg?: unknown) => void): void;
 }
 
@@ -42,9 +39,7 @@ const PIGPIOD_PORT = 8888;
 // rather than each opening its own.
 let connection: Promise<PigpioClient> | undefined;
 
-export function getPigpioConnection(
-  requiredBy: string,
-): Promise<PigpioClient> {
+export function getPigpioConnection(requiredBy: string): Promise<PigpioClient> {
   if (!connection) connection = connect(requiredBy);
   return connection;
 }

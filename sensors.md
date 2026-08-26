@@ -50,12 +50,12 @@ Everything the BME280 reads, plus a gas-resistance channel that tracks volatile 
 
 Presence tracking. One scan per message, reporting the Bluetooth signal strength of named devices, which is a proxy for how close each one is. Emits `{ metadata: { timestamp }, devices: { "<label>": { rssi } } }`.
 
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `devices` | -- | `[{ "address": "00:00:00:00:00:00", "label": "phone" }]` |
-| `adapter` | -- | which adapter to scan with, e.g. `hci0`; default otherwise |
-| `discoveryTimeout` | `10s` | how long to wait for a device before leaving it out |
-| `virtual` | `false` | fake RSSI instead of scanning for BLE advertisements |
+| Field              | Default | Meaning                                                    |
+| ------------------ | ------- | ---------------------------------------------------------- |
+| `devices`          | --      | `[{ "address": "00:00:00:00:00:00", "label": "phone" }]`   |
+| `adapter`          | --      | which adapter to scan with, e.g. `hci0`; default otherwise |
+| `discoveryTimeout` | `10s`   | how long to wait for a device before leaving it out        |
+| `virtual`          | `false` | fake RSSI instead of scanning for BLE advertisements       |
 
 `label` is optional and defaults to the address; it is the key that device's reading appears under. A device that does not turn up within `discoveryTimeout` is left out of `devices` entirely, so absence reads as absence rather than as a very weak signal.
 
@@ -90,11 +90,11 @@ Ambient light and proximity over I2C. Emits `{ metadata: { timestamp }, lux, pro
 
 Sound level from a MEMS I2S digital microphone, over ALSA. Each "sample" is itself a multi-second audio capture, so pair it with `trigger:repeat` and let one longer capture per read stand in for the [accumulate-and-aggregate smoothing](#sampling-by-hand) a faster sensor needs. Emits `{ metadata: { timestamp }, soundLevel }` - dBFS, relative to full scale. Not a calibrated absolute dB SPL reading; an uncalibrated MEMS mic has no basis for one.
 
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `alsaDevice` | none, required | ALSA capture device, e.g. `"plughw:CARD=<id>,DEV=0"` |
-| `captureSeconds` | `2` | length of the capture each read performs |
-| `virtual` | `false` | fake the level instead of capturing audio |
+| Field            | Default        | Meaning                                              |
+| ---------------- | -------------- | ---------------------------------------------------- |
+| `alsaDevice`     | none, required | ALSA capture device, e.g. `"plughw:CARD=<id>,DEV=0"` |
+| `captureSeconds` | `2`            | length of the capture each read performs             |
+| `virtual`        | `false`        | fake the level instead of capturing audio            |
 
 ```yaml
 tasks:

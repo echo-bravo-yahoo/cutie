@@ -284,9 +284,7 @@ describe("reads", function () {
 
       const bme280 = await task.importStep({ type: "read:bme280" } as never, 0);
 
-      expect((bme280.config as { standby: string }).standby).to.equal(
-        "MS_0_5",
-      );
+      expect((bme280.config as { standby: string }).standby).to.equal("MS_0_5");
     });
 
     it("accepts a longer standby value", async function () {

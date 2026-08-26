@@ -62,12 +62,12 @@ A `MessageContext` (`src/util/TaskModule.ts:61-69`) holds four things: `stash`, 
 
 A config can hand work from one task to another three ways. A `rescue` and a `control:branch` both go through `Task.invoke` and await it, so the whole context crosses. `output:event` into `trigger:event` does not await, and only half of it crosses that hop:
 
-| field | `rescue` / branch | `output:event` | how |
-| --- | --- | --- | --- |
-| `message` | yes | yes | `invoke`'s argument 1; `bus.emit`'s argument 2 |
-| `traceId` | yes | yes | `invoke`'s argument 2; `bus.emit`'s argument 3 |
-| `stash` | deep copy | no | `Caller.stash`; never wired across the bus |
-| `error` | when set | no | `Caller.error`; never wired across the bus |
+| field     | `rescue` / branch | `output:event` | how                                            |
+| --------- | ----------------- | -------------- | ---------------------------------------------- |
+| `message` | yes               | yes            | `invoke`'s argument 1; `bus.emit`'s argument 2 |
+| `traceId` | yes               | yes            | `invoke`'s argument 2; `bus.emit`'s argument 3 |
+| `stash`   | deep copy         | no             | `Caller.stash`; never wired across the bus     |
+| `error`   | when set          | no             | `Caller.error`; never wired across the bus     |
 
 The other half does not cross the bus, and nothing decided that it should not. Before `Task.invoke` existed, `Task.startMessage` unconditionally opened `{ stash: {} }`, because there was no mechanism by which one message could hand anything to another. `invoke`'s `caller` parameter (`src/util/Task.ts:124`) is that mechanism, and `Step.recover` and `control:branch` are the two things that supply it.
 

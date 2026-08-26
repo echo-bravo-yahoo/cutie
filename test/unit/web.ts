@@ -32,7 +32,11 @@ describe("parseServeUIArgs", function () {
   });
 
   it("leaves topic, host, and port undefined when not given, for serveUI to default", function () {
-    const args = parseServeUIArgs(["serve-ui", "--connectionName", "my-broker"]);
+    const args = parseServeUIArgs([
+      "serve-ui",
+      "--connectionName",
+      "my-broker",
+    ]);
 
     expect(args.topic).to.equal(undefined);
     expect(args.host).to.equal(undefined);

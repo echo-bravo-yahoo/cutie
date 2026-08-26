@@ -4,10 +4,7 @@ import MqttTopics from "mqtt-topics";
 
 import { Globals } from "../src/index.js";
 import Task from "../src/util/Task.js";
-import {
-  PigpioClient,
-  PigpioClientGpio,
-} from "../src/util/pigpio-client.js";
+import { PigpioClient, PigpioClientGpio } from "../src/util/pigpio-client.js";
 import {
   NEC_HEADER_HIGH_US,
   NEC_HEADER_LOW_US,

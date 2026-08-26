@@ -99,11 +99,7 @@ export default class NEC extends Output {
 
     if (this.config.virtual || !this.pigpioClient) return message;
 
-    await transmitNECCommand(
-      this.pigpioClient,
-      necCommand,
-      this.config.ledPin,
-    );
+    await transmitNECCommand(this.pigpioClient, necCommand, this.config.ledPin);
 
     return message;
   }

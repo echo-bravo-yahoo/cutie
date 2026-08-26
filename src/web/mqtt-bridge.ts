@@ -35,9 +35,7 @@ export async function publishNode(
 
   await connection.uploadSingleConfig(name, config, topic);
 
-  const warnings = problems.filter(
-    (problem) => problem.severity === "warning",
-  );
+  const warnings = problems.filter((problem) => problem.severity === "warning");
   return { ok: true, warnings };
 }
 
