@@ -2,6 +2,10 @@ import { ConfigError } from "../types";
 
 export interface ValidationPanelProps {
   errors: Array<ConfigError>;
+  // True while a selected node's config hasn't loaded yet, so validation for
+  // it has not run at all -- distinct from an empty errors array, which
+  // means validation ran and found nothing.
+  loading: boolean;
 }
 
 // A dotted path like "tasks.weather.steps[2].precision" is also the `id` a
@@ -13,7 +17,12 @@ function jumpTo(path: string) {
     ?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-export default function ValidationPanel({ errors }: ValidationPanelProps) {
+export default function ValidationPanel({
+  errors,
+  loading,
+}: ValidationPanelProps) {
+  if (loading) return <div className="validation-empty">Loading...</div>;
+
   if (!errors.length)
     return <div className="validation-empty">No problems found.</div>;
 

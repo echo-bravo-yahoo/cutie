@@ -260,10 +260,16 @@ export default function App() {
     }
   }
 
-  const nodeTopics = useMemo(
-    () => (draft ? knownOutputTopics(draft) : []),
-    [draft],
-  );
+  // null specifically means "a node is selected but its config, and
+  // therefore its topics, has not loaded yet" -- distinct from [] ("no node
+  // selected" or "this node declares none"), so MessageFeed can show an
+  // honest loading state instead of briefly rendering the whole broker's
+  // firehose as if it were this node's own traffic.
+  const nodeTopics = useMemo(() => {
+    if (!selectedNode) return [];
+    if (!draft) return null;
+    return knownOutputTopics(draft);
+  }, [selectedNode, draft]);
 
   if (loadError)
     return (
@@ -319,12 +325,14 @@ export default function App() {
       </div>
 
       <div className="main">
-        {!selectedNode || !draft || !modules ? (
+        {!selectedNode ? (
           <div className="empty-state">
             {nodes === null
               ? "Loading..."
               : "Select a node from the list to edit its config."}
           </div>
+        ) : !draft || !modules ? (
+          <div className="empty-state">Loading...</div>
         ) : (
           <>
             <ConnectionsPanel
@@ -350,10 +358,17 @@ export default function App() {
       <div className="rail">
         <div className="rail-section">
           <h2>Validation</h2>
-          <ValidationPanel errors={errors} />
+          <ValidationPanel
+            errors={errors}
+            loading={selectedNode !== null && !draft}
+          />
         </div>
         <div className="rail-section grow">
-          <MessageFeed messages={messages} nodeTopics={nodeTopics} />
+          <MessageFeed
+            messages={messages}
+            selectedNode={selectedNode}
+            nodeTopics={nodeTopics}
+          />
         </div>
       </div>
 

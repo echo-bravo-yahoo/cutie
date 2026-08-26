@@ -4,9 +4,13 @@ import { LiveMessage } from "../api";
 
 export interface MessageFeedProps {
   messages: Array<LiveMessage>;
-  // The selected node's own statically-known output:mqtt topics; empty when
-  // no node is selected or it declares none.
-  nodeTopics: Array<string>;
+  selectedNode: string | null;
+  // The selected node's own statically-known output:mqtt topics. Empty when
+  // no node is selected, or the selected node declares none. Null while a
+  // selected node's config is still loading -- distinct from empty so this
+  // does not fall back to showing the whole broker's firehose (which would
+  // look like "this node's traffic" but is not) during that window.
+  nodeTopics: Array<string> | null;
 }
 
 // Below this, scrollTop is treated as "at the head" -- new messages are free
@@ -16,6 +20,7 @@ const HEAD_THRESHOLD_PX = 4;
 
 export default function MessageFeed({
   messages,
+  selectedNode,
   nodeTopics,
 }: MessageFeedProps) {
   const [showAll, setShowAll] = useState(false);
@@ -23,11 +28,15 @@ export default function MessageFeed({
   const scrollTopRef = useRef(0);
   const scrollHeightRef = useRef(0);
 
+  const loadingTopics = selectedNode !== null && nodeTopics === null;
+  const topics = nodeTopics ?? [];
+
   const filtered = useMemo(() => {
-    if (showAll || nodeTopics.length === 0) return messages;
-    const topicSet = new Set(nodeTopics);
+    if (loadingTopics) return [];
+    if (showAll || topics.length === 0) return messages;
+    const topicSet = new Set(topics);
     return messages.filter((message) => topicSet.has(message.topic));
-  }, [messages, nodeTopics, showAll]);
+  }, [messages, topics, showAll, loadingTopics]);
 
   const visible = useMemo(() => filtered.slice(-100).reverse(), [filtered]);
 
@@ -64,34 +73,42 @@ export default function MessageFeed({
         <label>
           <input
             type="checkbox"
-            checked={showAll || nodeTopics.length === 0}
-            disabled={nodeTopics.length === 0}
+            checked={showAll || topics.length === 0}
+            disabled={loadingTopics || topics.length === 0}
             onChange={(event) => setShowAll(event.target.checked)}
           />
           show everything
         </label>
         <span className="hint">
-          {nodeTopics.length === 0
-            ? "no node selected, or it has no static output:mqtt topics"
-            : `filtering to ${nodeTopics.length} known topic(s)`}
+          {loadingTopics
+            ? `loading ${selectedNode}'s topics...`
+            : topics.length === 0
+              ? "no node selected, or it has no static output:mqtt topics"
+              : `filtering to ${topics.length} known topic(s)`}
         </span>
       </div>
 
       <div className="message-list" ref={listRef} onScroll={handleScroll}>
-        {visible.length === 0 && (
-          <div className="validation-empty">No messages yet.</div>
-        )}
+        {loadingTopics ? (
+          <div className="validation-empty">Loading...</div>
+        ) : (
+          <>
+            {visible.length === 0 && (
+              <div className="validation-empty">No messages yet.</div>
+            )}
 
-        {visible.map((message, index) => (
-          <div className="message-entry" key={index}>
-            <span className="topic">{message.topic}</span>
-            <span className="payload">
-              {typeof message.payload === "string"
-                ? message.payload
-                : JSON.stringify(message.payload)}
-            </span>
-          </div>
-        ))}
+            {visible.map((message, index) => (
+              <div className="message-entry" key={index}>
+                <span className="topic">{message.topic}</span>
+                <span className="payload">
+                  {typeof message.payload === "string"
+                    ? message.payload
+                    : JSON.stringify(message.payload)}
+                </span>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
