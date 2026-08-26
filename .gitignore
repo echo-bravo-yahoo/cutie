@@ -19,6 +19,7 @@ config-management/
 
 built/
 coverage/
+web/dist/
 
 # written by the remote-config cache; may contain credentials
 *.cache.json

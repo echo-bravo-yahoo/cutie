@@ -9,6 +9,9 @@ const universalIgnores = [
   "built/**",
   "provisioner/**",
   "src/util/bitbang/**",
+  // The web UI frontend is a separate npm package with its own tooling, not
+  // part of the TypeScript build this config lints.
+  "web/**",
   "test/unit/fixtures/**",
   // Scratch and investigation artifacts. Gitignored globally, so linting them
   // only breaks `npm run lint` for whoever happens to have files there.

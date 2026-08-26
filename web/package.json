@@ -1,0 +1,28 @@
+{
+  "name": "cutie-web-ui",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Frontend for `cutie serve-ui`. Builds to dist/, which the backend (src/web/server.ts) serves as static files. Not part of the published @echobravoyahoo/cutie npm package.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "diff": "^9.0.0",
+    "lucide-react": "^0.545.0",
+    "prismjs": "^1.30.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-simple-code-editor": "^0.14.1"
+  },
+  "devDependencies": {
+    "@types/prismjs": "^1.26.6",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^6.1.0",
+    "typescript": "^5.8.3",
+    "vite": "^8.2.2"
+  }
+}
