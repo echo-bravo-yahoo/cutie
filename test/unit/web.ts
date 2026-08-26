@@ -1,15 +1,63 @@
 import { describe, it, mock } from "node:test";
+import { EventEmitter } from "node:events";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
+import { Globals, setGlobals } from "../../src/index.js";
+import MQTTConnection from "../../src/connections/mqtt.js";
 import { ProvidingConnection } from "../../src/util/Connection.js";
 import { ConfigFile } from "../../src/util/configs.js";
 import { parseServeUIArgs } from "../../src/cli/serve-ui.js";
 import { discoverNodes, publishNode } from "../../src/web/mqtt-bridge.js";
+import { startServer } from "../../src/web/server.js";
 import { knownOutputTopics } from "../../src/web/topics.js";
+
+const fakeLogger = {
+  emit: () => {},
+  info: () => {},
+  warn: () => {},
+  error: () => {},
+  logListeners: [] as Array<unknown>,
+  addListener(listener: unknown) {
+    this.logListeners.push(listener);
+  },
+  removeListener(listener: unknown) {
+    const index = this.logListeners.indexOf(listener);
+    if (index !== -1) this.logListeners.splice(index, 1);
+  },
+  logger: {
+    info: () => {},
+    debug: () => {},
+    error: () => {},
+    child: () => fakeLogger,
+  },
+};
+
+function useFakeGlobals() {
+  setGlobals({
+    tasks: [],
+    connections: [],
+    version: "test",
+    logger: fakeLogger,
+    eventBus: new EventEmitter(),
+    configDir: process.cwd(),
+  } as unknown as Globals);
+}
+
+// A stand-in broker just real enough for startServer's own setup
+// (startLiveFeed's "message" listener and "#" subscription) -- this suite
+// never actually publishes anything to it.
+class FakeBroker extends EventEmitter {
+  options = { clientId: "web-test" };
+  async subscribeAsync() {}
+  async endAsync() {}
+}
 
 describe("parseServeUIArgs", function () {
   it("parses connectionName, topic, and host as strings and port as a number", function () {
@@ -151,5 +199,51 @@ describe("knownOutputTopics", function () {
     const config = { connections: [], tasks: {} } as unknown as ConfigFile;
 
     expect(knownOutputTopics(config)).to.deep.equal([]);
+  });
+});
+
+describe("startServer's SPA fallback", function () {
+  it("serves index.html for a nested client-side route, even when an ancestor directory starts with a dot", async function () {
+    useFakeGlobals();
+
+    // A dot-prefixed ancestor directory mimics running cutie from inside one
+    // (a git worktree under .claude/worktrees/, for instance) -- send's
+    // dotfile check used to 404 the SPA fallback whenever any segment of the
+    // resolved *absolute* path started with a dot.
+    const base = await mkdtemp(join(tmpdir(), "cutie-web-test-"));
+    const distDir = join(base, ".dotdir", "dist");
+    await mkdir(distDir, { recursive: true });
+    await writeFile(
+      join(distDir, "index.html"),
+      '<!doctype html><div id="root">spa-fallback-marker</div>',
+    );
+
+    const connection = new MQTTConnection({
+      type: "connection:mqtt",
+      name: "web-test",
+      endpoint: "mqtt://127.0.0.1:1883",
+    } as never);
+    connection.connection = new FakeBroker() as never;
+    connection.enabled = true;
+
+    const httpServer = await startServer({
+      connection,
+      port: 0,
+      host: "127.0.0.1",
+      distDir,
+    });
+
+    try {
+      const address = httpServer.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+
+      const res = await fetch(`http://127.0.0.1:${port}/node/some-node`);
+      expect(res.status).to.equal(200);
+      expect(await res.text()).to.include("spa-fallback-marker");
+    } finally {
+      await new Promise<void>((resolve) => httpServer.close(() => resolve()));
+      await connection.disable();
+      await rm(base, { recursive: true, force: true });
+    }
   });
 });

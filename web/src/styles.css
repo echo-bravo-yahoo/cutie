@@ -112,15 +112,19 @@ textarea {
 }
 
 .app-header h1 {
-  font-size: 15px;
   margin: 0;
+}
+
+.app-header h1 a {
+  font-size: 15px;
   letter-spacing: 0.02em;
   color: var(--text-dim);
   text-transform: uppercase;
+  text-decoration: none;
   cursor: pointer;
 }
 
-.app-header h1:hover {
+.app-header h1 a:hover {
   color: var(--text);
 }
 
@@ -192,6 +196,8 @@ textarea {
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
+  color: inherit;
+  text-decoration: none;
 }
 
 .node-list-item:hover {

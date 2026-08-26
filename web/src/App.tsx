@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   LiveMessage,
@@ -8,6 +8,7 @@ import {
   publishNode,
   validateNode,
 } from "./api";
+import { parseNodeNameFromPath, pathForNode } from "./router";
 import { knownOutputTopics } from "./topics";
 import {
   ConfigError,
@@ -36,7 +37,9 @@ export default function App() {
   const [modules, setModules] = useState<ModuleSchemasByKind | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(() =>
+    parseNodeNameFromPath(location.pathname),
+  );
   const [draft, setDraft] = useState<ConfigFile | null>(null);
   const [structureRevision, setStructureRevision] = useState(0);
   const [errors, setErrors] = useState<Array<ConfigError>>([]);
@@ -104,29 +107,87 @@ export default function App() {
     );
   }
 
+  // Pushes a real history entry for the given node (or "/" for home) and
+  // switches to it. The actual data load (draft/errors/collapse state) is
+  // driven by the effect below, keyed on selectedNode, so it runs the same
+  // way whether the switch came from here or from browser back/forward.
+  function navigateTo(name: string | null) {
+    const path = pathForNode(name);
+    if (location.pathname !== path) history.pushState(null, "", path);
+    setSelectedNode(name);
+  }
+
   // Clicking the already-selected node, or the "cutie" title, both return to
   // the unselected view -- the node list plus the always-visible validation
   // and live-message rail, with no single node's editor in the way.
   function selectNode(name: string) {
     if (name === selectedNode) return goHome();
     if (!confirmDiscardIfDirty()) return;
-
-    setSelectedNode(name);
-    setDraft(nodes ? structuredClone(nodes[name]) : null);
-    setStructureRevision(0);
-    setPublishState({ status: "idle" });
-    setCollapsedTasks({});
+    navigateTo(name);
   }
 
   function goHome() {
     if (!confirmDiscardIfDirty()) return;
+    navigateTo(null);
+  }
 
-    setSelectedNode(null);
-    setDraft(null);
+  // Loads the selected node's draft (or clears it, for home) whenever the
+  // selection actually changes -- from a click, from browser back/forward
+  // (which only ever changes selectedNode, never touches draft directly), or
+  // once `nodes` first arrives under a node already named in the URL (a
+  // deep link or a page refresh). previousNodeRef guards against re-running
+  // this, and clobbering in-progress edits, when `nodes` changes for some
+  // other reason (e.g. a successful publish) while staying on the same node.
+  const previousNodeRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (!nodes) return;
+    if (selectedNode === previousNodeRef.current) return;
+    previousNodeRef.current = selectedNode;
+
+    if (selectedNode && !nodes[selectedNode]) {
+      // The URL names a node that does not exist -- a stale bookmark or a
+      // typo. Send it home rather than show a broken editor.
+      navigateTo(null);
+      return;
+    }
+
+    setDraft(selectedNode ? structuredClone(nodes[selectedNode]) : null);
     setStructureRevision(0);
     setPublishState({ status: "idle" });
     setCollapsedTasks({});
-  }
+  }, [selectedNode, nodes]);
+
+  // Browser back/forward changes location.pathname without going through
+  // navigateTo, so it needs its own confirm-discard gate. confirmDiscardRef
+  // always holds the latest confirmDiscardIfDirty (which closes over
+  // isDirty/selectedNode) so this listener -- bound once per selectedNode
+  // change, not every render -- never acts on a stale dirty check.
+  const confirmDiscardRef = useRef(confirmDiscardIfDirty);
+  useEffect(() => {
+    confirmDiscardRef.current = confirmDiscardIfDirty;
+  });
+
+  useEffect(() => {
+    function handlePopState() {
+      const urlNode = parseNodeNameFromPath(location.pathname);
+      if (urlNode === selectedNode) return;
+
+      if (!confirmDiscardRef.current()) {
+        // Cancelled: push the current node's path back on top so the URL
+        // matches what is actually still shown. This adds a new history
+        // entry rather than truly restoring the forward stack, which is a
+        // common, accepted tradeoff for cancelling an SPA's back/forward.
+        history.pushState(null, "", pathForNode(selectedNode));
+        return;
+      }
+
+      setSelectedNode(urlNode);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [selectedNode]);
 
   function toggleTaskCollapse(name: string) {
     setCollapsedTasks((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -214,8 +275,17 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1 onClick={goHome} title="Back to all nodes">
-          cutie
+        <h1>
+          <a
+            href="/"
+            onClick={(event) => {
+              event.preventDefault();
+              goHome();
+            }}
+            title="Back to all nodes"
+          >
+            cutie
+          </a>
         </h1>
         {selectedNode && <span>{selectedNode}</span>}
         <div className="spacer" />
@@ -243,6 +313,7 @@ export default function App() {
           nodeNames={nodes ? Object.keys(nodes).sort() : []}
           selected={selectedNode}
           isDirty={isDirty}
+          loading={nodes === null}
           onSelect={selectNode}
         />
       </div>

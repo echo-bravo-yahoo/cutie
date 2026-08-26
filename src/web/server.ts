@@ -1,5 +1,5 @@
 import { createServer, Server } from "node:http";
-import { join, normalize } from "node:path";
+import { normalize } from "node:path";
 
 import express from "express";
 import { WebSocketServer } from "ws";
@@ -15,6 +15,10 @@ export interface StartServerOptions {
   topic?: string;
   port: number;
   host: string;
+  // Overrides where the built frontend is served from; defaults to the real
+  // web/dist/ next to this package. Exists so a test can point it at a fixture
+  // directory instead of depending on web/ having been built.
+  distDir?: string;
 }
 
 // `web/` builds to a static `web/dist/` beside `src/`/`built/`, whichever of
@@ -27,6 +31,7 @@ export async function startServer({
   topic,
   port,
   host,
+  distDir = DIST_DIR,
 }: StartServerOptions): Promise<Server> {
   const app = express();
   app.use(express.json());
@@ -34,10 +39,16 @@ export async function startServer({
   app.use("/api/nodes", createNodesRouter(connection, topic));
   app.use("/api/modules", createModulesRouter());
 
-  app.use(express.static(DIST_DIR));
+  app.use(express.static(distDir));
   // A plain middleware, not a route pattern, so the SPA fallback works the
   // same whether Express's router treats a bare "*" as a wildcard or not.
-  app.use((_req, res) => res.sendFile(join(DIST_DIR, "index.html")));
+  // The `root` option matters: without it, `send` (which this and
+  // express.static both use) checks every segment of the *resolved absolute
+  // path* for a leading dot and 404s if it finds one -- which it always
+  // would here, since a dotfile-prefixed ancestor directory (like a git
+  // worktree under .claude/worktrees/) is common. `root` makes it check only
+  // the path relative to distDir instead.
+  app.use((_req, res) => res.sendFile("index.html", { root: distDir }));
 
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: "/ws/messages" });
