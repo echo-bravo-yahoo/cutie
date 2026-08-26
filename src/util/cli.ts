@@ -86,6 +86,29 @@ const REMOTE_CONFIG_FLAGS: ReadonlyArray<Flag> = [
   },
 ];
 
+const SERVE_UI_FLAGS: ReadonlyArray<Flag> = [
+  {
+    name: "connectionName",
+    value: "<name>",
+    description: "name of the connection in the config file to use",
+  },
+  {
+    name: "topic",
+    value: "<topic>",
+    description: "override the connection's configured config topic",
+  },
+  {
+    name: "port",
+    value: "<port>",
+    description: "port to listen on (default: 4200)",
+  },
+  {
+    name: "host",
+    value: "<host>",
+    description: "address to bind to (default: 127.0.0.1)",
+  },
+];
+
 interface Subcommand {
   summary: string;
   flags: ReadonlyArray<Flag>;
@@ -108,6 +131,10 @@ export const SUBCOMMANDS: Record<string, Subcommand> = {
   download: {
     summary: "fetch config files from a connection",
     flags: REMOTE_CONFIG_FLAGS,
+  },
+  "serve-ui": {
+    summary: "run the web UI for managing a fleet's configs",
+    flags: SERVE_UI_FLAGS,
   },
 };
 

@@ -11,6 +11,7 @@ import initializeConfig from "./cli/init.js";
 import upload, { parseUploadArgs } from "./cli/upload.js";
 import download, { parseDownloadArgs } from "./cli/download.js";
 import validate, { parseValidateArgs } from "./cli/validate.js";
+import serveUI, { parseServeUIArgs } from "./cli/serve-ui.js";
 import {
   SUBCOMMANDS,
   parserDefaults,
@@ -57,6 +58,8 @@ export async function main(args: Array<string>): Promise<number> {
     await download(parseDownloadArgs(args));
   } else if (subcommand === "validate") {
     return (await validate(parseValidateArgs(args))) ? 0 : 1;
+  } else if (subcommand === "serve-ui") {
+    await serveUI(parseServeUIArgs(args));
   } else {
     await start();
   }

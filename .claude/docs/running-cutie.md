@@ -36,9 +36,10 @@ Entry point: `src/cli-entrypoint.ts`. Global flag `--config <path>` (default `./
 - `cutie validate` — check the config file against the module schemas and report every problem found, without running anything.
 - `cutie upload --config <path> --connectionName <name> --path <file-or-dir> [--node <name>] [--topic <topic>]` — publish local config file(s) to a connection as retained messages.
 - `cutie download --config <path> --connectionName <name> [--path <dir>] [--node <name>] [--topic <topic>]` — fetch config(s) from a connection, writing `<node>.conf.json` files.
+- `cutie serve-ui --config <path> --connectionName <name> [--topic <topic>] [--port <port>] [--host <host>]` — run the local web UI for browsing and editing a fleet's configs.
 - `--help`, `--version`
 
-See "Remote config over MQTT" below for what `upload`/`download` are for.
+See "Remote config over MQTT" below for what `upload`/`download` are for, and "Web UI" for `serve-ui`.
 
 ## Config shape
 
@@ -155,6 +156,19 @@ cutie download --config ./cutie.conf.yaml --connectionName my-broker --node kitc
 `--topic` defaults to `cutie/config/+`; the `+` segment stands in for the node name on both subscribe (download) and publish (upload). This substitution is a fleet-CLI-only convenience — a device's own `configProvider.topic` (the topic it fetches at boot) must be a literal string, not a `+` template.
 
 For administering the actual live fleet (which devices exist, their topics, reading current config off the broker), see the global `~/.claude/docs/cutie-admin.md` and `~/.claude/docs/cutie-fleet.md`.
+
+## Web UI
+
+`cutie serve-ui` runs a small local Express/React app for browsing and editing a fleet's configs without hand-editing raw JSON/YAML over MQTT. It connects to a `connection:mqtt` connection the same way `upload`/`download` do, discovers every node with a retained config under the config topic, and renders each one's connections and task chains as editable, schema-driven forms (`src/util/schema.ts`'s `ModuleSchema` drives every property field and the "add step" palette). Editing loads one node's whole `ConfigFile` into the browser, validates it client-side as you type and server-side again before publish (`src/util/validate.ts`'s `validateConfig`, the same function `cutie validate` uses), and publishing replaces the node's entire retained config via `uploadSingleConfig` — there is no partial-update path on the wire. A live message feed subscribes to the whole broker (`#`) once at server startup and streams it to the browser over a WebSocket, defaulting to whichever `output:mqtt` topics the selected node's own config names, with a toggle back to the raw firehose.
+
+The frontend is a separate npm package at `web/` (its own `package.json`/lockfile, not part of the root TypeScript build or the published npm package) and has to be built before `serve-ui` has anything to serve:
+
+```bash
+cd web && npm install && npm run build   # writes web/dist/, which src/web/server.ts serves as static files
+cutie serve-ui --config ./cutie.conf.yaml --connectionName my-broker
+```
+
+Flags: `--connectionName <name>` (required, as with `upload`/`download`), `--topic <topic>` (defaults to `cutie/config/+`, same substitution rules as above), `--port <port>` (default `4200`), `--host <host>` (default `127.0.0.1`). It binds to localhost with no authentication by design — it is meant to be run on demand from an operator's own machine for the length of an editing session, not left running or exposed on the network. Onboarding a brand-new device with no retained config yet is out of scope: the UI manages nodes the broker already knows about.
 
 ## Provisioning a new Pi
 
