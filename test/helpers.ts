@@ -151,8 +151,8 @@ export function createPigpioClientMock() {
     waveSendOnce: async (waveId: number) => {
       calls.push(`waveSendOnce(${waveId})`);
     },
-    waveNotBusy: async () => {
-      calls.push("waveNotBusy");
+    waveNotBusy: async (intervalMs?: number) => {
+      calls.push(`waveNotBusy(${intervalMs})`);
     },
     waveDelete: async (waveId: number) => {
       calls.push(`waveDelete(${waveId})`);

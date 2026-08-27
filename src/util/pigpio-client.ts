@@ -13,7 +13,7 @@ export interface PigpioClientGpio {
   waveCreate(): Promise<number>;
   waveAddPulse(triplets: Array<[number, number, number]>): Promise<unknown>;
   waveSendOnce(waveId: number): Promise<unknown>;
-  waveNotBusy(): Promise<void>;
+  waveNotBusy(intervalMs?: number): Promise<void>;
   waveDelete(waveId: number): Promise<unknown>;
 }
 
@@ -98,4 +98,24 @@ async function connect(requiredBy: string): Promise<PigpioClient> {
     client.once("connected", onConnected);
     client.once("error", onConnectError);
   });
+}
+
+// pigpiod's wave state (waveClear/waveCreate/waveBusy) is global to the
+// daemon, not scoped per connection or per GPIO pin -- pigpio-client's own
+// README: "waveClear, waveCreate and waveBusy are not gpio specific ... only
+// a single waveform can be active." Step.handleMessage (src/util/Step.ts:63)
+// never serializes concurrent messages to the same step, so two overlapping
+// output:nec sends -- even from the same process, even the same connection
+// -- could otherwise interleave and corrupt each other's wave. Every
+// wave-touching caller in this process funnels through this one queue so at
+// most one is ever mid-transmission at a time.
+let waveQueue: Promise<unknown> = Promise.resolve();
+
+export function withWaveLock<T>(fn: () => Promise<T>): Promise<T> {
+  const result = waveQueue.then(fn);
+  waveQueue = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
 }

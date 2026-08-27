@@ -42,6 +42,7 @@ import {
   necToWave,
   pulseToTriplet,
   transmitNECCommand,
+  WAVE_COMPLETION_POLL_INTERVAL_MS,
 } from "../../src/util/bitbang/adapters/nec.js";
 import { highWaveFromDuration } from "../../src/util/bitbang/helpers.js";
 import {
@@ -765,7 +766,7 @@ describe("the runtime", function () {
         "waveAddPulse",
         "waveCreate",
         `waveSendOnce(${MOCK_WAVE_ID})`,
-        "waveNotBusy",
+        `waveNotBusy(${WAVE_COMPLETION_POLL_INTERVAL_MS})`,
         `waveDelete(${MOCK_WAVE_ID})`,
       ]);
     });
@@ -781,6 +782,35 @@ describe("the runtime", function () {
       ).to.be.rejectedWith(/no gpio here/);
 
       expect(calls).to.include(`waveDelete(${MOCK_WAVE_ID})`);
+    });
+
+    it("serializes overlapping transmissions so their wave states cannot interleave", async function () {
+      const { calls, gpio, pigpioClient } = createPigpioClientMock();
+      let releaseFirstClear: () => void = () => {};
+      let clearCallCount = 0;
+      gpio.waveClear = async () => {
+        clearCallCount++;
+        calls.push("waveClear");
+        if (clearCallCount === 1) {
+          await new Promise<void>((resolve) => {
+            releaseFirstClear = resolve;
+          });
+        }
+      };
+
+      const first = transmitNECCommand(pigpioClient, command, 23);
+      const second = transmitNECCommand(pigpioClient, command, 23);
+
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(calls.filter((c) => c === "waveClear")).to.have.lengthOf(1);
+
+      releaseFirstClear();
+      await Promise.all([first, second]);
+
+      expect(calls.filter((c) => c === "waveClear")).to.have.lengthOf(2);
+      expect(calls.filter((c) => c.startsWith("waveDelete"))).to.have.lengthOf(
+        2,
+      );
     });
   });
 
