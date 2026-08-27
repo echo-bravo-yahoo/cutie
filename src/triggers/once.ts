@@ -14,6 +14,8 @@ export interface OnceConfig extends TriggerConfig {
 export default class Once extends Trigger {
   declare config: OnceConfig;
   delayMs = 0;
+  // @ts-expect-error timer is instantiated by enable()
+  timer: NodeJS.Timeout;
 
   constructor(config: OnceConfig, task: Task, index?: number) {
     super(config, task, index);
@@ -24,7 +26,7 @@ export default class Once extends Trigger {
   }
 
   delayedStartMessage() {
-    setTimeout(() => {
+    this.timer = setTimeout(() => {
       const traceId = newTraceId();
       const message =
         this.delayMs > 0
@@ -44,6 +46,7 @@ export default class Once extends Trigger {
   }
 
   async disable() {
+    clearTimeout(this.timer);
     this.info("Skipping running step once.");
     this.enabled = false;
   }

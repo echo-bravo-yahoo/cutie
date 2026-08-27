@@ -10,6 +10,24 @@ import {
 import * as realFs from "node:fs";
 import * as realFsPromises from "node:fs/promises";
 import { normalize } from "node:path";
+import { createRequire } from "node:module";
+
+// This test runs the real startup path, so pino's default destination lazily
+// requires sonic-boom on its first real log write, which does a plain CJS
+// require("fs") of its own. On Node 24 (only; fixed again by 25), the fs
+// mock below makes that crash with "Cannot redefine property: constants" --
+// a bug in node:test's --experimental-test-module-mocks, not in this file.
+// Loading sonic-boom for real now, before node:fs is mocked, gets its
+// require("fs") over with while the module cache is still untouched; pino's
+// own later require of it then just returns the cached exports. Best-effort:
+// if pino's dependency layout ever changes so this path doesn't resolve, fall
+// through and let Node 24 fail the way it already does without this file.
+try {
+  createRequire(import.meta.url)("pino/node_modules/sonic-boom");
+} catch {
+  // See above -- this is a prophylactic for a specific Node 24 bug, not a
+  // real dependency of this test.
+}
 
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";

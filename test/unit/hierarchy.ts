@@ -47,9 +47,16 @@ describe("the configurable hierarchy", function () {
         "trigger is not a step",
       );
 
-      expect(task.trigger).to.be.an.instanceOf(Trigger);
-      expect(task.trigger).to.be.an.instanceOf(TaskModule);
-      expect(task.trigger).to.not.be.an.instanceOf(Step);
+      try {
+        expect(task.trigger).to.be.an.instanceOf(Trigger);
+        expect(task.trigger).to.be.an.instanceOf(TaskModule);
+        expect(task.trigger).to.not.be.an.instanceOf(Step);
+      } finally {
+        // trigger:once's register() also enables it, which schedules a
+        // setTimeout; left running, it fires after this test has already
+        // ended and throws into an uncaughtException instead of a test.
+        await task.trigger!.disable();
+      }
     });
 
     it("has no chain surface to inherit", async function () {
@@ -57,10 +64,15 @@ describe("the configurable hierarchy", function () {
         { trigger: { type: "trigger:once", message: "hi" }, steps: [] },
         "trigger has no chain",
       );
-      const trigger = task.trigger as unknown as Record<string, unknown>;
 
-      for (const member of ["next", "handleMessage", "doHandleMessage"])
-        expect(trigger[member], member).to.equal(undefined);
+      try {
+        const trigger = task.trigger as unknown as Record<string, unknown>;
+
+        for (const member of ["next", "handleMessage", "doHandleMessage"])
+          expect(trigger[member], member).to.equal(undefined);
+      } finally {
+        await task.trigger!.disable();
+      }
     });
 
     it("still interpolates its configured message", async function () {
