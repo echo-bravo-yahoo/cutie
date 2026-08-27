@@ -43,6 +43,7 @@ import {
   pulseToTriplet,
   transmitNECCommand,
 } from "../../src/util/bitbang/adapters/nec.js";
+import { highWaveFromDuration } from "../../src/util/bitbang/helpers.js";
 import {
   createPigpioClientMock,
   MOCK_WAVE_ID,
@@ -740,6 +741,13 @@ describe("the runtime", function () {
 
       expect(wave.some((pulse) => pulse.gpioOn === 23)).to.equal(false);
       expect(wave.some((pulse) => pulse.gpioOn === 17)).to.equal(true);
+    });
+
+    it("honors a non-default carrier frequency", function () {
+      const defaultWave = highWaveFromDuration(9000, 23);
+      const customWave = highWaveFromDuration(9000, 23, 20000);
+
+      expect(customWave.length).to.not.equal(defaultWave.length);
     });
   });
 

@@ -168,14 +168,15 @@ export class NECFrameDecoder {
 export function necToWave(
   necCommand: NECCommand,
   ledPin: number,
+  carrierFrequencyHz?: number,
 ): Array<Pulse> {
   // the first two pulses are the NEC start header; the last signals the end
   // of transmission
   return [
-    ...highWaveFromDuration(NEC_HEADER_HIGH_US, ledPin),
+    ...highWaveFromDuration(NEC_HEADER_HIGH_US, ledPin, carrierFrequencyHz),
     ...lowWaveFromDuration(NEC_HEADER_LOW_US, ledPin),
-    ...bitArrayToWave(necToBits(necCommand), ledPin),
-    ...highWaveFromDuration(NEC_TRAILER_US, ledPin),
+    ...bitArrayToWave(necToBits(necCommand), ledPin, carrierFrequencyHz),
+    ...highWaveFromDuration(NEC_TRAILER_US, ledPin, carrierFrequencyHz),
   ];
 }
 
@@ -201,10 +202,11 @@ export async function transmitNECCommand(
   pigpioClient: PigpioClient,
   necCommand: NECCommand,
   ledPin: number,
+  carrierFrequencyHz?: number,
 ): Promise<void> {
   const gpio = pigpioClient.gpio(ledPin);
-  const triplets = necToWave(necCommand, ledPin).map((pulse) =>
-    pulseToTriplet(pulse, ledPin),
+  const triplets = necToWave(necCommand, ledPin, carrierFrequencyHz).map(
+    (pulse) => pulseToTriplet(pulse, ledPin),
   );
 
   await gpio.waveClear();

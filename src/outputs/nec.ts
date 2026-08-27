@@ -5,6 +5,7 @@ import {
   NECCommand,
   transmitNECCommand,
 } from "../util/bitbang/adapters/nec.js";
+import { DEFAULT_CARRIER_FREQUENCY_HZ } from "../util/bitbang/helpers.js";
 import { getPigpioConnection, PigpioClient } from "../util/pigpio-client.js";
 import { ModuleSchema } from "../util/schema.js";
 
@@ -21,6 +22,7 @@ export interface NECConfig extends OutputConfig {
   ledPin: number;
   virtual?: boolean;
   savedCommands?: Record<string, RawNECCommand>;
+  carrierFrequencyHz?: number;
 }
 
 export default class NEC extends Output {
@@ -99,7 +101,12 @@ export default class NEC extends Output {
 
     if (this.config.virtual || !this.pigpioClient) return message;
 
-    await transmitNECCommand(this.pigpioClient, necCommand, this.config.ledPin);
+    await transmitNECCommand(
+      this.pigpioClient,
+      necCommand,
+      this.config.ledPin,
+      this.config.carrierFrequencyHz,
+    );
 
     return message;
   }
@@ -142,6 +149,14 @@ export const schema: ModuleSchema = {
       type: "object",
       description:
         'Named commands a message can ask for by id, each {"address", "command"} with optional "extendedAddress" and "extendedCommand". A string value is read as hexadecimal.',
+    },
+    carrierFrequencyHz: {
+      type: "number",
+      description:
+        "The infrared carrier frequency the LED is modulated at. NEC nominally uses 38kHz, but some older or non-standard receivers expect a different frequency (36kHz, 40kHz, and 56kHz are common alternatives).",
+      unit: "Hz",
+      min: 1,
+      default: DEFAULT_CARRIER_FREQUENCY_HZ,
     },
   },
 };

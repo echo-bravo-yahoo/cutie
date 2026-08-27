@@ -13,7 +13,7 @@ export interface Pulse {
   usDelay: number;
 }
 
-const CARRIER_FREQUENCY_HZ = 38400;
+export const DEFAULT_CARRIER_FREQUENCY_HZ = 38400;
 const CARRIER_DUTY_CYCLE = 0.5;
 const US_PER_SECOND = 1000000;
 
@@ -57,9 +57,10 @@ export function bitArrayToByte(
 export function highWaveFromDuration(
   duration: number,
   ledPin: number,
+  carrierFrequencyHz: number = DEFAULT_CARRIER_FREQUENCY_HZ,
 ): Array<Pulse> {
-  const usDelay = US_PER_SECOND / CARRIER_FREQUENCY_HZ;
-  const cycles = Math.round((duration * CARRIER_FREQUENCY_HZ) / US_PER_SECOND);
+  const usDelay = US_PER_SECOND / carrierFrequencyHz;
+  const cycles = Math.round((duration * carrierFrequencyHz) / US_PER_SECOND);
   const pulses: Array<Pulse> = [];
 
   for (let i = 0; i < cycles; i++) {
@@ -88,11 +89,14 @@ export function lowWaveFromDuration(
 export function bitArrayToWave(
   bitArray: Array<boolean>,
   ledPin: number,
+  carrierFrequencyHz?: number,
 ): Array<Pulse> {
   const wave: Array<Pulse> = [];
 
   for (const bit of bitArray) {
-    wave.push(...highWaveFromDuration(NEC_PULSE_US, ledPin));
+    wave.push(
+      ...highWaveFromDuration(NEC_PULSE_US, ledPin, carrierFrequencyHz),
+    );
     wave.push({
       gpioOn: 0,
       gpioOff: ledPin,

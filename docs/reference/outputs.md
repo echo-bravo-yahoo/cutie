@@ -133,6 +133,7 @@ Transmits an NEC infrared command on a GPIO pin. The message either names a save
 | `ledPin` | number | no |  |  | The GPIO pin the infrared LED is wired to. Required unless virtual is set; there is no sensible default for someone else's wiring. Must be at least 0, a whole number. |
 | `virtual` | boolean | no | `false` |  | Log the command that would be sent without driving the pin. |
 | `savedCommands` | object | no |  |  | Named commands a message can ask for by id, each {"address", "command"} with optional "extendedAddress" and "extendedCommand". A string value is read as hexadecimal. |
+| `carrierFrequencyHz` | number | no | `38400` | `Hz` | The infrared carrier frequency the LED is modulated at. NEC nominally uses 38kHz, but some older or non-standard receivers expect a different frequency (36kHz, 40kHz, and 56kHz are common alternatives). Must be at least 1. |
 | `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
 | `name` | string | no |  |  | A label for this step, used in error messages. |
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
