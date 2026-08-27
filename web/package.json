@@ -10,15 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "diff": "^9.0.0",
-    "lucide-react": "^0.545.0",
-    "prismjs": "^1.30.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-simple-code-editor": "^0.14.1"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@types/prismjs": "^1.26.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "^6.1.0",
