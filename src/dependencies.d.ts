@@ -6,6 +6,18 @@ declare module "mqtt-topics" {
 declare module "bme280";
 declare module "bme680-sensor";
 declare module "node-yaml";
+// onoff is a native optional dependency (epoll bindings) that can fail to
+// build in CI on newer Node versions and gets silently skipped, unlike the
+// shapeless declarations below: output:inky-phat and output:st7735 use Gpio
+// as an instance-field type and call writeSync/unexport on it directly, so
+// this needs at least that much shape to type-check when onoff is absent.
+declare module "onoff" {
+  export class Gpio {
+    constructor(...args: unknown[]);
+    writeSync(value: number): void;
+    unexport(): void;
+  }
+}
 declare module "pi-spi";
 declare module "inkyphat";
 // Deep imports. inkyphat sets no "exports" field, so its lib/ is reachable,
