@@ -1,6 +1,9 @@
 import {
   PointerEvent as ReactPointerEvent,
+  memo,
+  useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -19,14 +22,54 @@ import { ConfigError, ConfigFile, StepConfig } from "./types";
 // .dash-canvas's background in styles.css, which is what these need to
 // match): TILE_WIDTH so a grid-aligned left edge leaves the right edge
 // aligned too, TILE_WIDTH + TILE_GAP so initial columns snap without
-// rounding drift, and SNAP -- every 2nd line, loosely, not every line.
-const TILE_WIDTH = 252;
-const TILE_GAP = 28;
-const ROW_STEP = 56;
-const SNAP = 56;
+// rounding drift, ROW_STEP with a full cell of breathing room between rows
+// to match, and SNAP -- every line.
+const GRID_CELL = 28;
+const TILE_WIDTH = GRID_CELL * 9;
+const TILE_GAP = GRID_CELL;
+const ROW_STEP = GRID_CELL * 3;
+const SNAP = GRID_CELL;
+
+// How many step dots a task tile shows before collapsing the rest into gap
+// markers (see selectVisibleStepIndices).
+const MAX_VISIBLE_DOTS = 8;
+// Loupe placement: how far past the tile's right edge it opens, and its own
+// width (matches .loupe's CSS width) so it can be kept on screen.
+const LOUPE_GAP = 16;
+const LOUPE_WIDTH = 300;
+// Live-message retention: how many messages each individual topic keeps
+// (immune to unrelated topics' traffic), and a render-only cap on the
+// flattened/sorted view shown when "show everything" spans many topics.
+const MESSAGES_PER_TOPIC = 50;
+const MESSAGE_DISPLAY_LIMIT = 500;
+
+// How far a tile's own box sits inside the grid slot it occupies, on every
+// side, so the blueprint shows through as a border around it rather than
+// disappearing under a flush edge.
+const TILE_INSET = 4;
+
+// A closed tile's real height (.dash-tile-head's 46px + 1px top/bottom
+// border + TILE_INSET*2 top/bottom = 56px, 2 grid cells -- see the matching
+// comment on .dash-tile-head in styles.css) -- used as the canvas-height
+// floor for a tile whose real height hasn't been measured yet (see
+// TileShell's ResizeObserver, below).
+const DEFAULT_TILE_HEIGHT = GRID_CELL * 2;
+
+// .board-canvas-wrap's own left/right padding in styles.css -- subtracted
+// out below so the canvas's own size lands on a grid multiple, not the
+// padded box around it.
+const CANVAS_PADDING_X = 24;
 
 function snap(value: number): number {
   return Math.max(0, Math.round(value / SNAP) * SNAP);
+}
+
+// The widest a grid-aligned canvas can be within whatever room the wrap
+// currently has, floored to the nearest cell so the background pattern
+// (and any tile positioned near the edge) never gets cut mid-cell.
+function availableCanvasWidth(wrap: HTMLDivElement | null): number {
+  const raw = (wrap?.clientWidth ?? 1100) - CANVAS_PADDING_X * 2;
+  return Math.max(GRID_CELL, Math.floor(raw / GRID_CELL) * GRID_CELL);
 }
 
 function stepTopics(step: StepConfig): Array<string> {
@@ -66,6 +109,20 @@ function pathPrefix(path: FieldPath): string {
   if (path.kind === "connection") return `connections[${path.index}]`;
   if (path.kind === "trigger") return `tasks.${path.taskName}.trigger`;
   return `tasks.${path.taskName}.steps[${path.index}]`;
+}
+
+// A task's trigger and steps render as one combined list (trigger first,
+// when present) -- this resolves one of that list's indices back to the
+// FieldPath it actually refers to, shared by every place that needs to (edit,
+// error lookup, open-loupe lookup).
+function stepPathAt(
+  taskName: string,
+  hasTrigger: boolean,
+  stepIndex: number,
+): FieldPath {
+  return hasTrigger && stepIndex === 0
+    ? { kind: "trigger", taskName }
+    : { kind: "step", taskName, index: hasTrigger ? stepIndex - 1 : stepIndex };
 }
 
 function stepAt(config: ConfigFile, path: FieldPath): StepConfig | undefined {
@@ -223,11 +280,13 @@ function FieldValue({
 function Detail({
   step,
   errors,
+  isEditing,
   onEdit,
 }: {
   step: StepConfig;
   errors: Array<ConfigError>;
-  onEdit: () => void;
+  isEditing: boolean;
+  onEdit: (anchor: HTMLElement) => void;
 }) {
   const options = stepOptions(step);
 
@@ -236,8 +295,11 @@ function Detail({
       <div className="dash-detail-head">
         <span className="dash-detail-type">{step.type}</span>
         {step.name && <span className="dash-detail-name">{step.name}</span>}
-        <button className="dash-detail-edit" onClick={onEdit}>
-          edit
+        <button
+          className={`dash-detail-edit${isEditing ? " open" : ""}`}
+          onClick={(event) => onEdit(event.currentTarget)}
+        >
+          {isEditing ? "editing" : "edit"}
         </button>
       </div>
       {errors.length > 0 && (
@@ -272,6 +334,111 @@ function Detail({
   );
 }
 
+// Matches a JSON string (key or value), true/false/null, or a number --
+// everything between matches (braces, commas, colons, whitespace) is left as
+// plain text for the caller to push through unwrapped.
+const JSON_TOKEN =
+  /("(?:\\u[0-9a-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
+
+function classifyJsonToken(raw: string): "key" | "string" | "boolean" | "null" | "number" {
+  if (raw.startsWith('"')) return raw.trimEnd().endsWith(":") ? "key" : "string";
+  if (raw === "true" || raw === "false") return "boolean";
+  if (raw === "null") return "null";
+  return "number";
+}
+
+// Colors JSON syntax within already-formatted text, built as real React text
+// nodes -- never dangerouslySetInnerHTML. Message payloads are live,
+// untrusted broker data, so raw HTML injection here would be a real XSS
+// vector; React escapes plain-string children automatically instead.
+function renderJsonTokens(text: string): Array<React.ReactNode> {
+  const nodes: Array<React.ReactNode> = [];
+  let cursor = 0;
+  let key = 0;
+
+  for (const match of text.matchAll(JSON_TOKEN)) {
+    const raw = match[0];
+    const start = match.index ?? 0;
+    if (start > cursor) nodes.push(text.slice(cursor, start));
+    nodes.push(
+      <span key={key++} className={`json-${classifyJsonToken(raw)}`}>
+        {raw}
+      </span>,
+    );
+    cursor = start + raw.length;
+  }
+
+  if (cursor < text.length) nodes.push(text.slice(cursor));
+  return nodes;
+}
+
+// This gate is what keeps the tokenizer off raw string payloads: formatValue
+// returns a string payload verbatim, un-stringified -- the common case for a
+// message that isn't JSON (e.g. a plain-text "ON"). Running the token regex
+// over that would mis-highlight incidental digits or the words
+// true/false/null inside ordinary prose as if they were real JSON.
+// isMultilineValue is only true for objects/arrays, so this only ever
+// tokenizes text that formatValue actually ran JSON.stringify on.
+function JsonPreview({ value }: { value: unknown }) {
+  if (!isMultilineValue(value)) return <>{formatValue(value)}</>;
+  return <>{renderJsonTokens(formatValue(value))}</>;
+}
+
+// Prefers steps that can actually show real activity (a real topic to
+// watch) over ones that structurally never can -- see
+// stepTopics/collectTopics above. Ignores gap markers entirely; that's
+// selectVisibleStepIndices's job below.
+function pickStepsByPriority(
+  steps: Array<StepConfig>,
+  budget: number,
+): Set<number> {
+  const indices = steps.map((_, index) => index);
+  const withSignal = indices.filter((i) => stepTopics(steps[i]).length > 0);
+  const withoutSignal = indices.filter(
+    (i) => stepTopics(steps[i]).length === 0,
+  );
+  const shown = withSignal.slice(0, budget);
+  if (shown.length < budget)
+    shown.push(...withoutSignal.slice(0, budget - shown.length));
+  return new Set(shown);
+}
+
+// How many separate runs of hidden steps a visible set leaves behind -- each
+// one gets its own gap marker (see TaskTile), and that marker takes a dot's
+// place in the row, not an extra one.
+function countGapRuns(
+  steps: Array<StepConfig>,
+  visible: Set<number>,
+): number {
+  let runs = 0;
+  let inGap = false;
+  steps.forEach((_, index) => {
+    if (visible.has(index)) inGap = false;
+    else if (!inGap) {
+      runs++;
+      inGap = true;
+    }
+  });
+  return runs;
+}
+
+// Once a task has more steps than fit as dots, shrink the dot budget until
+// shown-dots + needed-gap-markers actually fits max -- a gap marker occupies
+// a slot the same as a dot does, so it must count against the same cap
+// rather than appearing in addition to a full set of dots.
+function selectVisibleStepIndices(
+  steps: Array<StepConfig>,
+  max: number,
+): Set<number> {
+  if (steps.length <= max) return new Set(steps.map((_, index) => index));
+
+  for (let budget = max; budget >= 0; budget--) {
+    const visible = pickStepsByPriority(steps, budget);
+    if (visible.size + countGapRuns(steps, visible) <= max) return visible;
+  }
+  return new Set();
+}
+
 function Dot({
   step,
   activeTopics,
@@ -282,6 +449,7 @@ function Dot({
   pulseTokens: Map<string, number>;
 }) {
   const topics = stepTopics(step);
+  const hasSignal = topics.length > 0;
   const active = topics.some((topic) => activeTopics.has(topic));
   const pulse = topics.reduce(
     (max, topic) => Math.max(max, pulseTokens.get(topic) ?? 0),
@@ -290,8 +458,12 @@ function Dot({
 
   return (
     <span
-      className={`dash-dot kind-${kindOf(step.type)}${active ? " active" : ""}`}
-      title={step.type}
+      className={`dash-dot kind-${kindOf(step.type)}${active ? " active" : ""}${!hasSignal ? " no-signal" : ""}`}
+      title={
+        hasSignal
+          ? step.type
+          : `${step.type} -- no live signal available for this step type`
+      }
     >
       {pulse > 0 && <span key={pulse} className="dash-ping" />}
     </span>
@@ -328,6 +500,8 @@ interface TileShellProps {
   dots: React.ReactNode;
   count?: number;
   children?: React.ReactNode;
+  tileKey: string;
+  onHeightChange: (key: string, height: number) => void;
 }
 
 function TileShell({
@@ -341,20 +515,69 @@ function TileShell({
   dots,
   count,
   children,
+  tileKey,
+  onHeightChange,
 }: TileShellProps) {
   const { dragging, gripProps } = useDraggable(x, y, onMove, true);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLSpanElement>(null);
+  const [nameTruncated, setNameTruncated] = useState(false);
+
+  // Tracks the tile's own real rendered height -- which changes when it
+  // opens/closes, and can keep changing while open as its content does (a
+  // step gaining/losing a validation error) -- so Board's canvas height can
+  // grow to actually contain it, not just assume a closed tile's height.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+
+    const report = () => onHeightChange(tileKey, el.offsetHeight);
+    report();
+
+    const observer = new ResizeObserver(report);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [tileKey, onHeightChange]);
+
+  // Only a name CSS is actually clipping (scrollWidth exceeding the box it's
+  // rendered into) gets a hover tooltip -- a name that already fits in full
+  // doesn't need one repeating what's already fully visible. Re-checked via
+  // ResizeObserver, not just on mount, since the space available to the name
+  // shifts with how many dots the row ends up showing.
+  useEffect(() => {
+    const el = nameRef.current;
+    if (!el) return;
+
+    const check = () => setNameTruncated(el.scrollWidth > el.clientWidth);
+    check();
+
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [name]);
 
   return (
     <div
+      ref={rootRef}
       className={`dash-tile${open ? " open" : ""}${dragging ? " dragging" : ""}${hasError ? " has-error" : ""}`}
-      style={{ left: x, top: y }}
+      style={{
+        left: x + TILE_INSET,
+        top: y + TILE_INSET,
+        width: TILE_WIDTH - TILE_INSET * 2,
+      }}
     >
       <div className="dash-tile-head">
         <span className="dash-grip" title="Drag to move" {...gripProps}>
           ::
         </span>
         <button className="dash-tile-clickable" onClick={onToggle}>
-          <span className="dash-tile-name">{name}</span>
+          <span
+            className="dash-tile-name"
+            ref={nameRef}
+            title={nameTruncated ? name : undefined}
+          >
+            {name}
+          </span>
           <span className="dash-tile-dots">{dots}</span>
           {count !== undefined && (
             <span className="dash-tile-count">{count}</span>
@@ -375,8 +598,11 @@ function TaskTile({
   onMove,
   onEditStep,
   errorsByStep,
+  openByStep,
   activeTopics,
   pulseTokens,
+  tileKey,
+  onHeightChange,
 }: {
   taskName: string;
   steps: Array<StepConfig>;
@@ -384,15 +610,44 @@ function TaskTile({
   x: number;
   y: number;
   onMove: (x: number, y: number) => void;
-  onEditStep: (stepIndex: number) => void;
+  onEditStep: (stepIndex: number, anchor: HTMLElement) => void;
   errorsByStep: Array<Array<ConfigError>>;
+  openByStep: Array<boolean>;
   activeTopics: Set<string>;
   pulseTokens: Map<string, number>;
+  tileKey: string;
+  onHeightChange: (key: string, height: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const hasError = errorsByStep.some((errors) =>
     errors.some((error) => error.severity === "error"),
   );
+
+  const visibleDots = selectVisibleStepIndices(steps, MAX_VISIBLE_DOTS);
+  const dotNodes: Array<React.ReactNode> = [];
+  let inGap = false;
+  steps.forEach((step, index) => {
+    if (visibleDots.has(index)) {
+      dotNodes.push(
+        <Dot
+          key={index}
+          step={step}
+          activeTopics={activeTopics}
+          pulseTokens={pulseTokens}
+        />,
+      );
+      inGap = false;
+    } else if (!inGap) {
+      dotNodes.push(
+        <span
+          key={`gap-${index}`}
+          className="dash-dot-ellipsis"
+          title="More steps not shown here"
+        />,
+      );
+      inGap = true;
+    }
+  });
 
   return (
     <TileShell
@@ -404,21 +659,17 @@ function TaskTile({
       onToggle={() => setOpen((value) => !value)}
       name={taskName}
       count={steps.length}
-      dots={steps.map((step, index) => (
-        <Dot
-          key={index}
-          step={step}
-          activeTopics={activeTopics}
-          pulseTokens={pulseTokens}
-        />
-      ))}
+      dots={dotNodes}
+      tileKey={tileKey}
+      onHeightChange={onHeightChange}
     >
       {steps.map((step, index) => (
         <Detail
           key={index}
           step={step}
           errors={errorsByStep[index] ?? []}
-          onEdit={() => onEditStep(index)}
+          isEditing={openByStep[index] ?? false}
+          onEdit={(anchor) => onEditStep(index, anchor)}
         />
       ))}
       {!hasTrigger && (
@@ -435,17 +686,23 @@ function ConnectionTile({
   onMove,
   onEdit,
   errors,
+  isEditing,
   active,
   pulseToken,
+  tileKey,
+  onHeightChange,
 }: {
   step: StepConfig;
   x: number;
   y: number;
   onMove: (x: number, y: number) => void;
-  onEdit: () => void;
+  onEdit: (anchor: HTMLElement) => void;
   errors: Array<ConfigError>;
+  isEditing: boolean;
   active: boolean;
   pulseToken: number;
+  tileKey: string;
+  onHeightChange: (key: string, height: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const hasError = errors.some((error) => error.severity === "error");
@@ -462,8 +719,15 @@ function ConnectionTile({
       dots={
         <ConnectionDot step={step} active={active} pulseToken={pulseToken} />
       }
+      tileKey={tileKey}
+      onHeightChange={onHeightChange}
     >
-      <Detail step={step} errors={errors} onEdit={onEdit} />
+      <Detail
+        step={step}
+        errors={errors}
+        isEditing={isEditing}
+        onEdit={onEdit}
+      />
     </TileShell>
   );
 }
@@ -547,67 +811,134 @@ function Loupe({
   );
 }
 
-// The real app's right-hand rail, always visible (not a collapsible drawer --
-// that hid content the whole point was to keep in view).
+// A live message plus a stable, monotonically increasing id -- assigned once
+// per message as it arrives, so rows can be keyed by identity instead of
+// array index (which breaks once messages prepend and get re-sorted).
+interface KeyedMessage extends LiveMessage {
+  id: number;
+}
+
+const MessageRow = memo(function MessageRow({
+  message,
+}: {
+  message: KeyedMessage;
+}) {
+  return (
+    <li>
+      <span className="topic">{message.topic}</span>
+      <span
+        className={`payload${isMultilineValue(message.payload) ? " multiline" : ""}`}
+      >
+        <JsonPreview value={message.payload} />
+      </span>
+    </li>
+  );
+});
+
+// Live Messages' own scroll region, isolated from Validation above it (see
+// .board-rail-messages in styles.css). Anchors scroll position when a new
+// message prepends: a reader scrolled away from the top sees the view hold
+// steady instead of getting yanked, since prepending changes which messages
+// sit at a given scrollTop without changing scrollTop itself.
+function LiveMessagesList({ messages }: { messages: Array<KeyedMessage> }) {
+  const listRef = useRef<HTMLUListElement>(null);
+  const prevScroll = useRef({ top: 0, height: 0 });
+
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const { top, height } = prevScroll.current;
+    if (top > 4) el.scrollTop = top + (el.scrollHeight - height);
+    prevScroll.current = { top: el.scrollTop, height: el.scrollHeight };
+  }, [messages]);
+
+  function trackScroll() {
+    const el = listRef.current;
+    if (el) prevScroll.current = { top: el.scrollTop, height: el.scrollHeight };
+  }
+
+  return (
+    <ul className="dash-drawer-list mono" ref={listRef} onScroll={trackScroll}>
+      {messages.map((message) => (
+        <MessageRow key={message.id} message={message} />
+      ))}
+    </ul>
+  );
+}
+
+// The real app's right-hand rail: validation and live messages. Collapses to
+// a thin strip (not hidden entirely) so there is always something visible to
+// click back to it.
 function Rail({
+  collapsed,
+  onToggleCollapsed,
   errors,
   messages,
   showAll,
   onShowAllChange,
   nodeTopicCount,
 }: {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
   errors: Array<ConfigError>;
-  messages: Array<LiveMessage>;
+  messages: Array<KeyedMessage>;
   showAll: boolean;
   onShowAllChange: (value: boolean) => void;
   nodeTopicCount: number;
 }) {
   return (
-    <aside className="board-rail">
-      <section>
-        <h3>Validation</h3>
-        {errors.length === 0 ? (
-          <p className="dash-drawer-empty">No problems found.</p>
-        ) : (
-          <ul className="dash-drawer-list">
-            {errors.map((error, index) => (
-              <li key={index} className={error.severity}>
-                <span className="path">{error.path || "<config>"}</span>
-                {error.message}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <section className="board-rail-messages">
-        <div className="dash-drawer-section-head">
-          <h3>Live messages</h3>
-          <label>
-            <input
-              type="checkbox"
-              checked={showAll}
-              onChange={(event) => onShowAllChange(event.target.checked)}
-            />
-            show everything
-          </label>
-        </div>
-        <span className="dash-drawer-hint">
-          {showAll || nodeTopicCount === 0
-            ? "showing the whole broker"
-            : `filtered to ${nodeTopicCount} known topic(s)`}
-        </span>
-        {messages.length === 0 ? (
-          <p className="dash-drawer-empty">No messages yet.</p>
-        ) : (
-          <ul className="dash-drawer-list mono">
-            {messages.slice(0, 60).map((message, index) => (
-              <li key={index}>
-                <span className="topic">{message.topic}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+    <aside className={`board-rail${collapsed ? " collapsed" : ""}`}>
+      <div className="board-rail-head">
+        <button
+          className="board-rail-toggle"
+          onClick={onToggleCollapsed}
+          title={collapsed ? "Show validation and live messages" : "Hide"}
+        >
+          {collapsed ? "<<" : ">>"}
+        </button>
+      </div>
+      {!collapsed && (
+        <>
+          <section>
+            <h3>Validation</h3>
+            {errors.length === 0 ? (
+              <p className="dash-drawer-empty">No problems found.</p>
+            ) : (
+              <ul className="dash-drawer-list">
+                {errors.map((error, index) => (
+                  <li key={index} className={error.severity}>
+                    <span className="path">{error.path || "<config>"}</span>
+                    {error.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section className="board-rail-messages">
+            <div className="dash-drawer-section-head">
+              <h3>Live messages</h3>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showAll}
+                  onChange={(event) => onShowAllChange(event.target.checked)}
+                />
+                show everything
+              </label>
+            </div>
+            <span className="dash-drawer-hint">
+              {showAll || nodeTopicCount === 0
+                ? "showing the whole broker"
+                : `filtered to ${nodeTopicCount} known topic(s)`}
+            </span>
+            {messages.length === 0 ? (
+              <p className="dash-drawer-empty">No messages yet.</p>
+            ) : (
+              <LiveMessagesList messages={messages} />
+            )}
+          </section>
+        </>
+      )}
     </aside>
   );
 }
@@ -633,16 +964,45 @@ export default function Board({
     Record<string, { x: number; y: number }>
   >({});
   const [loupes, setLoupes] = useState<Array<OpenLoupe>>([]);
+  const [tileHeights, setTileHeights] = useState<Record<string, number>>({});
+  const reportTileHeight = useCallback((key: string, height: number) => {
+    setTileHeights((prev) =>
+      prev[key] === height ? prev : { ...prev, [key]: height },
+    );
+  }, []);
   const [showAllMessages, setShowAllMessages] = useState(false);
-  const [recentMessages, setRecentMessages] = useState<Array<LiveMessage>>([]);
+  const [messagesByTopic, setMessagesByTopic] = useState<
+    Map<string, Array<KeyedMessage>>
+  >(new Map());
+  const nextMessageId = useRef(0);
   const [activeTopics, setActiveTopics] = useState<Set<string>>(new Set());
   const [pulseTokens, setPulseTokens] = useState<Map<string, number>>(
     new Map(),
   );
   const [connectionActive, setConnectionActive] = useState(false);
   const [connectionPulse, setConnectionPulse] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  // How much room .board-canvas-wrap's own viewport offers -- the canvas's
+  // actual width (below, canvasWidth) is the larger of this and how far
+  // right the content itself extends, so it's a floor, not the final value.
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const [railCollapsed, setRailCollapsed] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const topZRef = useRef(1);
+
+  // Tracks .board-canvas-wrap's own size (not the canvas's -- that's about to
+  // be driven off this) so the canvas can be kept at an exact grid multiple
+  // through window resizes, not just on first paint.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    const measure = () => setViewportWidth(availableCanvasWidth(wrap));
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(wrap);
+    return () => observer.disconnect();
+  }, []);
 
   const nodeTopics = useMemo(() => collectTopics(config), [config]);
   const nodeTopicsRef = useRef(nodeTopics);
@@ -651,23 +1011,28 @@ export default function Board({
   }, [nodeTopics]);
 
   // Reset everything scoped to "the node currently being looked at" when the
-  // dropdown picks a different one -- draft edits, layout, open loupes, and
-  // the live signal history all belong to whichever node is on screen.
+  // dropdown picks a different one -- draft edits, layout, and open loupes.
+  // The live feed (messagesByTopic/activeTopics/pulseTokens/connectionActive)
+  // stays out of this: it comes from serve-ui's one connection to the whole
+  // broker, not from this node specifically, so switching nodes has nothing
+  // to do with whether that connection has seen traffic. Clearing it here
+  // was wiping real history (and flipping the connection dot dark) on every
+  // switch, with nothing having actually happened to the connection. It also
+  // means there is no separate "filtered buffer" to go stale on a node
+  // switch: messagesByTopic is the single, persistent source of truth, and
+  // displayedMessages below is just a live projection over it.
   useEffect(() => {
     setDraft(config);
     setErrors([]);
     setLoupes([]);
-    setRecentMessages([]);
-    setActiveTopics(new Set());
-    setPulseTokens(new Map());
-    setConnectionActive(false);
+    setTileHeights({});
 
     const taskEntries = Object.entries(config.tasks ?? {});
     const keys = [
       ...config.connections.map((_, index) => `connection:${index}`),
       ...taskEntries.map(([taskName]) => `task:${taskName}`),
     ];
-    const width = containerRef.current?.clientWidth ?? 1100;
+    const width = availableCanvasWidth(wrapRef.current);
     const cols = Math.max(
       1,
       Math.floor((width + TILE_GAP) / (TILE_WIDTH + TILE_GAP)),
@@ -676,9 +1041,12 @@ export default function Board({
     keys.forEach((key, index) => {
       const col = index % cols;
       const row = Math.floor(index / cols);
+      // Already exact grid multiples by construction (unlike a drag's
+      // arbitrary drop point) -- snap() would round ROW_STEP's 3-cell step
+      // to SNAP's 2-cell one and undo the vertical gap between rows.
       next[key] = {
-        x: snap(col * (TILE_WIDTH + TILE_GAP)),
-        y: snap(row * ROW_STEP),
+        x: col * (TILE_WIDTH + TILE_GAP),
+        y: row * ROW_STEP,
       };
     });
     setPositions(next);
@@ -687,10 +1055,22 @@ export default function Board({
 
   // Opened once for the component's lifetime, not per node -- nodeTopicsRef
   // keeps the handler's filtering current without tearing down the socket
-  // every time the dropdown changes.
+  // every time the dropdown changes. Retention is one ring buffer per topic
+  // (not one shared buffer for the whole broker) so a topic's own recent
+  // history is immune to how busy other topics are.
   useEffect(() => {
     return openMessageFeed((message) => {
-      setRecentMessages((prev) => [message, ...prev].slice(0, 60));
+      const keyed: KeyedMessage = { ...message, id: nextMessageId.current++ };
+
+      setMessagesByTopic((prev) => {
+        const next = new Map(prev);
+        const bucket = next.get(message.topic) ?? [];
+        next.set(
+          message.topic,
+          [keyed, ...bucket].slice(0, MESSAGES_PER_TOPIC),
+        );
+        return next;
+      });
 
       if (nodeTopicsRef.current.includes(message.topic)) {
         setActiveTopics((prev) => new Set(prev).add(message.topic));
@@ -726,11 +1106,58 @@ export default function Board({
   const errorCount = errors.filter(
     (error) => error.severity === "error",
   ).length;
-  const canvasHeight =
-    Math.max(400, ...Object.values(positions).map((p) => p.y)) + 320;
-  const displayedMessages = showAllMessages
-    ? recentMessages
-    : recentMessages.filter((message) => nodeTopics.includes(message.topic));
+  // Rounded up (not down, unlike the width) so the canvas is always at least
+  // tall enough to hold the lowest tile plus its margin -- never a partial
+  // cell short of it. Driven by each tile's own real measured height (see
+  // TileShell's ResizeObserver), not just its position, so a tile expanding
+  // open -- or growing further while open, e.g. picking up a validation
+  // error -- pushes the canvas down to actually contain it, the same way
+  // dragging a tile down already does. TILE_GAP below the tile's own bottom
+  // edge matches the same "one grid cell of breathing room" the row spacing
+  // (ROW_STEP) already leaves for a closed tile.
+  const rawCanvasHeight = Math.max(
+    400,
+    ...Object.entries(positions).map(
+      ([key, position]) =>
+        position.y + (tileHeights[key] ?? DEFAULT_TILE_HEIGHT) + TILE_GAP,
+    ),
+  );
+  const canvasHeight = Math.ceil(rawCanvasHeight / GRID_CELL) * GRID_CELL;
+  // Mirrors the height logic above: the canvas grows to follow content
+  // rightward the same way it already grows to follow content downward.
+  // TILE_GAP (not height's much larger 320px buffer) matches the existing
+  // column-spacing convention used everywhere else, since tiles never expand
+  // horizontally the way an open tile's body expands vertically.
+  const rawContentWidth =
+    Math.max(0, ...Object.values(positions).map((p) => p.x)) +
+    TILE_WIDTH +
+    TILE_GAP;
+  const contentWidth = Math.ceil(rawContentWidth / GRID_CELL) * GRID_CELL;
+  const canvasWidth = Math.max(viewportWidth, contentWidth);
+
+  // A plain flatten + sort, not a k-way merge -- fine at the scale a home
+  // broker actually has (a few dozen distinct topics, each capped at
+  // MESSAGES_PER_TOPIC). messagesByTopic itself is never reset on node
+  // switch, so both the filtered and unfiltered branches read the same live
+  // map, just with a different topic set applied.
+  const displayedMessages = useMemo(() => {
+    const onlyTopics =
+      showAllMessages || nodeTopics.length === 0 ? null : new Set(nodeTopics);
+    const merged: Array<KeyedMessage> = [];
+
+    for (const [topic, bucket] of messagesByTopic) {
+      if (onlyTopics && !onlyTopics.has(topic)) continue;
+      merged.push(...bucket);
+    }
+
+    merged.sort((a, b) => b.id - a.id);
+    return merged.slice(0, MESSAGE_DISPLAY_LIMIT);
+  }, [messagesByTopic, showAllMessages, nodeTopics]);
+
+  const openLoupeKeys = useMemo(
+    () => new Set(loupes.map((loupe) => loupe.key)),
+    [loupes],
+  );
 
   function movePosition(key: string, x: number, y: number) {
     setPositions((prev) => ({ ...prev, [key]: { x, y } }));
@@ -747,6 +1174,30 @@ export default function Board({
         );
       return [...prev, { key, path, x: atX, y: atY, z: topZRef.current }];
     });
+  }
+
+  // Positions a loupe from the real, current on-screen location of the
+  // specific tile/step being edited (via the DOM, at the moment "edit" is
+  // clicked) -- just past the tile's right edge, aligned with the step row.
+  // Computed once at open-time from real viewport geometry, not re-tracked if
+  // the canvas scrolls afterward: loupes are already meant to be dragged
+  // freely once open, so that's correct and sufficient. This also sidesteps
+  // a coordinate-system bug the old position.x/position.y approach had --
+  // those are canvas-relative, but a Loupe renders position: fixed
+  // (viewport-relative), so anything derived from them was wrong the moment
+  // the canvas was scrolled at all.
+  function openLoupeNear(path: FieldPath, anchor: HTMLElement) {
+    const tileRect = anchor.closest(".dash-tile")?.getBoundingClientRect();
+    const stepRect = anchor.closest(".dash-detail")?.getBoundingClientRect();
+    const x = Math.min(
+      (tileRect?.right ?? anchor.getBoundingClientRect().right) + LOUPE_GAP,
+      window.innerWidth - LOUPE_WIDTH - 8,
+    );
+    const y = Math.max(
+      8,
+      Math.min(stepRect?.top ?? tileRect?.top ?? 0, window.innerHeight - 80),
+    );
+    openLoupe(path, x, y);
   }
 
   function focusLoupe(key: string) {
@@ -773,95 +1224,99 @@ export default function Board({
 
   return (
     <div className="board">
-      <header className="board-header">
-        <h2>{nodeName}</h2>
-        <span className="dash-summary">
-          {draft.connections.length} connection(s), {tasks.length} task(s)
-          {errorCount > 0 && (
-            <span className="dash-error-count"> -- {errorCount} error(s)</span>
-          )}
-        </span>
-      </header>
-
       <div className="board-layout">
-        <div className="board-canvas-wrap">
-          <div
-            className="dash-canvas"
-            ref={containerRef}
-            style={{ height: canvasHeight }}
-          >
-            {draft.connections.map((connection, index) => {
-              const key = `connection:${index}`;
-              const position = positions[key] ?? { x: 0, y: 0 };
-              const path: FieldPath = { kind: "connection", index };
+        <div className="board-main">
+          <header className="board-header">
+            <h2>{nodeName}</h2>
+            <span className="dash-summary">
+              {draft.connections.length} connection(s), {tasks.length} task(s)
+              {errorCount > 0 && (
+                <span className="dash-error-count">
+                  {" "}
+                  -- {errorCount} error(s)
+                </span>
+              )}
+            </span>
+          </header>
 
-              return (
-                <ConnectionTile
-                  key={key}
-                  step={connection}
-                  x={position.x}
-                  y={position.y}
-                  onMove={(x, y) => movePosition(key, x, y)}
-                  onEdit={() => openLoupe(path, position.x + 280, position.y)}
-                  errors={errorsFor(errors, pathPrefix(path))}
-                  active={connectionActive}
-                  pulseToken={connectionPulse}
-                />
-              );
-            })}
+          <div className="board-canvas-wrap" ref={wrapRef}>
+            <div
+              className="dash-canvas"
+              style={{
+                height: canvasHeight,
+                width: canvasWidth || undefined,
+              }}
+            >
+              {draft.connections.map((connection, index) => {
+                const key = `connection:${index}`;
+                const position = positions[key] ?? { x: 0, y: 0 };
+                const path: FieldPath = { kind: "connection", index };
 
-            {tasks.map(([taskName, task]) => {
-              const key = `task:${taskName}`;
-              const position = positions[key] ?? { x: 0, y: 0 };
-              const hasTrigger = !!task.trigger;
-              const steps = [task.trigger, ...(task.steps ?? [])].filter(
-                Boolean,
-              ) as Array<StepConfig>;
+                return (
+                  <ConnectionTile
+                    key={key}
+                    step={connection}
+                    x={position.x}
+                    y={position.y}
+                    onMove={(x, y) => movePosition(key, x, y)}
+                    onEdit={(anchor) => openLoupeNear(path, anchor)}
+                    errors={errorsFor(errors, pathPrefix(path))}
+                    isEditing={openLoupeKeys.has(pathKey(path))}
+                    active={connectionActive}
+                    pulseToken={connectionPulse}
+                    tileKey={key}
+                    onHeightChange={reportTileHeight}
+                  />
+                );
+              })}
 
-              return (
-                <TaskTile
-                  key={key}
-                  taskName={taskName}
-                  steps={steps}
-                  hasTrigger={hasTrigger}
-                  x={position.x}
-                  y={position.y}
-                  onMove={(x, y) => movePosition(key, x, y)}
-                  onEditStep={(stepIndex) => {
-                    const path: FieldPath =
-                      hasTrigger && stepIndex === 0
-                        ? { kind: "trigger", taskName }
-                        : {
-                            kind: "step",
-                            taskName,
-                            index: hasTrigger ? stepIndex - 1 : stepIndex,
-                          };
-                    openLoupe(path, position.x + 280, position.y);
-                  }}
-                  errorsByStep={steps.map((_, stepIndex) => {
-                    const path: FieldPath =
-                      hasTrigger && stepIndex === 0
-                        ? { kind: "trigger", taskName }
-                        : {
-                            kind: "step",
-                            taskName,
-                            index: hasTrigger ? stepIndex - 1 : stepIndex,
-                          };
-                    return errorsFor(errors, pathPrefix(path));
-                  })}
-                  activeTopics={activeTopics}
-                  pulseTokens={pulseTokens}
-                />
-              );
-            })}
+              {tasks.map(([taskName, task]) => {
+                const key = `task:${taskName}`;
+                const position = positions[key] ?? { x: 0, y: 0 };
+                const hasTrigger = !!task.trigger;
+                const steps = [task.trigger, ...(task.steps ?? [])].filter(
+                  Boolean,
+                ) as Array<StepConfig>;
+
+                return (
+                  <TaskTile
+                    key={key}
+                    taskName={taskName}
+                    steps={steps}
+                    hasTrigger={hasTrigger}
+                    x={position.x}
+                    y={position.y}
+                    onMove={(x, y) => movePosition(key, x, y)}
+                    onEditStep={(stepIndex, anchor) => {
+                      const path = stepPathAt(taskName, hasTrigger, stepIndex);
+                      openLoupeNear(path, anchor);
+                    }}
+                    errorsByStep={steps.map((_, stepIndex) => {
+                      const path = stepPathAt(taskName, hasTrigger, stepIndex);
+                      return errorsFor(errors, pathPrefix(path));
+                    })}
+                    openByStep={steps.map((_, stepIndex) => {
+                      const path = stepPathAt(taskName, hasTrigger, stepIndex);
+                      return openLoupeKeys.has(pathKey(path));
+                    })}
+                    activeTopics={activeTopics}
+                    pulseTokens={pulseTokens}
+                    tileKey={key}
+                    onHeightChange={reportTileHeight}
+                  />
+                );
+              })}
+            </div>
+
+            {tasks.length === 0 && draft.connections.length === 0 && (
+              <p className="dash-empty">This node declares nothing.</p>
+            )}
           </div>
-
-          {tasks.length === 0 && draft.connections.length === 0 && (
-            <p className="dash-empty">This node declares nothing.</p>
-          )}
         </div>
 
         <Rail
+          collapsed={railCollapsed}
+          onToggleCollapsed={() => setRailCollapsed((value) => !value)}
           errors={errors}
           messages={displayedMessages}
           showAll={showAllMessages}

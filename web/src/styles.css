@@ -142,16 +142,31 @@ textarea {
   color: #ff6b6b;
 }
 
+/* board-layout is the header+canvas / rail split -- board-main carries the
+   header along with the canvas so the rail's divider runs the full height of
+   the row instead of starting partway down below a header it doesn't flank. */
 .board-layout {
   flex: 1;
   min-height: 0;
   display: flex;
 }
 
+.board-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .board-canvas-wrap {
   flex: 1;
   min-width: 0;
   overflow: auto;
+  /* Reserves the scrollbar's width whether or not it's actually showing, so
+     a tall canvas growing past the viewport doesn't shrink the space
+     available for it out from under its own (already-computed) grid-aligned
+     width. */
+  scrollbar-gutter: stable;
   position: relative;
   padding: 20px 24px;
 }
@@ -163,19 +178,30 @@ textarea {
 /* The grid's own origin (0 0) has to be the same coordinate system tile
    left/top are measured in -- anchoring it to .dash-canvas itself, rather
    than centering it on body, is what makes a tile's edges actually land on
-   a line instead of drifting by however wide the viewport happens to be. */
+   a line instead of drifting by however wide the viewport happens to be.
+   Kept visibly lighter than a tile's own border (#1f2733) so the grid reads
+   as background texture, not another layer of chrome.
+   background-repeat only ever draws a line at the START of each cell, never
+   at the far end of the last one, so even at an exact grid multiple there is
+   no line sitting on the canvas's own right/bottom edge -- outline (not
+   border, so it does not eat into the grid-multiple width/height above)
+   closes that off explicitly. */
 .dash-canvas {
   position: relative;
+  outline: 1px solid #1f2733;
+  outline-offset: -1px;
   background-image:
-    linear-gradient(#1f2733 1px, transparent 1px),
-    linear-gradient(90deg, #1f2733 1px, transparent 1px);
+    linear-gradient(#161c26 1px, transparent 1px),
+    linear-gradient(90deg, #161c26 1px, transparent 1px);
   background-size: 28px 28px;
   background-position: 0 0;
 }
 
 .dash-tile {
+  /* Width comes from Board.tsx (TILE_WIDTH - TILE_INSET * 2) alongside its
+     inset left/top, so the box sits inset from its grid slot on every side
+     rather than flush against it. */
   position: absolute;
-  width: 252px;
   background: #151b23;
   border: 1px solid #1f2733;
   border-radius: 6px;
@@ -202,6 +228,11 @@ textarea {
 .dash-tile-head {
   display: flex;
   align-items: stretch;
+  /* + the tile's 1px top/bottom border + the 4px top/bottom inset (see
+     TILE_INSET in Board.tsx) = 56px, 2 grid cells -- the one height a
+     collapsed tile can guarantee, since an open one's is content-driven
+     and can't be forced onto the grid. */
+  height: 46px;
 }
 
 .dash-grip {
@@ -238,6 +269,7 @@ textarea {
 
 .dash-tile-name {
   flex: 1;
+  min-width: 32px;
   font-size: 13px;
   font-weight: 500;
   overflow: hidden;
@@ -247,6 +279,7 @@ textarea {
 
 .dash-tile-dots {
   display: flex;
+  flex-shrink: 0;
   gap: 4px;
 }
 
@@ -260,13 +293,46 @@ textarea {
   transition: opacity 0.4s ease;
 }
 
-/* Dim = never seen live traffic for this step (or it has no topic this
-   prototype can observe at all, e.g. a transform step). Bright = it has, at
-   some point this session. The ring (below) is the moment-to-moment pulse --
-   only real messages trigger it, nothing here is decorative. */
+/* Dim = never seen live traffic for this step. Bright = it has, at some
+   point this session. The ring (below) is the moment-to-moment pulse -- only
+   real messages trigger it, nothing here is decorative. */
 .dash-dot.active {
   opacity: 1;
   box-shadow: 0 0 4px var(--kind, #39d2c0);
+}
+
+/* A step type with no topic this dashboard can observe at all (e.g. a
+   transform step) -- hollow rather than plain dim, so the UI doesn't imply
+   activity it can never actually show. See Dot's title for the reason. */
+.dash-dot.no-signal {
+  opacity: 0.22;
+  background: transparent;
+  border: 1px solid var(--kind, #39d2c0);
+}
+
+/* Same footprint as .dash-dot, marking a run of steps hidden by the
+   MAX_VISIBLE_DOTS cap (see selectVisibleStepIndices in Board.tsx). Drawn
+   with box-shadow, not a Unicode ellipsis glyph, to keep this file ASCII. */
+.dash-dot-ellipsis {
+  display: inline-block;
+  position: relative;
+  width: 7px;
+  height: 7px;
+}
+
+.dash-dot-ellipsis::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #4a5261;
+  box-shadow:
+    0 -3px 0 #4a5261,
+    0 3px 0 #4a5261;
+  transform: translate(-50%, -50%);
 }
 
 .dash-ping {
@@ -342,6 +408,14 @@ textarea {
 .dash-detail-edit:hover {
   border-color: var(--kind, #39d2c0);
   color: var(--kind, #39d2c0);
+}
+
+/* A loupe for this step is already open -- "editing," not "edit," so
+   clicking again reads as "bring it to front," not "open another one." */
+.dash-detail-edit.open {
+  border-color: var(--kind, #39d2c0);
+  color: var(--kind, #39d2c0);
+  background: color-mix(in srgb, var(--kind, #39d2c0) 15%, transparent);
 }
 
 .dash-detail-note {
@@ -433,20 +507,78 @@ textarea {
   white-space: pre;
 }
 
-/* Rail: the real app's right-hand panel, always visible -- a collapsible
-   drawer hid content that was the whole point to keep in view. */
+/* Rail: the real app's right-hand panel -- validation and live messages.
+   Collapses to a thin strip rather than vanishing behind a drawer elsewhere,
+   so there is always something on screen pointing back to it. */
 
 .board-rail {
   width: 300px;
   flex-shrink: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   background: #0d1117;
   border-left: 1px solid #1f2733;
   padding: 16px;
 }
 
+.board-rail.collapsed {
+  width: 34px;
+  padding: 16px 6px;
+  overflow: hidden;
+}
+
+.board-rail-head {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.board-rail.collapsed .board-rail-head {
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+.board-rail-toggle {
+  background: none;
+  border: 1px solid #2a3441;
+  border-radius: 4px;
+  color: #7d8590;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  padding: 3px 7px;
+  cursor: pointer;
+}
+
+.board-rail-toggle:hover {
+  border-color: #39d2c0;
+  color: #39d2c0;
+}
+
 .board-rail section {
   margin-bottom: 22px;
+}
+
+/* Isolates message scrolling from the Validation section above it -- Rail
+   used to scroll both as one region, so Validation's height changing (it
+   re-renders on every debounced validateNode resolution) shifted wherever
+   the messages happened to sit on screen. flex: 0 1 auto (not flex: 1) so
+   this section only takes the height its actual messages need -- a handful
+   of messages should not stretch it to fill the rest of the rail -- while
+   still being ABLE to shrink (and, via the list's own overflow-y below,
+   scroll) if there are enough messages that Validation + Live Messages
+   together would otherwise overflow the rail. */
+.board-rail-messages {
+  flex: 0 1 auto;
+  min-height: 0;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.board-rail-messages .dash-drawer-list {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .board-rail h3 {
@@ -510,6 +642,32 @@ textarea {
   display: block;
   font-family: "IBM Plex Mono", monospace;
   font-size: 10px;
+  color: #4a5261;
+}
+
+.dash-drawer-list li .payload {
+  display: block;
+  margin-top: 2px;
+  color: #7d8590;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.json-key {
+  color: #4cc3d0;
+}
+.json-string {
+  color: #6bd07a;
+}
+.json-number {
+  color: #f0c040;
+}
+.json-boolean,
+.json-null {
+  color: #b980f0;
+}
+
+.dash-drawer-list li .payload.multiline {
   color: #4a5261;
 }
 
