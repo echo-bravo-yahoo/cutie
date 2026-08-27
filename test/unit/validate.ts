@@ -1109,18 +1109,18 @@ describe("schema defaults", function () {
       const task = new Task({ steps: [] }, "defaults");
 
       const filled = new Constant({ type: "read:constant" } as never, task, 0);
-      expect((filled.config as Record<string, unknown>).greeting).to.equal(
-        "hello",
-      );
+      expect(
+        (filled.config as unknown as Record<string, unknown>).greeting,
+      ).to.equal("hello");
 
       const explicit = new Constant(
         { type: "read:constant", greeting: "hi" } as never,
         task,
         0,
       );
-      expect((explicit.config as Record<string, unknown>).greeting).to.equal(
-        "hi",
-      );
+      expect(
+        (explicit.config as unknown as Record<string, unknown>).greeting,
+      ).to.equal("hi");
     });
   });
 });

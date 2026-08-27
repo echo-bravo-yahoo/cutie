@@ -373,9 +373,10 @@ describe("the CLI's", function () {
       expect(downloaded).to.deep.equal(["bob.conf.json", "chicken.conf.json"]);
 
       // Feed exactly those filenames back through the upload walk.
-      mockReaddir.mock.mockImplementationOnce(async () =>
-        downloaded.map((name) => fakeDirEnt(".", name)),
-      );
+      mockReaddir.mock.mockImplementationOnce((async () =>
+        downloaded.map((name) =>
+          fakeDirEnt(".", name),
+        )) as unknown as typeof realFsPromises.readdir);
       mockUploadSingleConfig.mock.resetCalls();
 
       await upload({ connectionName: "test", path: "." } as UploadArgs);

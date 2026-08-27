@@ -520,7 +520,7 @@ describe("logging", function () {
       const config = await fetchConfig("./config/cutie.conf.yaml");
 
       await registerConnections(config.connections ?? []);
-      await registerTasks(config.tasks ?? {});
+      await registerTasks(config.tasks ?? []);
 
       try {
         expect(
