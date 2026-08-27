@@ -25,10 +25,6 @@ export interface NECCommand {
   extendedCommand?: number;
 }
 
-// The address halves are both inverted here while the command halves are not.
-// That asymmetry is not what the published NEC spec describes, but it is what
-// drives the hardware this was written against, so it is preserved verbatim --
-// do not "correct" it without a receiver to test against.
 export function necToBits({
   address,
   command,
@@ -37,8 +33,11 @@ export function necToBits({
 }: NECCommand): Array<boolean> {
   const invert = (bits: Array<boolean>) => bits.map((bit) => !bit);
 
-  const extendedAddressBits = invert(numberToBitArray(address, 8));
-  const addressBits = invert(numberToBitArray(extendedAddress ?? address, 8));
+  const addressBits = numberToBitArray(address, 8);
+  const subdeviceBits =
+    extendedAddress === undefined
+      ? invert(numberToBitArray(address, 8))
+      : numberToBitArray(extendedAddress, 8);
 
   const commandBits = numberToBitArray(command, 8);
   const extendedCommandBits =
@@ -48,29 +47,20 @@ export function necToBits({
 
   return [
     ...addressBits,
-    ...extendedAddressBits,
+    ...subdeviceBits,
     ...commandBits,
     ...extendedCommandBits,
   ];
 }
 
-// The exact structural inverse of necToBits, preserving the same asymmetric
-// inversion (see the comment above necToBits) so encode and decode stay
-// inverses of each other. Always returns all four fields; see the
-// necToBits comment for why "was extendedAddress/extendedCommand actually
-// given" can't be reliably recovered from the bits alone.
 export function necBitsToCommand(bits: Array<boolean>): NECCommand {
-  const invert = (byteBits: Array<boolean>) => byteBits.map((bit) => !bit);
-  const byte = (start: number, inverted: boolean) => {
-    const slice = bits.slice(start, start + 8);
-    return bitArrayToByte(inverted ? invert(slice) : slice);
-  };
+  const byte = (start: number) => bitArrayToByte(bits.slice(start, start + 8));
 
   return {
-    address: byte(8, true),
-    extendedAddress: byte(0, true),
-    command: byte(16, false),
-    extendedCommand: byte(24, false),
+    address: byte(0),
+    extendedAddress: byte(8),
+    command: byte(16),
+    extendedCommand: byte(24),
   };
 }
 

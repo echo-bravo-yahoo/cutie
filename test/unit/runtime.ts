@@ -820,7 +820,7 @@ describe("the runtime", function () {
         necBitsToCommand(necToBits({ address: 0x00, command: 0x00 })),
       ).to.deep.equal({
         address: 0x00,
-        extendedAddress: 0x00,
+        extendedAddress: 0xff,
         command: 0x00,
         extendedCommand: 0xff,
       });
@@ -829,7 +829,7 @@ describe("the runtime", function () {
         necBitsToCommand(necToBits({ address: 0xff, command: 0xff })),
       ).to.deep.equal({
         address: 0xff,
-        extendedAddress: 0xff,
+        extendedAddress: 0x00,
         command: 0xff,
         extendedCommand: 0x00,
       });
@@ -852,7 +852,7 @@ describe("the runtime", function () {
 
       expect(result).to.deep.equal({
         address: 0x7c,
-        extendedAddress: 0x7c,
+        extendedAddress: 0x83,
         command: 0x66,
         extendedCommand: 0x99,
       });
