@@ -483,6 +483,77 @@ describe("the runtime", function () {
       await task.trigger!.disable();
       expect(globals.eventBus.listenerCount("a-happening")).to.equal(0);
     });
+
+    it("gives each listener its own copy of the message, not a shared reference", async function () {
+      const KEY = "fanout-independence-test";
+
+      // Mirrors the shape that broke live on vaxholm: one listener renames a
+      // key (mutating the message in place, since transform:munge's rename
+      // unsets the source and Transform.determineInitialMessageOut aliases
+      // "out" to "in" for a paths-based step), and a sibling listener on the
+      // same key needs that same key still intact.
+      const mutator = new Task(
+        {
+          trigger: { type: "trigger:event", key: KEY } as EventConfig,
+          steps: [
+            {
+              type: "transform:munge",
+              paths: { temp: { op: "rename", to: "renamed" } },
+            } as any,
+            { type: "output:console" },
+          ],
+        },
+        "fanout mutator",
+      );
+      const reader = new Task(
+        {
+          trigger: { type: "trigger:event", key: KEY } as EventConfig,
+          steps: [{ type: "output:console" }],
+        },
+        "fanout reader",
+      );
+
+      await mutator.register();
+      await reader.register();
+
+      const mutatorSeen: Array<unknown> = [];
+      const readerSeen: Array<unknown> = [];
+      (mutator.steps[mutator.steps.length - 1] as Console).send = async (
+        message,
+      ) => {
+        mutatorSeen.push(message);
+        return message;
+      };
+      (reader.steps[reader.steps.length - 1] as Console).send = async (
+        message,
+      ) => {
+        readerSeen.push(message);
+        return message;
+      };
+
+      const emitter = new Task(
+        { steps: [{ type: "output:event", key: KEY } as any] },
+        "fanout emitter",
+      );
+      await emitter.register();
+
+      const shared = { temp: 5 };
+
+      try {
+        await emitter.startMessage(shared as any);
+        await taskDone(mutator, { timeout: 500, waitFor: 1 });
+        await taskDone(reader, { timeout: 500, waitFor: 1 });
+
+        expect(mutatorSeen[0]).to.deep.equal({ renamed: 5 });
+        expect(readerSeen[0]).to.deep.equal({ temp: 5 });
+        // The object output:event was actually handed is untouched too --
+        // nothing downstream should be able to reach back and mutate it.
+        expect(shared).to.deep.equal({ temp: 5 });
+      } finally {
+        await mutator.trigger!.disable();
+        await reader.trigger!.disable();
+      }
+    });
   });
 
   describe("MQTTConnection.matchesTopic", function () {

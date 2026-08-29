@@ -36,7 +36,15 @@ export default class Event extends Trigger {
         event: message,
       },
     );
-    this.fire(() => message, traceId);
+    // One emit reaches every trigger:event sharing this key (EventEmitter
+    // calls every listener with the same message reference), and most
+    // transforms mutate the message in place (e.g. transform:munge's rename,
+    // Transform.determineInitialMessageOut aliasing "out" to "in" for a
+    // paths-based step) rather than copying it. Without this clone, sibling
+    // listeners race on one shared object -- confirmed live: one listener's
+    // transform:munge deleted a key another listener's transform:convert
+    // still needed, and the second listener silently propagated `null`.
+    this.fire(() => structuredClone(message), traceId);
   }
 
   async enable() {
