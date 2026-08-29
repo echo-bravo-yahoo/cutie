@@ -91,6 +91,125 @@ function collectTopics(config: ConfigFile): Array<string> {
   return [...topics];
 }
 
+// One output:event step's broadcast to one trigger:event task -- the runtime
+// fans one emit() out to every listener sharing its key (see event.ts on both
+// sides, and globals.ts's single per-process EventEmitter), so this is a
+// pairing, not an exclusive edge: one key can produce many of these.
+interface EventEdge {
+  key: string;
+  fromTaskName: string;
+  toTaskName: string;
+}
+
+// Every output:event -> trigger:event pairing across the whole config, by
+// matching key. Deliberately the full N-emitters x M-listeners cross product
+// (matching the runtime's real broadcast semantics), not special-cased to
+// "one emitter" -- correct for any fleet config. An orphaned key on either
+// side just produces no edge; cutie validate has no cross-check for this (see
+// validate.ts), so a missing arrow here is the only signal a typo exists.
+function collectEventEdges(config: ConfigFile): Array<EventEdge> {
+  const emitters: Array<{ taskName: string; key: string }> = [];
+  const listeners: Array<{ taskName: string; key: string }> = [];
+
+  for (const [taskName, task] of Object.entries(config.tasks ?? {})) {
+    if (
+      task.trigger &&
+      task.trigger.type === "trigger:event" &&
+      typeof task.trigger.key === "string"
+    ) {
+      listeners.push({ taskName, key: task.trigger.key });
+    }
+    for (const step of task.steps ?? []) {
+      if (step.type === "output:event" && typeof step.key === "string") {
+        emitters.push({ taskName, key: step.key });
+      }
+    }
+  }
+
+  const edges: Array<EventEdge> = [];
+  for (const emitter of emitters)
+    for (const listener of listeners)
+      if (listener.key === emitter.key)
+        edges.push({
+          key: emitter.key,
+          fromTaskName: emitter.taskName,
+          toTaskName: listener.taskName,
+        });
+  return edges;
+}
+
+interface Rect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+function tileRect(
+  key: string,
+  positions: Record<string, { x: number; y: number }>,
+  tileHeights: Record<string, number>,
+): Rect {
+  const p = positions[key] ?? { x: 0, y: 0 };
+  return {
+    left: p.x + TILE_INSET,
+    top: p.y + TILE_INSET,
+    width: TILE_WIDTH - TILE_INSET * 2,
+    height: tileHeights[key] ?? DEFAULT_TILE_HEIGHT,
+  };
+}
+
+// Clips a ray from a rect's own center toward an external point to that
+// rect's boundary -- used twice per edge (once from each tile, aimed at the
+// other tile's center) so an arrow always starts/ends exactly on a tile's
+// edge, regardless of the tiles' relative position after dragging.
+function clipToRectBoundary(
+  cx: number,
+  cy: number,
+  halfWidth: number,
+  halfHeight: number,
+  towardX: number,
+  towardY: number,
+): { x: number; y: number } {
+  const dx = towardX - cx;
+  const dy = towardY - cy;
+  if (dx === 0 && dy === 0) return { x: cx, y: cy };
+  const scale = Math.min(
+    dx !== 0 ? halfWidth / Math.abs(dx) : Infinity,
+    dy !== 0 ? halfHeight / Math.abs(dy) : Infinity,
+  );
+  return { x: cx + dx * scale, y: cy + dy * scale };
+}
+
+function eventArrowPoints(source: Rect, target: Rect) {
+  const sourceCenter = {
+    x: source.left + source.width / 2,
+    y: source.top + source.height / 2,
+  };
+  const targetCenter = {
+    x: target.left + target.width / 2,
+    y: target.top + target.height / 2,
+  };
+  return {
+    start: clipToRectBoundary(
+      sourceCenter.x,
+      sourceCenter.y,
+      source.width / 2,
+      source.height / 2,
+      targetCenter.x,
+      targetCenter.y,
+    ),
+    end: clipToRectBoundary(
+      targetCenter.x,
+      targetCenter.y,
+      target.width / 2,
+      target.height / 2,
+      sourceCenter.x,
+      sourceCenter.y,
+    ),
+  };
+}
+
 // Identifies one step (a connection, a task's trigger, or one of a task's
 // steps) -- the unit both field edits and loupes operate on.
 interface FieldPath {
@@ -943,6 +1062,68 @@ function Rail({
   );
 }
 
+// Structural overlay: one arrow per output:event -> trigger:event pairing
+// (see collectEventEdges), showing declared wiring rather than observed
+// traffic -- complements, not replaces, each step's own activity dot. No
+// viewBox on purpose: .dash-canvas already sets an explicit pixel
+// width/height inline, and this SVG (styles.css: inset: 0; width/height:
+// 100%) inherits that exact pixel box, so with no viewBox its user-coordinate
+// system is 1:1 CSS pixels and x1/y1/x2/y2 line up directly with
+// positions/TILE_WIDTH with no scaling math.
+function EventArrows({
+  edges,
+  positions,
+  tileHeights,
+}: {
+  edges: Array<EventEdge>;
+  positions: Record<string, { x: number; y: number }>;
+  tileHeights: Record<string, number>;
+}) {
+  return (
+    <svg className="dash-event-arrows">
+      <defs>
+        <marker
+          id="event-arrow-head"
+          viewBox="0 0 8 8"
+          refX="7"
+          refY="4"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path d="M0,0 L8,4 L0,8 z" className="dash-event-arrow-head" />
+        </marker>
+      </defs>
+      {edges.map((edge, index) => {
+        const source = tileRect(
+          `task:${edge.fromTaskName}`,
+          positions,
+          tileHeights,
+        );
+        const target = tileRect(
+          `task:${edge.toTaskName}`,
+          positions,
+          tileHeights,
+        );
+        const { start, end } = eventArrowPoints(source, target);
+        return (
+          <line
+            key={`${edge.fromTaskName}->${edge.toTaskName}:${edge.key}:${index}`}
+            x1={start.x}
+            y1={start.y}
+            x2={end.x}
+            y2={end.y}
+            className="dash-event-arrow kind-output"
+            markerEnd="url(#event-arrow-head)"
+          >
+            <title>{`${edge.fromTaskName} -> ${edge.toTaskName} (event: ${edge.key})`}</title>
+          </line>
+        );
+      })}
+    </svg>
+  );
+}
+
 interface OpenLoupe {
   key: string;
   path: FieldPath;
@@ -1005,6 +1186,7 @@ export default function Board({
   }, []);
 
   const nodeTopics = useMemo(() => collectTopics(config), [config]);
+  const eventEdges = useMemo(() => collectEventEdges(draft), [draft]);
   const nodeTopicsRef = useRef(nodeTopics);
   useEffect(() => {
     nodeTopicsRef.current = nodeTopics;
@@ -1247,6 +1429,12 @@ export default function Board({
                 width: canvasWidth || undefined,
               }}
             >
+              <EventArrows
+                edges={eventEdges}
+                positions={positions}
+                tileHeights={tileHeights}
+              />
+
               {draft.connections.map((connection, index) => {
                 const key = `connection:${index}`;
                 const position = positions[key] ?? { x: 0, y: 0 };
