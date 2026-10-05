@@ -14,7 +14,9 @@ export interface Pulse {
 }
 
 export const DEFAULT_CARRIER_FREQUENCY_HZ = 38400;
-const CARRIER_DUTY_CYCLE = 0.5;
+// NEC recommends 1/3 (sbprojects.net/knowledge/ir/nec.php); most demodulators
+// tolerate a wide range, but there's no reason to drift from the spec.
+const CARRIER_DUTY_CYCLE = 1 / 3;
 const US_PER_SECOND = 1000000;
 
 // NEC holds the carrier for a fixed period and encodes the bit in the length
