@@ -56,6 +56,7 @@ Every option every module accepts, generated from the schemas the runtime valida
 - [`output:event`](./outputs.md#outputevent)
 - [`output:file`](./outputs.md#outputfile) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 - [`output:influxdb`](./outputs.md#outputinfluxdb)
+- [`output:infrared`](./outputs.md#outputinfrared)
 - [`output:inky-phat`](./outputs.md#outputinky-phat) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 - [`output:logs`](./outputs.md#outputlogs)
 - [`output:mqtt`](./outputs.md#outputmqtt) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">

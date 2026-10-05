@@ -542,6 +542,7 @@ describe("the message chain", function () {
     // deliberately wrong value, which is also the sharpest test of the base
     // class's promise.
     const NEEDS_EXTERNAL = [
+      "infrared",
       "influxdb",
       "inky-phat",
       "nec",

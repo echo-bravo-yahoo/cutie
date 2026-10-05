@@ -5,6 +5,8 @@
 // adapters/nec.ts; the other protocols' receive-side code and the terminal
 // graphing helper were left behind in git history.
 
+import { PigpioClient, withWaveLock } from "../pigpio-client.js";
+
 // One entry of a pigpio generic waveform: which pins to drive high, which to
 // drive low, and how long to hold that state, in microseconds.
 export interface Pulse {
@@ -110,4 +112,81 @@ export function bitArrayToWave(
   }
 
   return wave;
+}
+
+// Translates the Pulse shape above (gpioOn/gpioOff hold either the pin
+// number or 0) into pigpio-client's waveAddPulse triplet shape: [setFlag,
+// clearFlag, delayUs]. setFlag/clearFlag must be 0/1 -- pigpio-client shifts
+// them into a bitmask itself via "<< gpio" for whichever pin the bound gpio
+// object represents, so passing the raw pin number here (matching Pulse's
+// own convention) would silently build the wrong bitmask.
+export function pulseToTriplet(
+  pulse: Pulse,
+  ledPin: number,
+): [number, number, number] {
+  return [
+    pulse.gpioOn === ledPin ? 1 : 0,
+    pulse.gpioOff === ledPin ? 1 : 0,
+    pulse.usDelay,
+  ];
+}
+
+// pigpio-client's own default poll interval (25ms) means a full NEC frame
+// (50.1-86.1ms depending on payload) needs 2-4 waveBusy round-trips on this
+// connection's command socket to confirm completion. Each round-trip is
+// traffic pigpiod has to service while its one daemon-wide alert-delivery
+// thread is also trying to feed every OTHER connection's notify() data --
+// empirically, transmitting from one process silently starved a notify()-
+// only listener in a separate process for the transmission's duration.
+// Polling past the worst case (32 bits all long-gap: 9000 + 4500 +
+// 32*(563+1688) + 563 = 86095us) means pigpiod is asked exactly once,
+// instead of repeatedly while it may still be contending for attention.
+// output:infrared's raw pulse trains reuse this same interval for the same
+// reason, at whatever coarser grain their own length implies.
+export const WAVE_COMPLETION_POLL_INTERVAL_MS = 100;
+
+// Any Pulse[] -- an NEC frame or a raw capture alike -- transmitted the same
+// way: clear pigpiod's one global wave slot, load it, send it once, poll
+// until it finishes, then delete it. withWaveLock serializes this against
+// every other wave-touching caller in this process, because pigpiod's wave
+// state is not scoped per connection or per pin (see withWaveLock's own
+// comment in pigpio-client.ts).
+export async function transmitWave(
+  pigpioClient: PigpioClient,
+  pulses: Array<Pulse>,
+  ledPin: number,
+): Promise<void> {
+  const gpio = pigpioClient.gpio(ledPin);
+  const triplets = pulses.map((pulse) => pulseToTriplet(pulse, ledPin));
+
+  await withWaveLock(async () => {
+    await gpio.waveClear();
+    await gpio.waveAddPulse(triplets);
+    const waveId = await gpio.waveCreate();
+
+    try {
+      // TODO: figure out why WAVE_MODE_ONE_SHOT_SYNC binds things up -- same
+      // open question as the pigpio-based version this replaced.
+      await gpio.waveSendOnce(waveId);
+      await gpio.waveNotBusy(WAVE_COMPLETION_POLL_INTERVAL_MS);
+    } finally {
+      await gpio.waveDelete(waveId);
+    }
+  });
+}
+
+// A generic raw pulse train: relative microsecond durations, alternating
+// LED-on/LED-off, always starting on -- the same convention trigger:infrared
+// + transform:debounce + transform:ir-pulses produce, so a captured code
+// replays through output:infrared with no further conversion.
+export function rawPulsesToWave(
+  durationsUs: Array<number>,
+  ledPin: number,
+  carrierFrequencyHz?: number,
+): Array<Pulse> {
+  return durationsUs.flatMap((duration, index) =>
+    index % 2 === 0
+      ? highWaveFromDuration(duration, ledPin, carrierFrequencyHz)
+      : lowWaveFromDuration(duration, ledPin),
+  );
 }

@@ -394,4 +394,21 @@ describe("outputs", function () {
       ).to.deep.equal([]);
     });
   });
+
+  describe("output:infrared", function () {
+    it("requires a ledPin unless it is virtual", async function () {
+      await expect(
+        taskWith(
+          [{ type: "output:infrared" }],
+          "infrared with no pin",
+        ).register(),
+      ).to.be.rejectedWith(/needs a "ledPin"/);
+    });
+
+    it("registers with virtual: true and no ledPin", async function () {
+      expect(
+        await errorsFor({ type: "output:infrared", virtual: true }),
+      ).to.deep.equal([]);
+    });
+  });
 });

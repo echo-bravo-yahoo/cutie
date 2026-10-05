@@ -29,6 +29,7 @@ import { Configurable } from "../../src/util/Configurable.js";
 import LogHelper from "../../src/util/LogHelper.js";
 import { validateConfig } from "../../src/util/validate.js";
 import NEC from "../../src/outputs/nec.js";
+import InfraredOutput from "../../src/outputs/infrared.js";
 import Switchbots from "../../src/outputs/switchbots.js";
 import Once from "../../src/triggers/once.js";
 import NECTrigger from "../../src/triggers/nec.js";
@@ -41,11 +42,15 @@ import {
   NECFrameDecoder,
   necToBits,
   necToWave,
-  pulseToTriplet,
   transmitNECCommand,
-  WAVE_COMPLETION_POLL_INTERVAL_MS,
 } from "../../src/util/bitbang/adapters/nec.js";
-import { highWaveFromDuration } from "../../src/util/bitbang/helpers.js";
+import {
+  highWaveFromDuration,
+  pulseToTriplet,
+  rawPulsesToWave,
+  transmitWave,
+  WAVE_COMPLETION_POLL_INTERVAL_MS,
+} from "../../src/util/bitbang/helpers.js";
 import {
   createPigpioClientMock,
   MOCK_WAVE_ID,
@@ -748,6 +753,104 @@ describe("the runtime", function () {
     });
   });
 
+  describe("output:infrared", function () {
+    it("resolves a saved code by id", function () {
+      const task = new Task({ steps: [] }, "infrared saved code");
+      const infrared = new InfraredOutput(
+        {
+          type: "output:infrared",
+          virtual: true,
+          savedCodes: { mute: { pulses: [9000, 4500, 563, 1688] } },
+        } as any,
+        task,
+      );
+
+      expect(infrared.resolveCode({ id: "mute" } as any)).to.deep.equal({
+        pulses: [9000, 4500, 563, 1688],
+      });
+    });
+
+    it("reports an unknown saved code by name", function () {
+      const task = new Task({ steps: [] }, "infrared unknown code");
+      const infrared = new InfraredOutput(
+        { type: "output:infrared", virtual: true, savedCodes: {} } as any,
+        task,
+      );
+
+      expect(() => infrared.resolveCode({ id: "nope" } as any)).to.throw(
+        /"nope"/,
+      );
+    });
+
+    it("accepts a spelled-out pulses array", function () {
+      const task = new Task({ steps: [] }, "infrared spelled out");
+      const infrared = new InfraredOutput(
+        { type: "output:infrared", virtual: true } as any,
+        task,
+      );
+
+      expect(
+        infrared.resolveCode({ pulses: [9000, 4500, 563] } as any),
+      ).to.deep.equal({ pulses: [9000, 4500, 563] });
+    });
+
+    it("rejects an empty pulses array", function () {
+      const task = new Task({ steps: [] }, "infrared empty pulses");
+      const infrared = new InfraredOutput(
+        { type: "output:infrared", virtual: true } as any,
+        task,
+      );
+
+      expect(() => infrared.resolveCode({ pulses: [] } as any)).to.throw(
+        /non-empty "pulses"/,
+      );
+    });
+
+    it("rejects a non-positive duration", function () {
+      const task = new Task({ steps: [] }, "infrared bad duration");
+      const infrared = new InfraredOutput(
+        { type: "output:infrared", virtual: true } as any,
+        task,
+      );
+
+      expect(() =>
+        infrared.resolveCode({ pulses: [9000, 0, 563] } as any),
+      ).to.throw(/non-empty "pulses"/);
+    });
+
+    it("rejects a non-array pulses value", function () {
+      const task = new Task({ steps: [] }, "infrared non-array pulses");
+      const infrared = new InfraredOutput(
+        { type: "output:infrared", virtual: true } as any,
+        task,
+      );
+
+      expect(() => infrared.resolveCode({ pulses: "nope" } as any)).to.throw(
+        /non-empty "pulses"/,
+      );
+    });
+
+    it("requires the LED pin rather than guessing one", async function () {
+      await expect(
+        new Task(
+          { steps: [{ type: "output:infrared" } as never] },
+          "infrared without a pin",
+        ).register(),
+      ).to.be.rejectedWith(/needs a "ledPin"/);
+    });
+
+    it("wants no LED pin when it is virtual", async function () {
+      const errors = await validateConfig(
+        {
+          tasks: { t: { steps: [{ type: "output:infrared", virtual: true }] } },
+        },
+        { configPath: "/tmp/x.json" },
+      );
+
+      expect(errors).to.deep.equal([]);
+    });
+  });
+
   describe("output:switchbots", function () {
     it("lowers the arm to turn a normally-mounted bot on", function () {
       expect(Switchbots.toHandMotion(true, false)).to.equal("handDown");
@@ -882,6 +985,58 @@ describe("the runtime", function () {
       expect(calls.filter((c) => c === "waveClear")).to.have.lengthOf(2);
       expect(calls.filter((c) => c.startsWith("waveDelete"))).to.have.lengthOf(
         2,
+      );
+    });
+  });
+
+  describe("bitbang raw transmission", function () {
+    // The real, hardware-verified projector "mute" command this session
+    // captured and confirmed live against riddarholmen's projector:
+    // address 0x55, command 0x52, extendedAddress 0x83. Used here instead of
+    // a placeholder so the new generic raw path is validated against
+    // something a real receiver actually accepts, not a synthetic fixture.
+    const muteCommand = {
+      address: 0x55,
+      command: 0x52,
+      extendedAddress: 0x83,
+    };
+    const mutePulses = [
+      9000, 4500, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563,
+      563, 563, 1688, 563, 563, 563, 1688, 563, 1688, 563, 563, 563, 563, 563,
+      563, 563, 563, 563, 563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563,
+      563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563,
+      1688, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563,
+    ];
+
+    it("clears, loads, sends, waits, and deletes the wave in order", async function () {
+      const { calls, pigpioClient } = createPigpioClientMock();
+
+      await transmitWave(pigpioClient, rawPulsesToWave(mutePulses, 23), 23);
+
+      expect(calls).to.deep.equal([
+        "gpio(23)",
+        "waveClear",
+        "waveAddPulse",
+        "waveCreate",
+        `waveSendOnce(${MOCK_WAVE_ID})`,
+        `waveNotBusy(${WAVE_COMPLETION_POLL_INTERVAL_MS})`,
+        `waveDelete(${MOCK_WAVE_ID})`,
+      ]);
+    });
+
+    // Two independent code paths -- one NEC-specific, one generic -- must
+    // produce byte-identical Pulse[] for the same real, hardware-confirmed
+    // command. This is the core correctness claim of the generic raw path,
+    // not an incidental test.
+    it("produces the exact same waveform as necToWave for the same real command", function () {
+      expect(rawPulsesToWave(mutePulses, 23)).to.deep.equal(
+        necToWave(muteCommand, 23),
+      );
+    });
+
+    it("honors a non-default carrier frequency the same way necToWave does", function () {
+      expect(rawPulsesToWave(mutePulses, 23, 40000)).to.deep.equal(
+        necToWave(muteCommand, 23, 40000),
       );
     });
   });

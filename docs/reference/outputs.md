@@ -62,6 +62,21 @@ Writes each message to InfluxDB as one line of line protocol. The message must a
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
+## `output:infrared`
+
+Transmits a raw infrared pulse train on a GPIO pin. The message either names a saved code, {"id": "livingRoomPower"}, or spells one out as {"pulses": [9000, 4500, 563, 563, ...]} -- microsecond durations alternating LED-on/LED-off, starting on. This is the shape trigger:infrared + transform:debounce + transform:ir-pulses capture, so a learned code replays unchanged.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `ledPin` | number | no |  |  | The GPIO pin the infrared LED is wired to. Required unless virtual is set; there is no sensible default for someone else's wiring. Must be at least 0, a whole number. |
+| `virtual` | boolean | no | `false` |  | Log the code that would be sent without driving the pin. |
+| `savedCodes` | object | no |  |  | Named codes a message can ask for by id, each {"pulses": [...]}. |
+| `carrierFrequencyHz` | number | no | `38400` | `Hz` | The infrared carrier frequency the LED is modulated at. 38kHz is the most common default across remote protocols; a captured code's original frequency is rarely knowable, so this is a best guess unless measured. Must be at least 1. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
+
 ## `output:inky-phat`
 
 <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">

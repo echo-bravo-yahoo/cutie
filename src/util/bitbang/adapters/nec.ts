@@ -11,24 +11,13 @@ import {
   NEC_PULSE_US,
   numberToBitArray,
   Pulse,
+  transmitWave,
 } from "../helpers.js";
-import { PigpioClient, withWaveLock } from "../../pigpio-client.js";
+import { PigpioClient } from "../../pigpio-client.js";
 
 export const NEC_HEADER_HIGH_US = 9000;
 export const NEC_HEADER_LOW_US = 4500;
 export const NEC_TRAILER_US = 563;
-
-// pigpio-client's own default poll interval (25ms) means a full NEC frame
-// (50.1-86.1ms depending on payload) needs 2-4 waveBusy round-trips on this
-// connection's command socket to confirm completion. Each round-trip is
-// traffic pigpiod has to service while its one daemon-wide alert-delivery
-// thread is also trying to feed every OTHER connection's notify() data --
-// empirically, transmitting from one process silently starved a notify()-
-// only listener in a separate process for the transmission's duration.
-// Polling past the worst case (32 bits all long-gap: 9000 + 4500 +
-// 32*(563+1688) + 563 = 86095us) means pigpiod is asked exactly once,
-// instead of repeatedly while it may still be contending for attention.
-export const WAVE_COMPLETION_POLL_INTERVAL_MS = 100;
 
 export interface NECCommand {
   address: number;
@@ -192,47 +181,15 @@ export function necToWave(
   ];
 }
 
-// Translates the existing Pulse shape (gpioOn/gpioOff hold either the pin
-// number or 0, unchanged in helpers.ts/necToWave) into pigpio-client's
-// waveAddPulse triplet shape: [setFlag, clearFlag, delayUs]. setFlag/
-// clearFlag must be 0/1 -- pigpio-client shifts them into a bitmask itself
-// via "<< gpio" for whichever pin the bound gpio object represents, so
-// passing the raw pin number here (matching Pulse's own convention) would
-// silently build the wrong bitmask.
-export function pulseToTriplet(
-  pulse: Pulse,
-  ledPin: number,
-): [number, number, number] {
-  return [
-    pulse.gpioOn === ledPin ? 1 : 0,
-    pulse.gpioOff === ledPin ? 1 : 0,
-    pulse.usDelay,
-  ];
-}
-
 export async function transmitNECCommand(
   pigpioClient: PigpioClient,
   necCommand: NECCommand,
   ledPin: number,
   carrierFrequencyHz?: number,
 ): Promise<void> {
-  const gpio = pigpioClient.gpio(ledPin);
-  const triplets = necToWave(necCommand, ledPin, carrierFrequencyHz).map(
-    (pulse) => pulseToTriplet(pulse, ledPin),
+  await transmitWave(
+    pigpioClient,
+    necToWave(necCommand, ledPin, carrierFrequencyHz),
+    ledPin,
   );
-
-  await withWaveLock(async () => {
-    await gpio.waveClear();
-    await gpio.waveAddPulse(triplets);
-    const waveId = await gpio.waveCreate();
-
-    try {
-      // TODO: figure out why WAVE_MODE_ONE_SHOT_SYNC binds things up -- same
-      // open question as the pigpio-based version this replaced.
-      await gpio.waveSendOnce(waveId);
-      await gpio.waveNotBusy(WAVE_COMPLETION_POLL_INTERVAL_MS);
-    } finally {
-      await gpio.waveDelete(waveId);
-    }
-  });
 }
