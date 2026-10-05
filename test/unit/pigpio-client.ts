@@ -87,9 +87,19 @@ describe("pigpio-client reconnect", function () {
       await freshPigpioClient();
 
     const order: Array<string> = [];
+    // connection resolves the moment connect() succeeds, before any
+    // subscriber is re-enabled (see reconnectAfterDrop's own comment) -- so
+    // awaiting getPigpioConnection() alone proves nothing about re-enable
+    // having run yet. Wait on the subscriber's own enable() instead of
+    // inferring completion from connection's resolution timing.
+    let resolveEnabled: () => void;
+    const enabled = new Promise<void>((resolve) => {
+      resolveEnabled = resolve;
+    });
     onPigpioReconnect({
       enable: async () => {
         order.push("enable");
+        resolveEnabled();
       },
       disable: async () => {
         order.push("disable");
@@ -110,6 +120,7 @@ describe("pigpio-client reconnect", function () {
 
     const reconnected = await getPigpioConnection("after drop");
     expect(reconnected).to.equal(clients[1]);
+    await enabled;
     expect(order).to.deep.equal(["disable", "enable"]);
   });
 
@@ -224,6 +235,11 @@ describe("pigpio-client reconnect", function () {
     expect(clients).to.have.lengthOf(2);
     clients[1].emit("connected");
     await getPigpioConnection("after drop");
+    // connection resolves before the (empty, since unsubscribed) re-enable
+    // pass even runs -- give it a couple of ticks to settle before asserting
+    // the absence, rather than relying on getPigpioConnection()'s own timing.
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
 
     expect(order).to.deep.equal([]);
   });

@@ -71,25 +71,20 @@ export const RECONNECT_INTERVAL_MS = 2000;
 // so a getPigpioConnection() call mid-retry awaits this instead of racing a
 // second connect() -- the same reasoning as getPigpioConnection's own
 // catch above, just held open across every attempt rather than one.
+//
+// `connection` resolves the moment connect() itself succeeds, before any
+// subscriber is re-enabled -- not after, as an earlier version of this
+// function had it. Each real subscriber's own enable() calls
+// getPigpioConnection(), which reads this same `connection`; resolving it
+// only after re-enabling every subscriber would make that resolution depend
+// on enable() calls that are themselves awaiting it, deadlocking forever.
+// Confirmed live on real hardware (riddarholmen): trigger:gpio-button and
+// output:nec both hung in enable() indefinitely under the earlier version.
 function reconnectAfterDrop(requiredBy: string): void {
   connection = (async () => {
     for (;;) {
       try {
-        const client = await connect(requiredBy);
-
-        logAt(
-          CORE_TOPIC,
-          "info",
-          `Reconnected to pigpiod at ${PIGPIOD_HOST}:${PIGPIOD_PORT}; re-enabling ${reconnectSubscribers.size} GPIO module(s).`,
-        );
-
-        await Promise.allSettled(
-          [...reconnectSubscribers].map((subscriber) =>
-            subscriber.disable().then(() => subscriber.enable()),
-          ),
-        );
-
-        return client;
+        return await connect(requiredBy);
       } catch {
         await new Promise((resolve) =>
           setTimeout(resolve, RECONNECT_INTERVAL_MS),
@@ -97,6 +92,20 @@ function reconnectAfterDrop(requiredBy: string): void {
       }
     }
   })();
+
+  connection.then((client) => {
+    logAt(
+      CORE_TOPIC,
+      "info",
+      `Reconnected to pigpiod at ${PIGPIOD_HOST}:${PIGPIOD_PORT}; re-enabling ${reconnectSubscribers.size} GPIO module(s).`,
+    );
+
+    return Promise.allSettled(
+      [...reconnectSubscribers].map((subscriber) =>
+        subscriber.disable().then(() => subscriber.enable()),
+      ),
+    ).then(() => client);
+  });
 }
 
 async function connect(requiredBy: string): Promise<PigpioClient> {
