@@ -631,7 +631,7 @@ describe("the message chain", function () {
     // chain after a real capture, run through two steps wired together in a
     // real Task rather than called directly.
     it("replays the real mute command's captured edges as the exact pulses output:infrared would transmit", async function () {
-      const task = new Task(
+      const task = await registered(
         {
           steps: [
             { type: "transform:ir-pulses" },
@@ -640,7 +640,6 @@ describe("the message chain", function () {
         },
         "mute round trip",
       );
-      await task.register();
 
       const edges = necReceiverEdges(
         necToBits({ address: 0x55, command: 0x52, extendedAddress: 0x83 }),

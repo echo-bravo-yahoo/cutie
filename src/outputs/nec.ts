@@ -6,7 +6,11 @@ import {
   transmitNECCommand,
 } from "../util/bitbang/adapters/nec.js";
 import { DEFAULT_CARRIER_FREQUENCY_HZ } from "../util/bitbang/helpers.js";
-import { getPigpioConnection, PigpioClient } from "../util/pigpio-client.js";
+import {
+  getPigpioConnection,
+  onPigpioReconnect,
+  PigpioClient,
+} from "../util/pigpio-client.js";
 import { ModuleSchema } from "../util/schema.js";
 
 // A command as a config or a message writes it: numbers may arrive as hex
@@ -28,6 +32,7 @@ export interface NECConfig extends OutputConfig {
 export default class NEC extends Output {
   declare config: NECConfig;
   pigpioClient?: PigpioClient;
+  private unsubscribeReconnect?: () => void;
 
   // A pin is required only when one is actually driven, which is a pairing no
   // single option's schema can express.
@@ -114,6 +119,10 @@ export default class NEC extends Output {
   async enable() {
     if (!this.config.virtual) {
       this.pigpioClient = await getPigpioConnection("output:nec");
+      this.unsubscribeReconnect = onPigpioReconnect({
+        enable: () => this.enable(),
+        disable: () => this.disable(),
+      });
     }
 
     this.info("Enabled nec.");
@@ -121,6 +130,8 @@ export default class NEC extends Output {
   }
 
   async disable() {
+    this.unsubscribeReconnect?.();
+    this.unsubscribeReconnect = undefined;
     this.pigpioClient = undefined;
     this.info("Disabled nec.");
     this.enabled = false;

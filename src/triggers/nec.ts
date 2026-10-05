@@ -3,6 +3,7 @@ import Task from "../util/Task.js";
 import { NECFrameDecoder } from "../util/bitbang/adapters/nec.js";
 import {
   getPigpioConnection,
+  onPigpioReconnect,
   PigpioClientGpio,
 } from "../util/pigpio-client.js";
 import { ModuleSchema } from "../util/schema.js";
@@ -17,6 +18,7 @@ export default class NECTrigger extends Trigger {
   declare config: NECTriggerConfig;
   receiver?: PigpioClientGpio;
   decoder?: NECFrameDecoder;
+  private unsubscribeReconnect?: () => void;
 
   constructor(config: NECTriggerConfig, task: Task, index?: number) {
     super(config, task, index);
@@ -37,6 +39,10 @@ export default class NECTrigger extends Trigger {
       this.receiver = pigpioClient.gpio(this.config.receiverPin as number);
       this.receiver.modeSet("input");
       this.receiver.notify((level, tick) => this.handleEdge(level, tick));
+      this.unsubscribeReconnect = onPigpioReconnect({
+        enable: () => this.enable(),
+        disable: () => this.disable(),
+      });
 
       this.info(`Enabled NEC receiver on pin ${this.config.receiverPin}.`);
     }
@@ -60,6 +66,9 @@ export default class NECTrigger extends Trigger {
   }
 
   async disable() {
+    this.unsubscribeReconnect?.();
+    this.unsubscribeReconnect = undefined;
+
     if (this.receiver) {
       this.receiver.endNotify();
       this.receiver = undefined;

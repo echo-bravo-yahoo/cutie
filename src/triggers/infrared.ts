@@ -2,6 +2,7 @@ import Trigger, { TriggerConfig } from "../util/Trigger.js";
 import Task from "../util/Task.js";
 import {
   getPigpioConnection,
+  onPigpioReconnect,
   PigpioClientGpio,
 } from "../util/pigpio-client.js";
 import { ModuleSchema } from "../util/schema.js";
@@ -14,6 +15,7 @@ export interface InfraredConfig extends TriggerConfig {
 export default class Infrared extends Trigger {
   declare config: InfraredConfig;
   infraredReceiver?: PigpioClientGpio;
+  private unsubscribeReconnect?: () => void;
 
   constructor(config: InfraredConfig, task: Task, index?: number) {
     super(config, task, index);
@@ -32,6 +34,10 @@ export default class Infrared extends Trigger {
           if (level === null || tick === null) return;
           this.fire(() => ({ level, tick }));
         });
+        this.unsubscribeReconnect = onPigpioReconnect({
+          enable: () => this.enable(),
+          disable: () => this.disable(),
+        });
         this.info(
           `Enabled infrared receiver on pin ${this.config.receiverPin}.`,
         );
@@ -42,6 +48,9 @@ export default class Infrared extends Trigger {
   }
 
   async disable() {
+    this.unsubscribeReconnect?.();
+    this.unsubscribeReconnect = undefined;
+
     if (this.infraredReceiver) {
       this.infraredReceiver.endNotify();
       this.infraredReceiver = undefined;

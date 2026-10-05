@@ -6,7 +6,11 @@ import {
   rawPulsesToWave,
   transmitWave,
 } from "../util/bitbang/helpers.js";
-import { getPigpioConnection, PigpioClient } from "../util/pigpio-client.js";
+import {
+  getPigpioConnection,
+  onPigpioReconnect,
+  PigpioClient,
+} from "../util/pigpio-client.js";
 import { ModuleSchema } from "../util/schema.js";
 
 // The wire format for a raw code: relative microsecond durations,
@@ -29,6 +33,7 @@ export interface InfraredOutputConfig extends OutputConfig {
 export default class InfraredOutput extends Output {
   declare config: InfraredOutputConfig;
   pigpioClient?: PigpioClient;
+  private unsubscribeReconnect?: () => void;
 
   constructor(config: InfraredOutputConfig, task: Task, index?: number) {
     super(config, task, index);
@@ -97,6 +102,10 @@ export default class InfraredOutput extends Output {
   async enable() {
     if (!this.config.virtual) {
       this.pigpioClient = await getPigpioConnection("output:infrared");
+      this.unsubscribeReconnect = onPigpioReconnect({
+        enable: () => this.enable(),
+        disable: () => this.disable(),
+      });
     }
 
     this.info("Enabled infrared.");
@@ -104,6 +113,8 @@ export default class InfraredOutput extends Output {
   }
 
   async disable() {
+    this.unsubscribeReconnect?.();
+    this.unsubscribeReconnect = undefined;
     this.pigpioClient = undefined;
     this.info("Disabled infrared.");
     this.enabled = false;

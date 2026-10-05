@@ -3,6 +3,7 @@ import Task from "../util/Task.js";
 import { ModuleSchema } from "../util/schema.js";
 import {
   getPigpioConnection,
+  onPigpioReconnect,
   PigpioClientGpio,
 } from "../util/pigpio-client.js";
 
@@ -34,6 +35,7 @@ export default class GpioButton extends Trigger {
   declare config: GpioButtonConfig;
   private pins: Array<{ name: string; gpio: PigpioClientGpio }> = [];
   private lastEmit: Record<string, number> = {};
+  private unsubscribeReconnect?: () => void;
 
   constructor(config: GpioButtonConfig, task: Task, index?: number) {
     super(config, task, index);
@@ -80,6 +82,11 @@ export default class GpioButton extends Trigger {
       this.pins.push({ name, gpio });
     }
 
+    this.unsubscribeReconnect = onPigpioReconnect({
+      enable: () => this.enable(),
+      disable: () => this.disable(),
+    });
+
     this.info(
       `Enabled gpio buttons (${this.pins.map((p) => p.name).join(", ") || "none"}).`,
     );
@@ -87,6 +94,9 @@ export default class GpioButton extends Trigger {
   }
 
   async disable() {
+    this.unsubscribeReconnect?.();
+    this.unsubscribeReconnect = undefined;
+
     for (const { gpio } of this.pins) gpio.endNotify();
     this.pins = [];
     this.info("Disabled gpio buttons.");
