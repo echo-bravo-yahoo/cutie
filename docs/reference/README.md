@@ -34,6 +34,8 @@ Every option every module accepts, generated from the schemas the runtime valida
 - [`transform:accumulate`](./transforms.md#transformaccumulate) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 - [`transform:aggregate`](./transforms.md#transformaggregate)
 - [`transform:convert`](./transforms.md#transformconvert)
+- [`transform:debounce`](./transforms.md#transformdebounce)
+- [`transform:ir-pulses`](./transforms.md#transformir-pulses)
 - [`transform:javascript`](./transforms.md#transformjavascript) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 - [`transform:merge`](./transforms.md#transformmerge) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 - [`transform:munge`](./transforms.md#transformmunge)

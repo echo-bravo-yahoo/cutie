@@ -10,6 +10,8 @@ import { Globals, setGlobals } from "../../src/index.js";
 import { UNITS } from "../../src/transforms/convert.js";
 import Task from "../../src/util/Task.js";
 import { validateConfig } from "../../src/util/validate.js";
+import { necToBits } from "../../src/util/bitbang/adapters/nec.js";
+import { necReceiverEdges } from "../helpers.js";
 
 const fakeLogger = {
   emit: () => {},
@@ -358,6 +360,126 @@ describe("transform options", function () {
         path: "tasks.t.steps[0].count",
         message: "missing required option; expected number",
       });
+    });
+  });
+
+  describe("transform:debounce", function () {
+    it("resets the timer on every message, so a steady drip never flushes", async function (context) {
+      context.mock.timers.enable({ apis: ["setTimeout"] });
+      const batches: Array<unknown> = [];
+      const task = taskWith(
+        [{ type: "transform:debounce", idleMs: 100 }],
+        "steady drip",
+      );
+      await task.register();
+      task.endMessage = async (message) => {
+        batches.push(message);
+        return message;
+      };
+
+      for (let i = 0; i < 5; i++) {
+        await task.startMessage(i);
+        context.mock.timers.tick(50);
+      }
+
+      expect(batches).to.deep.equal([]);
+    });
+
+    it("flushes the held batch once nothing new arrives for idleMs", async function (context) {
+      context.mock.timers.enable({ apis: ["setTimeout"] });
+      const batches: Array<unknown> = [];
+      const task = taskWith(
+        [{ type: "transform:debounce", idleMs: 50 }],
+        "goes idle",
+      );
+      await task.register();
+      task.endMessage = async (message) => {
+        batches.push(message);
+        return message;
+      };
+
+      await task.startMessage(1);
+      await task.startMessage(2);
+      await task.startMessage(3);
+      expect(batches).to.deep.equal([]);
+
+      context.mock.timers.tick(50);
+
+      expect(batches).to.deep.equal([[1, 2, 3]]);
+    });
+
+    it("flushes what is pending when it is disabled", async function () {
+      const batches: Array<unknown> = [];
+      const task = taskWith(
+        [{ type: "transform:debounce", idleMs: 1000 }],
+        "flushes on shutdown",
+      );
+      await task.register();
+      task.endMessage = async (message) => {
+        batches.push(message);
+        return message;
+      };
+
+      await task.startMessage(1);
+      await task.startMessage(2);
+      await task.steps[0].disable();
+
+      expect(batches).to.deep.equal([[1, 2]]);
+    });
+
+    it("is rejected without idleMs", async function () {
+      const errors = await errorsFor({ type: "transform:debounce" });
+
+      expect(errors).to.deep.include({
+        severity: "error",
+        path: "tasks.t.steps[0].idleMs",
+        message: "missing required option; expected number",
+      });
+    });
+  });
+
+  describe("transform:ir-pulses", function () {
+    // The real, hardware-verified projector "mute" command (address 0x55,
+    // command 0x52, extendedAddress 0x83): its own receiver edges, not a
+    // synthetic frame, so this proves capture is exact for something a real
+    // projector actually responds to.
+    const muteEdges = necReceiverEdges(
+      necToBits({ address: 0x55, command: 0x52, extendedAddress: 0x83 }),
+    );
+    const mutePulses = [
+      9000, 4500, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563,
+      563, 563, 1688, 563, 563, 563, 1688, 563, 1688, 563, 563, 563, 563, 563,
+      563, 563, 563, 563, 563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563,
+      563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563,
+      1688, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563,
+    ];
+
+    it("converts the real mute command's own edges into its exact pulse array", async function () {
+      expect(
+        await through({ type: "transform:ir-pulses" }, muteEdges, "mute edges"),
+      ).to.deep.equal({ pulses: mutePulses });
+    });
+
+    it("drops the (null, null) endNotify sentinel rather than producing a bogus trailing duration", async function () {
+      const withSentinel = [...muteEdges, { level: null, tick: null }];
+
+      expect(
+        await through(
+          { type: "transform:ir-pulses" },
+          withSentinel,
+          "mute edges with sentinel",
+        ),
+      ).to.deep.equal({ pulses: mutePulses });
+    });
+
+    it("rejects a non-array message", async function () {
+      await expect(
+        through(
+          { type: "transform:ir-pulses" },
+          { not: "an array" },
+          "not an array",
+        ),
+      ).to.be.rejectedWith(/expects an array/);
     });
   });
 

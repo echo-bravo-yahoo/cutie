@@ -14,6 +14,8 @@ import MQTTConnection from "../../src/connections/mqtt.js";
 import { listModules } from "../../src/util/modules.js";
 import Step from "../../src/util/Step.js";
 import Task from "../../src/util/Task.js";
+import { necToBits } from "../../src/util/bitbang/adapters/nec.js";
+import { necReceiverEdges } from "../helpers.js";
 
 const fakeLogger = {
   emit: () => {},
@@ -612,6 +614,49 @@ describe("the message chain", function () {
 
       expect(await task.startMessage({ temp: 21.456 })).to.deep.equal({
         temp: 21.5,
+      });
+    });
+  });
+
+  describe("capture-to-replay round trip", function () {
+    before(function () {
+      useFakeGlobals();
+    });
+
+    // Closes the gap between "the math is right" (transform:ir-pulses' and
+    // output:infrared's own unit tests) and "the config actually wires it up
+    // right": the same real, hardware-verified projector mute command
+    // (address 0x55, command 0x52, extendedAddress 0x83), fed in as the
+    // edges trigger:infrared + transform:debounce would have handed this
+    // chain after a real capture, run through two steps wired together in a
+    // real Task rather than called directly.
+    it("replays the real mute command's captured edges as the exact pulses output:infrared would transmit", async function () {
+      const task = new Task(
+        {
+          steps: [
+            { type: "transform:ir-pulses" },
+            { type: "output:infrared", virtual: true, ledPin: 23 },
+          ],
+        },
+        "mute round trip",
+      );
+      await task.register();
+
+      const edges = necReceiverEdges(
+        necToBits({ address: 0x55, command: 0x52, extendedAddress: 0x83 }),
+      );
+
+      const result = await task.startMessage(edges as never);
+
+      expect(result).to.deep.equal({
+        pulses: [
+          9000, 4500, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688,
+          563, 563, 563, 1688, 563, 563, 563, 1688, 563, 1688, 563, 563, 563,
+          563, 563, 563, 563, 563, 563, 563, 563, 1688, 563, 563, 563, 1688,
+          563, 563, 563, 563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563,
+          1688, 563, 563, 563, 1688, 563, 1688, 563, 563, 563, 1688, 563,
+          563, 563, 1688, 563,
+        ],
       });
     });
   });

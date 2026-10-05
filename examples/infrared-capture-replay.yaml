@@ -1,0 +1,53 @@
+# Learn a remote's raw code, then replay it -- the YAML equivalent of the
+# "Infrared" recipes in ../cookbook.md.
+connections:
+  - type: "connection:mqtt"
+    name: "broker"
+    username: ""
+    password: ""
+    endpoint: "mqtt://127.0.0.1:1883"
+
+tasks:
+  # Listens on GPIO 25 for an infrared burst, waits 50ms of silence to mark
+  # the end of a transmission, and appends the resulting {pulses} to a file
+  # -- one JSON line per button press.
+  learn-remote:
+    trigger:
+      type: "trigger:infrared"
+      receiverPin: 25
+
+    steps:
+      - type: "transform:debounce"
+        idleMs: 50
+      - type: "transform:ir-pulses"
+      - type: "output:file"
+        path: "${globals.configDir}/learned-codes.jsonl"
+        append: true
+
+  # Transmits a previously-learned code whenever a message arrives on
+  # cutie/ir/replay. "mute" below is a real captured code, not a placeholder:
+  # the raw pulse train for a projector's "mute" button, the same NEC command
+  # (address 0x55, command 0x52, extendedAddress 0x83) captured from and
+  # confirmed live against real hardware, in the generic {pulses} shape
+  # trigger:infrared + transform:debounce + transform:ir-pulses would have
+  # produced for it.
+  replay-remote:
+    trigger:
+      type: "trigger:mqtt"
+      connectionName: "broker"
+      topics:
+        - "cutie/ir/replay"
+
+    steps:
+      - type: "output:infrared"
+        ledPin: 17
+        savedCodes:
+          mute:
+            pulses: [
+                9000, 4500, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688,
+                563, 563, 563, 1688, 563, 563, 563, 1688, 563, 1688, 563, 563,
+                563, 563, 563, 563, 563, 563, 563, 563, 563, 1688, 563, 563,
+                563, 1688, 563, 563, 563, 563, 563, 1688, 563, 563, 563, 1688,
+                563, 563, 563, 1688, 563, 563, 563, 1688, 563, 1688, 563, 563,
+                563, 1688, 563, 563, 563, 1688, 563,
+              ]

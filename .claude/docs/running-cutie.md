@@ -92,6 +92,8 @@ Type string is `<kind>:<subKind>`, and loads `src/<kind>s/<subKind>.ts` (see des
 - `transform:merge` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top"> — deep-merges additional objects into the message; each source is a literal object or a `${...}` template that resolves to one.
 - `transform:munge` — rename/duplicate/remove/retain keys by path, with a `"*"` wildcard default.
 - `transform:accumulate` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top"> — buffers messages, then forwards them as one array once `count` have arrived or the oldest has waited `maxAge`.
+- `transform:debounce` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top"> — buffers messages, then forwards them as one array once nothing new has arrived for `idleMs`; unlike `transform:accumulate`, there is no count/max-age escape hatch.
+- `transform:ir-pulses` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top"> — converts a buffered array of `trigger:infrared`'s `{level, tick}` edges into `{pulses}`, the raw microsecond-duration shape `output:infrared` transmits.
 - `transform:aggregate` — collapses an array of samples into one value via `latest`/`average`/`sum`/`median`/`pX` (`src/util/aggregation.ts`).
 - `transform:prettify` / `transform:uglify` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top"> — stringify the message as indented / compact JSON.
 - `transform:shell` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top"> — runs a shell command (`command` or `codePath`), coerces stdout to `string`/`number`/`object`.
@@ -115,6 +117,7 @@ Type string is `<kind>:<subKind>`, and loads `src/<kind>s/<subKind>.ts` (see des
 - `output:logs` — routes a `{log, object, verbosity, topic}` message back into the logger; the sink side of `trigger:logs`.
 - `output:influxdb` — writes a line-protocol point to InfluxDB via `connection:influxdb`.
 - `output:nec` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top"> — transmits an NEC infrared remote command via `pigpiod` bit-banging, reached over its socket protocol via `pigpio-client`.
+- `output:infrared` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top"> — transmits an arbitrary raw infrared pulse train (any protocol, not just NEC) the same way; the message names a saved code or spells one out as `{pulses}`.
 - `output:switchbots` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top"> — drives SwitchBot Bot devices (`on`/`off`/`press`) over BLE.
 - `output:thermal-printer` <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top"> — prints to a serial thermal printer, with a small markdown-heading dialect.
 - `output:inky-phat` <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top"> — draws each message on an Inky pHAT e-paper panel, 212x104 in three colours, from an image file or a bitmap the message carries.

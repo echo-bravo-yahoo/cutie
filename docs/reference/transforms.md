@@ -52,6 +52,31 @@ Converts a number from one unit to another within the same dimension: temperatur
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
+## `transform:debounce`
+
+Holds messages back and passes them on as one array once nothing new has arrived for idleMs. Unlike transform:accumulate, there is no count or max-age escape hatch: a steady stream faster than idleMs never flushes.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `idleMs` | number | **yes** |  | `ms` | How long a quiet period must last before flushing. Must be at least 1. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
+
+## `transform:ir-pulses`
+
+Replaces an array of {level, tick} infrared edges (as transform:debounce buffers from trigger:infrared) with {pulses}: the relative microsecond durations between them, ready for output:infrared.
+
+Takes no options of its own.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
+
 ## `transform:javascript`
 
 <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">

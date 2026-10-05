@@ -218,6 +218,79 @@ Four pieces are doing the work:
 
 A rescue that only reports, like `on-failure`, ends the message it was handed: the step that called it produced nothing, so there is nothing to carry on with. A rescue that recovers has to say so with `control:return`, and only what that step names crosses back -- the returned value as the message, and each `stash` key written into the caller's stash. Everything else the rescue stashed stays with the rescue.
 
+### Infrared
+
+#### Learn a remote's raw code and save it to a file
+
+This recipe listens on GPIO 25 for an infrared burst, waits 50ms of silence to mark the end of a transmission, and appends the resulting `{pulses}` to a file -- one JSON line per button press.
+
+```json
+{
+  "tasks": {
+    "learn-remote": {
+      "trigger": {
+        "type": "trigger:infrared",
+        "receiverPin": 25
+      },
+      "steps": [
+        { "type": "transform:debounce", "idleMs": 50 },
+        { "type": "transform:ir-pulses" },
+        {
+          "type": "output:file",
+          "path": "${globals.configDir}/learned-codes.jsonl",
+          "append": true
+        }
+      ]
+    }
+  }
+}
+```
+
+#### Replay a saved raw code on MQTT demand
+
+This recipe transmits a previously-learned code (see above) whenever a message arrives on `cutie/ir/replay`. The payload is the `{pulses}` line captured by the recipe above, pasted in as `savedCodes` -- shown here with a real captured code rather than a placeholder: this is the actual raw pulse train for a projector's "mute" button, the same NEC command (`address: 0x55, command: 0x52, extendedAddress: 0x83`) captured from and confirmed live against real hardware, now in the generic shape `trigger:infrared` + `transform:debounce` + `transform:ir-pulses` would have produced for it.
+
+```json
+{
+  "connections": [
+    {
+      "type": "connection:mqtt",
+      "name": "broker",
+      "username": "",
+      "password": "",
+      "endpoint": "mqtt://127.0.0.1:1883"
+    }
+  ],
+  "tasks": {
+    "replay-remote": {
+      "trigger": {
+        "type": "trigger:mqtt",
+        "connectionName": "broker",
+        "topics": ["cutie/ir/replay"]
+      },
+      "steps": [
+        {
+          "type": "output:infrared",
+          "ledPin": 17,
+          "savedCodes": {
+            "mute": {
+              "pulses": [
+                9000, 4500, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688,
+                563, 563, 563, 1688, 563, 563, 563, 1688, 563, 1688, 563, 563,
+                563, 563, 563, 563, 563, 563, 563, 563, 563, 1688, 563, 563,
+                563, 1688, 563, 563, 563, 563, 563, 1688, 563, 563, 563, 1688,
+                563, 563, 563, 1688, 563, 563, 563, 1688, 563, 1688, 563, 563,
+                563, 1688, 563, 563, 563, 1688, 563
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
 ### Flow control
 
 #### Branch on a reading, and drop the ones you cannot use
