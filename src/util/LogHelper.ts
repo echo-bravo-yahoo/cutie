@@ -55,6 +55,25 @@ function ownSubtree(listener: Logs, topic: string): boolean {
   );
 }
 
+// JSON.stringify drops Error's message/stack (they're non-enumerable), so an
+// Error logged as a field -- {err, origin}, as every crash/fatal log line
+// here does -- prints as "{}" by the time an output module stringifies the
+// SerializedLogLine built below. One level of flattening is enough: every
+// current call site logs a raw Error as a direct top-level field value,
+// never nested further.
+function toSerializable(value: unknown): unknown {
+  if (value instanceof Error)
+    return { name: value.name, message: value.message, stack: value.stack };
+  return value;
+}
+
+function sanitizeForLog(object?: object): object | undefined {
+  if (!object) return object;
+  return Object.fromEntries(
+    Object.entries(object).map(([key, value]) => [key, toSerializable(value)]),
+  );
+}
+
 export default class LogHelper {
   declare logListeners: Array<Logs>;
   declare logger: Logger;
@@ -182,6 +201,8 @@ export default class LogHelper {
     if (this.meetsLevel(verbosity))
       this.logger[verbosity](object || {}, message);
 
+    const safeObject = sanitizeForLog(object);
+
     // Two guards, against two different loops. This one stops a log-driven
     // task from observing itself.
     if (this.logListeners.some((listener) => ownSubtree(listener, topic)))
@@ -197,7 +218,7 @@ export default class LogHelper {
     // by addListener to whichever listener turns up first.
     if (this.held && this.logListeners.length === 0)
       this.held.push({
-        object: object as object,
+        object: safeObject as object,
         log: message,
         verbosity,
         topic,
@@ -211,7 +232,7 @@ export default class LogHelper {
         if (listener.shouldEmit(topic, verbosity))
           dispatched.push(
             listener.startMessage(
-              { object, log: message, verbosity, topic, traceId },
+              { object: safeObject, log: message, verbosity, topic, traceId },
               traceId,
             ),
           );

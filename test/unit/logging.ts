@@ -307,6 +307,54 @@ describe("logging", function () {
 
       expect(records).to.have.lengthOf(1);
     });
+
+    it("preserves an Error's message and stack through to a listener", async function () {
+      // Regression test: JSON.stringify drops an Error's message/stack
+      // (they're non-enumerable), so a raw Error logged as a field used to
+      // reach every trigger:logs listener as an object that printed "{}" the
+      // moment an output module (every one of them does) JSON.stringified
+      // it. This asserts on the listener's own startMessage payload rather
+      // than any one output's rendering of it, and then confirms the fix by
+      // actually round-tripping through JSON.stringify/JSON.parse, which is
+      // the exact step that silently ate the error before.
+      useLogger();
+      const listening = new Task(
+        {
+          trigger: {
+            type: "trigger:logs",
+            filters: ["core.test"],
+            minVerbosity: "trace",
+          } as never,
+          steps: [{ type: "output:stash", key: "line", value: "x" } as never],
+        },
+        "sees the sanitized error",
+      );
+      await listening.register();
+      globals.tasks.push(listening);
+
+      let captured: { object: { err: Error } } | undefined;
+      listening.steps[0].doHandleMessage = async (message) => {
+        captured = message as never;
+        return message;
+      };
+
+      globals.logger.emit("boom happened", "error", "core.test", {
+        err: new Error("boom"),
+      });
+      await handled(listening, 1);
+
+      expect(captured?.object.err.name).to.equal("Error");
+      expect(captured?.object.err.message).to.equal("boom");
+      expect(captured?.object.err.stack).to.be.a("string");
+
+      expect(
+        JSON.parse(JSON.stringify(captured?.object.err)),
+      ).to.deep.equal({
+        name: "Error",
+        message: "boom",
+        stack: captured?.object.err.stack,
+      });
+    });
   });
 
   describe("an invalid log level", function () {
