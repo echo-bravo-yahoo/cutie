@@ -36,16 +36,27 @@ export default class NECTrigger extends Trigger {
       this.decoder = new NECFrameDecoder(this.config.activeLow);
       this.receiver = pigpioClient.gpio(this.config.receiverPin as number);
       this.receiver.modeSet("input");
-      this.receiver.notify((level, tick) => {
-        if (level === null || tick === null) return;
-        const command = this.decoder!.consumeEdge(level, tick);
-        if (command) this.fire(() => command);
-      });
+      this.receiver.notify((level, tick) => this.handleEdge(level, tick));
 
       this.info(`Enabled NEC receiver on pin ${this.config.receiverPin}.`);
     }
 
     this.enabled = true;
+  }
+
+  // Broken out of enable()'s notify() registration so a stray edge can be
+  // driven directly in a test. endNotify() (in disable(), below) is
+  // fire-and-forget -- pigpio-client only drops this pin's notifier from
+  // its internal set once pigpiod's stop-notifications response actually
+  // arrives -- so a real edge can still land here after disable() has
+  // already nulled this.decoder. Guarding it turns that stray edge into a
+  // harmless no-op instead of the uncaughtException it used to throw.
+  handleEdge(level: number | null, tick: number | null) {
+    if (level === null || tick === null) return;
+    if (!this.decoder) return;
+
+    const command = this.decoder.consumeEdge(level, tick);
+    if (command) this.fire(() => command);
   }
 
   async disable() {

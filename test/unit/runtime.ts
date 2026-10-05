@@ -31,6 +31,7 @@ import { validateConfig } from "../../src/util/validate.js";
 import NEC from "../../src/outputs/nec.js";
 import Switchbots from "../../src/outputs/switchbots.js";
 import Once from "../../src/triggers/once.js";
+import NECTrigger from "../../src/triggers/nec.js";
 import Console from "../../src/outputs/console.js";
 import ThermalPrinter from "../../src/outputs/thermal-printer.js";
 import InfluxDB from "../../src/outputs/influxdb.js";
@@ -989,6 +990,45 @@ describe("the runtime", function () {
       );
 
       expect(errors).to.deep.equal([]);
+    });
+
+    it("ignores a real edge that lands after disable(), instead of throwing on the nulled decoder", async function () {
+      // Regression test for the uncaughtException this trigger used to
+      // throw: disable() calls receiver.endNotify(), which is
+      // fire-and-forget -- pigpio-client only drops this pin's notifier
+      // from its internal set once pigpiod's stop-notifications response
+      // actually arrives -- and then immediately nulls this.decoder. A real
+      // edge landing on the still-registered notify() callback in that
+      // window used to reach `this.decoder!.consumeEdge(...)` with decoder
+      // already undefined, throwing synchronously inside pigpio-client's
+      // own socket 'data' handler with nothing upstream able to catch it.
+      //
+      // This drives handleEdge directly rather than through a real
+      // enable()/getPigpioConnection() round trip: src/triggers/nec.ts and
+      // src/util/pigpio-client.ts are already loaded for real earlier in
+      // this file (the "requires the receiver pin" test above forces
+      // Task.importStep to dynamically import nec.ts), so no mock.module()
+      // call made this late could still rewire either of them. Setting the
+      // fields enable() would have set and calling disable()/handleEdge()
+      // directly exercises the same decoder-nulled-then-dereferenced
+      // sequence without needing a live or faked pigpiod connection.
+      const { gpio } = createPigpioClientMock();
+
+      const task = new Task({ steps: [] }, "nec disable race");
+      const trigger = new NECTrigger(
+        { type: "trigger:nec", receiverPin: 23 },
+        task,
+      );
+
+      trigger.decoder = new NECFrameDecoder();
+      trigger.receiver = gpio;
+
+      await trigger.disable();
+      expect(trigger.decoder).to.equal(undefined);
+
+      // A real edge (non-null level/tick), not the (null, null) pigpio-client
+      // sends once endNotify() itself actually completes.
+      expect(() => trigger.handleEdge(0, 1_000_123)).to.not.throw();
     });
   });
 
