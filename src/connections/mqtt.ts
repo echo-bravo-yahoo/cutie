@@ -17,6 +17,7 @@ import { fromTraceparent, newTraceId } from "../util/trace.js";
 export const DEFAULT_CONFIG_TOPIC = "cutie/config/+";
 const DEFAULT_COLLECT_MS = 100;
 const DEFAULT_FETCH_TIMEOUT_MS = 10000;
+const DEFAULT_FIRST_CONNECT_WAIT_MS = 10000;
 
 // A config topic doubles as a subscribe filter and a publish target, so a "+"
 // segment stands in for the node name. One --topic value therefore works for
@@ -47,6 +48,11 @@ export default class MQTTConnection
   // One MQTT connection is shared by every trigger on it, so a topic may have
   // several subscribers. Only unsubscribe when the last one goes away.
   subscriberCounts: Map<string, number> = new Map();
+
+  // Topics asked for while the link was down. The next "connect" subscribes
+  // them, because subscribeAsync on an offline client waits for the broker and
+  // would hold up everything registering behind the trigger that asked.
+  pendingSubscriptions: Set<string> = new Set();
 
   constructor(config: MQTTConnectionConfig) {
     super(config);
@@ -243,18 +249,22 @@ export default class MQTTConnection
   }
 
   async disable(): Promise<void> {
-    // register() assigns the client only once it has connected, and a
-    // connection can be reached by two teardowns, so this has to tolerate
-    // being called with nothing to close
+    // A connection that was never registered has no client, and one can be
+    // reached by two teardowns, so this has to tolerate being called with
+    // nothing to close
     if (!this.connection) return;
 
-    await this.connection.endAsync();
+    // A graceful end on a client that never reached the broker would wait on
+    // packets that cannot be sent.
+    await this.connection.endAsync(!this.connection.connected);
     // @ts-expect-error connection is instantiated by register()
     this.connection = undefined;
     this.enabled = false;
   }
 
-  async register() {
+  // Resolves once connected, or after waitMs without a connection; the client
+  // keeps retrying in the background either way.
+  async register(waitMs: number = DEFAULT_FIRST_CONNECT_WAIT_MS) {
     // Everything left over is handed to the mqtt client, so an option this
     // schema does not document still reaches it.
     const mqttConfig: Partial<typeof this.config> = { ...this.config };
@@ -263,11 +273,58 @@ export default class MQTTConnection
     delete mqttConfig.endpoint;
     delete mqttConfig.disabled;
 
-    // subscribe() gates on this.enabled, so the client has to have finished
-    // connecting before enabled flips -- otherwise an early subscribe races it.
-    this.connection = await mqtt.connectAsync(this.config.endpoint, mqttConfig);
-    this.connection.on("message", this.handleMessage.bind(this));
+    // connect(), not connectAsync(): connectAsync rejects on the first error and
+    // ends the client, so a broker that was not reachable yet at boot left this
+    // connection dead for the life of the process. connect() keeps retrying
+    // every reconnectPeriod.
+    const client = mqtt.connect(this.config.endpoint, mqttConfig);
+    this.connection = client;
+    client.on("message", this.handleMessage.bind(this));
+
+    // Without a listener, an error event would be thrown as an uncaught
+    // exception. Retries repeat the same error, so only the first is logged.
+    let lastError = "";
+    let linkDown = false;
+    client.on("error", (error: Error) => {
+      lastError = error.message;
+      if (linkDown) return;
+      linkDown = true;
+      this.warn(`Could not reach the broker (${lastError}); retrying.`);
+    });
+    client.on("connect", () => {
+      if (linkDown) this.info("Connected to the broker.");
+      linkDown = false;
+      this.subscribePending();
+    });
+
+    if (!client.connected) {
+      await new Promise<void>((resolve) => {
+        const done = () => {
+          clearTimeout(timer);
+          client.off("connect", done);
+          resolve();
+        };
+        const timer = setTimeout(done, waitMs);
+        client.once("connect", done);
+      });
+    }
+
+    if (!client.connected)
+      this.warn(
+        `Not connected to the broker after ${waitMs}ms${lastError ? ` (${lastError})` : ""}. Carrying on; still retrying in the background.`,
+      );
+
     this.enabled = true;
+  }
+
+  subscribePending() {
+    if (!this.pendingSubscriptions.size) return;
+
+    const topics = [...this.pendingSubscriptions];
+    this.pendingSubscriptions.clear();
+    this.connection.subscribeAsync(topics).catch((error: unknown) => {
+      this.error(`Could not subscribe to ${topics.join(", ")}: ${error}.`);
+    });
   }
 
   handleMessage(topic: string, raw: Buffer, packet: mqtt.IPublishPacket) {
@@ -329,7 +386,14 @@ export default class MQTTConnection
       return count === 0;
     });
 
-    if (fresh.length) return this.connection.subscribeAsync(fresh);
+    if (!fresh.length) return;
+
+    if (!this.connection.connected) {
+      fresh.forEach((topic) => this.pendingSubscriptions.add(topic));
+      return;
+    }
+
+    return this.connection.subscribeAsync(fresh);
   }
 
   async unsubscribe(
@@ -342,7 +406,22 @@ export default class MQTTConnection
       return count <= 0;
     });
 
-    if (done.length) return this.connection.unsubscribeAsync(done);
+    // A topic still pending was never subscribed, so there is nothing to undo.
+    const subscribed = done.filter(
+      (topic) => !this.pendingSubscriptions.delete(topic),
+    );
+    if (!subscribed.length) return;
+
+    if (!this.connection.connected) {
+      this.connection.unsubscribeAsync(subscribed).catch((error: unknown) => {
+        this.error(
+          `Could not unsubscribe from ${subscribed.join(", ")}: ${error}.`,
+        );
+      });
+      return;
+    }
+
+    return this.connection.unsubscribeAsync(subscribed);
   }
 
   // publishAsync, not publish: the caller awaits this, and the callback form
@@ -352,12 +431,12 @@ export default class MQTTConnection
     message: Parameters<typeof this.connection.publishAsync>[1],
     options?: mqtt.IClientPublishOptions,
   ) {
-    // register() may have failed to connect and torn the client down, so
-    // this has to tolerate being called with no client rather than throwing
-    // on every message a task tries to send while disconnected.
+    // There is no client before register() or after disable(), so this has to
+    // tolerate being called with none rather than throwing on every message a
+    // task tries to send.
     if (!this.connection) {
       this.warn(
-        `Dropped a publish to "${topic}"; connection "${this.name}" never connected.`,
+        `Dropped a publish to "${topic}"; connection "${this.name}" has no client.`,
       );
       return;
     }

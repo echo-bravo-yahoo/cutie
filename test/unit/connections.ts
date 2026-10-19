@@ -59,6 +59,7 @@ function stubbedConnection(name: string) {
 
   connection.connection = {
     options: { clientId: `${name}_client` },
+    connected: true,
     subscribeAsync: async () => {},
     unsubscribeAsync: async () => {},
   } as never;
@@ -520,25 +521,9 @@ describe("connections", function () {
   });
 });
 
-// "mqtt" can only be mocked once per process, and this file's other tests
-// either stub the client directly or stub register(), so the one mock here is
-// the always-refusing one this suite needs.
+// An unreachable broker does not fail registration -- the client keeps
+// retrying -- so the failure here is an endpoint mqtt.js refuses to parse.
 describe("registerConnections", function () {
-  before(() => {
-    mock.module("mqtt", {
-      defaultExport: {
-        connectAsync: async () => {
-          throw Object.assign(
-            new Error("connect ECONNREFUSED 127.0.0.1:1883"),
-            {
-              code: "ECONNREFUSED",
-            },
-          );
-        },
-      },
-    });
-  });
-
   it("logs a connection failure instead of crashing, and still resolves", async function () {
     const emitted: Array<{
       message: string;
@@ -565,7 +550,7 @@ describe("registerConnections", function () {
         {
           type: "connection:mqtt",
           name: "broker",
-          endpoint: "mqtt://127.0.0.1:1883",
+          endpoint: "not a url",
         } as never,
       ]),
     ).to.not.be.rejected;

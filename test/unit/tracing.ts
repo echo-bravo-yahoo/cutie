@@ -48,6 +48,7 @@ function stubbedConnection() {
 
   connection.connection = {
     options: { clientId: "stub_client" },
+    connected: true,
     subscribeAsync: async () => {},
     unsubscribeAsync: async () => {},
   } as any;

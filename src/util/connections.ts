@@ -46,10 +46,10 @@ export async function registerConnections(
     }
 
     promises.push(
-      // A single unreachable broker must not stop other connections or any
-      // task from registering. mqtt.js has already torn the client down by
-      // the time this rejects, so the connection stays inert until cutie
-      // restarts (systemd's Restart=always covers that in production).
+      // A single connection that fails to register must not stop other
+      // connections or any task from registering. It stays inert until cutie
+      // restarts. An MQTT broker that is merely unreachable does not land
+      // here: register() leaves the client retrying instead of rejecting.
       newConnection
         .register()
         .then(() => newConnection.enable())

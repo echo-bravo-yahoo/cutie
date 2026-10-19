@@ -33,10 +33,19 @@ export function createMqttMock(retained: Record<string, string> = {}) {
     options: { clientId: string; protocolVersion?: number };
     subscriptions = new Set<string>();
     ended = false;
+    connected: boolean;
 
-    constructor(index: number, options: any = {}) {
+    // connect() returns before the link is up and announces it afterwards,
+    // where connectAsync() resolves only once it is.
+    constructor(index: number, options: any = {}, connected = true) {
       super();
       this.options = { clientId: `mock_client_${index}`, ...options };
+      this.connected = connected;
+      if (!connected)
+        setImmediate(() => {
+          this.connected = true;
+          this.emit("connect", {});
+        });
     }
 
     deliver(topic: string, payload: string, properties?: any) {
@@ -106,7 +115,7 @@ export function createMqttMock(retained: Record<string, string> = {}) {
     mqtt: {
       connectAsync,
       connect: (_endpoint?: string, options?: any) => {
-        const client = new FakeMqttClient(clients.length, options);
+        const client = new FakeMqttClient(clients.length, options, false);
         clients.push(client);
         return client;
       },

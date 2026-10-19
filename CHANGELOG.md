@@ -62,6 +62,7 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 
 ### Fixed
 
+- A node whose MQTT broker is unreachable when it starts keeps trying, instead of staying disconnected until it is restarted. `connection:mqtt` used `connectAsync`, which gives up on the first error and ends the client, so a node that booted before its network was up dropped every publish and subscribed to nothing for as long as it ran. Registration now waits up to 10 seconds for the broker, carries on without it if it does not answer, and subscribes the topics its triggers asked for as soon as the connection comes up. `reconnectPeriod` sets how often it retries. A publish on a connection with no client is logged as having no client, where it used to say the connection never connected.
 - Publishing a new retained config to a running device does something. It used to be inert until someone SSHed in and restarted the process, which is what the two `TODO`s in `connection:mqtt` had stood for since the provider was written. Editing a local `cutie.conf.yaml` on a running node was inert for the same reason.
 
 - Module logging reaches the console. A node running the shipped config used to print only what `output:console` wrote.
