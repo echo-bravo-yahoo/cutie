@@ -1,0 +1,10 @@
+{
+  "feature": {
+    "parallel": ["npm run lint", "npm run typecheck"],
+    "ordered": ["npm test"]
+  },
+  "docs": {
+    "parallel": ["npm run lint"],
+    "ordered": []
+  }
+}
