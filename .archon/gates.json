@@ -3,6 +3,10 @@
     "parallel": ["npm run lint", "npm run typecheck"],
     "ordered": ["npm test"]
   },
+  "tests": {
+    "parallel": [],
+    "ordered": ["npm test"]
+  },
   "docs": {
     "parallel": ["npm run lint"],
     "ordered": []
