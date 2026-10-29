@@ -42,9 +42,17 @@ const CSCRIPT = resolve(__dirname, "./configure-host.sh");
 // them 32-bit would inherit that dead end for no reason.
 const BOARDS = {
   "pi-zero-w": {
+    // Pinned to Bookworm, not Trixie: Trixie's brcmfmac fails to associate
+    // with this board's BCM43430/1 chip at all, authenticating to a null
+    // BSSID (status 16, timeout waiting for next frame in sequence) even
+    // against a plain non-mesh AP with a verified-correct PSK. The
+    // regulatory domain also never leaves phy#0's self-managed "99"
+    // default despite iw reg set and raspi-config both reporting success.
+    // Bookworm's older kernel/brcmfmac pairing runs this same chip
+    // against this same network without issue.
     imageArch: "armhf",
-    imageDate: "2026-06-19",
-    imageFile: "2026-06-18-raspios-trixie-armhf-lite.img.xz",
+    imageDate: "2024-11-19",
+    imageFile: "2024-11-19-raspios-bookworm-armhf-lite.img.xz",
   },
   "pi-zero-2-w": {
     imageArch: "arm64",
