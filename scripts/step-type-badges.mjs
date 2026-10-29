@@ -31,6 +31,7 @@ const NEW_IN_V4 = new Set([
   "output:unicorn-hat-mini",
   "trigger:gpio-button",
   "trigger:nec",
+  "transform:render-text",
   "control:return",
   "control:branch",
   "control:stop",

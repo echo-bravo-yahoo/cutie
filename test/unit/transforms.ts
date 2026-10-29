@@ -1,17 +1,32 @@
 import { before, describe, it } from "node:test";
 import { EventEmitter } from "node:events";
+import { execFile } from "node:child_process";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
 
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
+import { Jimp } from "jimp";
+
 import { Globals, setGlobals } from "../../src/index.js";
+import ST7735 from "../../src/outputs/st7735.js";
 import { UNITS } from "../../src/transforms/convert.js";
+import {
+  frameCache,
+  loadWhiteFont,
+  renderText,
+} from "../../src/transforms/render-text.js";
 import Task from "../../src/util/Task.js";
 import { validateConfig } from "../../src/util/validate.js";
 import { necToBits } from "../../src/util/bitbang/adapters/nec.js";
 import { necReceiverEdges } from "../helpers.js";
+
+const execFileAsync = promisify(execFile);
 
 const fakeLogger = {
   emit: () => {},
@@ -447,11 +462,11 @@ describe("transform options", function () {
       necToBits({ address: 0x55, command: 0x52, extendedAddress: 0x83 }),
     );
     const mutePulses = [
-      9000, 4500, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563,
-      563, 563, 1688, 563, 563, 563, 1688, 563, 1688, 563, 563, 563, 563, 563,
-      563, 563, 563, 563, 563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563,
-      563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563,
-      1688, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563,
+      9000, 4500, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563, 563,
+      563, 1688, 563, 563, 563, 1688, 563, 1688, 563, 563, 563, 563, 563, 563,
+      563, 563, 563, 563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 563,
+      563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688,
+      563, 1688, 563, 563, 563, 1688, 563, 563, 563, 1688, 563,
     ];
 
     it("converts the real mute command's own edges into its exact pulse array", async function () {
@@ -480,6 +495,219 @@ describe("transform options", function () {
           "not an array",
         ),
       ).to.be.rejectedWith(/expects an array/);
+    });
+  });
+
+  describe("transform:render-text", function () {
+    const RENDER = {
+      type: "transform:render-text",
+      width: 160,
+      height: 80,
+    };
+
+    // The smallest rectangle holding every pixel that is not black.
+    function inkBox(frame: string, width: number, height: number) {
+      const bytes = Buffer.from(frame, "base64");
+      const box = { left: width, right: -1, top: height, bottom: -1 };
+
+      for (let y = 0; y < height; y += 1)
+        for (let x = 0; x < width; x += 1) {
+          const at = (y * width + x) * 3;
+          if (!bytes[at] && !bytes[at + 1] && !bytes[at + 2]) continue;
+          box.left = Math.min(box.left, x);
+          box.right = Math.max(box.right, x);
+          box.top = Math.min(box.top, y);
+          box.bottom = Math.max(box.bottom, y);
+        }
+
+      return box;
+    }
+
+    it("returns a base64 string holding width x height x 3 bytes", async function () {
+      const frame = await renderText("67F", 64, 160, 80);
+
+      expect(frame).to.be.a("string").with.lengthOf(51200);
+      expect(Buffer.from(frame, "base64")).to.have.lengthOf(38400);
+    });
+
+    it("interpolates its text from the message", async function () {
+      expect(
+        await through(
+          { ...RENDER, text: "${message.temp}F" },
+          { temp: 67 },
+          "interpolated",
+        ),
+      ).to.equal(await renderText("67F", 64, 160, 80));
+    });
+
+    it("draws a whole-degree reading in the large font where the node shows it", async function () {
+      expect(
+        inkBox(await renderText("67F", 64, 160, 80), 160, 80),
+      ).to.deep.equal({ left: 27, right: 132, top: 15, bottom: 61 });
+    });
+
+    it("draws a two-decimal reading in the small font where the node shows it", async function () {
+      expect(
+        inkBox(await renderText("72.64F", 32, 160, 80), 160, 80),
+      ).to.deep.equal({ left: 32, right: 129, top: 28, bottom: 51 });
+    });
+
+    for (const [text, fontSize] of [
+      ["67F", 64],
+      ["72.64F", 32],
+    ] as const)
+      it(
+        `draws the same pixels as examples/render-text-image.mjs for "${text}" at size ${fontSize}`,
+        { timeout: 20000 },
+        async function () {
+          const directory = await mkdtemp(join(tmpdir(), "render-text-"));
+          const png = join(directory, "frame.png");
+
+          try {
+            await execFileAsync(process.execPath, [
+              "examples/render-text-image.mjs",
+              text,
+              png,
+              "--font-size",
+              String(fontSize),
+            ]);
+            const image = await Jimp.read(png);
+            const rgb = Buffer.alloc(160 * 80 * 3);
+            for (let pixel = 0; pixel < 160 * 80; pixel += 1)
+              image.bitmap.data.copy(rgb, pixel * 3, pixel * 4, pixel * 4 + 3);
+
+            expect(rgb.toString("base64")).to.equal(
+              await renderText(text, fontSize, 160, 80),
+            );
+          } finally {
+            await rm(directory, { recursive: true, force: true });
+          }
+        },
+      );
+
+    describe("caching", function () {
+      it("returns the identical string for the same inputs", async function () {
+        expect(await renderText("55F", 64, 160, 80)).to.equal(
+          await renderText("55F", 64, 160, 80),
+        );
+      });
+
+      it("holds at most 32 frames", async function () {
+        for (let degrees = 0; degrees < 40; degrees += 1)
+          await renderText(`${degrees}F`, 32, 160, 80);
+
+        expect(frameCache.size).to.be.at.most(32);
+      });
+
+      it("shares one font load between callers of a size", function () {
+        expect(loadWhiteFont(32)).to.equal(loadWhiteFont(32));
+      });
+    });
+
+    describe("a text it cannot draw", function () {
+      it("throws when the text is wider than the canvas, naming both widths", async function () {
+        await expect(renderText("72.6F", 64, 160, 80)).to.be.rejectedWith(
+          /"72.6F" is 165 px wide at size 64, wider than the 160 px canvas/,
+        );
+      });
+
+      it("throws when the text is taller than the canvas", async function () {
+        await expect(renderText("67F", 64, 160, 60)).to.be.rejectedWith(
+          /taller than the 60 px canvas/,
+        );
+      });
+
+      it("throws for a character the font lacks", async function () {
+        await expect(renderText("字", 64, 160, 80)).to.be.rejectedWith(
+          /no such character/,
+        );
+      });
+
+      it("throws for a newline", async function () {
+        await expect(renderText("6\n7", 32, 160, 80)).to.be.rejectedWith(
+          /no such character/,
+        );
+      });
+
+      it("throws for a reading that interpolated to nothing", async function () {
+        await expect(
+          through({ ...RENDER, text: "${message.temp}F" }, {}, "no reading"),
+        ).to.be.rejectedWith(/"undefinedF" is \d+ px wide at size 64/);
+      });
+    });
+
+    describe("its options", function () {
+      it("requires text, width and height", async function () {
+        for (const option of ["text", "width", "height"]) {
+          const step: Record<string, unknown> = { ...RENDER, text: "67F" };
+          delete step[option];
+
+          expect(await errorsFor(step)).to.deep.include({
+            severity: "error",
+            path: `tasks.t.steps[0].${option}`,
+            message: `missing required option; expected ${option === "text" ? "string" : "number"}`,
+          });
+        }
+      });
+
+      it("rejects a fontSize outside 8 to 128", async function () {
+        expect(
+          await errorsFor({ ...RENDER, text: "67F", fontSize: 200 }),
+        ).to.deep.include({
+          severity: "error",
+          path: "tasks.t.steps[0].fontSize",
+          message: "200 is out of range; expected 8 to 128",
+        });
+      });
+
+      for (const fontSize of [48, 100])
+        it(`refuses size ${fontSize}, which is in range but has no font, at registration`, async function () {
+          await expect(
+            through({ ...RENDER, text: "67F", fontSize }, {}, "odd size"),
+          ).to.be.rejectedWith(/has no white font at size/);
+        });
+
+      it("refuses path, since it transforms the whole message", async function () {
+        await expect(
+          through({ ...RENDER, text: "67F", path: "temp" }, {}, "with a path"),
+        ).to.be.rejectedWith(/does not accept "path"/);
+      });
+    });
+
+    it("feeds output:st7735 a bitmap it draws unchanged", async function () {
+      const task = taskWith(
+        [
+          { ...RENDER, text: "${message.temp}F" },
+          {
+            type: "output:st7735",
+            source: "bitmap",
+            width: 160,
+            height: 80,
+            virtual: true,
+            spiDevice: "/dev/spidev0.1",
+            dcPin: 9,
+            backlightPin: 12,
+          },
+        ],
+        "render into a panel",
+      );
+      await task.register();
+
+      const frame = (await task.startMessage({ temp: 67 } as never)) as string;
+      const drawn = await (task.steps[1] as ST7735).rasterFrom(frame as never);
+      const expected = Buffer.from(
+        await renderText("67F", 64, 160, 80),
+        "base64",
+      );
+
+      expect(drawn.width).to.equal(160);
+      expect(drawn.height).to.equal(80);
+      for (let pixel = 0; pixel < 160 * 80; pixel += 1)
+        expect(
+          Array.from(drawn.data.subarray(pixel * 4, pixel * 4 + 3)),
+        ).to.deep.equal(
+          Array.from(expected.subarray(pixel * 3, pixel * 3 + 3)),
+        );
     });
   });
 

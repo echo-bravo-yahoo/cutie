@@ -41,6 +41,7 @@ Every module now declares its options in a schema, and `cutie` checks a config a
 
 - `cutie validate` checks a config and reports every problem, then exits non-zero if any of them is an error. `cutie start` runs the same pass and refuses to start rather than failing somewhere downstream.
 - `--log-level` sets the lowest level that reaches the console.
+- `transform:render-text` draws text on a display inside the running process, in milliseconds, without the shell step and PNG file that `transform:shell` plus `source: "image"` needs. It caches fonts and drawn frames, supports the five white font sizes (8, 16, 32, 64 and 128), and throws an error instead of wrapping text or drawing `?`. A `rescue` task can turn that error into an `ERROR` frame.
 - Per-command `--help`, and an unrecognized option is now an error that suggests the closest real one.
 - `transform:convert` handles pressure and length as well as temperature, and rejects an unknown unit or a cross-dimension pair when the task registers.
 - `transform:accumulate` takes a `maxAge`, so a slow topic's partial batch is passed on rather than held indefinitely, and a pending batch is flushed on shutdown instead of dropped.

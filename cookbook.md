@@ -291,6 +291,69 @@ This recipe transmits a previously-learned code (see above) whenever a message a
 }
 ```
 
+### Displays
+
+#### Show a reading on an ST7735 panel, and an ERROR frame when it will not fit
+
+This recipe redraws a 160×80 panel each time a temperature reading arrives on `data/weather/room`. `transform:round` drops the decimals, `transform:render-text` draws `67F` in white on a black canvas inside the cutie process, and `output:st7735` draws the result with `source: "bitmap"`. The font loads once when the task starts, and a repeated reading is served from a cache of drawn frames, so a redraw takes milliseconds.
+
+`render-text` throws instead of wrapping or shortening a text that is wider than the canvas, because the alternative is a display that shows the wrong number. This config names `display-error` as the step's `rescue`. That task has no trigger and runs only when `render-text` fails. It draws `ERROR` and hands the frame back with `control:return`, and the panel step after the failed one draws it. Size 64 is too wide for `ERROR` on a 160 px canvas, so the rescue uses size 32.
+
+`width` and `height` on `render-text` must equal the panel step's. A bitmap with the dimensions swapped has the same number of bytes, so the panel would accept it and draw it scrambled.
+
+```json
+{
+  "connections": [
+    {
+      "type": "connection:mqtt",
+      "name": "broker",
+      "endpoint": "mqtt://127.0.0.1:1883"
+    }
+  ],
+  "tasks": {
+    "display-weather": {
+      "trigger": {
+        "type": "trigger:mqtt",
+        "connectionName": "broker",
+        "topics": ["data/weather/room"]
+      },
+      "steps": [
+        { "type": "transform:round", "paths": { "temp": { "precision": 0 } } },
+        {
+          "type": "transform:render-text",
+          "text": "${message.temp}F",
+          "width": 160,
+          "height": 80,
+          "rescue": "display-error"
+        },
+        {
+          "type": "output:st7735",
+          "source": "bitmap",
+          "width": 160,
+          "height": 80,
+          "rotation": 270,
+          "spiDevice": "/dev/spidev0.1",
+          "dcPin": 9,
+          "backlightPin": 12
+        }
+      ]
+    },
+    "display-error": {
+      "steps": [
+        {
+          "type": "transform:render-text",
+          "text": "ERROR",
+          "fontSize": 32,
+          "width": 160,
+          "height": 80
+        },
+        { "type": "control:return" }
+      ]
+    }
+  }
+}
+```
+
 ### Flow control
 
 #### Branch on a reading, and drop the ones you cannot use

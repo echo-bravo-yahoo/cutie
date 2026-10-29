@@ -521,7 +521,8 @@ export default class ST7735 extends Output {
 
 The panel draws pixels and nothing else. Anything that produces an image or a
 bitmap can feed it - transform:shell and transform:javascript both can - so a
-reading is rendered by whatever step precedes this one.
+reading is rendered by whatever step precedes this one. To put text on the
+panel, use transform:render-text with source: "bitmap".
 
 width/height are the panel as it should appear once rotated - what the source
 image is fit against - not the controller's fixed internal memory shape. The

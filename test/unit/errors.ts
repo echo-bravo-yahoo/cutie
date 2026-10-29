@@ -7,6 +7,8 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 import { globals, setGlobals } from "../../src/index.js";
+import ST7735 from "../../src/outputs/st7735.js";
+import { renderText } from "../../src/transforms/render-text.js";
 import Task from "../../src/util/Task.js";
 import { registerTasks } from "../../src/util/tasks.js";
 import Trigger from "../../src/util/Trigger.js";
@@ -430,6 +432,64 @@ describe("failures", function () {
       expect(
         errorLines().some(({ log }) => log.includes("Cannot rescue")),
       ).to.equal(true);
+    });
+
+    it("turns a text that does not fit the display into an ERROR frame", async function () {
+      await registered(
+        {
+          steps: [
+            {
+              type: "transform:render-text",
+              text: "ERROR",
+              fontSize: 32,
+              width: 160,
+              height: 80,
+            },
+            { type: "control:return" },
+          ],
+        },
+        "display-error",
+      );
+      const task = await registered(
+        {
+          steps: [
+            {
+              type: "transform:render-text",
+              text: "${message.temp}F${message.temp}F",
+              width: 160,
+              height: 80,
+              rescue: "display-error",
+            },
+            {
+              type: "output:st7735",
+              source: "bitmap",
+              width: 160,
+              height: 80,
+              virtual: true,
+              spiDevice: "/dev/spidev0.1",
+              dcPin: 9,
+              backlightPin: 12,
+            },
+          ],
+        },
+        "display-weather",
+      );
+
+      const frame = await task.startMessage({ temp: 67 }, "a-trace");
+      const panel = task.steps[1] as ST7735;
+      const drawn = await panel.rasterFrom(frame as never);
+      const expected = await panel.rasterFrom(
+        (await renderText("ERROR", 32, 160, 80)) as never,
+      );
+
+      expect(Buffer.from(drawn.data)).to.deep.equal(Buffer.from(expected.data));
+      expect(
+        errorLines().filter(
+          ({ topic, log }) =>
+            topic === "core.runtime.tasks.display-weather.steps.0" &&
+            log.includes("Failed to handle message"),
+        ),
+      ).to.have.lengthOf(1);
     });
   });
 

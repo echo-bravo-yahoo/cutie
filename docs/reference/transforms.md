@@ -156,6 +156,23 @@ Replaces the message with its JSON text, indented for reading. transform:uglify 
 | `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
 | `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
 
+## `transform:render-text`
+
+<img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
+
+Replaces the message with a bitmap of white text centered on a black canvas, as a base64 string that output:st7735 draws with source: bitmap. Throws when the text does not fit, rather than wrapping it.
+
+| Option | Type | Required | Default | Unit | Description |
+| --- | --- | --- | --- | --- | --- |
+| `text` | string | **yes** |  |  | The text to draw. Supports ${...} interpolation, so ${message.temp} puts a reading in it. |
+| `fontSize` | number | no | `64` | `px` | Height of the font in pixels. Only 8, 16, 32, 64 and 128 exist. Must be between 8 and 128, a whole number. |
+| `width` | number | **yes** |  | `px` | Canvas width in pixels. Must equal the width of the output:st7735 step that draws it. Must be at least 1, a whole number. |
+| `height` | number | **yes** |  | `px` | Canvas height in pixels. Must equal the height of the output:st7735 step that draws it. Must be at least 1, a whole number. |
+| `type` | string | **yes** |  |  | Which module this step is, as "kind:subKind". |
+| `name` | string | no |  |  | A label for this step, used in error messages. |
+| `disabled` | boolean | no | `false` |  | Leave this step out of the task. |
+| `rescue` | string | no |  |  | Which task to run when this step fails, defaulting to the one its own task names. The rescue is handed the failed message and an ${error...} namespace; what it returns through control:return takes the message's place, and if it returns nothing the message ends there. |
+
 ## `transform:round`
 
 Rounds a number to a given number of decimal places.

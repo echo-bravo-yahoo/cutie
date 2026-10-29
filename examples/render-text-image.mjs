@@ -5,9 +5,9 @@
 //
 //   node examples/render-text-image.mjs "68F" /var/lib/cutie/enviro-temp.png --width 160 --height 80
 //
-// Not a cutie module: cutie's own display outputs only know how to draw a
-// pre-made image, so text is baked into one here, outside the pipeline, and
-// consumed through the ordinary `source: "image"` path via transform:shell.
+// Superseded by `transform:render-text` for text on a display; kept for black
+// ink, other backgrounds and one-off PNGs. Starting it takes over 10 s on a slow
+// single-core device.
 //
 // Options:
 //   --width <n>       canvas width in pixels (default 160)

@@ -41,6 +41,7 @@ Every option every module accepts, generated from the schemas the runtime valida
 - [`transform:munge`](./transforms.md#transformmunge)
 - [`transform:offset`](./transforms.md#transformoffset)
 - [`transform:prettify`](./transforms.md#transformprettify)
+- [`transform:render-text`](./transforms.md#transformrender-text) <img alt="new in v4" src="https://img.shields.io/badge/new%20in%20v4-blue" align="top">
 - [`transform:round`](./transforms.md#transformround)
 - [`transform:shell`](./transforms.md#transformshell) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
 - [`transform:uglify`](./transforms.md#transformuglify) <img alt="breaking in v4" src="https://img.shields.io/badge/breaking%20in%20v4-critical" align="top">
