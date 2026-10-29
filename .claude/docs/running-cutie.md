@@ -57,7 +57,7 @@ A connection is declared once and referenced by `connectionName` from any trigge
 
 ## Step-type inventory
 
-Type string is `<kind>:<subKind>`, and loads `src/<kind>s/<subKind>.ts` (see design-principles.md). Verified against the working tree on 2026-08-18; a given fleet device may run an older or feature-branch ref — see `~/.claude/docs/cutie-fleet.md`. Every option every module accepts is in the generated reference, `docs/reference/README.md`.
+Type string is `<kind>:<subKind>`, and loads `src/<kind>s/<subKind>.ts` (see design-principles.md). Verified against the working tree on 2026-08-18; a given fleet device may run an older or feature-branch ref — see `~/.claude/docs/iot.md`. Every option every module accepts is in the generated reference, `docs/reference/README.md`.
 
 **Triggers** (`src/triggers/`) — start a task:
 
@@ -159,7 +159,7 @@ cutie download --config ./cutie.conf.yaml --connectionName my-broker --node kitc
 
 `--topic` defaults to `cutie/config/+`; the `+` segment stands in for the node name on both subscribe (download) and publish (upload). This substitution is a fleet-CLI-only convenience — a device's own `configProvider.topic` (the topic it fetches at boot) must be a literal string, not a `+` template.
 
-For administering the actual live fleet (which devices exist, their topics, reading current config off the broker), see the global `~/.claude/docs/cutie-admin.md` and `~/.claude/docs/cutie-fleet.md`.
+For administering the actual live fleet (which devices exist, their topics, reading current config off the broker), see the cutie sections of the global `~/.claude/docs/iot.md`.
 
 ## Web UI
 
@@ -210,7 +210,7 @@ provisioner/pi.sh <host> rollback  # swap the retained previous build back in
 
 `deploy` never copies `node_modules`: native modules are compiled per architecture and per Node ABI, so a copy from a development machine lands unloadable binaries on the Pi. It also syncs `built/` and nothing else, so a build that imports a newly added runtime dependency starts and then dies at the import — sync `package.json` and `package-lock.json` to the device and run `npm install --omit=dev` there first.
 
-`~/.aeby/scripts/cutie-deploy.sh [--ref <git-ref>] [host ...]` is the fleet-wide alternative: it deploys a git ref over SSH, verifies the service comes back healthy, and is documented in `~/.claude/docs/cutie-admin.md`. Either route is a **code** deploy — distinct from the MQTT retained-config mechanism above, which changes a device's runtime _config_ without touching its code.
+`~/.aeby/scripts/cutie-deploy.sh [--ref <git-ref>] [host ...]` is the fleet-wide alternative: it deploys a git ref over SSH, verifies the service comes back healthy, and is documented in `~/.claude/docs/iot.md`. Either route is a **code** deploy — distinct from the MQTT retained-config mechanism above, which changes a device's runtime _config_ without touching its code.
 
 ## Testing
 
