@@ -204,11 +204,12 @@ The staged config is written under the provisioner's cache directory rather than
 
 ```bash
 provisioner/pi.sh <host> deploy    # build locally, rsync built/, restart
+provisioner/pi.sh <host> deps      # sync manifests + npm install a new dependency, no rebuild
 provisioner/pi.sh <host> logs      # follow the journal, --namespace=cutie
 provisioner/pi.sh <host> rollback  # swap the retained previous build back in
 ```
 
-`deploy` never copies `node_modules`: native modules are compiled per architecture and per Node ABI, so a copy from a development machine lands unloadable binaries on the Pi. It also syncs `built/` and nothing else, so a build that imports a newly added runtime dependency starts and then dies at the import — sync `package.json` and `package-lock.json` to the device and run `npm install --omit=dev` there first.
+`deploy` never copies `node_modules`: native modules are compiled per architecture and per Node ABI, so a copy from a development machine lands unloadable binaries on the Pi. It also syncs `built/` and nothing else, so a build that imports a newly added runtime dependency starts and then dies at the import — run `provisioner/pi.sh <host> deps` first.
 
 `~/.aeby/scripts/cutie-deploy.sh [--ref <git-ref>] [host ...]` is the fleet-wide alternative: it deploys a git ref over SSH, verifies the service comes back healthy, and is documented in `~/.claude/docs/iot.md`. Either route is a **code** deploy — distinct from the MQTT retained-config mechanism above, which changes a device's runtime _config_ without touching its code.
 

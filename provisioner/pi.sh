@@ -12,6 +12,8 @@
 #   probe      report kernel, Node, buses, service state, I2C addresses
 #   deploy     build locally, rsync built/ to the Pi, retain the previous build,
 #              restart the service
+#   deps       rsync package.json/package-lock.json to the Pi and npm install
+#              the new dependency set there (no full node_modules wipe/rebuild)
 #   install    clean on-device npm install (production dependencies only)
 #   rollback   restore the retained previous build and restart
 #   restart    restart the service
@@ -121,6 +123,19 @@ verb_deploy() {
   verb_restart
 }
 
+verb_deps() {
+  # Adding one runtime dependency doesn't need install's full node_modules
+  # wipe + 15-30 min native recompile -- rsync the manifests and let npm
+  # resolve the delta. No restart: this only stages node_modules for a
+  # subsequent `deploy`, which restarts anyway once new code actually
+  # requires the new package.
+  echo "== syncing package manifests to ${HOST}"
+  rsync -az "${REPO}/package.json" "${REPO}/package-lock.json" "${HOST}:${REMOTE_DIR}/"
+
+  echo "== npm install --omit=dev on ${HOST}"
+  on_pi "cd '${REMOTE_DIR}' && npm install --omit=dev"
+}
+
 verb_install() {
   # --omit=dev is not an optimisation, it is required on ARMv6. esbuild's
   # linux-arm prebuild is compiled for ARMv7 and dies with SIGILL in its own
@@ -195,6 +210,7 @@ verb_converge() {
 case "$VERB" in
 probe) verb_probe ;;
 deploy) verb_deploy ;;
+deps) verb_deps ;;
 install) verb_install ;;
 rollback) verb_rollback ;;
 restart) verb_restart ;;
