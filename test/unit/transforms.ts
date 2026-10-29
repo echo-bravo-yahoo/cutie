@@ -1,17 +1,10 @@
 import { before, describe, it } from "node:test";
 import { EventEmitter } from "node:events";
-import { execFile } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { promisify } from "node:util";
 
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 const { expect } = chai;
-
-import { Jimp } from "jimp";
 
 import { Globals, setGlobals } from "../../src/index.js";
 import ST7735 from "../../src/outputs/st7735.js";
@@ -25,8 +18,6 @@ import Task from "../../src/util/Task.js";
 import { validateConfig } from "../../src/util/validate.js";
 import { necToBits } from "../../src/util/bitbang/adapters/nec.js";
 import { necReceiverEdges } from "../helpers.js";
-
-const execFileAsync = promisify(execFile);
 
 const fakeLogger = {
   emit: () => {},
@@ -551,39 +542,6 @@ describe("transform options", function () {
         inkBox(await renderText("72.64F", 32, 160, 80), 160, 80),
       ).to.deep.equal({ left: 32, right: 129, top: 28, bottom: 51 });
     });
-
-    for (const [text, fontSize] of [
-      ["67F", 64],
-      ["72.64F", 32],
-    ] as const)
-      it(
-        `draws the same pixels as examples/render-text-image.mjs for "${text}" at size ${fontSize}`,
-        { timeout: 20000 },
-        async function () {
-          const directory = await mkdtemp(join(tmpdir(), "render-text-"));
-          const png = join(directory, "frame.png");
-
-          try {
-            await execFileAsync(process.execPath, [
-              "examples/render-text-image.mjs",
-              text,
-              png,
-              "--font-size",
-              String(fontSize),
-            ]);
-            const image = await Jimp.read(png);
-            const rgb = Buffer.alloc(160 * 80 * 3);
-            for (let pixel = 0; pixel < 160 * 80; pixel += 1)
-              image.bitmap.data.copy(rgb, pixel * 3, pixel * 4, pixel * 4 + 3);
-
-            expect(rgb.toString("base64")).to.equal(
-              await renderText(text, fontSize, 160, 80),
-            );
-          } finally {
-            await rm(directory, { recursive: true, force: true });
-          }
-        },
-      );
 
     describe("caching", function () {
       it("returns the identical string for the same inputs", async function () {

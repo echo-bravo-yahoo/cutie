@@ -102,8 +102,6 @@ export async function renderText(
 
   const image = new Jimp({ width, height, color: 0x000000ff });
 
-  // The same options as examples/render-text-image.mjs, so the pixels match
-  // what the shell route draws.
   image.print({
     font,
     x: 0,
