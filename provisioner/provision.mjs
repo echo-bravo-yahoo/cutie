@@ -94,6 +94,79 @@ function sh(command) {
   });
 }
 
+// Same as sh(), but also captures stderr (while still streaming it live) so
+// the caller can pattern-match the failure.
+function shCapturingStderr(command) {
+  return new Promise((resolveP, reject) => {
+    const child = spawn(command, [], {
+      cwd: process.cwd(),
+      shell: true,
+      stdio: ["inherit", "inherit", "pipe"],
+    });
+    let stderr = "";
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+      process.stderr.write(chunk);
+    });
+    child.on("close", (code) =>
+      code === 0
+        ? resolveP(code)
+        : reject(
+            Object.assign(
+              new Error(`command failed with exit code ${code}: ${command}`),
+              { stderr },
+            ),
+          ),
+    );
+    child.on("error", reject);
+  });
+}
+
+// sdm's --expand-root remounts the just-resized partition to grow its
+// filesystem. Under WSL2's usbipd passthrough, the kernel can take a beat to
+// recreate /dev/sdiN after sdm's own resize, so that remount sometimes hits
+// "special device ... does not exist" even though the write and the
+// partition-table resize both already succeeded (confirmed by hand: lsblk
+// shows the full resized size and the correct filesystem UUID even on a
+// failed attempt). This isn't sdm's bug or the image's - it's a passthrough
+// timing race, and the race is internal to sdm's own script (its resize and
+// its remount are one opaque command we can't step into), so the only lever
+// available is to make the *retry* land on a confirmed-settled device rather
+// than guessing.
+const PARTITION_RACE_SIGNATURE = /special device .* does not exist/i;
+
+// udevadm settle blocks until the kernel's queue of pending device-node
+// events is empty - a real synchronization point, not a fixed delay - so
+// this is a deterministic check, not a hopeful retry. It still fails loudly
+// if the partition node isn't there once the queue is confirmed drained,
+// rather than silently retrying into the same race a second time.
+async function settlePartitionTable(device) {
+  await sh(`sudo partprobe ${device}`);
+  await sh(`sudo udevadm settle --timeout=10`);
+  if (!exists(`${device}2`)) {
+    fail(
+      `${device}2 still doesn't exist after partprobe + udevadm settle drained. ` +
+        `The card may have been physically disconnected - check \`lsblk ${device}\` by hand.`,
+    );
+  }
+}
+
+async function shWithPartitionRaceRetry(command, device, maxAttempts = 3) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await shCapturingStderr(command);
+    } catch (e) {
+      const isKnownRace = PARTITION_RACE_SIGNATURE.test(e.stderr ?? "");
+      if (!isKnownRace || attempt === maxAttempts) throw e;
+      console.log(
+        `\nsdm hit the WSL2/usbipd partition-rescan race (attempt ${attempt}/${maxAttempts}). ` +
+          `Confirming ${device} is settled before retrying the burn from scratch.\n`,
+      );
+      await settlePartitionTable(device);
+    }
+  }
+}
+
 function loadConfig() {
   const path = resolve(__dirname, "./config.json");
   if (!exists(path)) {
@@ -495,13 +568,14 @@ async function main() {
 
   await confirmBurn(argv.burn, customImage);
   console.log(`Running sdm burn to ${argv.burn}.`);
-  await sh(
+  await shWithPartitionRaceRetry(
     [
       `sudo sdm --burn ${argv.burn}`,
       `--hostname ${config.hostname}`,
       "--expand-root",
       `'${customImage}'`,
     ].join(" "),
+    argv.burn,
   );
   console.log(`\nBurned ${config.hostname} to ${argv.burn}.`);
 }
