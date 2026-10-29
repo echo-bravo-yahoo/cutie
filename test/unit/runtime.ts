@@ -494,7 +494,7 @@ describe("the runtime", function () {
     it("gives each listener its own copy of the message, not a shared reference", async function () {
       const KEY = "fanout-independence-test";
 
-      // Mirrors the shape that broke live on vaxholm: one listener renames a
+      // Mirrors the shape that broke live on a real device: one listener renames a
       // key (mutating the message in place, since transform:munge's rename
       // unsets the source and Transform.determineInitialMessageOut aliases
       // "out" to "in" for a paths-based step), and a sibling listener on the
@@ -992,7 +992,7 @@ describe("the runtime", function () {
 
   describe("bitbang raw transmission", function () {
     // The real, hardware-verified projector "mute" command this session
-    // captured and confirmed live against riddarholmen's projector:
+    // captured and confirmed live against a real projector:
     // address 0x55, command 0x52, extendedAddress 0x83. Used here instead of
     // a placeholder so the new generic raw path is validated against
     // something a real receiver actually accepts, not a synthetic fixture.

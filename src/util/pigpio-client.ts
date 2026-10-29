@@ -78,8 +78,8 @@ export const RECONNECT_INTERVAL_MS = 2000;
 // getPigpioConnection(), which reads this same `connection`; resolving it
 // only after re-enabling every subscriber would make that resolution depend
 // on enable() calls that are themselves awaiting it, deadlocking forever.
-// Confirmed live on real hardware (riddarholmen): trigger:gpio-button and
-// output:nec both hung in enable() indefinitely under the earlier version.
+// Confirmed live on real hardware: trigger:gpio-button and output:nec both
+// hung in enable() indefinitely under the earlier version.
 function reconnectAfterDrop(requiredBy: string): void {
   connection = (async () => {
     for (;;) {
